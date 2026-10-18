@@ -19,10 +19,13 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\CustomerCreditAging;
+use App\Services\InvestmentSummaryService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 /**
@@ -37,6 +40,11 @@ use Livewire\Component;
  *  - Sections appear only for modules the user can open.
  *
  * Super admins additionally get a company overview (suppliers, users, fleet).
+ *
+ * Sales, credit-given/recovered, top lists and ledger figures follow the chosen
+ * period (?from=&to=, default: this month so far) and are compared with the
+ * period before it. Trends use fixed windows. The result is cached for a couple
+ * of minutes per user, supplier and period; ?refresh=1 recalculates it.
  */
 class Dashboard extends Component
 {
@@ -87,6 +95,32 @@ class Dashboard extends Component
 
     /** @var array<string, mixed> */
     public array $stockMovementBreakdown = [];
+
+    /**
+     * The chosen period and the one it is compared with.
+     *
+     * @var array{from: string, to: string, prev_from: string, prev_to: string, days: int, label: string, prev_label: string, preset: string|null, mtd: bool, presets: array<int, array{name: string, from: string, to: string}>}
+     */
+    public array $period = [];
+
+    /**
+     * What the business has tied up (same figures as the Investment Summary report).
+     *
+     * @var array{as_of?: string, parts?: array<string, float>, before?: array<string, float>, total?: float, change?: float}
+     */
+    public array $investment = [];
+
+    /**
+     * Plain-language findings worked out from the figures (run rate, outliers, concentration, cover).
+     *
+     * @var array<int, array{tone: string, value: string, title: string, text: string}>
+     */
+    public array $insights = [];
+
+    public string $refreshedAt = '';
+
+    /** Seconds the dashboard figures are kept before they are worked out again. */
+    public const CACHE_SECONDS = 120;
 
     /**
      * What the user is looking at: supplier + own/all per module.
@@ -164,11 +198,22 @@ class Dashboard extends Component
     /** Draft lists open from at least this date (the module lists default to today). */
     public const DRAFTS_FROM = '2026-03-01';
 
+    /** Everything the view needs that is worked out by the loaders (and so can be cached). */
+    private const STATE = [
+        'kpiCards', 'monthlySalesTrend', 'salesByPaymentMethod', 'revenueVsCogs', 'topProductsByStockValue',
+        'purchasesVsPayments', 'dailySalesTrend', 'journalEntryStatus', 'topProductsBySales', 'grnVsGoodsIssueTrend',
+        'topSalespersonBySales', 'pendingItems', 'cashVsCreditTrend', 'salesByDayOfWeek', 'warehouseStockDistribution',
+        'stockMovementBreakdown', 'lastMonth', 'recentSettlements', 'lowStock', 'topCreditCustomers', 'salesBySupplier',
+        'creditBreakdown', 'creditBySalesman', 'supplierLedger', 'creditAging', 'agingCustomers', 'companyOverview',
+        'draftLinks', 'investment', 'insights', 'refreshedAt',
+    ];
+
     public function mount(): void
     {
         $user = auth()->user();
 
         $this->scope = $this->resolveScope($user);
+        $this->resolvePeriod();
         $this->sections = [
             'sales' => $user->can('sales-settlement-list'),
             'distribution' => $user->can('goods-issue-list'),
@@ -177,8 +222,35 @@ class Dashboard extends Component
             'accounting' => $user->can('journal-entry-list') || $user->can('accounting-view'),
             'company' => $this->scope['is_super_admin'] || $this->scope['is_admin'],
             'credit' => $this->canSeeCredit($user),
+            'investment' => $this->scope['is_super_admin'] || $user->can('report-audit-investment-summary'),
         ];
 
+        $key = $this->cacheKey($user);
+
+        if (request()->boolean('refresh')) {
+            Cache::forget($key);
+        }
+
+        $state = app()->runningUnitTests()
+            ? $this->workOutState($user)
+            : Cache::remember($key, self::CACHE_SECONDS, fn () => $this->workOutState($user));
+
+        $this->fill($state);
+    }
+
+    private function cacheKey(User $user): string
+    {
+        return implode(':', [
+            'dashboard', $user->id, $this->scope['supplier_id'] ?? 'all', $this->period['from'], $this->period['to'],
+            (int) $this->scope['own_settlements'], (int) $this->scope['own_issues'], (int) $this->scope['own_grns'],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function workOutState(User $user): array
+    {
         $this->loadKpiCards($user);
         $this->loadPendingItems($user);
         $this->buildDraftLinks();
@@ -230,6 +302,130 @@ class Dashboard extends Component
         if ($this->sections['company']) {
             $this->loadCompanyOverview();
         }
+
+        if ($this->sections['investment']) {
+            $this->loadInvestment();
+        }
+
+        $this->loadInsights();
+        $this->refreshedAt = now()->format('d M Y, h:i A');
+
+        $state = [];
+        foreach (self::STATE as $property) {
+            $state[$property] = $this->{$property};
+        }
+
+        return $state;
+    }
+
+    /**
+     * The chosen dates (?from=&to=, default: this month so far, never in the future) and
+     * the period they are compared with: the same days of the previous month for a whole
+     * month-to-date, otherwise the same number of days straight before.
+     */
+    private function resolvePeriod(): void
+    {
+        $today = Carbon::today();
+        $parse = function (mixed $value): ?Carbon {
+            if (! is_string($value) || $value === '') {
+                return null;
+            }
+
+            try {
+                return Carbon::parse($value)->startOfDay();
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+
+        $from = $parse(request()->query('from'));
+        $to = $parse(request()->query('to'));
+
+        if ($from === null && $to === null) {
+            $from = $today->copy()->startOfMonth();
+            $to = $today->copy();
+        }
+
+        $from ??= $to->copy();
+        $to ??= $from->copy();
+
+        if ($to->gt($today)) {
+            $to = $today->copy();
+        }
+        if ($from->gt($to)) {
+            [$from, $to] = [$to->copy(), $from->copy()];
+        }
+        if ($from->diffInDays($to) > 730) {
+            $from = $to->copy()->subDays(730);
+        }
+
+        $days = (int) $from->diffInDays($to) + 1;
+        $monthToDate = $from->isSameDay($from->copy()->startOfMonth()) && $from->isSameMonth($to);
+
+        if ($monthToDate) {
+            $prevFrom = $from->copy()->subMonthNoOverflow()->startOfMonth();
+            $prevTo = $prevFrom->copy()->addDays($to->day - 1);
+            if ($prevTo->gt($prevFrom->copy()->endOfMonth())) {
+                $prevTo = $prevFrom->copy()->endOfMonth()->startOfDay();
+            }
+        } else {
+            $prevTo = $from->copy()->subDay();
+            $prevFrom = $prevTo->copy()->subDays($days - 1);
+        }
+
+        $range = fn (Carbon $a, Carbon $b): string => $a->isSameDay($b)
+            ? $a->format('d M Y')
+            : ($a->isSameYear($b) ? $a->format('d M') : $a->format('d M Y')).' – '.$b->format('d M Y');
+
+        $presets = [
+            'Today' => [$today->copy(), $today->copy()],
+            'Yesterday' => [$today->copy()->subDay(), $today->copy()->subDay()],
+            'Last 7 days' => [$today->copy()->subDays(6), $today->copy()],
+            'Last 30 days' => [$today->copy()->subDays(29), $today->copy()],
+            'This month' => [$today->copy()->startOfMonth(), $today->copy()],
+            'Last month' => [$today->copy()->subMonthNoOverflow()->startOfMonth(), $today->copy()->subMonthNoOverflow()->endOfMonth()->startOfDay()],
+            'This year' => [$today->copy()->startOfYear(), $today->copy()],
+        ];
+        $active = null;
+        foreach ($presets as $name => [$a, $b]) {
+            if ($a->isSameDay($from) && $b->isSameDay($to)) {
+                $active = $name;
+                break;
+            }
+        }
+
+        $this->period = [
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+            'prev_from' => $prevFrom->toDateString(),
+            'prev_to' => $prevTo->toDateString(),
+            'days' => $days,
+            'label' => $active === 'Today' ? 'Today, '.$to->format('d M Y') : ($active ?? $range($from, $to)).($active && $active !== 'Yesterday' ? ' · '.$range($from, $to) : ''),
+            'prev_label' => $range($prevFrom, $prevTo),
+            'preset' => $active,
+            'mtd' => $monthToDate,
+            'presets' => collect($presets)->map(fn ($r, $name) => ['name' => $name, 'from' => $r[0]->toDateString(), 'to' => $r[1]->toDateString()])->values()->all(),
+        ];
+    }
+
+    private function periodFrom(): Carbon
+    {
+        return Carbon::parse($this->period['from'])->startOfDay();
+    }
+
+    private function periodTo(): Carbon
+    {
+        return Carbon::parse($this->period['to'])->endOfDay();
+    }
+
+    private function previousFrom(): Carbon
+    {
+        return Carbon::parse($this->period['prev_from'])->startOfDay();
+    }
+
+    private function previousTo(): Carbon
+    {
+        return Carbon::parse($this->period['prev_to'])->endOfDay();
     }
 
     public function render()
@@ -316,10 +512,10 @@ class Dashboard extends Component
      */
     private function loadKpiCards($user): void
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
-        $lastStart = Carbon::now()->subMonthNoOverflow()->startOfMonth();
-        $lastEnd = Carbon::now()->subMonthNoOverflow()->endOfMonth();
+        $startOfMonth = $this->periodFrom();
+        $endOfMonth = $this->periodTo();
+        $lastStart = $this->previousFrom();
+        $lastEnd = $this->previousTo();
 
         if ($user->can('sales-settlement-list')) {
             $sums = fn (Carbon $from, Carbon $to) => $this->settlements()
@@ -346,6 +542,10 @@ class Dashboard extends Component
             $this->lastMonth['sales'] = (float) $last->sales;
             $this->lastMonth['profit'] = (float) $last->profit;
             $this->lastMonth['trips'] = (float) $last->trips;
+            $this->lastMonth['cash'] = (float) $last->cash;
+            $this->lastMonth['credit'] = (float) $last->credit;
+            $this->lastMonth['expenses'] = (float) $last->expenses;
+            $this->lastMonth['recoveries'] = (float) $last->recoveries;
 
             $this->kpiCards['pendingSettlements'] = $this->settlements()->where('status', 'draft')->count();
         }
@@ -422,6 +622,13 @@ class Dashboard extends Component
             $profits[] = round((float) ($row->total_profit ?? 0), 2);
         }
 
+        // Months before the first sale are only empty space on the chart.
+        while (count($labels) > 6 && $sales[0] == 0 && $profits[0] == 0) {
+            array_shift($labels);
+            array_shift($sales);
+            array_shift($profits);
+        }
+
         $this->monthlySalesTrend = [
             'labels' => $labels,
             'sales' => $sales,
@@ -433,7 +640,7 @@ class Dashboard extends Component
     {
         $data = $this->settlements()
             ->where('status', 'posted')
-            ->whereBetween('settlement_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
+            ->whereBetween('settlement_date', [$this->periodFrom(), $this->periodTo()])
             ->selectRaw('SUM(cash_sales_amount) as cash')
             ->selectRaw('SUM(cheque_sales_amount) as cheque')
             ->selectRaw('SUM(bank_transfer_amount) as bank_transfer')
@@ -560,8 +767,8 @@ class Dashboard extends Component
      */
     private function loadSupplierLedgerTable(): void
     {
-        $from = Carbon::now()->startOfMonth()->toDateString();
-        $to = Carbon::now()->endOfMonth()->toDateString();
+        $from = $this->period['from'];
+        $to = $this->period['to'];
 
         $this->supplierLedger = $this->ledger()
             ->join('suppliers', 'supplier_ledger_registers.supplier_id', '=', 'suppliers.id')
@@ -606,8 +813,8 @@ class Dashboard extends Component
             ->selectRaw('COALESCE(SUM(invoice_amount), 0) as invoices, COALESCE(SUM(online_amount), 0) as payments')
             ->first();
 
-        $now = $month(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
-        $last = $month(Carbon::now()->subMonthNoOverflow()->startOfMonth(), Carbon::now()->subMonthNoOverflow()->endOfMonth());
+        $now = $month($this->periodFrom(), $this->periodTo());
+        $last = $month($this->previousFrom(), $this->previousTo());
 
         $balance = (float) $this->ledger()
             ->selectRaw('COALESCE(SUM(opening_balance + online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance')
@@ -666,23 +873,26 @@ class Dashboard extends Component
             ->where('status', 'posted')
             ->where('settlement_date', '>=', Carbon::now()->subDays(29)->startOfDay())
             ->selectRaw('DATE(settlement_date) as date')
-            ->selectRaw('SUM(total_sales_amount) as total_sales')
+            ->selectRaw('SUM(total_sales_amount) as total_sales, SUM(gross_profit) as total_profit')
             ->groupByRaw('DATE(settlement_date)')
             ->get()
             ->keyBy(fn ($row) => Carbon::parse($row->date)->format('Y-m-d'));
 
         $labels = [];
         $sales = [];
+        $profit = [];
 
         for ($i = 29; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i);
             $labels[] = $date->format('d M');
             $sales[] = round((float) ($data[$date->format('Y-m-d')]->total_sales ?? 0), 2);
+            $profit[] = round((float) ($data[$date->format('Y-m-d')]->total_profit ?? 0), 2);
         }
 
         $this->dailySalesTrend = [
             'labels' => $labels,
             'sales' => $sales,
+            'profit' => $profit,
         ];
     }
 
@@ -706,7 +916,7 @@ class Dashboard extends Component
             ->join('sales_settlements', 'sales_settlement_items.sales_settlement_id', '=', 'sales_settlements.id')
             ->join('products', 'sales_settlement_items.product_id', '=', 'products.id')
             ->where('sales_settlements.status', 'posted')
-            ->whereBetween('sales_settlements.settlement_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
+            ->whereBetween('sales_settlements.settlement_date', [$this->periodFrom(), $this->periodTo()])
             ->whereNull('sales_settlements.deleted_at');
 
         $data = $this->scopeSettlements($query)
@@ -769,7 +979,7 @@ class Dashboard extends Component
         $query = SalesSettlement::query()
             ->join('employees', 'sales_settlements.employee_id', '=', 'employees.id')
             ->where('sales_settlements.status', 'posted')
-            ->whereBetween('sales_settlements.settlement_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+            ->whereBetween('sales_settlements.settlement_date', [$this->periodFrom(), $this->periodTo()]);
 
         $data = $this->scopeSettlements($query)
             ->select('employees.id', 'employees.name')
@@ -1001,7 +1211,7 @@ class Dashboard extends Component
         $balance = 'COALESCE(SUM(t.debit), 0) - COALESCE(SUM(t.credit), 0)';
 
         $month = $this->customerLedger()
-            ->whereBetween('t.transaction_date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::now()->endOfMonth()->toDateString()])
+            ->whereBetween('t.transaction_date', [$this->period['from'], $this->period['to']])
             ->selectRaw("COALESCE(SUM(CASE WHEN t.transaction_type <> 'opening_balance' THEN t.debit ELSE 0 END), 0) as given, COALESCE(SUM(t.credit), 0) as recovered")
             ->first();
         $this->kpiCards['creditGivenThisMonth'] = round((float) ($month->given ?? 0), 2);
@@ -1079,7 +1289,7 @@ class Dashboard extends Component
         $data = SalesSettlement::query()
             ->join('suppliers', 'sales_settlements.supplier_id', '=', 'suppliers.id')
             ->where('sales_settlements.status', 'posted')
-            ->whereBetween('sales_settlements.settlement_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
+            ->whereBetween('sales_settlements.settlement_date', [$this->periodFrom(), $this->periodTo()])
             ->when($this->scope['own_settlements'], fn ($q) => $q->where('sales_settlements.created_by', auth()->id()))
             ->select('suppliers.supplier_name')
             ->selectRaw('SUM(sales_settlements.total_sales_amount) as sales, SUM(sales_settlements.gross_profit) as profit')
@@ -1093,6 +1303,172 @@ class Dashboard extends Component
             'sales' => $data->pluck('sales')->map(fn ($v) => round((float) $v, 2))->toArray(),
             'profit' => $data->pluck('profit')->map(fn ($v) => round((float) $v, 2))->toArray(),
         ];
+    }
+
+    /**
+     * Investment as of the end of the period, and as of the day before it started, using the
+     * same figures as reports/investment-summary: stock, market credit, claims, expiry
+     * (AMR) and the supplier ledger (negative = we owe suppliers).
+     */
+    private function loadInvestment(): void
+    {
+        $service = app(InvestmentSummaryService::class);
+        $supplierIds = $this->scope['supplier_id']
+            ? [(int) $this->scope['supplier_id']]
+            : Supplier::where('disabled', false)->pluck('id')->all();
+
+        $sum = function (string $date) use ($service, $supplierIds): array {
+            $totals = ['stock' => 0.0, 'credit' => 0.0, 'claims' => 0.0, 'expiry' => 0.0, 'ledger' => 0.0];
+
+            foreach ($supplierIds as $id) {
+                $parts = $service->mainInvestment($date, (int) $id);
+                $totals['stock'] += $parts['stock'];
+                $totals['credit'] += $parts['credit'];
+                $totals['claims'] += $parts['claims'];
+                $totals['expiry'] += $parts['powder_expiry'] + $parts['liquid_expiry'];
+                $totals['ledger'] += $parts['ledger'];
+            }
+
+            return array_map(fn (float $v) => round($v, 2), $totals);
+        };
+
+        $now = $sum($this->period['to']);
+        $before = $sum(Carbon::parse($this->period['from'])->subDay()->toDateString());
+
+        $this->investment = [
+            'as_of' => $this->period['to'],
+            'before_on' => Carbon::parse($this->period['from'])->subDay()->toDateString(),
+            'parts' => $now,
+            'before' => $before,
+            'total' => round(array_sum($now), 2),
+            'change' => round(array_sum($now) - array_sum($before), 2),
+        ];
+    }
+
+    /**
+     * Plain-language findings from the figures already loaded. Simple, explainable statistics:
+     * run rate against the daily mean, days outside two standard deviations, Pareto share of
+     * the top products, collection efficiency and days of credit/stock cover.
+     */
+    private function loadInsights(): void
+    {
+        $rs = function (float $v): string {
+            $a = abs($v);
+            $sign = $v < 0 ? '-' : '';
+
+            return 'Rs '.$sign.match (true) {
+                $a >= 10000000 => number_format($a / 10000000, 2).' Cr',
+                $a >= 100000 => number_format($a / 100000, 1).' Lac',
+                default => number_format($a),
+            };
+        };
+        $k = $this->kpiCards;
+        $insights = [];
+
+        $daily = $this->dailySalesTrend['sales'] ?? [];
+        $labels = $this->dailySalesTrend['labels'] ?? [];
+        $active = array_values(array_filter($daily, fn ($v) => $v > 0));
+
+        if (count($active) >= 5) {
+            $mean = array_sum($active) / count($active);
+            $std = sqrt(array_sum(array_map(fn ($v) => ($v - $mean) ** 2, $active)) / (count($active) - 1));
+
+            if ($this->period['mtd'] && $this->period['to'] === Carbon::today()->toDateString() && isset($k['totalSalesThisMonth'])) {
+                $now = Carbon::today();
+                $elapsed = $now->day;
+                $pace = $k['totalSalesThisMonth'] / max(1, $elapsed) * $now->daysInMonth;
+                $spread = $std * sqrt(max(0, $now->daysInMonth - $elapsed));
+                $lastFull = $this->lastMonth['sales'] ?? 0;
+                $insights[] = [
+                    'tone' => '#1d4ed8',
+                    'value' => $rs($pace),
+                    'title' => 'On pace for this month',
+                    'text' => 'Month-end sales if the daily average of the last '.$elapsed.' days holds (likely '.$rs(max(0, $pace - $spread)).' to '.$rs($pace + $spread).')'
+                        .($lastFull > 0 ? '; last month so far was '.$rs($lastFull).'.' : '.'),
+                ];
+            }
+
+            $unusual = [];
+            foreach ($daily as $i => $v) {
+                if ($v > 0 && $std > 0 && abs($v - $mean) / $std >= 2) {
+                    $unusual[] = ['label' => $labels[$i], 'value' => $v, 'z' => ($v - $mean) / $std];
+                }
+            }
+            if ($unusual !== []) {
+                usort($unusual, fn ($a, $b) => abs($b['z']) <=> abs($a['z']));
+                $top = $unusual[0];
+                $insights[] = [
+                    'tone' => '#b45309',
+                    'value' => count($unusual).' '.Str::plural('day', count($unusual)),
+                    'title' => 'Unusual sales days (last 30)',
+                    'text' => 'More than 2 standard deviations from the '.$rs($mean).' daily average. Furthest: '.$top['label'].' at '.$rs($top['value']).($top['z'] < 0 ? ' (a dip)' : ' (a peak)').'.',
+                ];
+            }
+        }
+
+        $dow = $this->salesByDayOfWeek;
+        if (! empty($dow['values']) && array_sum($dow['values']) > 0) {
+            $values = array_filter($dow['values'], fn ($v) => $v > 0);
+            $best = array_search(max($values), $dow['values'], true);
+            $worst = array_search(min($values), $dow['values'], true);
+            $insights[] = [
+                'tone' => '#0f766e',
+                'value' => $dow['labels'][$best],
+                'title' => 'Strongest weekday',
+                'text' => 'Sells '.round(max($values) / max(1, min($values)), 1).'x the weakest working day ('.$dow['labels'][$worst].') over the last 90 days.',
+            ];
+        }
+
+        $products = $this->topProductsBySales;
+        $periodSales = (float) ($k['totalSalesThisMonth'] ?? 0);
+        if (! empty($products['values']) && $periodSales > 0) {
+            $topThree = array_sum(array_slice($products['values'], 0, 3));
+            $insights[] = [
+                'tone' => '#7c3aed',
+                'value' => round($topThree / $periodSales * 100).'%',
+                'title' => 'Sales from 3 products',
+                'text' => ($products['labels'][0] ?? '').' leads. The top 3 products bring '.$rs($topThree).' of '.$rs($periodSales).' sold in the period.',
+            ];
+        }
+
+        $given = (float) ($k['creditGivenThisMonth'] ?? 0);
+        $recovered = (float) ($k['creditRecoveredThisMonth'] ?? 0);
+        if ($given > 0) {
+            $insights[] = [
+                'tone' => $recovered >= $given ? '#15803d' : '#b91c1c',
+                'value' => round($recovered / $given * 100).'%',
+                'title' => 'Recovery against new credit',
+                'text' => $rs($recovered).' recovered against '.$rs($given).' given in the period'.($recovered >= $given ? ': market credit is shrinking.' : ': market credit is growing by '.$rs($given - $recovered).'.'),
+            ];
+        }
+
+        $owed = (float) ($k['creditOwed'] ?? 0);
+        if ($owed > 0 && isset($k['creditOverdue'])) {
+            $insights[] = [
+                'tone' => '#c2410c',
+                'value' => round($k['creditOverdue'] / $owed * 100).'%',
+                'title' => 'Credit older than 60 days',
+                'text' => $rs((float) $k['creditOverdue']).' of '.$rs($owed).' owed is from sales more than 60 days old, across '.($k['creditOverdueCustomers'] ?? 0).' customers.',
+            ];
+        }
+
+        if (isset($k['totalInventoryValue']) && $this->sections['sales']) {
+            $cogs30 = (float) $this->settlements()
+                ->where('status', 'posted')
+                ->where('settlement_date', '>=', Carbon::today()->subDays(29))
+                ->sum('total_cogs');
+            if ($cogs30 > 0 && $k['totalInventoryValue'] > 0) {
+                $cover = $k['totalInventoryValue'] / ($cogs30 / 30);
+                $insights[] = [
+                    'tone' => '#0e7490',
+                    'value' => round($cover).' days',
+                    'title' => 'Stock cover',
+                    'text' => $rs((float) $k['totalInventoryValue']).' of stock lasts about '.round($cover).' days at the last 30 days\' cost of goods sold.',
+                ];
+            }
+        }
+
+        $this->insights = array_slice($insights, 0, 6);
     }
 
     private function loadCompanyOverview(): void

@@ -172,7 +172,7 @@ it('shows accounting data for users with financial permissions', function () {
 
 // ── View rendering ──────────────────────────────────────────────────
 
-it('renders quick action links based on permissions', function () {
+it('does not render quick action shortcuts', function () {
     createDashboardPermissions();
 
     $user = User::factory()->create();
@@ -180,9 +180,9 @@ it('renders quick action links based on permissions', function () {
 
     Livewire::actingAs($user)
         ->test(Dashboard::class)
-        ->assertSee('New GRN')
-        ->assertSee('New Settlement')
-        ->assertDontSee('New Journal')
+        ->assertDontSee('Quick Actions')
+        ->assertDontSee('New GRN')
+        ->assertDontSee('New Settlement')
         ->assertSuccessful();
 });
 
@@ -533,4 +533,22 @@ it('takes the overdue share from what customers owe, not from credit net of adva
         ->assertSet('kpiCards.creditOwed', 1000.0)
         ->assertSet('kpiCards.creditOverdue', 1000.0)
         ->assertSee('100% of what is owed');
+});
+
+it('shows the investment section for a super admin', function () {
+    $admin = createSuperAdminUser();
+
+    Livewire::actingAs($admin)
+        ->test(Dashboard::class)
+        ->assertSee('Investment')
+        ->assertSuccessful();
+});
+
+it('resolves a custom period and compares it with the preceding window', function () {
+    $admin = createSuperAdminUser();
+
+    $component = Livewire::actingAs($admin)
+        ->test(Dashboard::class, ['from' => '2026-09-01', 'to' => '2026-09-10']);
+
+    $component->assertSuccessful();
 });

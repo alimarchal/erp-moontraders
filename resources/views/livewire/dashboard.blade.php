@@ -21,14 +21,15 @@
         };
     };
     $full = fn ($v) => 'Rs '.number_format((float) $v, 2);
-    // "▲ 12% vs last month" (null when there is nothing to compare with).
-    $delta = function (float $now, ?float $last): ?array {
+    // "▲ 12% vs same days last month" (null when there is nothing to compare with).
+    $vsText = $period['mtd'] ? 'vs same days last month' : 'vs previous period';
+    $delta = function (float $now, ?float $last) use ($vsText): ?array {
         if ($last === null || $last == 0.0) {
             return null;
         }
         $pct = ($now - $last) / abs($last) * 100;
 
-        return ['up' => $pct >= 0, 'text' => ($pct >= 0 ? '▲ ' : '▼ ').number_format(abs($pct), 0).'% vs last month'];
+        return ['up' => $pct >= 0, 'text' => ($pct >= 0 ? '▲ ' : '▼ ').number_format(abs($pct), 0).'% '.$vsText];
     };
     $ownNote = fn (bool $own) => $own ? 'your own entries' : 'all users';
     $pendingTotal = collect($pendingItems)->sum();
@@ -92,11 +93,6 @@
         .db-pending a { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: #fff; border: 1px solid #fde68a; font-size: 13px; font-weight: 600; color: #78350f; text-decoration: none; }
         .db-pending a:hover { border-color: #b45309; }
         .db-pending a b { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #b45309; color: #fff; font-size: 12px; }
-        .db-actions { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        @media (min-width: 768px) { .db-actions { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-        .db-action { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; border: 1px solid var(--ak-border); border-radius: 10px; background: #fff; font-size: 12.5px; font-weight: 600; color: var(--ak-text); text-decoration: none; text-align: center; }
-        .db-action:hover { border-color: var(--ak-navy); background: var(--ak-navy-tint); color: var(--ak-navy); }
-        .db-action svg { width: 20px; height: 20px; color: var(--ak-navy); }
         .db-chart { min-height: 290px; }
         .db-chart-sm { min-height: 240px; }
         .db-stack > * + * { margin-top: 16px; }
@@ -115,6 +111,56 @@
     </style>
 
     <div class="db-page ak-page" style="gap:28px">
+        @include('livewire.dashboard.style')
+
+        {{-- Top bar: the period everything below follows, the supplier, filters, refresh --}}
+        @php
+            $keep = array_filter(['supplier' => $scope['can_pick_supplier'] ? request()->query('supplier') : null]);
+            $canInvestmentReport = auth()->user()->can('report-audit-investment-summary');
+            $hourNow = (int) now()->format('G');
+            $greeting = $hourNow < 12 ? 'Good morning' : ($hourNow < 17 ? 'Good afternoon' : 'Good evening');
+            $firstName = \Illuminate\Support\Str::of(auth()->user()->name)->replaceMatches('/^(mr|mrs|ms|miss|dr)\.?\s+/i', '')->trim()->before(' ');
+        @endphp
+        <header class="db-top" x-data="{ filters: {{ request()->hasAny(['from', 'to']) && ! $period['preset'] ? 'true' : 'false' }} }">
+            <div class="db-top-row">
+                <div class="db-top-title">
+                    <h1 class="db-greet">{{ $greeting }}, {{ $firstName }}</h1>
+                    <p>
+                        <span class="db-period"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>{{ $period['label'] }}</span>
+                        <span>compared with {{ $period['prev_label'] }}</span>
+                        <span class="db-live" title="Figures are kept for {{ intdiv(\App\Livewire\Dashboard::CACHE_SECONDS, 60) }} minutes; Refresh recalculates them"><i></i> updated {{ $refreshedAt }}</span>
+                    </p>
+                </div>
+                <div class="db-top-actions">
+                    <button type="button" class="db-btn" @click="filters = ! filters" :aria-expanded="filters" aria-controls="db-filter-panel">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+                        Period
+                    </button>
+                    <a class="db-btn" href="{{ route('dashboard', array_merge($keep, array_filter(['from' => request()->query('from'), 'to' => request()->query('to')]), ['refresh' => 1])) }}" title="Work the figures out again now">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                        Refresh
+                    </a>
+                </div>
+            </div>
+            <form method="GET" action="{{ route('dashboard') }}" id="db-filter-panel" class="db-filter-panel" x-show="filters" x-cloak aria-label="Choose the period">
+                <div class="db-filter-label">Periods</div>
+                <div class="db-chips">
+                    @foreach ($period['presets'] as $preset)
+                        <a class="db-chip {{ $period['preset'] === $preset['name'] ? 'is-on' : '' }}" href="{{ route('dashboard', array_merge($keep, ['from' => $preset['from'], 'to' => $preset['to']])) }}">{{ $preset['name'] }}</a>
+                    @endforeach
+                </div>
+                <div class="db-filter-label">Custom dates</div>
+                <div class="db-range">
+                    @foreach ($keep as $name => $value)<input type="hidden" name="{{ $name }}" value="{{ $value }}">@endforeach
+                    <label for="db-from" class="sr-only">From</label><input id="db-from" type="date" name="from" value="{{ $period['from'] }}" max="{{ now()->toDateString() }}">
+                    <span>to</span>
+                    <label for="db-to" class="sr-only">To</label><input id="db-to" type="date" name="to" value="{{ $period['to'] }}" max="{{ now()->toDateString() }}">
+                    <button type="submit" class="db-btn db-btn-primary">Show</button>
+                    <a class="db-btn" href="{{ route('dashboard', $keep) }}">This month</a>
+                </div>
+            </form>
+        </header>
+
         {{-- What am I looking at --}}
         <div class="db-scope" style="justify-content:space-between">
             <div class="db-scope">
@@ -122,9 +168,9 @@
                     <label class="db-supplier-pick" title="Show the whole dashboard for one supplier">
                         <span>Supplier</span>
                         <select onchange="window.location = this.value">
-                            <option value="{{ route('dashboard') }}">All suppliers</option>
+                            <option value="{{ route('dashboard', array_filter(['from' => request()->query('from'), 'to' => request()->query('to')])) }}">All suppliers</option>
                             @foreach ($supplierOptions as $sid => $sname)
-                                <option value="{{ route('dashboard', ['supplier' => $sid]) }}" @selected($scope['supplier_id'] === $sid)>{{ $sname }}</option>
+                                <option value="{{ route('dashboard', array_filter(['supplier' => $sid, 'from' => request()->query('from'), 'to' => request()->query('to')])) }}" @selected($scope['supplier_id'] === $sid)>{{ $sname }}</option>
                             @endforeach
                         </select>
                     </label>
@@ -140,9 +186,12 @@
                 @endif
                 @if ($scope['is_super_admin'] || $scope['is_admin'])
                     <span class="ak-scope" style="background:#fee2e2; border-color:#fca5a5; color:#991b1b">{{ $scope['is_super_admin'] ? 'Super admin' : 'Admin' }} view</span>
+                @else
+                    <span class="ak-scope" style="background:#e0e7ff; border-color:#a5b4fc; color:#312e81">Your view</span>
                 @endif
             </div>
             <nav class="db-toc" aria-label="Jump to section">
+                @if ($sections['investment'] && ! empty($investment['parts']))<a href="#db-investment">Investment</a>@endif
                 @if ($sections['company'])<a href="#db-company">Company</a>@endif
                 @if ($sections['credit'])<a href="#db-credit">Credit</a>@endif
                 @if ($sections['sales'])<a href="#db-sales">Sales</a>@endif
@@ -190,49 +239,130 @@
             $salesmanCreditorsUrl = $canCreditors ? route('reports.creditors-ledger.salesman-creditors', array_filter(['filter' => array_filter(['supplier_id' => $scope['supplier_id']])])) : null;
             $creditHistoryUrl = auth()->user()->can('report-sales-credit-sales') ? route('reports.credit-sales.salesman-history') : null;
         @endphp
-        @if (isset($k['marketCredit']) || isset($k['totalInventoryValue']) || isset($k['totalSalesThisMonth']) || $owedTop !== null)
-            <section aria-label="Key figures">
-                <div class="ak-kpis">
-                    @isset($k['marketCredit'])
-                        <a href="{{ $creditUrl ?? '#db-credit' }}" class="ak-kpi ak-kpi-action" title="{{ $full($k['marketCredit']) }}">
-                            <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg></span>
-                            <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">Market credit (customers owe)</span>
-                                <span class="ak-kpi-value">Rs {{ $rs($k['marketCredit']) }}</span>
-                                <span class="ak-kpi-hint">{{ $n($k['creditCustomers'] ?? 0) }} customers &middot; Creditors ledger →</span>
-                            </span>
-                        </a>
-                    @endisset
-                    @isset($k['totalInventoryValue'])
-                        <a href="{{ route('inventory.current-stock.index') }}" class="ak-kpi" title="{{ $full($k['totalInventoryValue']) }}">
-                            <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg></span>
-                            <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">Inventory value (now)</span>
-                                <span class="ak-kpi-value">Rs {{ $rs($k['totalInventoryValue']) }}</span>
-                                <span class="ak-kpi-hint">{{ $n($k['productsInStock'] ?? 0) }} products in stock</span>
-                            </span>
-                        </a>
-                    @endisset
+        {{-- ============================== Highlights: shares as rings ============================== --}}
+        @php
+            $gaugeSales = (float) ($k['totalSalesThisMonth'] ?? 0);
+            $gaugeGiven = (float) ($k['creditGivenThisMonth'] ?? 0);
+            $gaugeRecovered = (float) ($k['creditRecoveredThisMonth'] ?? 0);
+            $gaugeOwed = (float) ($k['creditOwed'] ?? 0);
+            $gaugeInvoices = (float) ($k['supplierInvoicesThisMonth'] ?? 0);
+            $gaugePrev = (float) ($lastMonth['sales'] ?? 0);
+            $gaugeList = array_values(array_filter([
+                $gaugeSales > 0 ? ['id' => 'gauge-cash', 'pct' => round(($k['cashCollectedThisMonth'] ?? 0) / $gaugeSales * 100), 'color' => '#0d9488', 'title' => 'Sold for cash', 'text' => 'Rs '.$rs($k['cashCollectedThisMonth'] ?? 0).' of Rs '.$rs($gaugeSales)] : null,
+                $gaugeSales > 0 && $gaugePrev > 0 ? ['id' => 'gauge-pace', 'pct' => min(100, round($gaugeSales / $gaugePrev * 100)), 'color' => '#1d4ed8', 'title' => 'Sales vs '.($period['mtd'] ? 'same days last month' : 'previous period'), 'text' => 'Rs '.$rs($gaugeSales).' against Rs '.$rs($gaugePrev)] : null,
+                $gaugeGiven > 0 || $gaugeRecovered > 0 ? ['id' => 'gauge-recovery', 'pct' => $gaugeGiven > 0 ? min(100, round($gaugeRecovered / $gaugeGiven * 100)) : 100, 'color' => '#16a34a', 'title' => 'Credit recovered', 'text' => 'Rs '.$rs($gaugeRecovered).' back against Rs '.$rs($gaugeGiven).' given'] : null,
+                $gaugeOwed > 0 ? ['id' => 'gauge-fresh', 'pct' => max(0, round((1 - ($k['creditOverdue'] ?? 0) / $gaugeOwed) * 100)), 'color' => '#d97706', 'title' => 'Credit under 60 days old', 'text' => 'Rs '.$rs($gaugeOwed - ($k['creditOverdue'] ?? 0)).' of Rs '.$rs($gaugeOwed).' owed'] : null,
+                $gaugeInvoices > 0 ? ['id' => 'gauge-paid', 'pct' => min(100, round(($k['paymentsThisMonth'] ?? 0) / $gaugeInvoices * 100)), 'color' => '#6d28d9', 'title' => 'Supplier bills paid', 'text' => 'Rs '.$rs($k['paymentsThisMonth'] ?? 0).' paid on Rs '.$rs($gaugeInvoices).' billed'] : null,
+            ]));
+        @endphp
+        @if ($gaugeList)
+            <section class="db-card db-highlights" aria-label="Highlights">
+                <div class="db-card-head"><div><h3>Highlights</h3><p class="db-card-sub">each ring is one share of the period: the fuller the ring, the bigger the share</p></div></div>
+                <div class="db-gauges">
+                    @foreach ($gaugeList as $gauge)
+                        <figure><div id="{{ $gauge['id'] }}"></div><figcaption><b>{{ $gauge['title'] }}</b>{{ $gauge['text'] }}</figcaption></figure>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @php
+            $salesNow = (float) ($k['totalSalesThisMonth'] ?? 0);
+            $sD = $delta($salesNow, $lastMonth['sales'] ?? null);
+            $pD = $delta((float) ($k['grossProfitThisMonth'] ?? 0), $lastMonth['profit'] ?? null);
+            $cD = $delta((float) ($k['cashCollectedThisMonth'] ?? 0), $lastMonth['cash'] ?? null);
+            $includesToday = $period['to'] === now()->toDateString();
+            $inv = $investment;
+            $invChange = (float) ($inv['change'] ?? 0);
+            $hasTiles = isset($k['marketCredit']) || isset($k['totalInventoryValue']) || isset($k['totalSalesThisMonth']) || $owedTop !== null || ! empty($inv['parts']);
+        @endphp
+        @if ($hasTiles)
+            <section aria-label="Key figures" class="db-stack">
+                <div class="db-group">Key figures <span>{{ $period['label'] }} &middot; stock, credit and payables are as of now</span></div>
+                <div class="db-tiles">
                     @isset($k['totalSalesThisMonth'])
-                        <a href="#db-sales" class="ak-kpi" title="{{ $full($k['totalSalesThisMonth']) }}">
-                            <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.3 4.3a11.95 11.95 0 0 1 5.8-5.8l2.65-1.2m0 0-5.94-2.28m5.94 2.28-2.28 5.94" /></svg></span>
-                            <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">Sales this month</span>
-                                <span class="ak-kpi-value">Rs {{ $rs($k['totalSalesThisMonth']) }}</span>
-                                <span class="ak-kpi-hint">Rs {{ $rs($k['grossProfitThisMonth'] ?? 0) }} gross profit</span>
-                            </span>
-                        </a>
+                        @include('livewire.dashboard.tile', ['label' => 'Sales', 'prefix' => 'Rs', 'value' => $rs($salesNow), 'tone' => '#1d4ed8', 'icon' => 'sales', 'title' => $full($salesNow), 'href' => '#db-sales', 'badge' => $sD['text'] ?? null, 'badgeTone' => $sD ? ($sD['up'] ? 'up' : 'down') : 'flat', 'hint' => $includesToday ? 'Rs '.$rs($k['salesToday'] ?? 0).' today' : null, 'spark' => 'spark-sales'])
+                        @include('livewire.dashboard.tile', ['label' => 'Gross profit', 'prefix' => 'Rs', 'value' => $rs($k['grossProfitThisMonth'] ?? 0), 'tone' => '#16a34a', 'icon' => 'profit', 'title' => $full($k['grossProfitThisMonth'] ?? 0), 'href' => '#db-sales', 'badge' => $pD['text'] ?? null, 'badgeTone' => $pD ? ($pD['up'] ? 'up' : 'down') : 'flat', 'hint' => $margin.'% margin', 'spark' => 'spark-profit'])
+                        @include('livewire.dashboard.tile', ['label' => 'Cash collected', 'prefix' => 'Rs', 'value' => $rs($k['cashCollectedThisMonth'] ?? 0), 'tone' => '#0d9488', 'icon' => 'cash', 'title' => $full($k['cashCollectedThisMonth'] ?? 0), 'href' => '#db-sales', 'badge' => $cD['text'] ?? null, 'badgeTone' => $cD ? ($cD['up'] ? 'up' : 'down') : 'flat', 'hint' => '+ Rs '.$rs($k['recoveriesThisMonth'] ?? 0).' credit recovered'])
+                        @include('livewire.dashboard.tile', ['label' => 'Credit sales', 'prefix' => 'Rs', 'value' => $rs($k['creditSalesThisMonth'] ?? 0), 'tone' => '#ea580c', 'icon' => 'card', 'title' => $full($k['creditSalesThisMonth'] ?? 0), 'href' => '#db-sales', 'hint' => ($salesNow > 0 ? round(($k['creditSalesThisMonth'] ?? 0) / $salesNow * 100) : 0).'% of sales · Rs '.$rs($k['expensesThisMonth'] ?? 0).' expenses'])
+                    @endisset
+                    @isset($k['marketCredit'])
+                        @include('livewire.dashboard.tile', ['label' => 'Market credit', 'prefix' => 'Rs', 'value' => $rs($k['marketCredit']), 'tone' => '#d97706', 'icon' => 'alert', 'title' => $full($k['marketCredit']), 'href' => $creditUrl ?? '#db-credit', 'hint' => $n($k['creditCustomers'] ?? 0).' customers owe · Rs '.$rs($k['creditOverdue'] ?? 0).' over 60 days'])
+                    @endisset
+                    @if (! empty($inv['parts']))
+                        @include('livewire.dashboard.tile', ['label' => 'Investment', 'prefix' => 'Rs', 'value' => $rs($inv['total']), 'tone' => '#6d28d9', 'icon' => 'invest', 'title' => $full($inv['total']), 'href' => '#db-investment', 'badge' => ($invChange >= 0 ? '▲ ' : '▼ ').'Rs '.$rs(abs($invChange)), 'badgeTone' => $invChange >= 0 ? 'up' : 'down', 'hint' => 'since '.\Carbon\Carbon::parse($inv['before_on'])->format('d M')])
+                    @endif
+                    @isset($k['totalInventoryValue'])
+                        @include('livewire.dashboard.tile', ['label' => 'Inventory value', 'prefix' => 'Rs', 'value' => $rs($k['totalInventoryValue']), 'tone' => '#0e7490', 'icon' => 'box', 'title' => $full($k['totalInventoryValue']), 'href' => route('inventory.current-stock.index'), 'hint' => $n($k['productsInStock'] ?? 0).' products in stock'])
                     @endisset
                     @if ($owedTop !== null)
-                        <a href="#db-purchases" class="ak-kpi" title="{{ $full(abs($owedTop)) }}">
-                            <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.35m-16.5 11.65V9.35m0 0a3 3 0 0 0 3.75-.62 3 3 0 0 0 4.5 0 3 3 0 0 0 4.5 0 3 3 0 0 0 3.75.62m-16.5 0a3 3 0 0 1-.62-4.72L4.2 3.44A1.5 1.5 0 0 1 5.26 3h13.48a1.5 1.5 0 0 1 1.06.44l1.19 1.19a3 3 0 0 1-.62 4.72" /></svg></span>
-                            <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">{{ $owedTop > 0 ? 'Payable to suppliers' : 'Advance with suppliers' }}</span>
-                                <span class="ak-kpi-value">Rs {{ $rs(abs($owedTop)) }}</span>
-                                <span class="ak-kpi-hint">supplier ledger balance</span>
-                            </span>
-                        </a>
+                        @include('livewire.dashboard.tile', ['label' => $owedTop > 0 ? 'Payable to suppliers' : 'Advance with suppliers', 'prefix' => 'Rs', 'value' => $rs(abs($owedTop)), 'tone' => '#475569', 'icon' => 'store', 'title' => $full(abs($owedTop)), 'href' => '#db-purchases', 'hint' => 'supplier ledger balance'])
                     @endif
+                </div>
+            </section>
+        @endif
+
+        {{-- ============================== Insights ============================== --}}
+        @if ($insights)
+            <section aria-label="Insights" class="db-stack">
+                <div class="db-group">What the numbers say <span>worked out from the data above, not typed in</span></div>
+                <div class="db-insights">
+                    @foreach ($insights as $insight)
+                        <div class="db-insight" style="--tone: {{ $insight['tone'] }}">
+                            <b>{{ $insight['value'] }}</b>
+                            <h3>{{ $insight['title'] }}</h3>
+                            <p>{{ $insight['text'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- ============================== Investment ============================== --}}
+        @if ($sections['investment'] && ! empty($inv['parts']))
+            @php
+                $invRows = [
+                    ['stock', 'Stock in hand', 'at cost, warehouses and vans', '#1d4ed8'],
+                    ['credit', 'Market credit', 'what customers owe, salesman accounts', '#d97706'],
+                    ['claims', 'Claims receivable', 'raised on suppliers, not yet settled', '#0e7490'],
+                    ['expiry', 'Expiry (AMR) held', 'powder and liquid not yet disposed', '#7c3aed'],
+                    ['ledger', 'Supplier ledger', 'minus = payable to suppliers, plus = advance', '#64748b'],
+                ];
+                $invMax = max(1, ...array_values(array_map('abs', $inv['parts'])));
+            @endphp
+            <section class="db-section" id="db-investment" aria-labelledby="db-investment-h">
+                <div class="db-section-head">
+                    <div>
+                        <h2 id="db-investment-h">Investment</h2>
+                        <p>{{ $scope['supplier'] }} &middot; as of {{ \Carbon\Carbon::parse($inv['as_of'])->format('d M Y') }}, same figures as the Investment Summary report</p>
+                    </div>
+                    <div class="db-links">
+                        @if ($canInvestmentReport)<a href="{{ route('reports.investment-summary.index', array_filter(['date' => $inv['as_of'], 'supplier_id' => $scope['supplier_id']])) }}" class="ak-btn ak-btn-outline">Investment summary report</a>@endif
+                    </div>
+                </div>
+                <div class="db-card">
+                    <div class="db-invest">
+                        <div>
+                            <div class="db-kpi-label">Net investment</div>
+                            <div class="db-hero-num" title="{{ $full($inv['total']) }}"><small>Rs</small>{{ $rs($inv['total']) }}</div>
+                            <p class="ak-muted" style="margin-top:8px">
+                                <span class="db-delta {{ $invChange >= 0 ? 'up' : 'down' }}">{{ $invChange >= 0 ? '▲' : '▼' }} Rs {{ $rs(abs($invChange)) }}</span>
+                                since {{ \Carbon\Carbon::parse($inv['before_on'])->format('d M Y') }}
+                                ({{ $inv['total'] != 0 && ($inv['total'] - $invChange) != 0 ? round($invChange / abs($inv['total'] - $invChange) * 100, 1).'%' : '—' }})
+                            </p>
+                            <p class="ak-muted" style="margin-top:8px">Stock, market credit, claims and expiry less what is owed to suppliers.</p>
+                        </div>
+                        <div>
+                            @foreach ($invRows as [$key, $name, $note, $color])
+                                @php $val = (float) $inv['parts'][$key]; $diff = $val - (float) $inv['before'][$key]; @endphp
+                                <div class="db-inv-row">
+                                    <span class="db-inv-name">{{ $name }}<small>{{ $note }}</small></span>
+                                    <span class="db-inv-val" title="{{ $full($val) }}">Rs {{ $rs($val) }}<small style="color: var(--ak-muted)">{{ $diff == 0 ? 'no change' : ($diff > 0 ? '▲ ' : '▼ ').'Rs '.$rs(abs($diff)) }}</small></span>
+                                    <span class="db-inv-bar"><span style="width: {{ round(abs($val) / $invMax * 100) }}%; --bar: {{ $val < 0 ? '#dc2626' : $color }}"></span></span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             </section>
         @endif
@@ -290,7 +420,7 @@
 
                 @if (! empty($salesBySupplier['labels']))
                     <div class="db-card" style="margin-top:16px">
-                        <div class="db-card-head"><div><h3>Sales by supplier</h3><p class="db-card-sub">This month, posted settlements</p></div></div>
+                        <div class="db-card-head"><div><h3>Sales by supplier</h3><p class="db-card-sub">{{ $period['label'] }}, posted settlements</p></div></div>
                         <div id="db-sales-supplier" class="db-chart-sm" role="img" aria-label="Sales by supplier this month"></div>
                     </div>
                 @endif
@@ -329,7 +459,7 @@
                     <a href="{{ $creditHistoryUrl ?? '#db-credit' }}" class="ak-kpi" title="{{ $full($k['creditGivenThisMonth'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
                         <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Credit given this month</span>
+                            <span class="ak-kpi-label">Credit given</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['creditGivenThisMonth'] ?? 0) }}</span>
                             <span class="ak-kpi-hint">new credit sales{{ $creditHistoryUrl ? ' · by salesman →' : '' }}</span>
                         </span>
@@ -337,7 +467,7 @@
                     <div class="ak-kpi" title="{{ $full($k['creditRecoveredThisMonth'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
                         <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Recovered this month</span>
+                            <span class="ak-kpi-label">Recovered</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['creditRecoveredThisMonth'] ?? 0) }}</span>
                             @php $given = (float) ($k['creditGivenThisMonth'] ?? 0); $rec = (float) ($k['creditRecoveredThisMonth'] ?? 0); @endphp
                             <span class="ak-kpi-hint {{ $rec >= $given ? 'db-up' : 'db-down' }}">{{ $given > 0 ? round($rec / $given * 100).'% of credit given' : 'cash and cheque recoveries' }}</span>
@@ -495,11 +625,10 @@
                 <div class="db-section-head">
                     <div>
                         <h2 id="db-sales-h">Sales &amp; settlements</h2>
-                        <p>{{ $scope['supplier'] }} &middot; {{ $ownNote($scope['own_settlements']) }} &middot; {{ now()->format('F Y') }}</p>
+                        <p>{{ $scope['supplier'] }} &middot; {{ $ownNote($scope['own_settlements']) }} &middot; {{ $period['label'] }}</p>
                     </div>
                     <div class="db-links">
                         <a href="{{ route('sales-settlements.index') }}" class="ak-btn ak-btn-outline">Open settlements</a>
-                        @can('sales-settlement-create')<a href="{{ route('sales-settlements.create') }}" class="ak-btn ak-btn-primary">＋ New Settlement</a>@endcan
                     </div>
                 </div>
 
@@ -507,7 +636,7 @@
                     <div class="ak-kpi" title="{{ $full($k['totalSalesThisMonth'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.3 4.3a11.95 11.95 0 0 1 5.8-5.8l2.65-1.2m0 0-5.94-2.28m5.94 2.28-2.28 5.94" /></svg></span>
                         <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Sales this month</span>
+                            <span class="ak-kpi-label">Sales</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['totalSalesThisMonth'] ?? 0) }}</span>
                             <span class="ak-kpi-hint {{ $salesDelta ? ($salesDelta['up'] ? 'db-up' : 'db-down') : '' }}">{{ $salesDelta['text'] ?? 'Rs '.$rs($k['salesToday'] ?? 0).' today' }}</span>
                         </span>
@@ -547,11 +676,11 @@
                             <div id="db-sales-monthly" class="db-chart" role="img" aria-label="Monthly sales and gross profit"></div>
                         </div>
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>How customers paid</h3><p class="db-card-sub">This month's sales: cash, credit and bank transfer</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.index', 'Daily sales') !!}</div>
+                            <div class="db-card-head"><div><h3>How customers paid</h3><p class="db-card-sub">Sales in the period: cash, credit and bank transfer</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.index', 'Daily sales') !!}</div>
                             @if (array_sum($salesByPaymentMethod['values'] ?? []) > 0)
                                 <div id="db-sales-method" class="db-chart" role="img" aria-label="Sales by payment method"></div>
                             @else
-                                <div class="db-empty"><b>No posted sales this month</b></div>
+                                <div class="db-empty"><b>No posted sales in this period</b></div>
                             @endif
                         </div>
                     </div>
@@ -564,22 +693,22 @@
                             <div id="db-sales-daily" class="db-chart-sm" role="img" aria-label="Daily sales, last 30 days"></div>
                         </div>
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>Top salesmen</h3><p class="db-card-sub">This month by sales</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.salesman-wise', 'Salesman-wise') !!}</div>
+                            <div class="db-card-head"><div><h3>Top salesmen</h3><p class="db-card-sub">{{ $period['label'] }}, by sales</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.salesman-wise', 'Salesman-wise') !!}</div>
                             @if (! empty($topSalespersonBySales['labels']))
                                 <div id="db-sales-salesmen" class="db-chart-sm" role="img" aria-label="Top salesmen this month"></div>
                             @else
-                                <div class="db-empty"><b>No posted sales this month</b></div>
+                                <div class="db-empty"><b>No posted sales in this period</b></div>
                             @endif
                         </div>
                     </div>
 
                     <div class="db-grid">
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>Best-selling products</h3><p class="db-card-sub">This month, top {{ count($topProductsBySales['labels'] ?? []) }}</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.product-wise', 'Product-wise') !!}</div>
+                            <div class="db-card-head"><div><h3>Best-selling products</h3><p class="db-card-sub">{{ $period['label'] }}, top {{ count($topProductsBySales['labels'] ?? []) }}</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.product-wise', 'Product-wise') !!}</div>
                             @if (! empty($topProductsBySales['labels']))
                                 <div id="db-sales-products" class="db-chart" role="img" aria-label="Best-selling products this month"></div>
                             @else
-                                <div class="db-empty"><b>No product sales this month</b></div>
+                                <div class="db-empty"><b>No product sales in this period</b></div>
                             @endif
                         </div>
                         <div class="db-card">
@@ -622,7 +751,7 @@
 
                     @if (! $sections['company'] && ! empty($salesBySupplier['labels']) && count($salesBySupplier['labels']) > 1)
                         <div class="db-card" style="margin-top:16px">
-                            <div class="db-card-head"><div><h3>Sales by supplier</h3><p class="db-card-sub">This month, posted settlements</p></div></div>
+                            <div class="db-card-head"><div><h3>Sales by supplier</h3><p class="db-card-sub">{{ $period['label'] }}, posted settlements</p></div></div>
                             <div id="db-sales-supplier" class="db-chart-sm" role="img" aria-label="Sales by supplier this month"></div>
                         </div>
                     @endif
@@ -641,14 +770,13 @@
                     </div>
                     <div class="db-links">
                         <a href="{{ route('goods-issues.index') }}" class="ak-btn ak-btn-outline">Open goods issues</a>
-                        @can('goods-issue-create')<a href="{{ route('goods-issues.create') }}" class="ak-btn ak-btn-primary">＋ New Issue</a>@endcan
                     </div>
                 </div>
                 <div class="ak-kpis">
                     <div class="ak-kpi" title="{{ $full($k['goodsIssuedThisMonth'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg></span>
                         <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Goods Issued this month</span>
+                            <span class="ak-kpi-label">Goods issued</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['goodsIssuedThisMonth'] ?? 0) }}</span>
                             <span class="ak-kpi-hint {{ $issuedDelta ? ($issuedDelta['up'] ? 'db-up' : 'db-down') : '' }}">{{ $issuedDelta['text'] ?? 'stock value sent to vans' }}</span>
                         </span>
@@ -656,7 +784,7 @@
                     <div class="ak-kpi">
                         <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.11c0-1.13-.84-2.09-1.96-2.18a48.42 48.42 0 0 0-1.12-.08m-5.8 0c-.07.21-.1.44-.1.67 0 .41.34.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.67m-5.8 0A2.25 2.25 0 0 1 15 2.25h1.5a2.25 2.25 0 0 1 2.15 1.6m-5.8 0c-.38.03-.75.05-1.12.08C9.6 4.02 8.75 4.98 8.75 6.11V8.25m0 0H4.88c-.62 0-1.13.5-1.13 1.13v10.5c0 .62.5 1.12 1.13 1.12h9.75c.62 0 1.12-.5 1.12-1.12V9.38c0-.62-.5-1.13-1.12-1.13H8.25Z" /></svg></span>
                         <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Issues this month</span>
+                            <span class="ak-kpi-label">Issues</span>
                             <span class="ak-kpi-value">{{ $n($k['goodsIssueCountThisMonth'] ?? 0) }}</span>
                             <span class="ak-kpi-hint">{{ $n($k['issuedToday'] ?? 0) }} issued today</span>
                         </span>
@@ -698,7 +826,6 @@
                     </div>
                     <div class="db-links">
                         @can('goods-receipt-note-list')<a href="{{ route('goods-receipt-notes.index') }}" class="ak-btn ak-btn-outline">Open GRNs</a>@endcan
-                        @can('goods-receipt-note-create')<a href="{{ route('goods-receipt-notes.create') }}" class="ak-btn ak-btn-primary">＋ New GRN</a>@endcan
                     </div>
                 </div>
                 @php
@@ -712,7 +839,7 @@
                         <a href="{{ $ledgerUrl ?? '#' }}" class="ak-kpi" title="{{ $full($k['supplierInvoicesThisMonth']) }}">
                             <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.63a3.38 3.38 0 0 0-3.38-3.37h-1.5a1.13 1.13 0 0 1-1.12-1.13v-1.5a3.38 3.38 0 0 0-3.38-3.37H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.63c-.62 0-1.13.5-1.13 1.13v17.24c0 .63.5 1.13 1.13 1.13h12.74c.63 0 1.13-.5 1.13-1.13V11.25a9 9 0 0 0-9-9Z" /></svg></span>
                             <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">Supplier invoices this month</span>
+                                <span class="ak-kpi-label">Supplier invoices</span>
                                 <span class="ak-kpi-value">Rs {{ $rs($k['supplierInvoicesThisMonth']) }}</span>
                                 <span class="ak-kpi-hint {{ $invDelta ? ($invDelta['up'] ? 'db-down' : 'db-up') : '' }}">{{ $invDelta['text'] ?? 'invoice amount billed to us' }}</span>
                             </span>
@@ -720,7 +847,7 @@
                         <a href="{{ $ledgerUrl ?? '#' }}" class="ak-kpi" title="{{ $full($k['paymentsThisMonth'] ?? 0) }}">
                             <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
                             <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">Payments This Month</span>
+                                <span class="ak-kpi-label">Payments</span>
                                 <span class="ak-kpi-value">Rs {{ $rs($k['paymentsThisMonth'] ?? 0) }}</span>
                                 <span class="ak-kpi-hint">{{ $payDelta['text'] ?? 'online amount paid to suppliers' }}</span>
                             </span>
@@ -738,7 +865,7 @@
                         <div class="ak-kpi" title="{{ $full($k['totalPurchasesThisMonth']) }}">
                             <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.63 10.63a2.25 2.25 0 0 1-2.24 2.12H6.62a2.25 2.25 0 0 1-2.24-2.12L3.75 7.5m6 4.13h4.5M3.38 7.5h17.25c.62 0 1.12-.5 1.12-1.13v-1.5c0-.62-.5-1.12-1.12-1.12H3.38c-.63 0-1.13.5-1.13 1.12v1.5c0 .63.5 1.13 1.13 1.13Z" /></svg></span>
                             <span class="ak-kpi-body">
-                                <span class="ak-kpi-label">Received (GRN) this month</span>
+                                <span class="ak-kpi-label">Received (GRN)</span>
                                 <span class="ak-kpi-value">Rs {{ $rs($k['totalPurchasesThisMonth']) }}</span>
                                 <span class="ak-kpi-hint">{{ $n($k['grnCountThisMonth'] ?? 0) }} GRNs &middot; {{ $n($pendingItems['draftGrns'] ?? 0) }} drafts</span>
                             </span>
@@ -762,7 +889,7 @@
                     @endphp
                     <div class="db-card" style="margin-top:16px; padding:0; overflow:hidden">
                         <div class="db-card-head" style="padding:16px 18px 6px">
-                            <div><h3>Ledger register by supplier</h3><p class="db-card-sub">{{ now()->format('F Y') }} invoices and payments, and the balance to date</p></div>
+                            <div><h3>Ledger register by supplier</h3><p class="db-card-sub">{{ $period['label'] }} invoices and payments, and the balance to date</p></div>
                         </div>
                         <div style="overflow-x:auto">
                             <table class="ak-dt" style="min-width:640px">
@@ -928,7 +1055,6 @@
                     <div class="db-links">
                         @can('journal-entry-list')<a href="{{ route('journal-entries.index') }}" class="ak-btn ak-btn-outline">Journal entries</a>@endcan
                         @can('report-financial-general-ledger')<a href="{{ route('reports.general-ledger.index') }}" class="ak-btn ak-btn-outline">General ledger</a>@endcan
-                        @can('journal-entry-create')<a href="{{ route('journal-entries.create') }}" class="ak-btn ak-btn-primary">＋ New Journal</a>@endcan
                     </div>
                 </div>
                 <div class="db-grid">
@@ -958,31 +1084,6 @@
                 </div>
             </section>
         @endif
-
-        {{-- ============================== Quick Actions ============================== --}}
-        @php
-            $actions = collect([
-                ['goods-receipt-note-create', 'goods-receipt-notes.create', 'New GRN', 'M12 4.5v15m7.5-7.5h-15'],
-                ['goods-issue-create', 'goods-issues.create', 'New Issue', 'M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5'],
-                ['sales-settlement-create', 'sales-settlements.create', 'New Settlement', 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
-                ['journal-entry-create', 'journal-entries.create', 'New Journal', 'M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.59a1 1 0 0 1 .7.29l5.42 5.42a1 1 0 0 1 .29.7V19a2 2 0 0 1-2 2Z'],
-                ['supplier-payment-create', 'supplier-payments.create', 'New Payment', 'M2.25 18.75h19.5M3.75 6h16.5a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5H3.75a1.5 1.5 0 0 1-1.5-1.5V7.5A1.5 1.5 0 0 1 3.75 6Z'],
-                ['inventory-view', 'inventory.current-stock.index', 'View Stock', 'm21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9'],
-            ])->filter(fn ($a) => auth()->user()->can($a[0]));
-        @endphp
-        @if ($actions->isNotEmpty())
-            <section class="db-card" aria-labelledby="db-actions-h">
-                <div class="db-card-head"><div><h3 id="db-actions-h">Quick Actions</h3><p class="db-card-sub">Jump to what you do most</p></div></div>
-                <div class="db-actions" style="margin-top:8px">
-                    @foreach ($actions as [$perm, $route, $label, $icon])
-                        <a href="{{ route($route) }}" class="db-action">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}" /></svg>
-                            {{ $label }}
-                        </a>
-                    @endforeach
-                </div>
-            </section>
-        @endif
     </div>
 
     @php
@@ -992,6 +1093,7 @@
             'creditSalesman' => $canCreditorsJs ? array_map(fn ($id) => $id ? route('reports.creditors-ledger.index', ['filter' => array_filter(['employee_id' => $id, 'supplier_id' => $scope['supplier_id'], 'has_balance' => 'yes'])]) : null, $creditBySalesman['ids'] ?? []) : [],
         ];
         $chartData = [
+            'gauges' => $gaugeList ?? [],
             'monthly' => $monthlySalesTrend ?: null,
             'method' => $salesByPaymentMethod ?: null,
             'daily' => $dailySalesTrend ?: null,
@@ -1062,6 +1164,21 @@
                     dataLabels: { enabled: true, formatter: v => v >= 5 ? Math.round(v) + '%' : '', dropShadow: { enabled: false } },
                     plotOptions: { pie: { donut: { size: '64%', labels: { show: true, total: { show: true, label: total, color: ink, formatter: w => fmt === rupees ? 'Rs ' + short(w.globals.seriesTotals.reduce((a, b) => a + b, 0)) : whole(w.globals.seriesTotals.reduce((a, b) => a + b, 0)) } } } } },
                 });
+                const spark = (id, series, color) => draw(id, {
+                    chart: { type: 'area', height: 34, sparkline: { enabled: true } },
+                    series: [{ name: 'Daily', data: series }], colors: [color],
+                    stroke: { curve: 'monotoneCubic', width: 2 },
+                    fill: { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0.02 } },
+                    tooltip: { fixed: { enabled: false }, x: { show: false }, y: { formatter: rupees }, marker: { show: false } },
+                });
+                const gauge = (id, pct, color) => draw(id, {
+                    chart: { type: 'radialBar', height: 150 },
+                    series: [pct], colors: [color],
+                    plotOptions: { radialBar: { startAngle: -135, endAngle: 135, hollow: { size: '58%' }, track: { background: '#e2e8f0', strokeWidth: '100%' }, dataLabels: { name: { show: false }, value: { offsetY: 7, fontSize: '22px', fontWeight: 800, color: '#0f172a', formatter: v => Math.round(v) + '%' } } } },
+                    stroke: { lineCap: 'round' },
+                    tooltip: { enabled: false },
+                    legend: { show: false },
+                });
                 const bars = (id, labels, series, colors, height = 250) => draw(id, {
                     chart: { type: 'bar', height },
                     series, colors,
@@ -1070,6 +1187,11 @@
                     xaxis: Object.assign({}, base.xaxis, { categories: labels }),
                 });
 
+                (data.gauges || []).forEach(g => gauge(g.id, g.pct, g.color));
+                if (data.daily) {
+                    spark('spark-sales', data.daily.sales, c[0]);
+                    spark('spark-profit', data.daily.profit || [], c[2]);
+                }
                 if (data.monthly) {
                     draw('db-sales-monthly', {
                         chart: { type: 'area', height: 290 },
@@ -1083,7 +1205,7 @@
                 }
                 if (data.method) {
                     const keep = data.method.values.map((v, i) => [data.method.labels[i], v]).filter(p => p[1] > 0);
-                    donut('db-sales-method', keep.map(p => p[0]), keep.map(p => p[1]), c, 'This month');
+                    donut('db-sales-method', keep.map(p => p[0]), keep.map(p => p[1]), c, 'Period');
                 }
                 if (data.daily) {
                     draw('db-sales-daily', {

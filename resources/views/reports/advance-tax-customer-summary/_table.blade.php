@@ -1,7 +1,7 @@
 {{-- Report table shared by the screen and the PDF. The header repeats on every PDF page. --}}
 <table class="report-table">
     <thead>
-        <tr class="bg-gray-50">
+        <tr>
             <th class="text-center font-bold" style="width:4%">#</th>
             <th class="text-center font-bold px-2" style="width:34%">Customer</th>
             <th class="text-center font-bold px-2 whitespace-nowrap" style="width:11%">NTN</th>
@@ -57,7 +57,7 @@
         @endforelse
     </tbody>
     @if ($rows->isNotEmpty())
-        <tfoot class="bg-gray-100 font-extrabold">
+        <tfoot class="font-extrabold">
             <tr>
                 <td colspan="3" class="text-right px-2 py-1">Total ({{ $rows->reject(fn ($row) => $row['unassigned'] ?? false)->count() }} customers)</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($totalSale, 2) }}</td>

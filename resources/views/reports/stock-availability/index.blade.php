@@ -21,13 +21,32 @@
                 word-wrap: break-word;
             }
 
+            .report-table thead th {
+                background: #0b2a6f;
+                color: #fff;
+                border-color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report-table tbody tr:nth-child(even) td {
+                background: #f8fafc;
+            }
+
+            .report-table tfoot td {
+                background: #dbeafe;
+                color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             .print-only {
                 display: none;
             }
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    margin: 0.5in;
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -66,6 +85,25 @@
             }
         </style>
     @endpush
+
+    @if ($stockData->isNotEmpty())
+        @php($pdfQuery = request()->query())
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 no-print">
+            <div class="flex justify-end gap-2">
+                @foreach (['portrait' => 'PDF Portrait', 'landscape' => 'PDF Landscape'] as $orientation => $label)
+                    <a href="{{ route('reports.stock-availability.export.pdf', $pdfQuery + ['orientation' => $orientation]) }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150"
+                        title="Download as an A4 {{ $orientation }} PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <x-filter-section :action="route('reports.stock-availability.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -180,6 +218,10 @@
                 </p>
             </div>
 
+            <div class="px-4 pt-4">
+                @include('reports._visuals')
+            </div>
+
             <div class="overflow-x-auto">
                 @if ($stockData->isEmpty())
                     <div class="px-6 py-10 text-center text-sm text-gray-500">
@@ -188,7 +230,7 @@
                 @else
                     <table class="report-table">
                         <thead>
-                            <tr class="bg-gray-50">
+                            <tr>
                                 <th style="width: 40px;">Sr#</th>
                                 <th style="width: 250px;">Supplier</th>
                                 <th style="width: 120px;">Stock In Quantity</th>
@@ -207,7 +249,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot class="bg-gray-100 font-extrabold">
+                        <tfoot class="font-extrabold">
                             <tr>
                                 <td colspan="2" class="text-center px-2 py-1">Grand Total</td>
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalQuantity, 2) }}</td>

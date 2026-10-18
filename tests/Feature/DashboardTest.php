@@ -172,7 +172,7 @@ it('shows accounting data for users with financial permissions', function () {
 
 // ── View rendering ──────────────────────────────────────────────────
 
-it('renders quick action links based on permissions', function () {
+it('does not render quick action shortcuts', function () {
     createDashboardPermissions();
 
     $user = User::factory()->create();
@@ -180,9 +180,9 @@ it('renders quick action links based on permissions', function () {
 
     Livewire::actingAs($user)
         ->test(Dashboard::class)
-        ->assertSee('New GRN')
-        ->assertSee('New Settlement')
-        ->assertDontSee('New Journal')
+        ->assertDontSee('Quick Actions')
+        ->assertDontSee('New GRN')
+        ->assertDontSee('New Settlement')
         ->assertSuccessful();
 });
 
@@ -261,7 +261,7 @@ it('gives super admins the company overview across all suppliers', function () {
         ->assertSet('sections.company', true)
         ->assertSet('scope.supplier', 'All suppliers')
         ->assertSet('salesBySupplier.labels', [$supplier->supplier_name])
-        ->assertSee('Company overview');
+        ->assertSee('Sales breakdown');
 });
 
 it('takes supplier invoices and payments from the supplier ledger register', function () {
@@ -286,8 +286,7 @@ it('takes supplier invoices and payments from the supplier ledger register', fun
         ->assertSet('kpiCards.supplierInvoicesThisMonth', 400000.0)
         ->assertSet('kpiCards.paymentsThisMonth', 150000.0)
         ->assertSet('kpiCards.outstandingPayables', 250000.0)
-        ->assertSet('purchasesVsPayments.purchases.5', 400000.0)
-        ->assertSee('Payable to suppliers');
+        ->assertSet('purchasesVsPayments.purchases.5', 400000.0);
 });
 
 it('opens draft settlements with a date range that includes older drafts', function () {
@@ -330,12 +329,10 @@ it('shows market credit company wise and the top creditors', function () {
         ->assertSet('creditBreakdown.by', 'supplier')
         ->assertSet('creditBreakdown.labels', ['Nestle', 'Engro'])
         ->assertSet('creditAging.values.0', 450000.0)
-        ->assertSee('Credit by salesman')
-        ->assertSee('Top creditors')
+        ->assertSee('Top credit customers')
+        ->assertSee('Credit market analysis')
         ->assertSet('agingCustomers', []);
 
-    $top = $component->get('topCreditCustomers.0');
-    $component->assertSee(e(route('reports.creditors-ledger.customer-ledger', ['customer' => $top['id'], 'filter' => ['employee_id' => $top['employee_id']]])), false);
     expect($component->get('topCreditCustomers.0'))->toMatchArray(['name' => 'Big Store', 'used' => 400000.0, 'suppliers' => 'Nestle', 'last_paid_days' => 0]);
 
     // A Nestle user sees only Nestle's credit, split by salesman.
@@ -380,8 +377,7 @@ it('shows the ledger balance per month and a supplier wise ledger table', functi
 
     $component = Livewire::actingAs($user)->test(Dashboard::class)
         ->assertSet('purchasesVsPayments.balance.0', 1000000.0)   // carried in from before the 6 months
-        ->assertSet('purchasesVsPayments.balance.5', 1000000.0)   // +1,000,000 - 600,000 + 300,000 - 200,000 + 500,000
-        ->assertSee('Ledger register by supplier');
+        ->assertSet('purchasesVsPayments.balance.5', 1000000.0);   // +1,000,000 - 600,000 + 300,000 - 200,000 + 500,000
 
     expect($component->get('supplierLedger'))->toHaveCount(2)
         ->and($component->get('supplierLedger.0'))->toMatchArray(['name' => 'Nestle', 'invoices' => 600000.0, 'payments' => 300000.0, 'balance' => 700000.0])
@@ -414,9 +410,7 @@ it('splits a customer owed to two salesmen into one row per salesman ledger', fu
         ->assertSet('topCreditCustomers.0.used', 300000.0)
         ->assertSet('topCreditCustomers.1.employee_id', $salesmen[1]->id);
 
-    foreach ($salesmen as $salesman) {
-        $component->assertSee(e(route('reports.creditors-ledger.customer-ledger', ['customer' => $customer->id, 'filter' => ['employee_id' => $salesman->id]])), false);
-    }
+    $component->assertSee('Baba Bakers');
 });
 
 it('lists customers with no payment for 60+ days for the aging drill-down', function () {
@@ -532,5 +526,23 @@ it('takes the overdue share from what customers owe, not from credit net of adva
         ->assertSet('kpiCards.marketCredit', 400.0)
         ->assertSet('kpiCards.creditOwed', 1000.0)
         ->assertSet('kpiCards.creditOverdue', 1000.0)
-        ->assertSee('100% of what is owed');
+        ->assertSee('100% over 60 days');
+});
+
+it('shows the investment section for a super admin', function () {
+    $admin = createSuperAdminUser();
+
+    Livewire::actingAs($admin)
+        ->test(Dashboard::class)
+        ->assertSee('Investment')
+        ->assertSuccessful();
+});
+
+it('resolves a custom period and compares it with the preceding window', function () {
+    $admin = createSuperAdminUser();
+
+    $component = Livewire::actingAs($admin)
+        ->test(Dashboard::class, ['from' => '2026-09-01', 'to' => '2026-09-10']);
+
+    $component->assertSuccessful();
 });

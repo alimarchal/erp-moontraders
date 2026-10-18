@@ -21,13 +21,32 @@
                 word-wrap: break-word;
             }
 
+            .report-table thead th {
+                background: #0b2a6f;
+                color: #fff;
+                border-color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report-table tbody tr:nth-child(even) td {
+                background: #f8fafc;
+            }
+
+            .report-table tfoot td {
+                background: #dbeafe;
+                color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             .print-only {
                 display: none;
             }
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    margin: 0.5in;
                 }
 
                 .no-print {
@@ -100,15 +119,18 @@
                     </svg>
                     Export to Excel
                 </a>
-                <a href="{{ route('reports.company-target-summary.export.pdf', $query) }}"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Export to PDF
-                </a>
+                @foreach (['portrait' => 'PDF Portrait', 'landscape' => 'PDF Landscape'] as $orientation => $label)
+                    <a href="{{ route('reports.company-target-summary.export.pdf', $query + ['orientation' => $orientation]) }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150"
+                        title="Download as an A4 {{ $orientation }} PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {{ $label }}
+                    </a>
+                @endforeach
             </div>
         </div>
     @endif
@@ -183,6 +205,7 @@
                     </p>
 
                     @if ($summary)
+                        @include('reports._visuals')
                         @include('reports.company-target-summary._table', ['summary' => $summary])
                     @endif
                 </div>

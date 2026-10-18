@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Helpers\ReportPdf;
+use App\Helpers\SvgChart;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Supplier;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -45,31 +47,120 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
 
     public function index(Request $request): View
     {
-        return view('reports.advance-tax-customer-summary.index', $this->reportData($request));
+        $data = $this->reportData($request);
+
+        return view('reports.advance-tax-customer-summary.index', $data + [
+            'tiles' => $this->tiles($data),
+            'charts' => $this->charts($data),
+        ]);
     }
 
     /**
-     * A4 PDF of the same report, portrait or landscape, with the table header repeated on every page.
+     * A4 PDF of the same report with the figure tiles and charts, portrait or landscape,
+     * half inch margins, and the table header repeated on every page.
      */
     public function exportPdf(Request $request): Response
     {
         $data = $this->reportData($request);
         abort_unless($data['hasFilter'], 422, 'Select a company first.');
 
-        $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+        $orientation = ReportPdf::orientation($request->query('orientation'));
 
-        $pdf = Pdf::loadView('reports.advance-tax-customer-summary.pdf', $data + [
-            'orientation' => $orientation,
-            'generatedBy' => $request->user()->name,
-            'generatedAt' => now(),
-        ])->setPaper('a4', $orientation);
-
-        $pdf->render();
-        $dompdf = $pdf->getDomPDF();
-        $canvas = $dompdf->getCanvas();
-        $canvas->page_text($canvas->get_width() - 80, $canvas->get_height() - 22, 'Page {PAGE_NUM} of {PAGE_COUNT}', $dompdf->getFontMetrics()->getFont('Helvetica'), 7);
+        $pdf = ReportPdf::make('reports.advance-tax-customer-summary.pdf', $data + [
+            'title' => 'Advance Tax Customer Summary',
+            'subtitle' => [
+                'Company: '.$data['selectedSupplier']->supplier_name,
+                'Period: '.Carbon::parse($data['startDate'])->format('d M Y').' to '.Carbon::parse($data['endDate'])->format('d M Y'),
+            ],
+            'meta' => [
+                'Customers' => $data['rows']->reject(fn ($row) => $row['unassigned'] ?? false)->count(),
+                'Printed by' => $request->user()->name,
+                'On' => now()->format('d M Y, h:i A'),
+            ],
+            'tiles' => $this->tiles($data),
+            'charts' => $this->charts($data),
+        ], $orientation, 'Moon Traders ERP  |  Advance Tax Customer Summary  |  '.$data['selectedSupplier']->supplier_name);
 
         return $pdf->download('advance-tax-customer-summary-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<int, array{label: string, value: string, note: string, color: string}>
+     */
+    private function tiles(array $data): array
+    {
+        if (! $data['hasFilter'] || $data['rows']->isEmpty()) {
+            return [];
+        }
+
+        $customers = $data['rows']->reject(fn ($row) => $row['unassigned'] ?? false)->count();
+
+        return [
+            ['label' => 'Sale', 'value' => 'Rs '.SvgChart::money($data['totalSale']), 'note' => number_format($data['totalSale']), 'color' => '#2563eb'],
+            ['label' => 'Adv. tax (2.5%)', 'value' => 'Rs '.SvgChart::money($data['totalAdvanceTax']), 'note' => number_format($data['totalAdvanceTax']), 'color' => '#f97316'],
+            ['label' => 'Benefits (NTN)', 'value' => 'Rs '.SvgChart::money($data['totalBenefits']), 'note' => 'account 1161', 'color' => '#7c3aed'],
+            ['label' => 'Received', 'value' => 'Rs '.SvgChart::money($data['totalReceived']), 'note' => 'advance tax - benefits', 'color' => '#16a34a'],
+            ['label' => 'Customers', 'value' => number_format($customers), 'note' => 'with an entry', 'color' => '#0891b2'],
+        ];
+    }
+
+    /**
+     * Three charts: where the advance tax went, the biggest customers, benefits against received.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, array<string, mixed>>
+     */
+    private function charts(array $data): array
+    {
+        $customers = $data['rows']->reject(fn ($row) => $row['unassigned'] ?? false);
+
+        if (! $data['hasFilter'] || $customers->isEmpty()) {
+            return [];
+        }
+
+        $name = fn (array $row): string => (string) ($row['customer']?->business_name ?: $row['customer']?->customer_name);
+        $bySale = $customers->sortByDesc('sale')->take(8)->values();
+        $byTax = $customers->sortByDesc('advance_tax')->take(6)->values();
+
+        return [
+            [
+                'title' => 'Where the advance tax went',
+                'subtitle' => 'Benefit given to NTN customers and what was received',
+                'accent' => '#7c3aed',
+                'svg' => fn (int $w) => SvgChart::donut(
+                    ['Received', 'Benefits (NTN)'],
+                    [max($data['totalReceived'], 0), max($data['totalBenefits'], 0)],
+                    ['#16a34a', '#7c3aed'],
+                    $w, 200, SvgChart::money($data['totalAdvanceTax']), 'advance tax'
+                ),
+            ],
+            [
+                'title' => 'Biggest customers by sale',
+                'subtitle' => 'Top 8 in the period',
+                'accent' => '#2563eb',
+                'svg' => fn (int $w) => SvgChart::bars(
+                    $bySale->map($name)->all(),
+                    $bySale->pluck('sale')->all(),
+                    ['#2563eb', '#0891b2', '#16a34a', '#f59e0b', '#f97316', '#e11d48', '#7c3aed', '#64748b'],
+                    $w, 200, null, 18
+                ),
+            ],
+            [
+                'title' => 'Benefits and received by customer',
+                'subtitle' => 'Top 6 customers by advance tax',
+                'accent' => '#f97316',
+                'wide' => true,
+                'svg' => fn (int $w) => SvgChart::columns(
+                    $byTax->take($w < 500 ? 4 : 6)->map(fn (array $row) => explode(' ', $name($row))[0])->all(),
+                    [
+                        ['name' => 'Benefits (NTN)', 'color' => '#7c3aed', 'values' => $byTax->take($w < 500 ? 4 : 6)->pluck('benefits')->all()],
+                        ['name' => 'Received', 'color' => '#16a34a', 'values' => $byTax->take($w < 500 ? 4 : 6)->pluck('received')->all()],
+                    ],
+                    $w, 200
+                ),
+            ],
+        ];
     }
 
     /**

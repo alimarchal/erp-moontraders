@@ -107,6 +107,16 @@ it('downloads the Excel and PDF versions', function () {
     expect($pdf->baseResponse->getContent() ?: $pdf->streamedContent())->toStartWith('%PDF');
 });
 
+it('downloads the PDF in landscape and shows charts on screen', function () {
+    $pdf = $this->actingAs($this->admin)->get(route('reports.company-target-summary.export.pdf', $this->query + ['orientation' => 'landscape']));
+    $pdf->assertOk()->assertDownload();
+    expect($pdf->baseResponse->getContent() ?: $pdf->streamedContent())->toStartWith('%PDF');
+
+    $this->actingAs($this->admin)->get(route('reports.company-target-summary.index', $this->query))
+        ->assertOk()
+        ->assertSee('<svg', false);
+});
+
 it('keeps the order of the target sheet and lists unplanned salesmen last', function () {
     $extra = Employee::factory()->create(['supplier_id' => $this->nestle->id, 'designation' => 'Salesman', 'name' => 'Aaron Unplanned']);
     SalesSettlement::factory()->create([

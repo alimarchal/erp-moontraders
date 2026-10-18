@@ -164,7 +164,6 @@
 
                     {{-- Report Header --}}
                     <p class="text-center font-extrabold mb-2">
-                        SHAHZAIN TRADERS - MUZAFFRABAD<br>
                         COMPANY TARGET SUMMARY<br>
                         @if ($supplier)
                             <span class="text-sm font-semibold">

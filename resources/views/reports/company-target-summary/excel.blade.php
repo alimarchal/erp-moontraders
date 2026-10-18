@@ -1,6 +1,5 @@
 <table>
     <thead>
-        <tr><th colspan="7">SHAHZAIN TRADERS - MUZAFFRABAD</th></tr>
         <tr><th colspan="7">COMPANY TARGET SUMMARY</th></tr>
         <tr><th colspan="7">DISTRIBUTOR: {{ $supplier?->supplier_name }}</th></tr>
         <tr><th colspan="7">Period: {{ $from->format('d.m.Y') }} to {{ $to->format('d.m.Y') }} | Days left: {{ $summary['days_left'] ?? '-' }}</th></tr>

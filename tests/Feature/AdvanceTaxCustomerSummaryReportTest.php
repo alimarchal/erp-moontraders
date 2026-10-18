@@ -75,7 +75,7 @@ it('asks for a company before showing anything', function () {
         ->assertOk()->assertSee('Please select a company');
 });
 
-it('adds the advance tax up per customer across settlements and shows the customer details', function () {
+it('adds the advance tax up per customer across settlements and works out the three tax columns', function () {
     $first = ($this->settle)($this->nestle->id, '2026-10-03');
     $second = ($this->settle)($this->nestle->id, '2026-10-17');
     ($this->entry)($first, $this->customerA, 100000, 250);
@@ -88,15 +88,19 @@ it('adds the advance tax up per customer across settlements and shows the custom
     expect($rows)->toHaveCount(2)
         ->and($rows[0]['customer']->customer_code)->toBe('C-1001')
         ->and($rows[0]['entries'])->toBe(2)
-        ->and($rows[0]['sale_amount'])->toBe(160000.0)
-        ->and($rows[0]['tax_amount'])->toBe(400.0)
-        ->and($rows[1]['tax_amount'])->toBe(100.0)
-        ->and($response->viewData('totalTax'))->toBe(500.0)
-        ->and($response->viewData('totalSale'))->toBe(200000.0);
+        ->and($rows[0]['sale'])->toBe(160000.0)
+        ->and($rows[0]['advance_tax'])->toBe(4000.0)
+        ->and($rows[0]['benefits'])->toBe(400.0)
+        ->and($rows[0]['received'])->toBe(3600.0)
+        ->and($rows[1]['advance_tax'])->toBe(1000.0)
+        ->and($rows[1]['received'])->toBe(900.0)
+        ->and($response->viewData('totalSale'))->toBe(200000.0)
+        ->and($response->viewData('totalAdvanceTax'))->toBe(5000.0)
+        ->and($response->viewData('totalBenefits'))->toBe(500.0)
+        ->and($response->viewData('totalReceived'))->toBe(4500.0);
 
-    $response->assertSee('C-1001')->assertSee('Ali General Store')->assertSee('Ali Mart')
-        ->assertSee('82101-1234567-1')->assertSee('1234567-8')
-        ->assertSee('Main Bazar, Chattar, Muzaffarabad')->assertSee('Wholesale buyer');
+    $response->assertSee('C-1001')->assertSee('Ali Mart')->assertSee('Received From Customer', false)
+        ->assertDontSee('82101-1234567-1')->assertDontSee('Main Bazar');
 });
 
 it('reads entries of suppliers that store advance tax as income as well', function () {
@@ -106,7 +110,7 @@ it('reads entries of suppliers that store advance tax as income as well', functi
 
     $rows = $this->actingAs($this->admin)->get(($this->url)())->viewData('rows');
 
-    expect($rows)->toHaveCount(1)->and($rows[0]['tax_amount'])->toBe(250.0)->and($rows[0]['entries'])->toBe(2);
+    expect($rows)->toHaveCount(1)->and($rows[0]['benefits'])->toBe(250.0)->and($rows[0]['entries'])->toBe(2);
 });
 
 it('leaves out drafts, other dates and other companies', function () {
@@ -118,7 +122,7 @@ it('leaves out drafts, other dates and other companies', function () {
     $response = $this->actingAs($this->admin)->get(($this->url)());
 
     expect($response->viewData('rows'))->toHaveCount(1)
-        ->and($response->viewData('totalTax'))->toBe(250.0)
+        ->and($response->viewData('totalBenefits'))->toBe(250.0)
         ->and($response->viewData('totalSale'))->toBe(100000.0);
 });
 
@@ -132,7 +136,7 @@ it('cross-checks the customer-wise total with the 1161 amount posted on the sett
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
 
-    expect($response->viewData('totalTax'))->toBe(350.0)
+    expect($response->viewData('totalBenefits'))->toBe(350.0)
         ->and($response->viewData('benefitsPosted'))->toBe(350.0)
         ->and($response->viewData('difference'))->toBe(0.0);
 
@@ -147,7 +151,7 @@ it('lets a company user see only their own company', function () {
 
     $this->actingAs($this->companyUser)
         ->get(route('reports.advance-tax-customer-summary.index', ['filter' => ['start_date' => '2026-10-01', 'end_date' => '2026-10-31']]))
-        ->assertOk()->assertSee('Ali General Store');
+        ->assertOk()->assertSee('C-1001')->assertSee('Ali Mart');
 
     $this->actingAs($this->companyUser)->get(($this->url)(['supplier_id' => $this->other->id]))->assertForbidden();
 });

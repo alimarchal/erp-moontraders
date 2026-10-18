@@ -26,6 +26,11 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
     private const ADVANCE_TAX_ACCOUNT_CODE = '1161';
 
     /**
+     * Advance tax charged on sales, the same 2.5% the Advance Tax Sales Register uses.
+     */
+    private const ADVANCE_TAX_RATE = 0.025;
+
+    /**
      * Per-customer advance tax entries live in one table for normal suppliers and in the
      * "income" table for suppliers flagged is_advance_tax_income. A supplier only ever
      * writes to one of them, so both are read and added together.
@@ -78,7 +83,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             $benefitsPosted = $this->postedBenefits($selectedSupplier->id, $startDate, $endDate);
         }
 
-        $totalTax = (float) $rows->sum('tax_amount');
+        $totalBenefits = (float) $rows->sum('benefits');
 
         return view('reports.advance-tax-customer-summary.index', [
             'rows' => $rows,
@@ -89,15 +94,18 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             'endDate' => $endDate,
             'hasFilter' => $selectedSupplier !== null,
             'totalEntries' => (int) $rows->sum('entries'),
-            'totalSale' => (float) $rows->sum('sale_amount'),
-            'totalTax' => $totalTax,
+            'totalSale' => (float) $rows->sum('sale'),
+            'totalAdvanceTax' => (float) $rows->sum('advance_tax'),
+            'totalBenefits' => $totalBenefits,
+            'totalReceived' => (float) $rows->sum('received'),
             'benefitsPosted' => $benefitsPosted,
-            'difference' => round($totalTax - $benefitsPosted, 2),
+            'difference' => round($totalBenefits - $benefitsPosted, 2),
         ]);
     }
 
     /**
-     * One row per customer: entries, sale amount and advance tax added up, plus the customer details.
+     * One row per customer, added up over the dates: entries, sale, advance tax on that sale (2.5%),
+     * the advance tax benefit given (account 1161) and what was received from the customer.
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -130,8 +138,10 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
                 'customer_id' => $customerId,
                 'customer' => $customers->get($customerId),
                 'entries' => $total['entries'],
-                'sale_amount' => $total['sale_amount'],
-                'tax_amount' => $total['tax_amount'],
+                'sale' => $total['sale_amount'],
+                'advance_tax' => $total['sale_amount'] * self::ADVANCE_TAX_RATE,
+                'benefits' => $total['tax_amount'],
+                'received' => $total['sale_amount'] * self::ADVANCE_TAX_RATE - $total['tax_amount'],
             ])
             ->sortBy(fn (array $row) => mb_strtolower((string) $row['customer']?->customer_name))
             ->values();

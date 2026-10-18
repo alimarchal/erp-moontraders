@@ -158,20 +158,23 @@
                         <thead>
                             <tr class="bg-gray-50">
                                 <th class="w-10 text-center font-bold">#</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">Customer No</th>
-                                <th class="text-center font-bold px-2">Customer / Shop Name</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">CNIC</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">NTN</th>
-                                <th class="text-center font-bold px-2">Address</th>
-                                <th class="text-center font-bold px-2">Description</th>
+                                <th class="text-center font-bold px-2">Customer</th>
                                 <th class="text-center font-bold px-2 whitespace-nowrap">Entries</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">
-                                    Sale Amount
-                                    <div class="text-xs font-normal text-gray-500">Invoiced</div>
+                                <th class="text-center font-bold px-2">
+                                    Sale
+                                    <div class="text-xs font-normal text-gray-500">Total Sales</div>
                                 </th>
                                 <th class="text-center font-bold px-2 whitespace-nowrap">
-                                    Advance Tax
+                                    Advance Tax (2.5%)
+                                    <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
+                                </th>
+                                <th class="text-center font-bold px-2 whitespace-nowrap">
+                                    Advance Tax Benefits<br>(NTN Customer)
                                     <div class="text-xs font-normal text-gray-500">Account 1161</div>
+                                </th>
+                                <th class="text-center font-bold px-2 whitespace-nowrap">
+                                    Advance Tax<br>Received From Customer
+                                    <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
                                 </th>
                             </tr>
                         </thead>
@@ -180,34 +183,31 @@
                                 @php($customer = $row['customer'])
                                 <tr>
                                     <td class="text-center">{{ $index + 1 }}</td>
-                                    <td class="px-2 whitespace-nowrap">{{ $customer?->customer_code }}</td>
                                     <td class="px-2">
-                                        <span class="font-semibold">{{ $customer?->customer_name }}</span>
-                                        @if ($customer?->business_name)
-                                            <br><span class="text-xs">{{ $customer->business_name }}</span>
-                                        @endif
+                                        <span class="font-semibold">{{ $customer?->customer_code }}</span>
+                                        <span class="px-1">–</span>{{ $customer?->business_name ?: $customer?->customer_name }}
                                     </td>
-                                    <td class="px-2 whitespace-nowrap">{{ $customer?->owner_cnic ?: '—' }}</td>
-                                    <td class="px-2 whitespace-nowrap">{{ $customer?->ntn ?: '—' }}</td>
-                                    <td class="px-2">{{ collect([$customer?->address, $customer?->sub_locality, $customer?->city])->filter()->implode(', ') ?: '—' }}</td>
-                                    <td class="px-2">{{ $customer?->notes ?: '—' }}</td>
                                     <td class="text-center px-2">{{ $row['entries'] }}</td>
-                                    <td class="text-right font-mono px-2">{{ number_format($row['sale_amount'], 2) }}</td>
-                                    <td class="text-right font-mono px-2">{{ number_format($row['tax_amount'], 2) }}</td>
+                                    <td class="text-right font-mono px-2">{{ number_format($row['sale'], 2) }}</td>
+                                    <td class="text-right font-mono px-2">{{ number_format($row['advance_tax'], 2) }}</td>
+                                    <td class="text-right font-mono px-2">{{ number_format($row['benefits'], 2) }}</td>
+                                    <td class="text-right font-mono px-2">{{ number_format($row['received'], 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
+                                    <td colspan="7" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                         @if ($rows->isNotEmpty())
                             <tfoot class="bg-gray-100 font-extrabold">
                                 <tr>
-                                    <td colspan="7" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
+                                    <td colspan="2" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
                                     <td class="text-center px-2 py-1">{{ $totalEntries }}</td>
                                     <td class="text-right font-mono px-2 py-1">{{ number_format($totalSale, 2) }}</td>
-                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalTax, 2) }}</td>
+                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalAdvanceTax, 2) }}</td>
+                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalBenefits, 2) }}</td>
+                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalReceived, 2) }}</td>
                                 </tr>
                             </tfoot>
                         @endif
@@ -217,8 +217,8 @@
                     <table class="report-table mt-4" style="width: auto; min-width: 420px;">
                         <tbody>
                             <tr>
-                                <td class="px-2">Advance tax added up customer-wise</td>
-                                <td class="text-right font-mono px-2">{{ number_format($totalTax, 2) }}</td>
+                                <td class="px-2">Benefits (1161) added up customer-wise</td>
+                                <td class="text-right font-mono px-2">{{ number_format($totalBenefits, 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="px-2">Advance Tax (1161) on the posted settlements</td>

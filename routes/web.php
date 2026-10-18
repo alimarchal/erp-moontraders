@@ -40,6 +40,7 @@ use App\Http\Controllers\ProductTaxMappingController;
 use App\Http\Controllers\ProfitCategoryController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
+use App\Http\Controllers\Reports\AdvanceTaxCustomerSummaryController;
 use App\Http\Controllers\Reports\AdvanceTaxReportController;
 use App\Http\Controllers\Reports\AdvanceTaxSalesRegisterController;
 use App\Http\Controllers\Reports\AmrDisposeRegisterController;
@@ -800,6 +801,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('percentage-expense', [PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');
         Route::get('advance-tax-sales-register', [AdvanceTaxSalesRegisterController::class, 'index'])->name('advance-tax-sales-register.index');
+        Route::get('advance-tax-customer-summary', [AdvanceTaxCustomerSummaryController::class, 'index'])->name('advance-tax-customer-summary.index');
 
         /* Cheque Register */
         Route::prefix('cheque-register')->name('cheque-register.')->group(function () {

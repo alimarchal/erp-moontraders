@@ -68,7 +68,7 @@ class PermissionCatalog
         ],
         'Supplier Reports' => [
             'report-audit-invoice-summary', 'report-audit-custom-settlement', 'report-sales-sku-rates',
-            'report-audit-advance-tax', 'report-audit-advance-tax-sales-register',
+            'report-audit-advance-tax', 'report-audit-advance-tax-sales-register', 'report-audit-advance-tax-customer-summary',
         ],
         'Sales & Revenue' => [
             'report-sales-settlement', 'report-sales-roi', 'report-sales-summary-roi', 'report-sales-scheme-discount',
@@ -138,6 +138,7 @@ class PermissionCatalog
         'report-audit-cash-detail' => 'Cash Collection Detail',
         'report-audit-investment-summary' => 'Investment Summary',
         'report-audit-company-target-summary' => 'Company Target Summary',
+        'report-audit-advance-tax-customer-summary' => 'Advance Tax Customer Summary',
         'report-audit-claim-register' => 'Claim Register',
         'report-audit-ledger-register' => 'Supplier Ledger Register',
         'report-audit-cheque-register' => 'Cheque Register',

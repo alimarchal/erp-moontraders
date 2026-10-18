@@ -64,6 +64,7 @@ class RoleAndPermissionSeeder extends Seeder
             'profit-category' => ['list', 'create', 'edit', 'delete'],
             'profit-after-category' => ['create', 'edit', 'delete', 'post'],
             'ticket' => ['list', 'create', 'edit', 'delete', 'approve'],
+            'company-target' => ['list', 'create', 'edit', 'delete'],
 
             // Employee Salary Management
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
@@ -79,7 +80,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
 
             // Reports - Audit & Operational (granular per report)
-            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'customer-account-statement', 'claim-register', 'expense-detail', 'revenue-detail', 'profit-after-category', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'sku-fmr-amr', 'stock-availability', 'product-price-change-log'],
+            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'customer-account-statement', 'claim-register', 'expense-detail', 'revenue-detail', 'profit-after-category', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'company-target-summary', 'sku-fmr-amr', 'stock-availability', 'product-price-change-log'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],
@@ -110,7 +111,8 @@ class RoleAndPermissionSeeder extends Seeder
                 || str_starts_with($name, 'revenue-detail-')
                 || str_starts_with($name, 'profit-category-')
                 || str_starts_with($name, 'profit-after-category-')
-                || str_starts_with($name, 'ticket-');
+                || str_starts_with($name, 'ticket-')
+                || str_starts_with($name, 'company-target-');
         }));
 
         // Company (supplier) user: raises, edits and deletes tickets, never approves them.

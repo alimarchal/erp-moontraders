@@ -105,6 +105,14 @@ class User extends Authenticatable
         return $this->is_super_admin === 'Yes' || $this->hasRole(['super-admin', 'admin']);
     }
 
+    /**
+     * Whether the user may work with every supplier's data; anyone else only sees their own company.
+     */
+    public function hasAllSupplierAccess(): bool
+    {
+        return $this->isTicketAdmin();
+    }
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);

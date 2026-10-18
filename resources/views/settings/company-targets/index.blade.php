@@ -37,7 +37,7 @@
                     @if ($isAdmin)
                         <div class="ak-field">
                             <label for="supplier_id">Company</label>
-                            <select id="supplier_id" name="supplier_id">
+                            <select id="supplier_id" name="supplier_id" class="select2" data-placeholder="All companies">
                                 <option value="">All companies</option>
                                 @foreach ($suppliers as $supplier)
                                     <option value="{{ $supplier->id }}" @selected(($filters['supplier_id'] ?? null) == $supplier->id)>{{ $supplier->supplier_name }}</option>

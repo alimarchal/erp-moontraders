@@ -5,7 +5,7 @@
 @endphp
 <table class="report-table tabular-nums">
     <thead>
-        <tr class="bg-gray-100">
+        <tr>
             <th class="text-center w-10 px-1 py-0.5">#</th>
             <th class="text-left px-1 py-0.5">Salesman</th>
             <th class="text-left px-1 py-0.5">Target</th>
@@ -33,7 +33,7 @@
         @endforelse
     </tbody>
     @if ($summary['rows']->isNotEmpty())
-        <tfoot class="bg-gray-50 font-bold">
+        <tfoot class="font-bold">
             <tr>
                 <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['total']) }}</td>

@@ -733,6 +733,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
         Route::get('vehicle', [VehicleReportController::class, 'index'])->name('vehicle.index');
+        Route::get('stock-availability/export/pdf', [StockAvailabilityReportController::class, 'exportPdf'])->name('stock-availability.export.pdf');
         Route::get('stock-availability', [StockAvailabilityReportController::class, 'index'])->name('stock-availability.index');
         Route::get('product-price-change-log', [ProductPriceChangeLogController::class, 'index'])->name('product-price-change-log.index');
         Route::get('supplier-ledger', [SupplierLedgerReportController::class, 'index'])->name('supplier-ledger.index');

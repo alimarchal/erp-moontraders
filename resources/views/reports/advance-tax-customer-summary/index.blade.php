@@ -21,13 +21,36 @@
                 color: #000;
             }
 
+            .report-table thead th {
+                background: #0b2a6f;
+                color: #fff;
+                border-color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report-table thead th .text-gray-500 {
+                color: #bfdbfe;
+            }
+
+            .report-table tbody tr:nth-child(even) td {
+                background: #f8fafc;
+            }
+
+            .report-table tfoot td {
+                background: #dbeafe;
+                color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             .print-only {
                 display: none;
             }
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    margin: 0.5in;
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -182,6 +205,7 @@
                         </span>
                     </p>
 
+                    @include('reports._visuals')
                     @include('reports.advance-tax-customer-summary._table')
 
                     <p class="text-xs mt-1">

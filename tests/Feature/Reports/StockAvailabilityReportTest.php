@@ -173,3 +173,36 @@ it('shows supplier wise salesman credit closing balance', function () {
             return $row && $row->credit_balance_salesman === 1250.0;
         });
 });
+
+it('shows figure tiles and charts above the supplier table', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo('report-audit-stock-availability');
+    Supplier::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('reports.stock-availability.index'))
+        ->assertOk()
+        ->assertSee('Stock value')
+        ->assertSee('<svg', false);
+});
+
+it('downloads an A4 PDF in portrait and in landscape', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo('report-audit-stock-availability');
+    Supplier::factory()->create();
+
+    foreach (['portrait', 'landscape'] as $orientation) {
+        $response = $this->actingAs($user)->get(route('reports.stock-availability.export.pdf', ['orientation' => $orientation]));
+
+        $response->assertOk()->assertDownload();
+        expect($response->baseResponse->getContent())->toStartWith('%PDF');
+    }
+});
+
+it('has no PDF when there is no stock data and keeps it behind the permission', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo('report-audit-stock-availability');
+
+    $this->actingAs($user)->get(route('reports.stock-availability.export.pdf'))->assertStatus(422);
+    $this->actingAs(User::factory()->create())->get(route('reports.stock-availability.export.pdf'))->assertForbidden();
+});

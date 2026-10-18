@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Helpers\ReportPdf;
+use App\Helpers\SvgChart;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 class StockAvailabilityReportController extends Controller implements HasMiddleware
 {
@@ -21,6 +25,132 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
     }
 
     public function index(Request $request)
+    {
+        $data = $this->reportData($request);
+
+        return view('reports.stock-availability.index', $data + [
+            'tiles' => $this->tiles($data),
+            'charts' => $this->charts($data),
+        ]);
+    }
+
+    /**
+     * A4 PDF with the figure tiles, charts and the supplier table; portrait or landscape (?orientation=).
+     */
+    public function exportPdf(Request $request): Response
+    {
+        $data = $this->reportData($request);
+        abort_if($data['stockData']->isEmpty(), 422, 'No stock data found for the selected filters.');
+
+        $orientation = ReportPdf::orientation($request->query('orientation'));
+        $source = match ($data['stockSource']) {
+            'warehouse' => 'Warehouse only',
+            'van' => 'Van only',
+            default => 'Warehouse + Van',
+        };
+
+        $pdf = ReportPdf::make('reports.stock-availability.pdf', $data + [
+            'title' => 'Stock Availability Report',
+            'subtitle' => [
+                'As of '.Carbon::parse($data['asOfDate'])->format('d M Y').($data['isCurrentStock'] ? ' (current)' : ' (historical)'),
+                'Source: '.$source.($data['supplierId'] ? ' | Supplier: '.$data['suppliers']->firstWhere('id', (int) $data['supplierId'])?->supplier_name : ''),
+            ],
+            'meta' => [
+                'Suppliers' => $data['stockData']->count(),
+                'Printed by' => $request->user()->name,
+                'On' => now()->format('d M Y, h:i A'),
+            ],
+            'tiles' => $this->tiles($data),
+            'charts' => $this->charts($data),
+        ], $orientation, 'Moon Traders ERP  |  Stock Availability Report  |  As of '.Carbon::parse($data['asOfDate'])->format('d M Y'));
+
+        return $pdf->download('stock-availability-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<int, array{label: string, value: string, note: string, color: string}>
+     */
+    private function tiles(array $data): array
+    {
+        if ($data['stockData']->isEmpty()) {
+            return [];
+        }
+
+        $withStock = $data['stockData']->filter(fn ($row) => $row->total_quantity > 0)->count();
+
+        return [
+            ['label' => 'Stock value', 'value' => 'Rs '.SvgChart::money($data['grandTotalAmount']), 'note' => number_format($data['grandTotalAmount']), 'color' => '#2563eb'],
+            ['label' => 'Stock quantity', 'value' => SvgChart::money($data['grandTotalQuantity']), 'note' => number_format($data['grandTotalQuantity'], 2).' units', 'color' => '#16a34a'],
+            ['label' => 'Salesman credit', 'value' => 'Rs '.SvgChart::money($data['grandTotalSalesmanCreditBalance']), 'note' => 'owed by customers', 'color' => '#f97316'],
+            ['label' => 'Stock + credit', 'value' => 'Rs '.SvgChart::money($data['grandTotalAmount'] + $data['grandTotalSalesmanCreditBalance']), 'note' => 'tied up in the market', 'color' => '#7c3aed'],
+            ['label' => 'Suppliers', 'value' => (string) $data['stockData']->count(), 'note' => $withStock.' with stock', 'color' => '#0891b2'],
+        ];
+    }
+
+    /**
+     * Three charts: share of stock value, biggest stock by supplier, stock against credit.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, array<string, mixed>>
+     */
+    private function charts(array $data): array
+    {
+        $rows = $data['stockData'];
+
+        if ($rows->isEmpty() || $data['grandTotalAmount'] <= 0 && $data['grandTotalSalesmanCreditBalance'] <= 0) {
+            return [];
+        }
+
+        $byAmount = $rows->sortByDesc('total_amount')->values();
+        $head = $byAmount->take(5);
+        $others = (float) $byAmount->skip(5)->sum('total_amount');
+        $shareLabels = $head->pluck('supplier_name')->all();
+        $shareValues = $head->pluck('total_amount')->map(fn ($v) => max(0.0, (float) $v))->all();
+        if ($others > 0) {
+            $shareLabels[] = 'Others';
+            $shareValues[] = $others;
+        }
+        $short = fn ($name) => explode(' ', (string) $name)[0];
+
+        return [
+            [
+                'title' => 'Share of stock value',
+                'subtitle' => 'Which supplier holds the stock',
+                'accent' => '#2563eb',
+                'svg' => fn (int $w) => SvgChart::donut($shareLabels, $shareValues, SvgChart::PALETTE, $w, 200, SvgChart::money($data['grandTotalAmount']), 'stock value'),
+            ],
+            [
+                'title' => 'Stock value by supplier',
+                'subtitle' => 'Top 8',
+                'accent' => '#16a34a',
+                'svg' => fn (int $w) => SvgChart::bars(
+                    $byAmount->take(8)->pluck('supplier_name')->all(),
+                    $byAmount->take(8)->pluck('total_amount')->all(),
+                    SvgChart::PALETTE, $w, 200, null, 18
+                ),
+            ],
+            [
+                'title' => 'Stock and salesman credit',
+                'subtitle' => 'Money tied up per supplier',
+                'accent' => '#f97316',
+                'wide' => true,
+                'svg' => fn (int $w) => SvgChart::columns(
+                    $byAmount->take($w < 500 ? 4 : 6)->pluck('supplier_name')->map($short)->all(),
+                    [
+                        ['name' => 'Stock', 'color' => '#2563eb', 'values' => $byAmount->take($w < 500 ? 4 : 6)->pluck('total_amount')->all()],
+                        ['name' => 'Salesman credit', 'color' => '#f97316', 'values' => $byAmount->take($w < 500 ? 4 : 6)->pluck('credit_balance_salesman')->all()],
+                    ],
+                    $w, 200
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function reportData(Request $request): array
     {
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
         $supplierId = $request->input('supplier_id');
@@ -66,7 +196,7 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
         $grandTotalAmount = $stockData->sum('total_amount');
         $grandTotalSalesmanCreditBalance = $stockData->sum('credit_balance_salesman');
 
-        return view('reports.stock-availability.index', compact(
+        return compact(
             'asOfDate',
             'supplierId',
             'warehouseId',
@@ -82,7 +212,7 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
             'grandTotalAmount',
             'grandTotalSalesmanCreditBalance',
             'isCurrentStock',
-        ));
+        );
     }
 
     private function getCurrentStock($allSuppliers, ?int $warehouseId, ?int $categoryId, string $stockSource)

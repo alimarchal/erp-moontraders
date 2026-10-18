@@ -7,7 +7,8 @@
      */
     $hex = ltrim($tone ?? '#1d4ed8', '#');
     [$r, $g, $b] = [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
-    $style = "--tone:#{$hex};--soft:rgba({$r},{$g},{$b},.12);--glow:rgba({$r},{$g},{$b},.38)";
+    $lighten = fn (int $v) => str_pad(dechex((int) round($v + (255 - $v) * 0.22)), 2, '0', STR_PAD_LEFT);
+    $style = '--c2:#'.$hex.';--c1:#'.$lighten($r).$lighten($g).$lighten($b);
     $icons = [
         'sales' => 'M2.25 18 9 11.25l4.3 4.3a11.95 11.95 0 0 1 5.8-5.8l2.65-1.2m0 0-5.94-2.28m5.94 2.28-2.28 5.94',
         'profit' => 'M12 6v12m-3-2.82.88.66c1.17.88 3.07.88 4.24 0 1.17-.88 1.17-2.3 0-3.18C13.54 12.22 12.77 12 12 12c-.72 0-1.45-.22-2-.66-1.1-.88-1.1-2.3 0-3.18s2.9-.88 4 0l.42.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',

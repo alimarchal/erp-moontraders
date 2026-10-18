@@ -132,7 +132,8 @@ it('lists the active employees of a designation for the create form', function (
         ->assertJsonPath('employees.0.name', 'Atif Naqvi')
         ->assertJsonCount(2, 'employees')
         ->assertJsonCount(3, 'all_employees')
-        ->assertJsonFragment(['designations' => ['Driver', 'Salesman']]);
+        ->assertJsonPath('designations.0', ['name' => 'Driver', 'count' => 1])
+        ->assertJsonPath('designations.1', ['name' => 'Salesman', 'count' => 2]);
 });
 
 it('creates the monthly sheet with zero targets for every active salesman, once', function () {

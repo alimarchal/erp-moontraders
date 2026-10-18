@@ -165,13 +165,7 @@ class CompanyTargetController extends Controller implements HasMiddleware
         ])->values();
 
         return response()->json([
-            'designations' => Employee::query()
-                ->where('supplier_id', $supplierId)
-                ->where('is_active', true)
-                ->whereNotNull('designation')
-                ->distinct()
-                ->orderBy('designation')
-                ->pluck('designation'),
+            'designations' => $this->designationsOf((int) $supplierId),
             'employees' => $mapRows($service->eligibleEmployees((int) $supplierId, $designation)),
             'all_employees' => $mapRows(Employee::query()
                 ->where('supplier_id', $supplierId)
@@ -214,9 +208,30 @@ class CompanyTargetController extends Controller implements HasMiddleware
             'target' => $target,
             'suppliers' => $suppliers,
             'designation' => $designation,
+            'designations' => $this->designationsOf((int) $target->supplier_id),
             'rows' => $this->formRows($target, $employees),
             'lockedSupplier' => ! auth()->user()->hasAllSupplierAccess(),
         ];
+    }
+
+    /**
+     * Every designation held in the company with how many active employees carry it, for the
+     * create form's dropdown.
+     *
+     * @return Collection<int, array{name: string, count: int}>
+     */
+    private function designationsOf(int $supplierId): Collection
+    {
+        return Employee::query()
+            ->where('supplier_id', $supplierId)
+            ->whereNotNull('designation')
+            ->where('designation', '!=', '')
+            ->groupBy('designation')
+            ->orderBy('designation')
+            ->selectRaw('designation, SUM(CASE WHEN is_active THEN 1 ELSE 0 END) as active_count')
+            ->get()
+            ->map(fn ($row) => ['name' => $row->designation, 'count' => (int) $row->active_count])
+            ->values();
     }
 
     /**

@@ -120,8 +120,8 @@
                 {{-- Company --}}
                 <div>
                     <x-label for="supplier_id" value="{{ __('Company') }}" />
-                    <select id="supplier_id" name="supplier_id"
-                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <select id="supplier_id" name="supplier_id" data-placeholder="Select Company"
+                        class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                         @if (auth()->user()->hasAllSupplierAccess())
                             <option value="">Select Company</option>
                         @endif
@@ -148,8 +148,8 @@
                 {{-- Designation --}}
                 <div>
                     <x-label for="designation" value="{{ __('Designation') }}" />
-                    <select id="designation" name="designation"
-                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <select id="designation" name="designation" data-placeholder="All Designations"
+                        class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                         <option value="">All Designations</option>
                         @foreach ($designations as $option)
                             <option value="{{ $option }}" {{ $designation === $option ? 'selected' : '' }}>{{ $option }}</option>

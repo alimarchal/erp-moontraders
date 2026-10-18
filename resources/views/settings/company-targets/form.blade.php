@@ -1,8 +1,9 @@
 {{--
     Settings -> Company Targets -> Add / Edit (/settings/company-targets/create).
-    Step 1 picks the company, dates and designation (the dropdown lists every designation of that
-    company). Step 2 shows the salesman rows before anything is saved: edit Target text and Total,
-    set one Total for all rows, remove rows or add more. A sticky bar keeps the total and Save in view.
+    Pick the company, dates and designation (every dropdown is a searchable Select2; the designation
+    list and the salesmen belong to the chosen company only). The salesman rows are shown before
+    anything is saved: edit Target text and Total, set one Total for all rows, remove rows, or add
+    several salesmen of that company at once. A sticky bar keeps the total and Save in view.
 --}}
 @php
     $isCreate = ! $target->exists;
@@ -43,25 +44,25 @@
         .ct-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--ak-line); background: #fafbfd; border-radius: var(--ak-radius) var(--ak-radius) 0 0; }
         .ct-tools-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
         .ct-tools label { font-size: 12px; font-weight: 600; color: var(--ak-muted); }
-        .ct-tools input, .ct-tools select { height: 34px; padding: 0 10px; border: 1px solid var(--ak-border); border-radius: 8px; font-size: 13px; background: #fff; }
+        .ct-tools input { height: 34px; padding: 0 10px; border: 1px solid var(--ak-border); border-radius: 8px; font-size: 13px; background: #fff; }
         .ct-tools input[type=number] { width: 150px; }
-        .ct-tools select { min-width: 200px; }
-        .ct-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
-        .ct-table th { position: sticky; top: 0; z-index: 1; padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ak-muted); background: #f3f4f6; border-bottom: 1px solid var(--ak-line); }
-        .ct-table td { padding: 10px 14px; border-bottom: 1px solid #eef0f3; vertical-align: middle; }
-        .ct-table tbody tr:hover td { background: #f8faff; }
+        .ct-tools .select2-container { min-width: 260px; }
+        .ct-wrap { max-width: 1000px; margin-inline: auto; }
+        .ct-table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
+        .ct-table th { position: sticky; top: 0; z-index: 1; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ak-muted); background: #f3f4f6; border-bottom: 1px solid var(--ak-line); }
+        .ct-table td { padding: 6px 12px; border-bottom: 1px solid #eef0f3; vertical-align: middle; }
+        .ct-table tbody tr:nth-child(even) td { background: #fbfcfe; }
+        .ct-table tbody tr:hover td { background: #f1f5ff; }
         .ct-num { text-align: right; }
-        .ct-person { display: flex; align-items: center; gap: 12px; }
-        .ct-avatar { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 34px; height: 34px; border-radius: 999px; background: #e0e7ff; color: #3730a3; font-size: 12px; font-weight: 700; }
-        .ct-person b { display: block; color: var(--ak-text); font-weight: 600; }
-        .ct-person span { font-size: 12px; color: var(--ak-muted); }
-        .ct-cell { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--ak-border); border-radius: 8px; font-size: 14px; background: #fff; }
-        .ct-cell:focus, .ct-tools input:focus, .ct-tools select:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
-        .ct-money { position: relative; }
-        .ct-money i { position: absolute; left: 12px; top: 10px; font-style: normal; font-size: 12px; font-weight: 600; color: var(--ak-muted); pointer-events: none; }
-        .ct-money .ct-cell { padding-left: 42px; text-align: right; font-variant-numeric: tabular-nums; }
-        .ct-words { margin-top: 2px; font-size: 11px; color: var(--ak-muted); text-align: right; min-height: 14px; }
-        .ct-remove { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #9ca3af; cursor: pointer; }
+        .ct-name { font-weight: 600; color: var(--ak-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ct-cell { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--ak-border); border-radius: 6px; font-size: 14px; background: #fff; }
+        .ct-cell.is-amount { text-align: right; font-variant-numeric: tabular-nums; }
+        .ct-cell.is-zero { color: #9ca3af; }
+        .ct-cell:focus, .ct-tools input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); color: var(--ak-text); }
+        .ct-tools .select2-container--default .select2-selection--multiple { min-height: 34px; border: 1px solid var(--ak-border); border-radius: 8px; padding: 0 6px; }
+        .ct-tools .select2-container--default .select2-selection--multiple .select2-selection__choice { margin-top: 5px; font-size: 12px; }
+        .ct-tools .select2-search--inline .select2-search__field { margin-top: 6px; font-size: 13px; }
+        .ct-remove { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #9ca3af; cursor: pointer; }
         .ct-remove:hover, .ct-remove:focus-visible { color: #b91c1c; background: #fef2f2; border-color: #fecaca; outline: none; }
         .ct-empty { padding: 44px 16px; text-align: center; color: var(--ak-muted); }
         .ct-empty b { display: block; margin-bottom: 4px; color: var(--ak-text); }
@@ -90,22 +91,22 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ $isCreate ? route('company-targets.store') : route('company-targets.update', $target) }}">
+        <form class="ct-wrap" method="POST" action="{{ $isCreate ? route('company-targets.store') : route('company-targets.update', $target) }}">
             @csrf
             @unless ($isCreate) @method('PUT') @endunless
 
             {{-- Step 1 --}}
             <section class="ak-card" style="padding:20px;" aria-labelledby="step-company">
-                <h2 class="ct-step" id="step-company"><span class="ct-step-no">1</span> Company &amp; period <small>who the targets are for, and which dates they cover</small></h2>
+                <h2 class="ct-step" id="step-company">Company &amp; period <small>who the targets are for, and which dates they cover</small></h2>
                 <div class="ct-grid">
                     <div class="ak-field ct-col-5">
                         <label for="supplier_id">Company</label>
-                        <select id="supplier_id" name="supplier_id" x-model="supplierId" @change="changeSupplier()" @disabled($lockedSupplier) required>
+                        <select id="supplier_id" name="supplier_id" x-ref="company" @disabled($lockedSupplier) required>
                             @unless ($lockedSupplier)
                                 <option value="">Select company</option>
                             @endunless
                             @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}">{{ $supplier->supplier_name }}</option>
+                                <option value="{{ $supplier->id }}" @selected((string) $selectedSupplier === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
                             @endforeach
                         </select>
                         @if ($lockedSupplier)
@@ -123,12 +124,7 @@
                     </div>
                     <div class="ak-field ct-col-3">
                         <label for="designation">Designation</label>
-                        <select id="designation" name="designation" x-model="designation" @change="reload()" :disabled="!supplierId">
-                            <option value="" x-show="!supplierId || designations.length === 0" x-text="supplierId ? 'No designations found' : 'Select a company first'"></option>
-                            <template x-for="option in designations" :key="option.name">
-                                <option :value="option.name" x-text="`${option.name} (${option.count})`" :selected="option.name === designation"></option>
-                            </template>
-                        </select>
+                        <select id="designation" name="designation" x-ref="designation"></select>
                         <p class="ct-hint">Every designation of this company. The number is its active employees.</p>
                     </div>
                     <div class="ct-col-12" x-show="periodDays() > 0">
@@ -142,10 +138,7 @@
             </section>
 
             {{-- Step 2 --}}
-            <section class="ak-card" style="margin-top:16px;padding:0;" aria-labelledby="step-rows">
-                <div style="padding:20px 20px 0;">
-                    <h2 class="ct-step" id="step-rows"><span class="ct-step-no">2</span> Salesmen &amp; targets <small>review the rows, then save</small></h2>
-                </div>
+            <section class="ak-card" style="margin-top:16px;padding:0;" aria-label="Salesmen and targets">
                 <div class="ct-tools">
                     <div class="ct-tools-group">
                         <label for="bulk">Same Total for all rows</label>
@@ -154,38 +147,37 @@
                         <button type="button" class="ak-btn ak-btn-ghost ak-btn-sm" @click="resetTotals()" :disabled="rows.length === 0">Reset to 0</button>
                     </div>
                     <div class="ct-tools-group">
-                        <label for="add">Add salesman</label>
-                        <select id="add" x-model="addId" @change="addRow()" :disabled="availableEmployees().length === 0">
-                            <option value="" x-text="availableEmployees().length ? 'Choose to add…' : 'Everyone is already listed'"></option>
-                            <template x-for="employee in availableEmployees()" :key="employee.id">
-                                <option :value="employee.id" x-text="employee.name + (employee.code ? ' (' + employee.code + ')' : '')"></option>
-                            </template>
-                        </select>
+                        <label for="add">Add salesmen</label>
+                        <div style="width:380px;max-width:100%;">
+                            <select id="add" x-ref="add" multiple></select>
+                        </div>
+                        <button type="button" class="ak-btn ak-btn-outline ak-btn-sm" @click="addSelected()" :disabled="picked.length === 0">Add selected</button>
+                        <button type="button" class="ak-btn ak-btn-ghost ak-btn-sm" @click="addAll()" :disabled="availableEmployees().length === 0">Add all</button>
                     </div>
                 </div>
                 <div class="ct-loading" x-show="loading" x-cloak role="status">Loading this company's salesmen…</div>
                 <div style="overflow-x:auto;">
-                    <table class="ct-table" style="min-width:760px;">
+                    <table class="ct-table" style="min-width:640px;">
+                        <colgroup><col style="width:52px;"><col><col style="width:210px;"><col style="width:200px;"><col style="width:52px;"></colgroup>
                         <thead>
-                            <tr><th style="width:56px;">#</th><th>Salesman</th><th style="width:30%;">Target</th><th class="ct-num" style="width:230px;">Total</th><th style="width:60px;"><span class="sr-only">Remove</span></th></tr>
+                            <tr><th>#</th><th>Salesman</th><th>Target</th><th class="ct-num">Total (PKR)</th><th><span class="sr-only">Remove</span></th></tr>
                         </thead>
                         <tbody>
                             <template x-for="(row, index) in rows" :key="row.employee_id">
                                 <tr>
                                     <td class="ak-muted" x-text="index + 1"></td>
-                                    <td>
-                                        <div class="ct-person">
-                                            <span class="ct-avatar" x-text="initials(row.name)" aria-hidden="true"></span>
-                                            <div><b x-text="row.name"></b></div>
-                                        </div>
+                                    <td class="ct-name" :title="row.name">
+                                        <span x-text="row.name"></span>
                                         <input type="hidden" :name="`lines[${index}][employee_id]`" :value="row.employee_id">
                                     </td>
                                     <td><input class="ct-cell" type="text" :name="`lines[${index}][target_label]`" x-model="row.target_label" maxlength="255" placeholder="Corporate" :aria-label="`Target for ${row.name}`"></td>
                                     <td>
-                                        <div class="ct-money"><i>PKR</i><input class="ct-cell" type="number" :name="`lines[${index}][target_amount]`" x-model="row.target_amount" min="0" step="0.01" required :aria-label="`Total for ${row.name}`"></div>
-                                        <div class="ct-words" x-text="Number(row.target_amount) > 0 ? format(row.target_amount) : ''"></div>
+                                        <input class="ct-cell is-amount" :class="Number(row.target_amount) > 0 ? '' : 'is-zero'" type="number" inputmode="decimal"
+                                            :name="`lines[${index}][target_amount]`" x-model="row.target_amount" min="0" step="0.01" required
+                                            :aria-label="`Total for ${row.name}`" :title="Number(row.target_amount) >= 1000 ? format(row.target_amount) : null" data-amount
+                                            @focus="$event.target.select()" @keydown.enter.prevent="focusNext($event)">
                                     </td>
-                                    <td class="ct-num"><button type="button" class="ct-remove" @click="rows.splice(index, 1)" :aria-label="`Remove ${row.name}`" title="Remove row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V5h6v2m-8 0 1 12h8l1-12"/></svg></button></td>
+                                    <td class="ct-num"><button type="button" class="ct-remove" @click="removeRow(index)" :aria-label="`Remove ${row.name}`" title="Remove row"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V5h6v2m-8 0 1 12h8l1-12"/></svg></button></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -200,6 +192,7 @@
             <div class="ct-bar">
                 <div class="ct-bar-stats">
                     <div><span>Salesmen</span><b x-text="rows.length"></b></div>
+                    <div><span>With a target</span><b x-text="`${filledCount()} / ${rows.length}`"></b></div>
                     <div><span>Total target</span><b x-text="grandTotal()"></b></div>
                 </div>
                 <div style="display:flex;gap:10px;">
@@ -220,13 +213,59 @@
                 start: @js(old('period_start', $target->period_start?->toDateString())),
                 end: @js(old('period_end', $target->period_end?->toDateString())),
                 allEmployees: [],
-                addId: '',
-                bulk: '',
+                picked: [],
                 loading: false,
                 async init() {
+                    await this.whenSelect2();
+                    this.mountSelects();
                     if (this.supplierId) {
                         await this.load(false);
                     }
+                },
+                whenSelect2() {
+                    return new Promise((resolve) => {
+                        const check = () => (window.jQuery && jQuery.fn.select2 ? resolve() : setTimeout(check, 30));
+                        check();
+                    });
+                },
+                mountSelects() {
+                    const $company = jQuery(this.$refs.company);
+                    $company.select2({ width: '100%', placeholder: 'Select company' });
+                    $company.on('change', () => {
+                        if (this.supplierId !== $company.val()) {
+                            this.supplierId = $company.val() || '';
+                            this.changeSupplier();
+                        }
+                    });
+
+                    const $designation = jQuery(this.$refs.designation);
+                    $designation.select2({ width: '100%', placeholder: 'Select a company first' });
+                    $designation.on('change', () => {
+                        if ($designation.val() && this.designation !== $designation.val()) {
+                            this.designation = $designation.val();
+                            this.reload();
+                        }
+                    });
+                    this.fillDesignations();
+
+                    const $add = jQuery(this.$refs.add);
+                    $add.select2({ width: '100%', placeholder: 'Search salesmen…', closeOnSelect: false });
+                    $add.on('change', () => { this.picked = $add.val() || []; });
+                },
+                fillDesignations() {
+                    const $designation = jQuery(this.$refs.designation).empty();
+                    this.designations.forEach((option) => {
+                        $designation.append(new Option(`${option.name} (${option.count})`, option.name, false, option.name === this.designation));
+                    });
+                    $designation.prop('disabled', !this.supplierId).val(this.designation || null).trigger('change.select2');
+                },
+                fillAddList() {
+                    const $add = jQuery(this.$refs.add).empty();
+                    this.availableEmployees().forEach((employee) => {
+                        $add.append(new Option(employee.name + (employee.code ? ` (${employee.code})` : ''), employee.id, false, false));
+                    });
+                    $add.prop('disabled', !this.supplierId).val(null).trigger('change.select2');
+                    this.picked = [];
                 },
                 async reload() {
                     await this.load(true);
@@ -234,6 +273,7 @@
                 async changeSupplier() {
                     this.designation = '';
                     this.designations = [];
+                    this.fillDesignations();
                     await this.load(true);
                 },
                 async load(replaceRows) {
@@ -241,6 +281,8 @@
                         this.rows = [];
                         this.allEmployees = [];
                         this.designations = [];
+                        this.fillDesignations();
+                        this.fillAddList();
                         return;
                     }
                     this.loading = true;
@@ -272,6 +314,8 @@
                                 target_amount: '0',
                             }));
                         }
+                        this.fillDesignations();
+                        this.fillAddList();
                     } finally {
                         this.loading = false;
                     }
@@ -279,12 +323,36 @@
                 availableEmployees() {
                     return this.allEmployees.filter((employee) => !this.rows.some((row) => row.employee_id === employee.id));
                 },
-                addRow() {
-                    const employee = this.allEmployees.find((item) => String(item.id) === String(this.addId));
-                    if (employee) {
-                        this.rows.push({ employee_id: employee.id, name: employee.name, target_label: 'Corporate', target_amount: '0' });
+                pushEmployee(employee) {
+                    this.rows.push({ employee_id: employee.id, name: employee.name, target_label: 'Corporate', target_amount: '0' });
+                },
+                addSelected() {
+                    this.picked.forEach((id) => {
+                        const employee = this.allEmployees.find((item) => String(item.id) === String(id));
+                        if (employee && !this.rows.some((row) => row.employee_id === employee.id)) {
+                            this.pushEmployee(employee);
+                        }
+                    });
+                    this.fillAddList();
+                },
+                addAll() {
+                    this.availableEmployees().forEach((employee) => this.pushEmployee(employee));
+                    this.fillAddList();
+                },
+                removeRow(index) {
+                    this.rows.splice(index, 1);
+                    this.fillAddList();
+                },
+                bulk: '',
+                focusNext(event) {
+                    const inputs = Array.from(this.$root.querySelectorAll('[data-amount]'));
+                    const next = inputs[inputs.indexOf(event.target) + 1];
+                    if (next) {
+                        next.focus();
                     }
-                    this.addId = '';
+                },
+                filledCount() {
+                    return this.rows.filter((row) => Number(row.target_amount) > 0).length;
                 },
                 applyBulk() {
                     if (this.bulk === '' || Number(this.bulk) < 0) {

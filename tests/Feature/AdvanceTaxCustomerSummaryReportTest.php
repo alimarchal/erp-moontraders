@@ -129,24 +129,50 @@ it('leaves out drafts, other dates and other companies', function () {
         ->and($response->viewData('totalSale'))->toBe(100000.0);
 });
 
-it('cross-checks the customer-wise total with the 1161 amount posted on the settlements', function () {
+it('ties the customer-wise benefits to the 1161 amount posted on the settlements', function () {
     $first = ($this->settle)($this->nestle->id, '2026-10-03');
     $second = ($this->settle)($this->nestle->id, '2026-10-17');
-    ($this->entry)($first, $this->customerA, 100000, 250);
-    ($this->entry)($second, $this->customerB, 40000, 100);
+    ($this->entry)($first, $this->customerA, 0, 250);
+    ($this->entry)($second, $this->customerB, 0, 100);
     ($this->benefit)($first, 250);
     ($this->benefit)($second, 100);
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
 
-    expect($response->viewData('totalBenefits'))->toBe(350.0)
-        ->and($response->viewData('benefitsPosted'))->toBe(350.0)
-        ->and($response->viewData('difference'))->toBe(0.0);
+    expect($response->viewData('totalBenefits'))->toBe((float) SalesSettlementExpense::query()->sum('amount'))
+        ->and($response->viewData('totalBenefits'))->toBe(350.0);
 
-    ($this->benefit)($second, 25);
+    $response->assertDontSee('added up customer-wise')->assertDontSee('Difference');
+});
+
+it('shows the CNIC after the customer code instead of in a column of its own', function () {
+    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-05', 'posted', 100000), $this->customerA, 0, 250);
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
-    expect($response->viewData('difference'))->toBe(-25.0);
+
+    $response->assertSee('CNIC 82101-1234567-1')->assertDontSee('>CNIC</th>', false)->assertSee('>NTN</th>', false);
+});
+
+it('downloads an A4 PDF in portrait and in landscape', function () {
+    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-05', 'posted', 100000), $this->customerA, 0, 250);
+
+    foreach (['portrait', 'landscape'] as $orientation) {
+        $response = $this->actingAs($this->admin)->get(route('reports.advance-tax-customer-summary.export.pdf', [
+            'filter' => ['supplier_id' => $this->nestle->id, 'start_date' => '2026-10-01', 'end_date' => '2026-10-31'],
+            'orientation' => $orientation,
+        ]));
+
+        $response->assertOk()->assertDownload();
+        expect($response->baseResponse->getContent())->toStartWith('%PDF');
+    }
+});
+
+it('needs a company, the permission and the company scope for the PDF too', function () {
+    $this->actingAs($this->admin)->get(route('reports.advance-tax-customer-summary.export.pdf'))->assertStatus(422);
+    $this->actingAs(User::factory()->create())->get(route('reports.advance-tax-customer-summary.export.pdf'))->assertForbidden();
+    $this->actingAs($this->companyUser)
+        ->get(route('reports.advance-tax-customer-summary.export.pdf', ['filter' => ['supplier_id' => $this->other->id]]))
+        ->assertForbidden();
 });
 
 it('lets a company user see only their own company', function () {

@@ -99,6 +99,34 @@
         </style>
     @endpush
 
+    @if ($hasFilter)
+        @php
+            $query = array_filter([
+                'filter' => [
+                    'supplier_id' => $selectedSupplierId,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                ],
+            ]);
+        @endphp
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 no-print">
+            <div class="flex justify-end gap-2">
+                @foreach (['portrait' => 'PDF Portrait', 'landscape' => 'PDF Landscape'] as $orientation => $label)
+                    <a href="{{ route('reports.advance-tax-customer-summary.export.pdf', $query + ['orientation' => $orientation]) }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150"
+                        title="Download as an A4 {{ $orientation }} PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <x-filter-section :action="route('reports.advance-tax-customer-summary.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -154,87 +182,11 @@
                         </span>
                     </p>
 
-                    <table class="report-table">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="w-10 text-center font-bold">#</th>
-                                <th class="text-center font-bold px-2">Customer</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">CNIC</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">NTN</th>
-                                <th class="text-center font-bold px-2">
-                                    Sale
-                                    <div class="text-xs font-normal text-gray-500">Total Sales</div>
-                                </th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">
-                                    Advance Tax (2.5%)
-                                    <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
-                                </th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">
-                                    Advance Tax Benefits<br>(NTN Customer)
-                                    <div class="text-xs font-normal text-gray-500">Account 1161</div>
-                                </th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">
-                                    Advance Tax<br>Received From Customer
-                                    <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($rows as $index => $row)
-                                @php($customer = $row['customer'])
-                                <tr>
-                                    <td class="text-center">{{ $index + 1 }}</td>
-                                    <td class="px-2">
-                                        <span class="font-semibold">{{ $customer?->customer_code }}</span><br>
-                                        {{ $customer?->business_name ?: $customer?->customer_name }}@if ($address = collect([$customer?->address, $customer?->sub_locality, $customer?->city])->filter()->implode(', '))<span class="text-xs">, {{ $address }}</span>@endif
-                                    </td>
-                                    <td class="px-2 whitespace-nowrap">{{ $customer?->owner_cnic ?: '—' }}</td>
-                                    <td class="px-2 whitespace-nowrap">{{ $customer?->ntn ?: '—' }}</td>
-                                    <td class="text-right font-mono px-2">{{ number_format($row['sale'], 2) }}</td>
-                                    <td class="text-right font-mono px-2">{{ number_format($row['advance_tax'], 2) }}</td>
-                                    <td class="text-right font-mono px-2">{{ number_format($row['benefits'], 2) }}</td>
-                                    <td class="text-right font-mono px-2">{{ number_format($row['received'], 2) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        @if ($rows->isNotEmpty())
-                            <tfoot class="bg-gray-100 font-extrabold">
-                                <tr>
-                                    <td colspan="4" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
-                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalSale, 2) }}</td>
-                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalAdvanceTax, 2) }}</td>
-                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalBenefits, 2) }}</td>
-                                    <td class="text-right font-mono px-2 py-1">{{ number_format($totalReceived, 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        @endif
-                    </table>
+                    @include('reports.advance-tax-customer-summary._table')
 
                     <p class="text-xs mt-1">
                         Sale is the Total Sales of the settlements the customer has an advance tax entry on. A settlement with several customers shows its sale against each of them, and counts once in the Total row.
                     </p>
-
-                    {{-- Cross-check against the 1161 amount on the settlements --}}
-                    <table class="report-table mt-4" style="width: auto; min-width: 420px;">
-                        <tbody>
-                            <tr>
-                                <td class="px-2">Benefits (1161) added up customer-wise</td>
-                                <td class="text-right font-mono px-2">{{ number_format($totalBenefits, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2">Advance Tax (1161) on the posted settlements</td>
-                                <td class="text-right font-mono px-2">{{ number_format($benefitsPosted, 2) }}</td>
-                            </tr>
-                            <tr class="font-bold">
-                                <td class="px-2">Difference</td>
-                                <td class="text-right font-mono px-2">{{ number_format($difference, 2) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             @endif
         </div>

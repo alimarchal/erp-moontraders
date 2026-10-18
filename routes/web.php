@@ -801,6 +801,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('percentage-expense', [PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');
         Route::get('advance-tax-sales-register', [AdvanceTaxSalesRegisterController::class, 'index'])->name('advance-tax-sales-register.index');
+        Route::get('advance-tax-customer-summary/export/pdf', [AdvanceTaxCustomerSummaryController::class, 'exportPdf'])->name('advance-tax-customer-summary.export.pdf');
         Route::get('advance-tax-customer-summary', [AdvanceTaxCustomerSummaryController::class, 'index'])->name('advance-tax-customer-summary.index');
 
         /* Cheque Register */

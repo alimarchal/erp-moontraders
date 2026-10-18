@@ -20,7 +20,6 @@
 </head>
 <body>
     <div class="header">
-        SHAHZAIN TRADERS - MUZAFFRABAD<br>
         COMPANY TARGET SUMMARY<br>
         <span class="sub">DISTRIBUTOR: {{ $supplier?->supplier_name }}</span><br>
         <span class="sub">Period: {{ $from->format('d.m.Y') }} to {{ $to->format('d.m.Y') }} | Days left: {{ $summary['days_left'] ?? '-' }}</span><br>

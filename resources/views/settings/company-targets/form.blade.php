@@ -47,7 +47,6 @@
         .ct-tools input { height: 34px; padding: 0 10px; border: 1px solid var(--ak-border); border-radius: 8px; font-size: 13px; background: #fff; }
         .ct-tools input[type=number] { width: 150px; }
         .ct-tools .select2-container { min-width: 260px; }
-        .ct-wrap { max-width: 1000px; margin-inline: auto; }
         .ct-table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: fixed; }
         .ct-table th { position: sticky; top: 0; z-index: 1; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ak-muted); background: #f3f4f6; border-bottom: 1px solid var(--ak-line); }
         .ct-table td { padding: 6px 12px; border-bottom: 1px solid #eef0f3; vertical-align: middle; }
@@ -91,7 +90,7 @@
             </div>
         @endif
 
-        <form class="ct-wrap" method="POST" action="{{ $isCreate ? route('company-targets.store') : route('company-targets.update', $target) }}">
+        <form method="POST" action="{{ $isCreate ? route('company-targets.store') : route('company-targets.update', $target) }}">
             @csrf
             @unless ($isCreate) @method('PUT') @endunless
 
@@ -158,7 +157,7 @@
                 <div class="ct-loading" x-show="loading" x-cloak role="status">Loading this company's salesmen…</div>
                 <div style="overflow-x:auto;">
                     <table class="ct-table" style="min-width:640px;">
-                        <colgroup><col style="width:52px;"><col><col style="width:210px;"><col style="width:200px;"><col style="width:52px;"></colgroup>
+                        <colgroup><col style="width:52px;"><col><col style="width:30%;"><col style="width:220px;"><col style="width:52px;"></colgroup>
                         <thead>
                             <tr><th>#</th><th>Salesman</th><th>Target</th><th class="ct-num">Total (PKR)</th><th><span class="sr-only">Remove</span></th></tr>
                         </thead>

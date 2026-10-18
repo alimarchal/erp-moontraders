@@ -253,7 +253,7 @@
                 @endcanany
 
                 {{-- ─── Audit & Product Reports ─── --}}
-                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-revenue-detail', 'report-audit-profit-after-category', 'report-audit-supplier-ledger', 'report-sales-scheme-received'])
+                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-revenue-detail', 'report-audit-profit-after-category', 'report-audit-supplier-ledger', 'report-sales-scheme-received', 'report-audit-company-target-summary'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Audit &amp;
                             Product Reports</p>
@@ -390,6 +390,20 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-company-target-summary')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.company-target-summary.index') }}"
+                                    label="Company Target Summary" description="Salesman target vs achieved sales, remaining per day"
+                                    icon-bg="bg-orange-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

@@ -19,6 +19,7 @@ use App\Http\Controllers\CategoryRevenueController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\ClaimRegisterController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanyTargetController;
 use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\CreditSalesReportController;
 use App\Http\Controllers\CurrencyController;
@@ -46,6 +47,7 @@ use App\Http\Controllers\Reports\BalanceSheetController;
 use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\ChequeRegisterController;
 use App\Http\Controllers\Reports\ClaimRegisterReportController;
+use App\Http\Controllers\Reports\CompanyTargetSummaryController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\CustomerAccountStatementController;
 use App\Http\Controllers\Reports\CustomSettlementReportController;
@@ -676,6 +678,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('suppliers', SupplierController::class);
         Route::get('employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::resource('employees', EmployeeController::class);
+        Route::get('company-targets/employees', [CompanyTargetController::class, 'employees'])->name('company-targets.employees');
+        Route::get('company-targets/help', [CompanyTargetController::class, 'help'])->name('company-targets.help');
+        Route::resource('company-targets', CompanyTargetController::class);
         Route::get('customers/export/excel', [CustomerController::class, 'exportExcel'])->name('customers.export.excel');
         Route::resource('customers', CustomerController::class);
 
@@ -713,6 +718,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('goods-issue', [GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('cash-detail', [CashDetailController::class, 'index'])->name('cash-detail.index');
         Route::get('investment-summary', [InvestmentSummaryController::class, 'index'])->name('investment-summary.index');
+        Route::get('company-target-summary/export/excel', [CompanyTargetSummaryController::class, 'exportExcel'])->name('company-target-summary.export.excel');
+        Route::get('company-target-summary/export/pdf', [CompanyTargetSummaryController::class, 'exportPdf'])->name('company-target-summary.export.pdf');
+        Route::get('company-target-summary', [CompanyTargetSummaryController::class, 'index'])->name('company-target-summary.index');
         Route::get('customer-account-statement', [CustomerAccountStatementController::class, 'index'])->name('customer-account-statement.index');
         Route::get('customer-account-statement/{customerEmployeeAccount}', [CustomerAccountStatementController::class, 'show'])->name('customer-account-statement.show');
         Route::get('sku-fmr-amr', [SkuFmrAmrController::class, 'index'])->name('sku-fmr-amr.index');

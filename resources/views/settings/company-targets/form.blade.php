@@ -304,7 +304,7 @@
                                 data = (await fetchData(this.designation)) ?? data;
                             }
                         }
-                        this.allEmployees = data.all_employees;
+                        this.allEmployees = data.employees;
                         if (replaceRows) {
                             this.rows = data.employees.map((employee) => ({
                                 employee_id: employee.id,

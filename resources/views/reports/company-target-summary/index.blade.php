@@ -1,101 +1,189 @@
-{{--
-    Reports -> Company Target Summary (/reports/company-target-summary).
-    Salesman target vs achieved sales from posted settlements. Excel and PDF downloads use the same filters.
---}}
-@php
-    $query = array_filter([
-        'supplier_id' => $supplier?->id,
-        'from' => $from->toDateString(),
-        'to' => $to->toDateString(),
-        'designation' => $designation,
-    ], fn ($value) => $value !== null && $value !== '');
-@endphp
-
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('reports.index') }}">Reports</a><span aria-hidden="true">›</span><span>Company Target Summary</span>
-                </nav>
-                <h1 class="ak-title">Company Target Summary</h1>
-                <p class="ak-sub">Salesman target against sales achieved in posted settlements.</p>
-            </div>
-            <div class="ak-head-actions">
-                <a href="{{ route('reports.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
-                @if ($summary)
-                    <a href="{{ route('reports.company-target-summary.export.excel', $query) }}" class="ak-btn ak-btn-outline">Excel</a>
-                    <a href="{{ route('reports.company-target-summary.export.pdf', $query) }}" class="ak-btn ak-btn-outline">PDF</a>
-                    <button type="button" class="ak-btn ak-btn-primary" onclick="window.print()">Print</button>
-                @endif
-            </div>
-        </div>
+        <x-page-header title="Company Target Summary" :createRoute="null" createLabel="" :showSearch="true"
+            :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
-    @include('settings.partials.ui-style')
-    <style>@page { size: A4 landscape; margin: 10mm; }</style>
+    @push('header')
+        <style>
+            .report-table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid black;
+                font-size: 14px;
+                line-height: 1.2;
+            }
 
-    <div class="ak-page">
-        <x-status-message />
-        @if ($errors->any())
-            <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
-        @endif
+            .report-table th,
+            .report-table td {
+                border: 1px solid black;
+                padding: 3px 4px;
+                word-wrap: break-word;
+            }
 
-        <section class="ak-card no-print" aria-label="Filters">
-            <form method="GET" action="{{ route('reports.company-target-summary.index') }}" class="ak-filters">
-                <div class="ak-filter-row">
-                    <div class="ak-field">
-                        <label for="supplier_id">Company</label>
-                        <select id="supplier_id" name="supplier_id" @disabled($suppliers->count() === 1 && ! auth()->user()->hasAllSupplierAccess())>
-                            @if (auth()->user()->hasAllSupplierAccess())
-                                <option value="">Select company</option>
+            .print-only {
+                display: none;
+            }
+
+            @media print {
+                @page {
+                    margin: 15mm 10mm 20mm 10mm;
+                }
+
+                .no-print {
+                    display: none !important;
+                }
+
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .max-w-7xl {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .bg-white {
+                    margin: 0 !important;
+                    padding: 10px !important;
+                    box-shadow: none !important;
+                }
+
+                .overflow-x-auto {
+                    overflow: visible !important;
+                }
+
+                .report-table {
+                    font-size: 10px !important;
+                    width: 100% !important;
+                }
+
+                .report-table th,
+                .report-table td {
+                    padding: 2px 3px !important;
+                    color: #000 !important;
+                }
+
+                .print-info {
+                    font-size: 9px !important;
+                    margin-top: 5px !important;
+                    margin-bottom: 10px !important;
+                    color: #000 !important;
+                }
+
+                .print-only {
+                    display: block !important;
+                }
+            }
+        </style>
+    @endpush
+
+    <div>
+        <x-filter-section :action="route('reports.company-target-summary.index')" class="no-print">
+            <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                {{-- Company --}}
+                <div>
+                    <x-label for="supplier_id" value="{{ __('Company') }}" />
+                    <select id="supplier_id" name="supplier_id"
+                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                        @if (auth()->user()->hasAllSupplierAccess())
+                            <option value="">Select Company</option>
+                        @endif
+                        @foreach ($suppliers as $option)
+                            <option value="{{ $option->id }}" {{ $supplier?->id === $option->id ? 'selected' : '' }}>
+                                {{ $option->supplier_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Start date --}}
+                <div>
+                    <x-label for="from" value="{{ __('Start Date') }}" />
+                    <x-input id="from" class="block mt-1 w-full" type="date" name="from" :value="$from->toDateString()" required />
+                </div>
+
+                {{-- End date --}}
+                <div>
+                    <x-label for="to" value="{{ __('End Date') }}" />
+                    <x-input id="to" class="block mt-1 w-full" type="date" name="to" :value="$to->toDateString()" required />
+                </div>
+
+                {{-- Designation --}}
+                <div>
+                    <x-label for="designation" value="{{ __('Designation') }}" />
+                    <select id="designation" name="designation"
+                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                        <option value="">All Designations</option>
+                        @foreach ($designations as $option)
+                            <option value="{{ $option }}" {{ $designation === $option ? 'selected' : '' }}>{{ $option }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </x-filter-section>
+
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
+            <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
+                <div class="overflow-x-auto">
+                    @if ($errors->any())
+                        <div class="no-print mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                            {{ $errors->first() }}
+                        </div>
+                    @endif
+
+                    @if (! $summary)
+                        <div
+                            class="no-print mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            Select a company from the filters to view the target summary.
+                        </div>
+                    @endif
+
+                    {{-- Download links --}}
+                    @if ($summary)
+                        @php
+                            $query = array_filter([
+                                'supplier_id' => $supplier->id,
+                                'from' => $from->toDateString(),
+                                'to' => $to->toDateString(),
+                                'designation' => $designation,
+                            ], fn ($value) => $value !== null && $value !== '');
+                        @endphp
+                        <div class="no-print flex justify-end gap-4 mb-2 text-sm">
+                            <a class="text-indigo-700 hover:underline" href="{{ route('reports.company-target-summary.export.excel', $query) }}">Download Excel</a>
+                            <a class="text-indigo-700 hover:underline" href="{{ route('reports.company-target-summary.export.pdf', $query) }}">Download PDF</a>
+                        </div>
+                    @endif
+
+                    {{-- Report Header --}}
+                    <p class="text-center font-extrabold mb-2">
+                        SHAHZAIN TRADERS - MUZAFFRABAD<br>
+                        COMPANY TARGET SUMMARY<br>
+                        @if ($supplier)
+                            <span class="text-sm font-semibold">
+                                DISTRIBUTOR: {{ $supplier->supplier_name }}
+                            </span><br>
+                        @endif
+                        <span class="text-sm font-semibold">
+                            Period: {{ $from->format('d.m.Y') }} to {{ $to->format('d.m.Y') }}
+                            @if ($summary)
+                                | Days left: {{ $summary['days_left'] }}
                             @endif
-                            @foreach ($suppliers as $option)
-                                <option value="{{ $option->id }}" @selected($supplier?->id === $option->id)>{{ $option->supplier_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-field">
-                        <label for="from">Start date</label>
-                        <input id="from" type="date" name="from" value="{{ $from->toDateString() }}">
-                    </div>
-                    <div class="ak-field">
-                        <label for="to">End date</label>
-                        <input id="to" type="date" name="to" value="{{ $to->toDateString() }}">
-                    </div>
-                    <div class="ak-field">
-                        <label for="designation">Designation</label>
-                        <select id="designation" name="designation">
-                            <option value="">All</option>
-                            @foreach ($designations as $option)
-                                <option value="{{ $option }}" @selected($designation === $option)>{{ $option }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-filter-buttons">
-                        <button type="submit" class="ak-btn ak-btn-primary">Show report</button>
-                        <a href="{{ route('reports.company-target-summary.index') }}" class="ak-btn ak-btn-outline">Reset</a>
-                    </div>
-                </div>
-            </form>
-        </section>
+                        </span><br>
+                        <span class="text-xs font-normal">System generated by MOON TRADERS ERP</span><br>
+                        <span class="print-only print-info text-xs text-center">
+                            Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                        </span>
+                    </p>
 
-        <section class="ak-card" aria-label="Company target summary" style="padding:18px;margin-top:14px;">
-            @if ($summary)
-                <div style="text-align:center;background:#a9d18e;border:2px solid #111827;padding:10px;font-size:22px;font-weight:700;letter-spacing:1px;margin-bottom:12px;">
-                    {{ mb_strtoupper($supplier->supplier_name) }}
+                    @if ($summary)
+                        @include('reports.company-target-summary._table', ['summary' => $summary])
+                    @endif
                 </div>
-                <p class="ak-muted" style="margin:0 0 12px;font-size:13px;">
-                    {{ $from->format('d M Y') }} to {{ $to->format('d M Y') }} &middot; {{ $summary['days_left'] }} day(s) left for Remaining/Day
-                    &middot; Generated {{ now()->format('d M Y H:i') }} by {{ auth()->user()->name }} &middot; MOON TRADERS ERP
-                </p>
-                <div style="overflow-x:auto;">
-                    @include('reports.company-target-summary._table', ['summary' => $summary])
-                </div>
-            @else
-                <div class="ak-empty">Select a company to see its target summary.</div>
-            @endif
-        </section>
+            </div>
+        </div>
     </div>
-    <style>@media print { .no-print, nav, header .ak-head-actions { display: none !important; } }</style>
 </x-app-layout>

@@ -159,7 +159,8 @@
                             <tr class="bg-gray-50">
                                 <th class="w-10 text-center font-bold">#</th>
                                 <th class="text-center font-bold px-2">Customer</th>
-                                <th class="text-center font-bold px-2 whitespace-nowrap">Entries</th>
+                                <th class="text-center font-bold px-2 whitespace-nowrap">CNIC</th>
+                                <th class="text-center font-bold px-2 whitespace-nowrap">NTN</th>
                                 <th class="text-center font-bold px-2">
                                     Sale
                                     <div class="text-xs font-normal text-gray-500">Total Sales</div>
@@ -184,10 +185,11 @@
                                 <tr>
                                     <td class="text-center">{{ $index + 1 }}</td>
                                     <td class="px-2">
-                                        <span class="font-semibold">{{ $customer?->customer_code }}</span>
-                                        <span class="px-1">–</span>{{ $customer?->business_name ?: $customer?->customer_name }}
+                                        <span class="font-semibold">{{ $customer?->customer_code }}</span><br>
+                                        {{ $customer?->business_name ?: $customer?->customer_name }}@if ($address = collect([$customer?->address, $customer?->sub_locality, $customer?->city])->filter()->implode(', '))<span class="text-xs">, {{ $address }}</span>@endif
                                     </td>
-                                    <td class="text-center px-2">{{ $row['entries'] }}</td>
+                                    <td class="px-2 whitespace-nowrap">{{ $customer?->owner_cnic ?: '—' }}</td>
+                                    <td class="px-2 whitespace-nowrap">{{ $customer?->ntn ?: '—' }}</td>
                                     <td class="text-right font-mono px-2">{{ number_format($row['sale'], 2) }}</td>
                                     <td class="text-right font-mono px-2">{{ number_format($row['advance_tax'], 2) }}</td>
                                     <td class="text-right font-mono px-2">{{ number_format($row['benefits'], 2) }}</td>
@@ -195,15 +197,14 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
+                                    <td colspan="8" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                         @if ($rows->isNotEmpty())
                             <tfoot class="bg-gray-100 font-extrabold">
                                 <tr>
-                                    <td colspan="2" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
-                                    <td class="text-center px-2 py-1">{{ $totalEntries }}</td>
+                                    <td colspan="4" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
                                     <td class="text-right font-mono px-2 py-1">{{ number_format($totalSale, 2) }}</td>
                                     <td class="text-right font-mono px-2 py-1">{{ number_format($totalAdvanceTax, 2) }}</td>
                                     <td class="text-right font-mono px-2 py-1">{{ number_format($totalBenefits, 2) }}</td>
@@ -212,6 +213,10 @@
                             </tfoot>
                         @endif
                     </table>
+
+                    <p class="text-xs mt-1">
+                        Sale is the Total Sales of the settlements the customer has an advance tax entry on. A settlement with several customers shows its sale against each of them, and counts once in the Total row.
+                    </p>
 
                     {{-- Cross-check against the 1161 amount on the settlements --}}
                     <table class="report-table mt-4" style="width: auto; min-width: 420px;">

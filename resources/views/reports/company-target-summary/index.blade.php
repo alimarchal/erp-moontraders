@@ -87,7 +87,6 @@
                 'supplier_id' => $supplier->id,
                 'from' => $from->toDateString(),
                 'to' => $to->toDateString(),
-                'designation' => $designation,
             ], fn ($value) => $value !== null && $value !== '');
         @endphp
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 no-print">
@@ -116,7 +115,7 @@
 
     <div>
         <x-filter-section :action="route('reports.company-target-summary.index')" class="no-print">
-            <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
                 {{-- Company --}}
                 <div>
                     <x-label for="supplier_id" value="{{ __('Company') }}" />
@@ -143,18 +142,6 @@
                 <div>
                     <x-label for="to" value="{{ __('End Date') }}" />
                     <x-input id="to" class="block mt-1 w-full" type="date" name="to" :value="$to->toDateString()" required />
-                </div>
-
-                {{-- Designation --}}
-                <div>
-                    <x-label for="designation" value="{{ __('Designation') }}" />
-                    <select id="designation" name="designation" data-placeholder="All Designations"
-                        class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                        <option value="">All Designations</option>
-                        @foreach ($designations as $option)
-                            <option value="{{ $option }}" {{ $designation === $option ? 'selected' : '' }}>{{ $option }}</option>
-                        @endforeach
-                    </select>
                 </div>
             </div>
         </x-filter-section>

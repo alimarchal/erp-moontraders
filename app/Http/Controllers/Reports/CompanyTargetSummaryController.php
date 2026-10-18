@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Reports;
 
 use App\Exports\CompanyTargetSummaryExport;
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
 use App\Models\Supplier;
 use App\Services\CompanyTargetService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -32,7 +31,6 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
 
         return view('reports.company-target-summary.index', $data + [
             'suppliers' => $this->suppliersForUser(),
-            'designations' => $this->designations($data['supplier']?->id),
         ]);
     }
 
@@ -59,7 +57,7 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
     }
 
     /**
-     * @return array{supplier: ?Supplier, from: Carbon, to: Carbon, designation: ?string, summary: ?array<string, mixed>}
+     * @return array{supplier: ?Supplier, from: Carbon, to: Carbon, summary: ?array<string, mixed>}
      */
     private function reportData(Request $request, CompanyTargetService $service): array
     {
@@ -67,7 +65,6 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
             'supplier_id' => ['nullable', 'integer'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
-            'designation' => ['nullable', 'string', 'max:100'],
         ]);
 
         $user = $request->user();
@@ -82,14 +79,12 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
 
         $from = $request->filled('from') ? Carbon::parse($request->input('from'))->startOfDay() : now()->startOfMonth();
         $to = $request->filled('to') ? Carbon::parse($request->input('to'))->startOfDay() : now()->startOfDay();
-        $designation = $request->input('designation', CompanyTargetService::DEFAULT_DESIGNATION) ?: null;
 
         return [
             'supplier' => $supplier,
             'from' => $from,
             'to' => $to,
-            'designation' => $designation,
-            'summary' => $supplier ? $service->summary($supplier->id, $from, $to, $designation) : null,
+            'summary' => $supplier ? $service->summary($supplier->id, $from, $to) : null,
         ];
     }
 
@@ -107,18 +102,5 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
                 : $query->whereRaw('1 = 0'))
             ->orderBy('supplier_name')
             ->get(['id', 'supplier_name']);
-    }
-
-    /**
-     * @return Collection<int, string>
-     */
-    private function designations(?int $supplierId): Collection
-    {
-        return Employee::query()
-            ->whereNotNull('designation')
-            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
-            ->distinct()
-            ->orderBy('designation')
-            ->pluck('designation');
     }
 }

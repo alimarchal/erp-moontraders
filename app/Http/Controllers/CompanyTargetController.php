@@ -167,11 +167,6 @@ class CompanyTargetController extends Controller implements HasMiddleware
         return response()->json([
             'designations' => $this->designationsOf((int) $supplierId),
             'employees' => $mapRows($service->eligibleEmployees((int) $supplierId, $designation)),
-            'all_employees' => $mapRows(Employee::query()
-                ->where('supplier_id', $supplierId)
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'employee_code'])),
         ]);
     }
 

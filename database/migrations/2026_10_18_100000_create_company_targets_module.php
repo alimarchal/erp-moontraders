@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
@@ -54,10 +53,6 @@ return new class extends Migration
         });
 
         $this->seedPermissions();
-
-        // The current month's sheets exist straight after `php artisan migrate`; the scheduler
-        // creates every following month on the 1st.
-        Artisan::call('company-targets:generate');
     }
 
     public function down(): void

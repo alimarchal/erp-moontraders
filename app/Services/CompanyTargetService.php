@@ -75,7 +75,7 @@ class CompanyTargetService
      *
      * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, float>, days_left: int}
      */
-    public function summary(int $supplierId, CarbonInterface $from, CarbonInterface $to, ?string $designation = null, ?CarbonInterface $today = null): array
+    public function summary(int $supplierId, CarbonInterface $from, CarbonInterface $to, ?CarbonInterface $today = null): array
     {
         $today ??= now();
 
@@ -97,7 +97,6 @@ class CompanyTargetService
 
         $employees = Employee::query()
             ->whereIn('id', $lines->pluck('employee_id')->merge($achieved->keys())->unique())
-            ->when($designation, fn ($query) => $query->where('designation', $designation))
             ->get(['id', 'name'])
             ->keyBy('id');
 

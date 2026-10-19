@@ -26,12 +26,9 @@
                 <tr>
                     <td class="center">{{ $index + 1 }}</td>
                     <td style="word-wrap: break-word">
-                        @if ($row['unassigned'] ?? false)
-                            <span class="bold">No customer entry</span><br>
-                            <span class="small muted">Settlements with sales but no advance tax entry on any customer:</span>
-                            @foreach ($row['settlements'] ?? [] as $settlement)
-                                <br><span class="small"><b>{{ $settlement['number'] }}</b> | {{ \Illuminate\Support\Carbon::parse($settlement['date'])->format('d-M-Y') }} | {{ number_format($settlement['sale'], 2) }}</span>
-                            @endforeach
+                        @if ($row['non_ntn'] ?? false)
+                            <span class="bold">Sale to NON NTN customers</span><br>
+                            <span class="small muted">Settlements' Total Sales less the NTN customers' sale above. No advance tax is taken on this.</span>
                         @else
                             <span class="bold">{{ $customer?->customer_code }}</span>@if ($customer?->owner_cnic) <span class="small muted">| CNIC {{ $customer->owner_cnic }}</span>@endif<br>
                             {{ $customer?->business_name ?: $customer?->customer_name }}@if ($address)<span class="small muted">, {{ $address }}</span>@endif
@@ -39,9 +36,9 @@
                     </td>
                     <td>{{ $customer?->ntn ?: '-' }}</td>
                     <td class="num">{{ $money($row['sale']) }}</td>
-                    <td class="num">{{ $money($row['advance_tax']) }}</td>
-                    <td class="num">{{ $money($row['benefits']) }}</td>
-                    <td class="num bold">{{ $money($row['received']) }}</td>
+                    <td class="num">{{ isset($row['advance_tax']) ? $money($row['advance_tax']) : '-' }}</td>
+                    <td class="num">{{ isset($row['benefits']) ? $money($row['benefits']) : '-' }}</td>
+                    <td class="num bold">{{ isset($row['received']) ? $money($row['received']) : '-' }}</td>
                 </tr>
             @empty
                 <tr><td colspan="7" class="center muted">No advance tax entries found for this company and period.</td></tr>
@@ -50,7 +47,7 @@
         @if ($rows->isNotEmpty())
             <tfoot>
                 <tr>
-                    <td colspan="3" class="num">Total ({{ $rows->reject(fn ($row) => $row['unassigned'] ?? false)->count() }} customers)</td>
+                    <td colspan="3" class="num">Total ({{ $rows->reject(fn ($row) => $row['non_ntn'] ?? false)->count() }} customers)</td>
                     <td class="num">{{ $money($totalSale) }}</td>
                     <td class="num">{{ $money($totalAdvanceTax) }}</td>
                     <td class="num">{{ $money($totalBenefits) }}</td>
@@ -59,5 +56,5 @@
             </tfoot>
         @endif
     </table>
-    <div class="note">Sale is the Total Sales of the settlements the customer has an advance tax entry on. A settlement with several customers shows its sale against each of them, and counts once in the Total row.</div>
+    <div class="note">A customer's sale is worked back from the advance tax benefit (benefit / 2.5%). The last row is the rest of the settlements' Total Sales, sold to non-NTN customers, with no advance tax. Both together equal the Total row.</div>
 @endsection

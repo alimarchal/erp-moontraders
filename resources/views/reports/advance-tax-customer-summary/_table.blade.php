@@ -7,7 +7,7 @@
             <th class="text-center font-bold px-2 whitespace-nowrap" style="width:11%">NTN</th>
             <th class="text-center font-bold px-2" style="width:12.75%">
                 Sale
-                <div class="text-xs font-normal text-gray-500">Total Sales</div>
+                <div class="text-xs font-normal text-gray-500">Benefit ÷ 2.5%</div>
             </th>
             <th class="text-center font-bold px-2" style="width:12.75%">
                 Advance Tax (2.5%)
@@ -32,13 +32,9 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td class="px-2">
-                    @if ($row['unassigned'] ?? false)
-                        <span class="font-semibold">No customer entry</span><br>
-                        <span class="text-xs">Settlements with sales but no advance tax entry on any customer:</span>
-                        @foreach ($row['settlements'] ?? [] as $settlement)
-                            <br><a href="{{ route('sales-settlements.show', $settlement['id']) }}" target="_blank" class="text-xs font-semibold text-blue-700 underline">{{ $settlement['number'] }}</a>
-                            <span class="text-xs">| {{ \Illuminate\Support\Carbon::parse($settlement['date'])->format('d-M-Y') }} | {{ number_format($settlement['sale'], 2) }}</span>
-                        @endforeach
+                    @if ($row['non_ntn'] ?? false)
+                        <span class="font-semibold">Sale to NON NTN customers</span><br>
+                        <span class="text-xs">Settlements' Total Sales less the NTN customers' sale above. No advance tax is taken on this.</span>
                     @else
                     <span class="font-semibold">{{ $customer?->customer_code }}</span>@if ($customer?->owner_cnic) <span class="text-xs">| CNIC {{ $customer->owner_cnic }}</span>@endif<br>
                     {{ $customer?->business_name ?: $customer?->customer_name }}@if ($address)<span class="text-xs">, {{ $address }}</span>@endif
@@ -46,9 +42,9 @@
                 </td>
                 <td class="px-2 whitespace-nowrap">{{ $customer?->ntn ?: '—' }}</td>
                 <td class="text-right font-mono px-2">{{ number_format($row['sale'], 2) }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['advance_tax'], 2) }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['benefits'], 2) }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['received'], 2) }}</td>
+                <td class="text-right font-mono px-2">{{ isset($row['advance_tax']) ? number_format($row['advance_tax'], 2) : '—' }}</td>
+                <td class="text-right font-mono px-2">{{ isset($row['benefits']) ? number_format($row['benefits'], 2) : '—' }}</td>
+                <td class="text-right font-mono px-2">{{ isset($row['received']) ? number_format($row['received'], 2) : '—' }}</td>
             </tr>
         @empty
             <tr>
@@ -59,7 +55,7 @@
     @if ($rows->isNotEmpty())
         <tfoot class="font-extrabold">
             <tr>
-                <td colspan="3" class="text-right px-2 py-1">Total ({{ $rows->reject(fn ($row) => $row['unassigned'] ?? false)->count() }} customers)</td>
+                <td colspan="3" class="text-right px-2 py-1">Total ({{ $rows->reject(fn ($row) => $row['non_ntn'] ?? false)->count() }} customers)</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($totalSale, 2) }}</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($totalAdvanceTax, 2) }}</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($totalBenefits, 2) }}</td>

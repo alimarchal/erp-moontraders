@@ -33,8 +33,8 @@ class CompanyTargetService
      * Target vs achieved rows for one supplier between two dates.
      *
      * Total is the sum of the target sheets overlapping the dates; Achieved is the sales of
-     * posted settlements in the dates; Remaining/Day spreads what is left over the days still
-     * to go (today to the end date, at least one).
+     * posted settlements in the dates; Remaining/Day spreads what is left over the working days
+     * still to go (Monday to Saturday, today to the end date, at least one).
      *
      * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, float>, days_left: int}
      */
@@ -65,7 +65,7 @@ class CompanyTargetService
 
         $anchor = $today->copy()->startOfDay();
         $anchor = $anchor->lt($from) ? $from->copy()->startOfDay() : $anchor;
-        $daysLeft = max(1, (int) $anchor->diffInDays($to->copy()->startOfDay(), false) + 1);
+        $daysLeft = max(1, $this->workingDaysBetween($anchor, $to));
 
         // Rows keep the order of the target sheet; salesmen with sales but no target follow, by name.
         $sheetOrder = $lines->pluck('employee_id')->unique()->values()->flip();
@@ -100,5 +100,24 @@ class CompanyTargetService
             ],
             'days_left' => $daysLeft,
         ];
+    }
+
+    /**
+     * Working days from one date to another, both included: Monday to Saturday, Sundays are off.
+     */
+    private function workingDaysBetween(CarbonInterface $from, CarbonInterface $to): int
+    {
+        $days = 0;
+        $day = $from->copy()->startOfDay();
+
+        while ($day->lte($to)) {
+            if (! $day->isSunday()) {
+                $days++;
+            }
+
+            $day = $day->addDay();
+        }
+
+        return $days;
     }
 }

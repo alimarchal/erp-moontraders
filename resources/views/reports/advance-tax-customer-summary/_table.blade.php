@@ -103,12 +103,12 @@
 <h3 class="font-bold mt-4 mb-1">Calculation</h3>
 <table class="report-table" style="width:60%">
     <tbody>
+        <tr><td class="px-2">Total sale (NTN + non-NTN), equals the settlements' Total Sales</td><td class="text-right font-mono px-2">{{ number_format($totalSale, 2) }}</td></tr>
         <tr><td class="px-2">Sale to NTN customers (table 1)</td><td class="text-right font-mono px-2">{{ number_format($ntnSale, 2) }}</td></tr>
         <tr><td class="px-2">Benefits given at 2% (account 1161)</td><td class="text-right font-mono px-2">{{ number_format($totalBenefits, 2) }}</td></tr>
         <tr><td class="px-2">Advance Tax Received From Customer (Adv. Tax − Benefits, table 1)</td><td class="text-right font-mono px-2">{{ number_format($ntnReceived, 2) }}</td></tr>
         <tr><td class="px-2">Sale to NON NTN customers (table 2)</td><td class="text-right font-mono px-2">{{ number_format($nonNtnSale, 2) }}</td></tr>
         <tr><td class="px-2">Advance Tax on non-NTN sale (2.5%, table 2)</td><td class="text-right font-mono px-2">{{ number_format($nonNtnAdvanceTax, 2) }}</td></tr>
         <tr class="font-extrabold"><td class="px-2">Tax to pay now (Received From Customer + 2.5% on non-NTN sale)</td><td class="text-right font-mono px-2">{{ number_format($totalReceived, 2) }}</td></tr>
-        <tr><td class="px-2 text-xs">Total sale (NTN + non-NTN), equals the settlements' Total Sales</td><td class="text-right font-mono px-2 text-xs">{{ number_format($totalSale, 2) }}</td></tr>
     </tbody>
 </table>

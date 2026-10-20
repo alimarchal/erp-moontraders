@@ -7,8 +7,8 @@
         <tr>
             <th>#</th>
             <th>Salesman</th>
+            <th>Channel</th>
             <th>Target</th>
-            <th>Total</th>
             <th>Achieved</th>
             <th>Remaining/Day</th>
             <th>%age</th>
@@ -28,7 +28,7 @@
         @endforeach
         @if (! empty($summary['totals']))
             <tr>
-                <td colspan="3">Total:</td>
+                <td colspan="3">Target:</td>
                 <td>{{ round($summary['totals']['total'], 2) }}</td>
                 <td>{{ round($summary['totals']['achieved'], 2) }}</td>
                 <td>{{ round($summary['totals']['remaining_per_day'], 2) }}</td>

@@ -8,8 +8,8 @@
         <tr>
             <th class="text-center w-10 px-1 py-0.5">#</th>
             <th class="text-left px-1 py-0.5">Salesman</th>
-            <th class="text-left px-1 py-0.5">Target</th>
-            <th class="text-right px-1 py-0.5">Total</th>
+            <th class="text-left px-1 py-0.5">Channel</th>
+            <th class="text-right px-1 py-0.5">Target</th>
             <th class="text-right px-1 py-0.5">Achieved</th>
             <th class="text-right px-1 py-0.5">Remaining/Day</th>
             <th class="text-right px-1 py-0.5">%age</th>
@@ -35,7 +35,7 @@
     @if ($summary['rows']->isNotEmpty())
         <tfoot class="font-bold">
             <tr>
-                <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Target:</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['total']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['achieved']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['remaining_per_day']) }}</td>

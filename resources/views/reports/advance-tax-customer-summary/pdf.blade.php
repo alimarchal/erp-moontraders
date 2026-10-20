@@ -1,5 +1,14 @@
 @extends('reports.pdf-layout')
 
+@section('styles')
+    <style>
+        .data th { background: #ffffff; color: #000000; border: 1px solid #000000; }
+        .data td { border: 1px solid #000000; }
+        .data tbody tr:nth-child(even) td { background: #ffffff; }
+        .data tfoot td { background: #ffffff; color: #000000; border: 1px solid #000000; }
+    </style>
+@endsection
+
 @section('content')
     @php
         $landscape = $orientation === 'landscape';

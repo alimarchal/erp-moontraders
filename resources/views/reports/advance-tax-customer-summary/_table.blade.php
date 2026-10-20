@@ -14,7 +14,7 @@
                 <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
             <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
-                Advance Tax Benefits<br>(NTN Customer)
+                Advance Tax Benefits (2%)<br>(NTN Customer)
                 <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
             <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
@@ -79,7 +79,7 @@
                 <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
             <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
-                Advance Tax Benefits<br>(NTN Customer)
+                Advance Tax Benefits (2%)<br>(NTN Customer)
                 <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
             <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">

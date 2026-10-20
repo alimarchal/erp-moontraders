@@ -9,8 +9,9 @@
         <thead>
             <tr>
                 <th class="center" style="width: 4%">#</th>
-                <th style="width: {{ $landscape ? '30%' : '27%' }}; text-align: left">Customer</th>
-                <th style="width: 13%">NTN</th>
+                <th style="width: 11%">Code</th>
+                <th style="width: {{ $landscape ? '26%' : '23%' }}; text-align: left">Customer</th>
+                <th style="width: 12%">NTN</th>
                 <th class="num">Sale</th>
                 <th class="num">Advance Tax<br>(2.5%)</th>
                 <th class="num">Benefits (2%)<br>(NTN customer)</th>
@@ -25,10 +26,8 @@
                 @endphp
                 <tr>
                     <td class="center">{{ $index + 1 }}</td>
-                    <td style="word-wrap: break-word">
-                            <span class="bold">{{ $customer?->business_name ?: $customer?->customer_name }}</span><br>
-                            <span class="small muted">{{ $customer?->customer_code }}@if ($address) · {{ $address }}@endif</span>
-                    </td>
+                    <td>{{ $customer?->customer_code }}</td>
+                    <td style="word-wrap: break-word">{{ collect([$customer?->business_name ?: $customer?->customer_name, $address])->filter()->implode(', ') }}</td>
                     <td>{{ $customer?->ntn ?: '-' }}</td>
                     <td class="num">{{ $money($row['sale']) }}</td>
                     <td class="num">{{ $money($row['advance_tax']) }}</td>
@@ -36,13 +35,13 @@
                     <td class="num bold">{{ $money($row['received']) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="center muted">No advance tax entries found for this company and period.</td></tr>
+                <tr><td colspan="8" class="center muted">No advance tax entries found for this company and period.</td></tr>
             @endforelse
         </tbody>
         @if ($rows->isNotEmpty())
             <tfoot>
                 <tr>
-                    <td colspan="3" class="num">Total ({{ $rows->count() }} customers)</td>
+                    <td colspan="4" class="num">Total ({{ $rows->count() }} customers)</td>
                     <td class="num">{{ $money($ntnSale) }}</td>
                     <td class="num">{{ $money($ntnAdvanceTax) }}</td>
                     <td class="num">{{ $money($totalBenefits) }}</td>
@@ -55,8 +54,9 @@
     <table class="data" style="table-layout: fixed">
         <thead>
             <tr>
-                <th style="width: {{ $landscape ? '34%' : '31%' }}; text-align: left">Customer</th>
-                <th style="width: 13%">NTN</th>
+                <th style="width: 11%">Code</th>
+                <th style="width: {{ $landscape ? '30%' : '27%' }}; text-align: left">Customer</th>
+                <th style="width: 12%">NTN</th>
                 <th class="num">Sale</th>
                 <th class="num">Advance Tax<br>(2.5%)</th>
                 <th class="num">Benefits (2%)<br>(NTN customer)</th>
@@ -65,6 +65,7 @@
         </thead>
         <tbody>
             <tr>
+                <td>-</td>
                 <td style="word-wrap: break-word"><span class="bold">Sale to NON NTN customers</span><br><span class="small muted">Settlements' Total Sales less the NTN customers' sale above.</span></td>
                 <td>-</td>
                 <td class="num">{{ $money($nonNtnSale) }}</td>

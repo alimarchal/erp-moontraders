@@ -3,21 +3,22 @@
     <thead>
         <tr>
             <th class="text-center font-bold" style="vertical-align:middle;width:4%">#</th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:28%">Customer</th>
+            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:10%">Code</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:26%">Customer</th>
             <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:10%">NTN</th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Sale
                 <div class="text-xs font-normal text-gray-500">Benefit ÷ 2%</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Advance Tax (2.5%)
                 <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Advance Tax Benefits (2%)<br>(NTN Customer)
                 <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Advance Tax Received<br>From Customer
                 <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
             </th>
@@ -31,10 +32,8 @@
             @endphp
             <tr>
                 <td class="text-center" style="vertical-align:middle">{{ $index + 1 }}</td>
-                <td class="px-2" style="vertical-align:middle">
-                    <div class="font-semibold">{{ $customer?->business_name ?: $customer?->customer_name }}</div>
-                    <div class="text-xs text-gray-500">{{ $customer?->customer_code }}@if ($address) · {{ $address }}@endif</div>
-                </td>
+                <td class="px-2 whitespace-nowrap text-center" style="vertical-align:middle">{{ $customer?->customer_code }}</td>
+                <td class="px-2" style="vertical-align:middle">{{ collect([$customer?->business_name ?: $customer?->customer_name, $address])->filter()->implode(', ') }}</td>
                 <td class="px-2 whitespace-nowrap text-center" style="vertical-align:middle">{{ $customer?->ntn ?: '—' }}</td>
                 <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['sale'], 2) }}</td>
                 <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['advance_tax'], 2) }}</td>
@@ -43,14 +42,14 @@
             </tr>
         @empty
             <tr>
-                <td colspan="7" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
+                <td colspan="8" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
             </tr>
         @endforelse
     </tbody>
     @if ($rows->isNotEmpty())
         <tfoot class="font-extrabold">
             <tr>
-                <td colspan="3" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
+                <td colspan="4" class="text-right px-2 py-1">Total ({{ $rows->count() }} customers)</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($ntnSale, 2) }}</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($ntnAdvanceTax, 2) }}</td>
                 <td class="text-right font-mono px-2 py-1">{{ number_format($totalBenefits, 2) }}</td>
@@ -64,21 +63,22 @@
 <table class="report-table">
     <thead>
         <tr>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:32%">Customer</th>
+            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:14%">Code</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:26%">Customer</th>
             <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:10%">NTN</th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Sale
                 <div class="text-xs font-normal text-gray-500">Total Sales − NTN sale</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Advance Tax (2.5%)
                 <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Advance Tax Benefits (2%)<br>(NTN Customer)
                 <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.5%">
                 Advance Tax Received<br>From Customer
                 <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
             </th>
@@ -86,11 +86,12 @@
     </thead>
     <tbody>
         <tr>
+            <td class="px-2 text-center">—</td>
             <td class="px-2">
                 <span class="font-semibold">Sale to NON NTN customers</span><br>
                 <span class="text-xs">Settlements' Total Sales less the NTN customers' sale above.</span>
             </td>
-            <td class="px-2">—</td>
+            <td class="px-2 text-center">—</td>
             <td class="text-right font-mono px-2">{{ number_format($nonNtnSale, 2) }}</td>
             <td class="text-right font-mono px-2">{{ number_format($nonNtnAdvanceTax, 2) }}</td>
             <td class="text-right font-mono px-2">{{ number_format(0, 2) }}</td>

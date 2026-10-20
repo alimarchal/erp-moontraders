@@ -14,7 +14,6 @@
                 <th class="num">Target</th>
                 <th class="num">Achieved</th>
                 <th class="num">Remaining / Day</th>
-                <th class="num">Remaining Target Per Day<br>÷ {{ $summary['month_days_left'] }} working days</th>
                 <th class="num" style="width: 11%">%age</th>
             </tr>
         </thead>
@@ -27,11 +26,10 @@
                     <td class="num">{{ $money($row['total']) }}</td>
                     <td class="num">{{ $money($row['achieved']) }}</td>
                     <td class="num">{{ $money($row['remaining_per_day']) }}</td>
-                    <td class="num">{{ $money($row['remaining_per_day_share']) }}</td>
                     <td class="num bold" style="color: {{ $barColor($row['percentage']) }}">{{ number_format($row['percentage'], 0) }}%</td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="center muted">No data found</td></tr>
+                <tr><td colspan="7" class="center muted">No data found</td></tr>
             @endforelse
         </tbody>
         @if ($summary['rows']->isNotEmpty())
@@ -41,11 +39,10 @@
                     <td class="num">{{ $money($summary['totals']['total']) }}</td>
                     <td class="num">{{ $money($summary['totals']['achieved']) }}</td>
                     <td class="num">{{ $money($summary['totals']['remaining_per_day']) }}</td>
-                    <td class="num">{{ $money($summary['totals']['remaining_per_day_share']) }}</td>
                     <td class="num">{{ number_format($summary['totals']['percentage'], 2) }}%</td>
                 </tr>
             </tfoot>
         @endif
     </table>
-    <div class="note">Achieved is the sales of posted settlements in the period. Remaining / Day spreads what is left of the target over the working days still to go; Remaining Target Per Day divides that by the working days left in the month. Percent: green is 100% or more, amber from 70%, red below.</div>
+    <div class="note">Achieved is the sales of posted settlements in the period. Remaining / Day spreads what is left of the target over the working days still to go. Percent: green is 100% or more, amber from 70%, red below.</div>
 @endsection

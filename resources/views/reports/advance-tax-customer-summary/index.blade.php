@@ -18,6 +18,30 @@
                 border: 1px solid black;
                 padding: 3px 4px;
                 word-wrap: break-word;
+                color: #000;
+            }
+
+            .report-table thead th {
+                background: #0b2a6f;
+                color: #fff;
+                border-color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .report-table thead th .text-gray-500 {
+                color: #bfdbfe;
+            }
+
+            .report-table tbody tr:nth-child(even) td {
+                background: #f8fafc;
+            }
+
+            .report-table tfoot td {
+                background: #dbeafe;
+                color: #0b2a6f;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .print-only {

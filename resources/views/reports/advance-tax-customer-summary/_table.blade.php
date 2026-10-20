@@ -3,22 +3,22 @@
     <thead>
         <tr>
             <th class="text-center font-bold" style="vertical-align:middle;width:4%">#</th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:34%">Customer</th>
-            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:11%">NTN</th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:28%">Customer</th>
+            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:10%">NTN</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
                 Sale
                 <div class="text-xs font-normal text-gray-500">Benefit ÷ 2%</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
                 Advance Tax (2.5%)
                 <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
                 Advance Tax Benefits (2%)<br>(NTN Customer)
                 <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
-                Advance Tax<br>Received From Customer
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+                Advance Tax Received<br>From Customer
                 <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
             </th>
         </tr>
@@ -68,22 +68,22 @@
 <table class="report-table">
     <thead>
         <tr>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:38%">Customer</th>
-            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:11%">NTN</th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:32%">Customer</th>
+            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:10%">NTN</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
                 Sale
                 <div class="text-xs font-normal text-gray-500">Total Sales − NTN sale</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
                 Advance Tax (2.5%)
                 <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
                 Advance Tax Benefits (2%)<br>(NTN Customer)
                 <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
-            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
-                Advance Tax<br>Received From Customer
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:14.5%">
+                Advance Tax Received<br>From Customer
                 <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
             </th>
         </tr>

@@ -22,11 +22,20 @@
             }
 
             .report-table thead th {
+                font-size: 13px;
+                line-height: 1.2;
+                padding: 5px 6px;
+                vertical-align: middle;
                 background: #0b2a6f;
                 color: #fff;
                 border-color: #0b2a6f;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+            }
+
+            .report-table thead th div {
+                font-size: 11px;
+                margin-top: 1px;
             }
 
             .report-table thead th .text-gray-500 {

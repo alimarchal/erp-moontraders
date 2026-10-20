@@ -632,6 +632,81 @@
                     </div>
                 @endcanany
 
+
+                {{-- ─── Bank Register ─── --}}
+                @canany(['bank-statement-entry-list', 'bank-entry-category-list', 'bank-party-alias-list', 'bank-entry-rule-list', 'bank-cheque-list', 'bank-reconciliation-list'])
+                    <div>
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Bank Register</p>
+                        <div class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
+                            @can('bank-statement-entry-list')
+                                <x-settings-row href="{{ route('bank-statement-entries.index') }}" label="Bank Statement Register"
+                                    description="Import statements, tag, approve & post" icon-bg="bg-teal-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-entry-category-list')
+                            <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('bank-entry-categories.index') }}" label="Bank Entry Categories"
+                                    description="Receipt / payment categories" :count="\App\Models\BankEntryCategory::count()" icon-bg="bg-cyan-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-party-alias-list')
+                            <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('bank-party-aliases.index') }}" label="Party Aliases"
+                                    description="Merge different spellings of a party" :count="\App\Models\BankPartyAlias::count()" icon-bg="bg-sky-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-entry-rule-list')
+                            <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('bank-entry-rules.index') }}" label="Auto-classify Rules"
+                                    description="Tag entries by text in the narration" :count="\App\Models\BankEntryRule::count()" icon-bg="bg-indigo-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-cheque-list')
+                            <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('bank-cheques.index') }}" label="Bank Cheque Register"
+                                    description="Issued & received cheques, auto-cleared" :count="\App\Models\BankCheque::count()" icon-bg="bg-emerald-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-reconciliation-list')
+                            <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('bank-reconciliations.index') }}" label="Bank Reconciliations"
+                                    description="Match statement with the books & lock a period" icon-bg="bg-teal-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                        </div>
+                    </div>
+                @endcanany
+
             </div>
         </div>
     </div>

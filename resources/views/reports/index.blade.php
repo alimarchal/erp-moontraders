@@ -753,6 +753,24 @@
                     </div>
                 @endcanany
 
+
+                {{-- ─── Bank Register ─── --}}
+                @canany(['report-bank-company-month-summary', 'report-bank-category-month-summary', 'report-bank-company-ledger', 'report-bank-reconciliation-statement', 'report-bank-unclassified', 'report-bank-unreconciled', 'report-bank-missing-attachments', 'report-bank-pending-approvals', 'report-bank-cash-flow', 'report-bank-charges-tax', 'report-bank-top-parties', 'report-bank-audit-log'])
+                    <div>
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Bank Register</p>
+                        <div class="bg-white rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
+                            <x-settings-row href="{{ route('reports.bank.index') }}" label="Bank Statement Reports"
+                                description="Company / category month-wise, ledger, reconciliation, cash-flow, audit" icon-bg="bg-teal-600">
+                                <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                                        </svg>
+                                    </x-slot>
+                            </x-settings-row>
+                        </div>
+                    </div>
+                @endcanany
+
             </div>
         </div>
     </div>

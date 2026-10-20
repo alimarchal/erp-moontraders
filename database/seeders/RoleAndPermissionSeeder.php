@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\BankRegister\BankRegisterPermissions;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -96,6 +97,11 @@ class RoleAndPermissionSeeder extends Seeder
             }
         }
 
+        foreach (BankRegisterPermissions::all() as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+            $allPermissionNames[] = $name;
+        }
+
         // Create roles and assign permissions
 
         // Super Admin: Gets everything
@@ -163,6 +169,13 @@ class RoleAndPermissionSeeder extends Seeder
             'report-audit-invoice-summary-manage',
             'setting-view',
         ]);
+
+        // Bank Statement Register: accountant is the maker; checker, senior approver and auditor are separate roles.
+        $accountantRole->givePermissionTo(BankRegisterPermissions::grantsFor('accountant'));
+        foreach (['bank-checker', 'bank-senior-approver', 'auditor'] as $bankRoleName) {
+            Role::firstOrCreate(['name' => $bankRoleName, 'guard_name' => 'web'])
+                ->syncPermissions(BankRegisterPermissions::grantsFor($bankRoleName));
+        }
 
         // Inventory Manager
         $inventoryManagerRole = Role::firstOrCreate(['name' => 'inventory-manager', 'guard_name' => 'web']);

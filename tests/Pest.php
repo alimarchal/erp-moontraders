@@ -2,9 +2,13 @@
 
 use App\Models\AccountingPeriod;
 use App\Models\AccountType;
+use App\Models\BankAccount;
+use App\Models\BankEntryCategory;
 use App\Models\ChartOfAccount;
+use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Currency;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -113,4 +117,72 @@ function seedGrnPostingAccounts(): void
             ]
         );
     }
+}
+
+/**
+ * Everything a Bank Statement Register test needs to post a journal: a base currency, an open
+ * accounting period, a bank account linked to a ledger, and a company with receivable/payable ledgers.
+ *
+ * @return array{bank: BankAccount, company: Company, category: BankEntryCategory, bankLedger: ChartOfAccount}
+ */
+function bankRegisterFixture(): array
+{
+    $currency = Currency::where('is_base_currency', true)->first()
+        ?? Currency::create([
+            'currency_code' => 'PKR',
+            'currency_name' => 'Pakistani Rupee',
+            'currency_symbol' => 'Rs',
+            'is_base_currency' => true,
+        ]);
+
+    if (! AccountingPeriod::where('start_date', '<=', now())->where('end_date', '>=', now())->exists()) {
+        AccountingPeriod::create([
+            'name' => now()->format('F Y'),
+            'start_date' => now()->startOfMonth(),
+            'end_date' => now()->endOfMonth(),
+            'status' => 'open',
+        ]);
+    }
+
+    $type = AccountType::firstOrCreate(
+        ['type_name' => 'Assets'],
+        ['report_group' => 'BalanceSheet', 'category' => 'Asset']
+    );
+
+    $ledger = fn (string $code, string $name) => ChartOfAccount::create([
+        'account_type_id' => $type->id,
+        'currency_id' => $currency->id,
+        'account_code' => $code,
+        'account_name' => $name,
+        'normal_balance' => 'debit',
+        'is_active' => true,
+    ]);
+
+    $bankLedger = $ledger('1121', 'HBL Bank');
+    $receivable = $ledger('1141', 'Company Receivable');
+    $payable = $ledger('2111', 'Company Payable');
+
+    return [
+        'bank' => BankAccount::factory()->create(['chart_of_account_id' => $bankLedger->id]),
+        'company' => Company::factory()->create([
+            'company_name' => 'Unilever',
+            'default_receivable_account_id' => $receivable->id,
+            'default_payable_account_id' => $payable->id,
+        ]),
+        'category' => BankEntryCategory::query()->where('slug', 'customer-receipt')->firstOrFail(),
+        'bankLedger' => $bankLedger,
+    ];
+}
+
+/**
+ * A user holding exactly the given permissions (the permissions come from the bank register migration).
+ *
+ * @param  array<int, string>  $permissions
+ */
+function bankUser(array $permissions, string $name = 'Test User'): User
+{
+    $user = User::factory()->create(['name' => $name]);
+    $user->givePermissionTo($permissions);
+
+    return $user;
 }

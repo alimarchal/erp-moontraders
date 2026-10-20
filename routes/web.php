@@ -13,6 +13,16 @@
 use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\BankApprovalController;
+use App\Http\Controllers\BankChequeController;
+use App\Http\Controllers\BankEntryAttachmentController;
+use App\Http\Controllers\BankEntryCategoryController;
+use App\Http\Controllers\BankEntryRuleController;
+use App\Http\Controllers\BankPartyAliasController;
+use App\Http\Controllers\BankReconciliationController;
+use App\Http\Controllers\BankRegisterHelpController;
+use App\Http\Controllers\BankStatementEntryController;
+use App\Http\Controllers\BankStatementImportController;
 use App\Http\Controllers\BatchTransferController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CategoryRevenueController;
@@ -45,6 +55,7 @@ use App\Http\Controllers\Reports\AdvanceTaxReportController;
 use App\Http\Controllers\Reports\AdvanceTaxSalesRegisterController;
 use App\Http\Controllers\Reports\AmrDisposeRegisterController;
 use App\Http\Controllers\Reports\BalanceSheetController;
+use App\Http\Controllers\Reports\BankReportController;
 use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\ChequeRegisterController;
 use App\Http\Controllers\Reports\ClaimRegisterReportController;
@@ -630,6 +641,56 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->name('tickets.approve');
     Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
     Route::resource('tickets', TicketController::class);
+
+    /*
+    |----------------------------------------------------------------------
+    | Bank Statement Register — import, tag, approve (maker-checker), post, reconcile
+    |----------------------------------------------------------------------
+    */
+    Route::get('bank-register/help', BankRegisterHelpController::class)->name('bank-register.help');
+
+    Route::resource('bank-statement-imports', BankStatementImportController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+    Route::post('bank-statement-imports/{bankStatementImport}/confirm', [BankStatementImportController::class, 'confirm'])->name('bank-statement-imports.confirm');
+
+    Route::get('bank-statement-entries/export', [BankStatementEntryController::class, 'export'])->name('bank-statement-entries.export');
+    Route::post('bank-statement-entries/bulk-classify', [BankStatementEntryController::class, 'bulkClassify'])->name('bank-statement-entries.bulk-classify');
+    Route::post('bank-statement-entries/bulk-submit', [BankStatementEntryController::class, 'bulkSubmit'])->name('bank-statement-entries.bulk-submit');
+    Route::post('bank-statement-entries/auto-classify', [BankStatementEntryController::class, 'autoClassify'])->name('bank-statement-entries.auto-classify');
+    Route::get('bank-statement-entries/{bankStatementEntry}/drawer', [BankStatementEntryController::class, 'drawer'])->name('bank-statement-entries.drawer');
+    Route::post('bank-statement-entries/{bankStatementEntry}/flag', [BankStatementEntryController::class, 'flag'])->name('bank-statement-entries.flag');
+    Route::post('bank-statement-entries/{bankStatementEntry}/submit', [BankStatementEntryController::class, 'submit'])->name('bank-statement-entries.submit');
+    Route::post('bank-statement-entries/{bankStatementEntry}/reverse', [BankStatementEntryController::class, 'reverse'])->name('bank-statement-entries.reverse');
+    Route::post('bank-statement-entries/{bankStatementEntry}/attachments', [BankEntryAttachmentController::class, 'store'])->name('bank-statement-entries.attachments.store');
+    Route::resource('bank-statement-entries', BankStatementEntryController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
+
+    Route::get('bank-attachments/{attachment}/download', [BankEntryAttachmentController::class, 'download'])->name('bank-attachments.download');
+    Route::delete('bank-attachments/{attachment}', [BankEntryAttachmentController::class, 'destroy'])->name('bank-attachments.destroy');
+
+    Route::get('bank-approvals', [BankApprovalController::class, 'index'])->name('bank-approvals.index');
+    Route::post('bank-approvals/bulk-approve', [BankApprovalController::class, 'bulkApprove'])->name('bank-approvals.bulk-approve');
+    Route::post('bank-approvals/{bankStatementEntry}/approve', [BankApprovalController::class, 'approve'])->name('bank-approvals.approve');
+    Route::post('bank-approvals/{bankStatementEntry}/reject', [BankApprovalController::class, 'reject'])->name('bank-approvals.reject');
+
+    Route::resource('bank-reconciliations', BankReconciliationController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('bank-reconciliations/{bankReconciliation}/auto-match', [BankReconciliationController::class, 'autoMatch'])->name('bank-reconciliations.auto-match');
+    Route::post('bank-reconciliations/{bankReconciliation}/match', [BankReconciliationController::class, 'match'])->name('bank-reconciliations.match');
+    Route::delete('bank-reconciliations/{bankReconciliation}/items/{item}', [BankReconciliationController::class, 'unmatch'])->name('bank-reconciliations.unmatch');
+    Route::post('bank-reconciliations/{bankReconciliation}/complete', [BankReconciliationController::class, 'complete'])->name('bank-reconciliations.complete');
+    Route::post('bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])->name('bank-reconciliations.cancel');
+
+    Route::prefix('settings')->group(function () {
+        Route::resource('bank-entry-categories', BankEntryCategoryController::class)->except(['show'])->parameters(['bank-entry-categories' => 'bankEntryCategory']);
+        Route::resource('bank-party-aliases', BankPartyAliasController::class)->except(['show'])->parameters(['bank-party-aliases' => 'bankPartyAlias']);
+        Route::resource('bank-entry-rules', BankEntryRuleController::class)->except(['show'])->parameters(['bank-entry-rules' => 'bankEntryRule']);
+        Route::resource('bank-cheques', BankChequeController::class)->except(['show'])->parameters(['bank-cheques' => 'bankCheque']);
+    });
+
+    Route::prefix('reports/bank')->name('reports.bank.')->group(function () {
+        Route::get('/', [BankReportController::class, 'index'])->name('index');
+        Route::get('{report}/export/excel', [BankReportController::class, 'exportExcel'])->name('export.excel');
+        Route::get('{report}/export/pdf', [BankReportController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('{report}', [BankReportController::class, 'show'])->name('show');
+    });
 
     /*
     |----------------------------------------------------------------------

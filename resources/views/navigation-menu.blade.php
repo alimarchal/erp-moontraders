@@ -38,6 +38,15 @@
                             {{ __('Sales Settlement') }}
                         </x-nav-link>
                     @endcan
+                    @can('bank-statement-entry-list')
+                        @php($pendingBank = \App\Models\BankStatementEntry::query()->where('status', 'pending_approval')->count())
+                        <x-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*') || request()->routeIs('reports.bank.*')">
+                            {{ __('Bank Register') }}
+                            @if ($pendingBank > 0)
+                                <span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{{ $pendingBank }}</span>
+                            @endif
+                        </x-nav-link>
+                    @endcan
                     @can('setting-view')
                         <x-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
                             {{ __('Settings') }}
@@ -222,6 +231,11 @@
             @can('setting-view')
                 <x-responsive-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
                     {{ __('Settings') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('bank-statement-entry-list')
+                <x-responsive-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*')">
+                    {{ __('Bank Register') }}
                 </x-responsive-nav-link>
             @endcan
             @can('ticket-list')

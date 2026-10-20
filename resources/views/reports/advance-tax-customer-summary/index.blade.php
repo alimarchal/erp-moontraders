@@ -209,7 +209,7 @@
                     @include('reports.advance-tax-customer-summary._table')
 
                     <p class="text-xs mt-1">
-                        Sale is the Total Sales of the settlements the customer has an advance tax entry on. A settlement with several customers shows its sale against each of them, and counts once in the Total row.
+                        A customer's sale is worked back from the advance tax benefit (benefit / 2.5%). The last row is the rest of the settlements' Total Sales, sold to non-NTN customers, with no advance tax. Both together equal the Total row.
                     </p>
                 </div>
             @endif

@@ -73,7 +73,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
                 'Period: '.Carbon::parse($data['startDate'])->format('d M Y').' to '.Carbon::parse($data['endDate'])->format('d M Y'),
             ],
             'meta' => [
-                'Customers' => $data['rows']->reject(fn ($row) => $row['unassigned'] ?? false)->count(),
+                'Customers' => $data['rows']->reject(fn ($row) => $row['non_ntn'] ?? false)->count(),
                 'Printed by' => $request->user()->name,
                 'On' => now()->format('d M Y, h:i A'),
             ],
@@ -94,7 +94,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             return [];
         }
 
-        $customers = $data['rows']->reject(fn ($row) => $row['unassigned'] ?? false)->count();
+        $customers = $data['rows']->reject(fn ($row) => $row['non_ntn'] ?? false)->count();
 
         return [
             ['label' => 'Sale', 'value' => 'Rs '.SvgChart::money($data['totalSale']), 'note' => number_format($data['totalSale']), 'color' => '#2563eb'],
@@ -113,7 +113,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
      */
     private function charts(array $data): array
     {
-        $customers = $data['rows']->reject(fn ($row) => $row['unassigned'] ?? false);
+        $customers = $data['rows']->reject(fn ($row) => $row['non_ntn'] ?? false);
 
         if (! $data['hasFilter'] || $customers->isEmpty()) {
             return [];
@@ -196,16 +196,14 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
 
         $selectedSupplier = $supplierId ? $suppliers->firstWhere('id', $supplierId) : null;
         $rows = collect();
-        $settlementSales = collect();
+        $totalSale = 0.0;
 
         if ($selectedSupplier) {
-            ['rows' => $rows, 'settlement_sales' => $settlementSales] = $this->customerRows($selectedSupplier->id, $startDate, $endDate);
+            ['rows' => $rows, 'total_sale' => $totalSale] = $this->customerRows($selectedSupplier->id, $startDate, $endDate);
         }
 
-        // A settlement can carry several customers, so its sale shows against each of them but is
-        // counted once in the totals, the way the Advance Tax Sales Register counts it.
-        $totalSale = (float) $settlementSales->sum();
-        $totalAdvanceTax = $totalSale * self::ADVANCE_TAX_RATE;
+        // Advance tax is only taken on NTN customers' sales, so the non-NTN row adds nothing to it.
+        $totalAdvanceTax = (float) $rows->sum('advance_tax');
         $totalBenefits = (float) $rows->sum('benefits');
 
         return [
@@ -224,20 +222,18 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
     }
 
     /**
-     * One row per customer, added up over the dates: the sale of the settlements the customer has
-     * an entry on (each settlement once), the advance tax on that sale (2.5%), the benefit given
-     * (account 1161) and what was received from the customer.
+     * One row per NTN customer, added up over the dates, and a last row for the rest of the sales.
      *
-     * The entries themselves only record the customer and the tax amount, so the sale is the
-     * settlement's Total Sales, the figure the Advance Tax Sales Register shows by date.
+     * The entries only record the customer and the benefit given (account 1161), which is 2.5% of
+     * what the customer bought, so the customer's sale is worked back from it (benefit / 2.5%).
+     * The settlements' Total Sales minus the NTN customers' sale is what was sold to non-NTN
+     * customers; it carries no advance tax. NTN sale + non-NTN sale always equals the Total Sales.
      *
-     * @return array{rows: Collection<int, array<string, mixed>>, settlement_sales: Collection<int, float>}
+     * @return array{rows: Collection<int, array<string, mixed>>, total_sale: float}
      */
     private function customerRows(int $supplierId, string $startDate, string $endDate): array
     {
         $benefits = [];
-        $customerSettlements = [];
-        $settlementSales = [];
 
         foreach (self::ENTRY_TABLES as $table) {
             $entries = DB::table("{$table} as entry")
@@ -246,71 +242,50 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
                 ->whereNull('settlement.deleted_at')
                 ->where('settlement.supplier_id', $supplierId)
                 ->whereBetween('settlement.settlement_date', [$startDate, $endDate])
-                ->groupBy('entry.customer_id', 'settlement.id', 'settlement.total_sales_amount')
-                ->selectRaw('entry.customer_id, settlement.id as settlement_id, settlement.total_sales_amount as sale, SUM(entry.tax_amount) as tax_amount')
+                ->groupBy('entry.customer_id')
+                ->selectRaw('entry.customer_id, SUM(entry.tax_amount) as tax_amount')
                 ->get();
 
             foreach ($entries as $entry) {
                 $benefits[$entry->customer_id] = ($benefits[$entry->customer_id] ?? 0) + (float) $entry->tax_amount;
-                $customerSettlements[$entry->customer_id][$entry->settlement_id] = (float) $entry->sale;
-                $settlementSales[$entry->settlement_id] = (float) $entry->sale;
             }
         }
 
-        // Posted settlements with sales but no advance tax entry on any customer (no NTN benefit given)
-        // still carry sale and 2.5% advance tax. Without them the totals fall short of the Advance Tax
-        // Sales Register, so they are shown together on one "no customer entry" row.
-        $unassignedSettlements = DB::table('sales_settlements as settlement')
+        $totalSale = (float) DB::table('sales_settlements as settlement')
             ->where('settlement.status', 'posted')
             ->whereNull('settlement.deleted_at')
             ->where('settlement.supplier_id', $supplierId)
             ->whereBetween('settlement.settlement_date', [$startDate, $endDate])
-            ->when($settlementSales !== [], fn ($query) => $query->whereNotIn('settlement.id', array_keys($settlementSales)))
-            ->where('settlement.total_sales_amount', '!=', 0)
-            ->orderBy('settlement.settlement_date')
-            ->orderBy('settlement.id')
-            ->get(['settlement.id', 'settlement.settlement_number', 'settlement.settlement_date', 'settlement.total_sales_amount']);
-
-        $unassignedSales = $unassignedSettlements->pluck('total_sales_amount', 'id')->map(fn ($sale) => (float) $sale);
+            ->sum('settlement.total_sales_amount');
 
         $customers = Customer::query()->whereIn('id', array_keys($benefits))->get()->keyBy('id');
 
         $rows = collect($benefits)
-            ->map(function (float $benefit, int $customerId) use ($customers, $customerSettlements) {
-                $sale = array_sum($customerSettlements[$customerId]);
-                $advanceTax = $sale * self::ADVANCE_TAX_RATE;
-
-                return [
-                    'customer_id' => $customerId,
-                    'customer' => $customers->get($customerId),
-                    'sale' => $sale,
-                    'advance_tax' => $advanceTax,
-                    'benefits' => $benefit,
-                    'received' => $advanceTax - $benefit,
-                ];
-            })
+            ->map(fn (float $benefit, int $customerId) => [
+                'customer_id' => $customerId,
+                'customer' => $customers->get($customerId),
+                'sale' => round($benefit / self::ADVANCE_TAX_RATE, 2),
+                'advance_tax' => $benefit,
+                'benefits' => $benefit,
+                'received' => 0.0,
+            ])
             ->sortBy(fn (array $row) => mb_strtolower((string) $row['customer']?->customer_name))
             ->values();
 
-        if ($unassignedSales->isNotEmpty()) {
-            $sale = (float) $unassignedSales->sum();
+        $nonNtnSale = round($totalSale - $rows->sum('sale'), 2);
+
+        if ($nonNtnSale !== 0.0) {
             $rows->push([
                 'customer_id' => null,
                 'customer' => null,
-                'unassigned' => true,
-                'settlements' => $unassignedSettlements->map(fn (object $settlement) => [
-                    'id' => $settlement->id,
-                    'number' => $settlement->settlement_number,
-                    'date' => $settlement->settlement_date,
-                    'sale' => (float) $settlement->total_sales_amount,
-                ])->all(),
-                'sale' => $sale,
-                'advance_tax' => $sale * self::ADVANCE_TAX_RATE,
-                'benefits' => 0.0,
-                'received' => $sale * self::ADVANCE_TAX_RATE,
+                'non_ntn' => true,
+                'sale' => $nonNtnSale,
+                'advance_tax' => null,
+                'benefits' => null,
+                'received' => null,
             ]);
         }
 
-        return ['rows' => $rows, 'settlement_sales' => collect($settlementSales)->union($unassignedSales->all())];
+        return ['rows' => $rows, 'total_sale' => $totalSale];
     }
 }

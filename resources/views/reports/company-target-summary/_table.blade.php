@@ -12,7 +12,7 @@
             <th class="text-right px-1 py-0.5">Target</th>
             <th class="text-right px-1 py-0.5">Achieved</th>
             <th class="text-right px-1 py-0.5">Remaining/Day</th>
-            <th class="text-right px-1 py-0.5">Remaining Per Day</th>
+            <th class="text-right px-1 py-0.5">Remaining Per Day<div class="text-xs font-normal">÷ {{ $summary['month_days_left'] }} working days</div></th>
             <th class="text-right px-1 py-0.5">%age</th>
         </tr>
     </thead>

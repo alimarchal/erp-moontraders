@@ -102,7 +102,7 @@ it('works each customer sale back from the 2% benefit and keeps the rest as non-
         ->and($response->viewData('totalReceived'))->toBe(36400.0);
 
     $response->assertSee('C-1001')->assertSee('Ali Mart')->assertSee('Main Bazar, Chattar, Muzaffarabad')
-        ->assertSee('82101-1234567-1')->assertSee('1234567-8')
+        ->assertDontSee('82101-1234567-1')->assertSee('1234567-8')
         ->assertSee('Sale to NON NTN customers')->assertSee('Total (2 customers)')
         ->assertSee('Tax to pay now')->assertDontSee('Wholesale buyer');
 });
@@ -159,12 +159,11 @@ it('ties the customer-wise benefits to the 1161 amount posted on the settlements
     $response->assertDontSee('added up customer-wise')->assertDontSee('Difference');
 });
 
-it('shows the CNIC after the customer code instead of in a column of its own', function () {
+it('does not show the CNIC in the customer column', function () {
     ($this->entry)(($this->settle)($this->nestle->id, '2026-10-05', 'posted', 100000), $this->customerA, 0, 250);
 
-    $response = $this->actingAs($this->admin)->get(($this->url)());
-
-    $response->assertSee('CNIC 82101-1234567-1')->assertDontSee('>CNIC</th>', false)->assertSee('>NTN</th>', false);
+    $this->actingAs($this->admin)->get(($this->url)())
+        ->assertDontSee('CNIC')->assertDontSee('82101-1234567-1')->assertSee('C-1001')->assertSee('Ali Mart');
 });
 
 it('downloads an A4 PDF in portrait and in landscape', function () {

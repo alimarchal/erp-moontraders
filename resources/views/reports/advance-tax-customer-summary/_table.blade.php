@@ -32,12 +32,8 @@
             <tr>
                 <td class="text-center" style="vertical-align:middle">{{ $index + 1 }}</td>
                 <td class="px-2" style="vertical-align:middle">
-                    <div>
-                        <span class="font-semibold">{{ $customer?->customer_code }}</span>
-                        @if ($customer?->owner_cnic)<span class="text-xs"> | CNIC {{ $customer->owner_cnic }}</span>@endif
-                    </div>
-                    <div class="font-medium">{{ $customer?->business_name ?: $customer?->customer_name }}</div>
-                    @if ($address)<div class="text-xs text-gray-500">{{ $address }}</div>@endif
+                    <div class="font-semibold">{{ $customer?->business_name ?: $customer?->customer_name }}</div>
+                    <div class="text-xs text-gray-500">{{ $customer?->customer_code }}@if ($address) · {{ $address }}@endif</div>
                 </td>
                 <td class="px-2 whitespace-nowrap text-center" style="vertical-align:middle">{{ $customer?->ntn ?: '—' }}</td>
                 <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['sale'], 2) }}</td>

@@ -209,7 +209,7 @@
                     @include('reports.advance-tax-customer-summary._table')
 
                     <p class="text-xs mt-1">
-                        A customer's sale is worked back from the advance tax benefit (benefit / 2.5%). The last row is the rest of the settlements' Total Sales, sold to non-NTN customers, with no advance tax. Both together equal the Total row.
+                        A customer's sale is worked back from the benefit given (benefit / 2%). The advance tax is 2.5% of the sale; the benefit is part of it and the rest is received from the customer. Sale not made to NTN customers carries the full 2.5%.
                     </p>
                 </div>
             @endif

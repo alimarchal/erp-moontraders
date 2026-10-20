@@ -101,7 +101,7 @@ it('works each customer sale back from the 2% benefit and keeps the rest as non-
         ->and($response->viewData('ntnReceived'))->toBe(275.0)
         ->and($response->viewData('totalReceived'))->toBe(36400.0);
 
-    $response->assertSee('C-1001')->assertSee('Ali Mart')->assertSee('Main Bazar, Chattar, Muzaffarabad')
+    $response->assertSee('C-1001')->assertSee('Ali Mart, Main Bazar, Chattar, Muzaffarabad')
         ->assertDontSee('82101-1234567-1')->assertSee('1234567-8')
         ->assertSee('Sale to NON NTN customers')->assertSee('Total (2 customers)')
         ->assertSee('Tax to pay now')->assertDontSee('Wholesale buyer');

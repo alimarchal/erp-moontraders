@@ -26,8 +26,8 @@
                 <tr>
                     <td class="center">{{ $index + 1 }}</td>
                     <td style="word-wrap: break-word">
-                            <span class="bold">{{ $customer?->customer_code }}</span>@if ($customer?->owner_cnic) <span class="small muted">| CNIC {{ $customer->owner_cnic }}</span>@endif<br>
-                            {{ $customer?->business_name ?: $customer?->customer_name }}@if ($address)<span class="small muted">, {{ $address }}</span>@endif
+                            <span class="bold">{{ $customer?->business_name ?: $customer?->customer_name }}</span><br>
+                            <span class="small muted">{{ $customer?->customer_code }}@if ($address) · {{ $address }}@endif</span>
                     </td>
                     <td>{{ $customer?->ntn ?: '-' }}</td>
                     <td class="num">{{ $money($row['sale']) }}</td>

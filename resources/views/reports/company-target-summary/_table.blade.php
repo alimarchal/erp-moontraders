@@ -12,6 +12,7 @@
             <th class="text-right px-1 py-0.5">Target</th>
             <th class="text-right px-1 py-0.5">Achieved</th>
             <th class="text-right px-1 py-0.5">Remaining/Day</th>
+            <th class="text-right px-1 py-0.5">Remaining Per Day</th>
             <th class="text-right px-1 py-0.5">%age</th>
         </tr>
     </thead>
@@ -24,11 +25,12 @@
                 <td class="text-right font-mono px-1 py-0.5">{{ $money($row['total']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5">{{ $money($row['achieved']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5">{{ $money($row['remaining_per_day']) }}</td>
+                <td class="text-right font-mono px-1 py-0.5">{{ $money($row['remaining_per_day_share']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5">{{ $percent($row['percentage']) }}</td>
             </tr>
         @empty
             <tr>
-                <td colspan="7" class="text-center italic text-gray-500 px-1 py-0.5">No data found</td>
+                <td colspan="8" class="text-center italic text-gray-500 px-1 py-0.5">No data found</td>
             </tr>
         @endforelse
     </tbody>
@@ -39,6 +41,7 @@
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['total']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['achieved']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['remaining_per_day']) }}</td>
+                <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $money($summary['totals']['remaining_per_day_share']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ $percent($summary['totals']['percentage'], 2) }}</td>
             </tr>
         </tfoot>

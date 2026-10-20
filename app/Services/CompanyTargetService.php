@@ -83,6 +83,7 @@ class CompanyTargetService
                 'total' => $total,
                 'achieved' => $sales,
                 'remaining_per_day' => $remaining / $daysLeft,
+                'remaining_per_day_share' => $remaining / $daysLeft / $daysLeft,
                 'percentage' => $total > 0 ? $sales / $total * 100 : 0.0,
             ];
         })->sortBy([['position', 'asc'], ['employee', 'asc']])->values();
@@ -96,6 +97,7 @@ class CompanyTargetService
                 'total' => $total,
                 'achieved' => $sales,
                 'remaining_per_day' => (float) $rows->sum('remaining_per_day'),
+                'remaining_per_day_share' => (float) $rows->sum('remaining_per_day_share'),
                 'percentage' => $total > 0 ? $sales / $total * 100 : 0.0,
             ],
             'days_left' => $daysLeft,

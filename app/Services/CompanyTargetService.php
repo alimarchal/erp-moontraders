@@ -34,10 +34,9 @@ class CompanyTargetService
      *
      * Total is the sum of the target sheets overlapping the dates; Achieved is the sales of
      * posted settlements in the dates; Remaining/Day spreads what is left over the working days
-     * still to go (Monday to Saturday, today to the end date, at least one). Remaining Per Day divides
-     * that again by the working days left in the month of the end date.
+     * still to go (Monday to Saturday, today to the end date, at least one).
      *
-     * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, float>, days_left: int, month_days_left: int}
+     * @return array{rows: Collection<int, array<string, mixed>>, totals: array<string, float>, days_left: int}
      */
     public function summary(int $supplierId, CarbonInterface $from, CarbonInterface $to, ?CarbonInterface $today = null): array
     {
@@ -67,12 +66,11 @@ class CompanyTargetService
         $anchor = $today->copy()->startOfDay();
         $anchor = $anchor->lt($from) ? $from->copy()->startOfDay() : $anchor;
         $daysLeft = max(1, $this->workingDaysBetween($anchor, $to));
-        $monthDaysLeft = max(1, $this->workingDaysBetween($anchor, $to->copy()->endOfMonth()));
 
         // Rows keep the order of the target sheet; salesmen with sales but no target follow, by name.
         $sheetOrder = $lines->pluck('employee_id')->unique()->values()->flip();
 
-        $rows = $employees->map(function (Employee $employee) use ($lines, $achieved, $daysLeft, $monthDaysLeft, $sheetOrder) {
+        $rows = $employees->map(function (Employee $employee) use ($lines, $achieved, $daysLeft, $sheetOrder) {
             $employeeLines = $lines->where('employee_id', $employee->id);
             $total = (float) $employeeLines->sum('target_amount');
             $sales = (float) ($achieved[$employee->id] ?? 0);
@@ -85,7 +83,6 @@ class CompanyTargetService
                 'total' => $total,
                 'achieved' => $sales,
                 'remaining_per_day' => $remaining / $daysLeft,
-                'remaining_per_day_share' => $remaining / $daysLeft / $monthDaysLeft,
                 'percentage' => $total > 0 ? $sales / $total * 100 : 0.0,
             ];
         })->sortBy([['position', 'asc'], ['employee', 'asc']])->values();
@@ -99,11 +96,9 @@ class CompanyTargetService
                 'total' => $total,
                 'achieved' => $sales,
                 'remaining_per_day' => (float) $rows->sum('remaining_per_day'),
-                'remaining_per_day_share' => (float) $rows->sum('remaining_per_day_share'),
                 'percentage' => $total > 0 ? $sales / $total * 100 : 0.0,
             ],
             'days_left' => $daysLeft,
-            'month_days_left' => $monthDaysLeft,
         ];
     }
 

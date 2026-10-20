@@ -14,7 +14,7 @@
                 <th class="num">Target</th>
                 <th class="num">Achieved</th>
                 <th class="num">Remaining / Day</th>
-                <th class="num">Remaining Per Day<br>÷ {{ $summary['month_days_left'] }} working days</th>
+                <th class="num">Remaining Target Per Day<br>÷ {{ $summary['month_days_left'] }} working days</th>
                 <th class="num" style="width: 11%">%age</th>
             </tr>
         </thead>
@@ -47,5 +47,5 @@
             </tfoot>
         @endif
     </table>
-    <div class="note">Achieved is the sales of posted settlements in the period. Remaining / Day spreads what is left of the target over the working days still to go; Remaining Per Day divides that by the working days left in the month. Percent: green is 100% or more, amber from 70%, red below.</div>
+    <div class="note">Achieved is the sales of posted settlements in the period. Remaining / Day spreads what is left of the target over the working days still to go; Remaining Target Per Day divides that by the working days left in the month. Percent: green is 100% or more, amber from 70%, red below.</div>
 @endsection

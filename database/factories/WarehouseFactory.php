@@ -18,7 +18,7 @@ class WarehouseFactory extends Factory
     public function definition(): array
     {
         return [
-            'warehouse_name' => fake()->company().' Warehouse',
+            'warehouse_name' => fake()->company().' Warehouse '.fake()->unique()->numerify('#####'),
             'disabled' => fake()->boolean(10),
             'is_group' => fake()->boolean(20),
             'is_rejected_warehouse' => fake()->boolean(10),

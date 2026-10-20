@@ -132,10 +132,10 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
         return [
             [
                 'title' => 'Where the advance tax went',
-                'subtitle' => 'Benefit given to NTN customers and what was received',
+                'subtitle' => 'Benefit given to NTN customers and the tax still to pay',
                 'accent' => '#7c3aed',
                 'svg' => fn (int $w) => SvgChart::donut(
-                    ['Received', 'Benefits (NTN)'],
+                    ['Tax to pay', 'Benefits (NTN)'],
                     [max($data['totalReceived'], 0), max($data['totalBenefits'], 0)],
                     ['#16a34a', '#7c3aed'],
                     $w, 200, SvgChart::money($data['totalAdvanceTax']), 'advance tax'
@@ -161,7 +161,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
                     $byTax->take($w < 500 ? 4 : 6)->map(fn (array $row) => explode(' ', $name($row))[0])->all(),
                     [
                         ['name' => 'Benefits (NTN)', 'color' => '#7c3aed', 'values' => $byTax->take($w < 500 ? 4 : 6)->pluck('benefits')->all()],
-                        ['name' => 'Received', 'color' => '#16a34a', 'values' => $byTax->take($w < 500 ? 4 : 6)->pluck('received')->all()],
+                        ['name' => 'Received from customer', 'color' => '#16a34a', 'values' => $byTax->take($w < 500 ? 4 : 6)->pluck('received')->all()],
                     ],
                     $w, 200
                 ),

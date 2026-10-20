@@ -30,6 +30,12 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
     private const ADVANCE_TAX_RATE = 0.025;
 
     /**
+     * Benefit (account 1161) given to an NTN customer, as a share of the customer's sale. The rest of
+     * the 2.5% advance tax is what is received from the customer.
+     */
+    private const BENEFIT_RATE = 0.02;
+
+    /**
      * Per-customer advance tax entries live in one table for normal suppliers and in the
      * "income" table for suppliers flagged is_advance_tax_income. A supplier only ever
      * writes to one of them, so both are read and added together.
@@ -73,7 +79,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
                 'Period: '.Carbon::parse($data['startDate'])->format('d M Y').' to '.Carbon::parse($data['endDate'])->format('d M Y'),
             ],
             'meta' => [
-                'Customers' => $data['rows']->reject(fn ($row) => $row['non_ntn'] ?? false)->count(),
+                'Customers' => $data['rows']->count(),
                 'Printed by' => $request->user()->name,
                 'On' => now()->format('d M Y, h:i A'),
             ],
@@ -94,13 +100,13 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             return [];
         }
 
-        $customers = $data['rows']->reject(fn ($row) => $row['non_ntn'] ?? false)->count();
+        $customers = $data['rows']->count();
 
         return [
             ['label' => 'Sale', 'value' => 'Rs '.SvgChart::money($data['totalSale']), 'note' => number_format($data['totalSale']), 'color' => '#2563eb'],
             ['label' => 'Adv. tax (2.5%)', 'value' => 'Rs '.SvgChart::money($data['totalAdvanceTax']), 'note' => number_format($data['totalAdvanceTax']), 'color' => '#f97316'],
-            ['label' => 'Benefits (NTN)', 'value' => 'Rs '.SvgChart::money($data['totalBenefits']), 'note' => 'account 1161', 'color' => '#7c3aed'],
-            ['label' => 'Received', 'value' => 'Rs '.SvgChart::money($data['totalReceived']), 'note' => 'advance tax - benefits', 'color' => '#16a34a'],
+            ['label' => 'Benefits (NTN)', 'value' => 'Rs '.SvgChart::money($data['totalBenefits']), 'note' => 'account 1161, 2%', 'color' => '#7c3aed'],
+            ['label' => 'Tax to pay', 'value' => 'Rs '.SvgChart::money($data['totalReceived']), 'note' => 'advance tax - benefits', 'color' => '#16a34a'],
             ['label' => 'Customers', 'value' => number_format($customers), 'note' => 'with an entry', 'color' => '#0891b2'],
         ];
     }
@@ -113,7 +119,7 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
      */
     private function charts(array $data): array
     {
-        $customers = $data['rows']->reject(fn ($row) => $row['non_ntn'] ?? false);
+        $customers = $data['rows'];
 
         if (! $data['hasFilter'] || $customers->isEmpty()) {
             return [];
@@ -202,9 +208,12 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             ['rows' => $rows, 'total_sale' => $totalSale] = $this->customerRows($selectedSupplier->id, $startDate, $endDate);
         }
 
-        // Advance tax is only taken on NTN customers' sales, so the non-NTN row adds nothing to it.
-        $totalAdvanceTax = (float) $rows->sum('advance_tax');
-        $totalBenefits = (float) $rows->sum('benefits');
+        $ntnSale = round((float) $rows->sum('sale'), 2);
+        $ntnAdvanceTax = round((float) $rows->sum('advance_tax'), 2);
+        $totalBenefits = round((float) $rows->sum('benefits'), 2);
+        $ntnReceived = round((float) $rows->sum('received'), 2);
+        $nonNtnSale = round($totalSale - $ntnSale, 2);
+        $nonNtnAdvanceTax = round($nonNtnSale * self::ADVANCE_TAX_RATE, 2);
 
         return [
             'rows' => $rows,
@@ -215,19 +224,25 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             'endDate' => $endDate,
             'hasFilter' => $selectedSupplier !== null,
             'totalSale' => $totalSale,
-            'totalAdvanceTax' => $totalAdvanceTax,
+            'ntnSale' => $ntnSale,
+            'ntnAdvanceTax' => $ntnAdvanceTax,
+            'ntnReceived' => $ntnReceived,
+            'nonNtnSale' => $nonNtnSale,
+            'nonNtnAdvanceTax' => $nonNtnAdvanceTax,
+            'totalAdvanceTax' => round($ntnAdvanceTax + $nonNtnAdvanceTax, 2),
             'totalBenefits' => $totalBenefits,
-            'totalReceived' => $totalAdvanceTax - $totalBenefits,
+            // What is still to be paid: received from NTN customers plus the 2.5% on the non-NTN sale.
+            'totalReceived' => round($ntnReceived + $nonNtnAdvanceTax, 2),
         ];
     }
 
     /**
-     * One row per NTN customer, added up over the dates, and a last row for the rest of the sales.
+     * One row per NTN customer, added up over the dates, and the settlements' total sale.
      *
-     * The entries only record the customer and the benefit given (account 1161), which is 2.5% of
-     * what the customer bought, so the customer's sale is worked back from it (benefit / 2.5%).
-     * The settlements' Total Sales minus the NTN customers' sale is what was sold to non-NTN
-     * customers; it carries no advance tax. NTN sale + non-NTN sale always equals the Total Sales.
+     * The entries only record the customer and the benefit given (account 1161), which is 2% of what
+     * the customer bought, so the customer's sale is worked back from it (benefit / 2%). The 2.5%
+     * advance tax on that sale less the benefit is what is received from the customer. What is left
+     * of the settlements' Total Sales after the NTN customers is the non-NTN sale.
      *
      * @return array{rows: Collection<int, array<string, mixed>>, total_sale: float}
      */
@@ -261,30 +276,21 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
         $customers = Customer::query()->whereIn('id', array_keys($benefits))->get()->keyBy('id');
 
         $rows = collect($benefits)
-            ->map(fn (float $benefit, int $customerId) => [
-                'customer_id' => $customerId,
-                'customer' => $customers->get($customerId),
-                'sale' => round($benefit / self::ADVANCE_TAX_RATE, 2),
-                'advance_tax' => $benefit,
-                'benefits' => $benefit,
-                'received' => 0.0,
-            ])
+            ->map(function (float $benefit, int $customerId) use ($customers) {
+                $sale = round($benefit / self::BENEFIT_RATE, 2);
+                $advanceTax = round($sale * self::ADVANCE_TAX_RATE, 2);
+
+                return [
+                    'customer_id' => $customerId,
+                    'customer' => $customers->get($customerId),
+                    'sale' => $sale,
+                    'advance_tax' => $advanceTax,
+                    'benefits' => $benefit,
+                    'received' => round($advanceTax - $benefit, 2),
+                ];
+            })
             ->sortBy(fn (array $row) => mb_strtolower((string) $row['customer']?->customer_name))
             ->values();
-
-        $nonNtnSale = round($totalSale - $rows->sum('sale'), 2);
-
-        if ($nonNtnSale !== 0.0) {
-            $rows->push([
-                'customer_id' => null,
-                'customer' => null,
-                'non_ntn' => true,
-                'sale' => $nonNtnSale,
-                'advance_tax' => null,
-                'benefits' => null,
-                'received' => null,
-            ]);
-        }
 
         return ['rows' => $rows, 'total_sale' => $totalSale];
     }

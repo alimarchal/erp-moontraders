@@ -76,39 +76,35 @@ it('asks for a company before showing anything', function () {
         ->assertOk()->assertSee('Please select a company');
 });
 
-it('works each customer sale back from the benefit and keeps the rest as non-NTN sale', function () {
+it('works each customer sale back from the 2% benefit and keeps the rest as non-NTN sale', function () {
     $first = ($this->settle)($this->nestle->id, '2026-10-03', 'posted', 1000000);
     $second = ($this->settle)($this->nestle->id, '2026-10-17', 'posted', 500000);
-    ($this->entry)($first, $this->customerA, 0, 525);
-    ($this->entry)($second, $this->customerA, 0, 636);
+    ($this->entry)($first, $this->customerA, 0, 400);
+    ($this->entry)($second, $this->customerA, 0, 600);
     ($this->entry)($second, $this->customerB, 0, 100);
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
     $rows = $response->viewData('rows');
 
-    // 525 + 636 = 1161 is 2.5% of 46,440; 100 is 2.5% of 4,000.
-    expect($rows)->toHaveCount(3)
+    // 1,000 benefit is 2% of 50,000 sale; 100 is 2% of 5,000.
+    expect($rows)->toHaveCount(2)
         ->and($rows[0]['customer']->customer_code)->toBe('C-1001')
-        ->and($rows[0]['sale'])->toBe(46440.0)
-        ->and($rows[0]['advance_tax'])->toBe(1161.0)
-        ->and($rows[0]['benefits'])->toBe(1161.0)
-        ->and($rows[0]['received'])->toBe(0.0)
-        ->and($rows[1]['sale'])->toBe(4000.0)
-        ->and($rows[2]['non_ntn'])->toBeTrue()
-        ->and($rows[2]['customer'])->toBeNull()
-        ->and($rows[2]['sale'])->toBe(1500000.0 - 46440.0 - 4000.0)
-        ->and($rows[2]['advance_tax'])->toBeNull()
-        // NTN sale plus non-NTN sale is the settlements' Total Sales.
-        ->and($rows->sum('sale'))->toBe($response->viewData('totalSale'))
-        ->and($response->viewData('totalSale'))->toBe(1500000.0)
-        ->and($response->viewData('totalAdvanceTax'))->toBe(1261.0)
-        ->and($response->viewData('totalBenefits'))->toBe(1261.0)
-        ->and($response->viewData('totalReceived'))->toBe(0.0);
+        ->and($rows[0]['sale'])->toBe(50000.0)
+        ->and($rows[0]['advance_tax'])->toBe(1250.0)
+        ->and($rows[0]['benefits'])->toBe(1000.0)
+        ->and($rows[0]['received'])->toBe(250.0)
+        ->and($rows[1]['sale'])->toBe(5000.0)
+        ->and($response->viewData('ntnSale'))->toBe(55000.0)
+        ->and($response->viewData('nonNtnSale'))->toBe(1445000.0)
+        ->and($response->viewData('nonNtnAdvanceTax'))->toBe(36125.0)
+        ->and($response->viewData('ntnSale') + $response->viewData('nonNtnSale'))->toBe($response->viewData('totalSale'))
+        ->and($response->viewData('ntnReceived'))->toBe(275.0)
+        ->and($response->viewData('totalReceived'))->toBe(36400.0);
 
     $response->assertSee('C-1001')->assertSee('Ali Mart')->assertSee('Main Bazar, Chattar, Muzaffarabad')
         ->assertSee('82101-1234567-1')->assertSee('1234567-8')
         ->assertSee('Sale to NON NTN customers')->assertSee('Total (2 customers)')
-        ->assertDontSee('No customer entry')->assertDontSee('Wholesale buyer');
+        ->assertSee('Tax to pay now')->assertDontSee('Wholesale buyer');
 });
 
 it('shows all the sale as non-NTN sale when no customer has an advance tax entry', function () {
@@ -117,13 +113,11 @@ it('shows all the sale as non-NTN sale when no customer has an advance tax entry
     ($this->settle)($this->nestle->id, '2026-10-16', 'draft', 5000);
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
-    $rows = $response->viewData('rows');
 
-    expect($rows)->toHaveCount(1)
-        ->and($rows[0]['non_ntn'])->toBeTrue()
-        ->and($rows[0]['sale'])->toBe(7645.74)
+    expect($response->viewData('rows'))->toHaveCount(0)
+        ->and($response->viewData('nonNtnSale'))->toBe(7645.74)
         ->and($response->viewData('totalSale'))->toBe(7645.74)
-        ->and($response->viewData('totalAdvanceTax'))->toBe(0.0);
+        ->and($response->viewData('totalReceived'))->toBe(round(7645.74 * 0.025, 2));
 });
 
 it('reads entries of suppliers that store advance tax as income as well', function () {
@@ -133,7 +127,7 @@ it('reads entries of suppliers that store advance tax as income as well', functi
 
     $rows = $this->actingAs($this->admin)->get(($this->url)())->viewData('rows');
 
-    expect($rows)->toHaveCount(2)->and($rows[0]['benefits'])->toBe(250.0)->and($rows[0]['sale'])->toBe(10000.0)->and($rows[1]['sale'])->toBe(70000.0);
+    expect($rows)->toHaveCount(1)->and($rows[0]['benefits'])->toBe(250.0)->and($rows[0]['sale'])->toBe(12500.0);
 });
 
 it('leaves out drafts, other dates and other companies', function () {
@@ -144,7 +138,7 @@ it('leaves out drafts, other dates and other companies', function () {
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
 
-    expect($response->viewData('rows'))->toHaveCount(2)
+    expect($response->viewData('rows'))->toHaveCount(1)
         ->and($response->viewData('totalBenefits'))->toBe(250.0)
         ->and($response->viewData('totalSale'))->toBe(100000.0);
 });

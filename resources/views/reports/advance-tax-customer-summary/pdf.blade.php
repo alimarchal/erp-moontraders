@@ -13,7 +13,7 @@
                 <th style="width: 13%">NTN</th>
                 <th class="num">Sale</th>
                 <th class="num">Advance Tax<br>(2.5%)</th>
-                <th class="num">Benefits<br>(NTN customer)</th>
+                <th class="num">Benefits (2%)<br>(NTN customer)</th>
                 <th class="num">Received from<br>customer</th>
             </tr>
         </thead>
@@ -59,7 +59,7 @@
                 <th style="width: 13%">NTN</th>
                 <th class="num">Sale</th>
                 <th class="num">Advance Tax<br>(2.5%)</th>
-                <th class="num">Benefits<br>(NTN customer)</th>
+                <th class="num">Benefits (2%)<br>(NTN customer)</th>
                 <th class="num">Received from<br>customer</th>
             </tr>
         </thead>

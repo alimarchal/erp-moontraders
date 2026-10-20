@@ -223,7 +223,7 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
         $supplier = $supplierId ? Supplier::query()->where('disabled', false)->find($supplierId, ['id', 'supplier_name']) : null;
 
         $from = $request->filled('from') ? Carbon::parse($request->input('from'))->startOfDay() : now()->startOfMonth();
-        $to = $request->filled('to') ? Carbon::parse($request->input('to'))->startOfDay() : now()->startOfDay();
+        $to = $request->filled('to') ? Carbon::parse($request->input('to'))->startOfDay() : now()->endOfMonth()->startOfDay();
 
         return [
             'supplier' => $supplier,

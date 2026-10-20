@@ -11,7 +11,7 @@
             <th>Target</th>
             <th>Achieved</th>
             <th>Remaining/Day</th>
-            <th>Remaining Per Day</th>
+            <th>Remaining Per Day (÷ {{ $summary['month_days_left'] ?? '-' }} working days)</th>
             <th>%age</th>
         </tr>
     </thead>

@@ -2,24 +2,24 @@
 <table class="report-table">
     <thead>
         <tr>
-            <th class="text-center font-bold" style="width:4%">#</th>
-            <th class="text-center font-bold px-2" style="width:34%">Customer</th>
-            <th class="text-center font-bold px-2 whitespace-nowrap" style="width:11%">NTN</th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold" style="vertical-align:middle;width:4%">#</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:34%">Customer</th>
+            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:11%">NTN</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Sale
-                <div class="text-xs font-normal">Benefit ÷ 2%</div>
+                <div class="text-xs font-normal text-gray-500">Benefit ÷ 2%</div>
             </th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Advance Tax (2.5%)
-                <div class="text-xs font-normal">Sale × 2.5%</div>
+                <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Advance Tax Benefits<br>(NTN Customer)
-                <div class="text-xs font-normal">Account 1161</div>
+                <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Advance Tax<br>Received From Customer
-                <div class="text-xs font-normal">Adv. Tax − Benefits</div>
+                <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
             </th>
         </tr>
     </thead>
@@ -30,20 +30,24 @@
                 $address = collect([$customer?->address, $customer?->sub_locality, $customer?->city])->filter()->implode(', ');
             @endphp
             <tr>
-                <td class="text-center">{{ $index + 1 }}</td>
-                <td class="px-2">
-                    <span class="font-semibold">{{ $customer?->customer_code }}</span>@if ($customer?->owner_cnic) <span class="text-xs">| CNIC {{ $customer->owner_cnic }}</span>@endif<br>
-                    {{ $customer?->business_name ?: $customer?->customer_name }}@if ($address)<span class="text-xs">, {{ $address }}</span>@endif
+                <td class="text-center" style="vertical-align:middle">{{ $index + 1 }}</td>
+                <td class="px-2" style="vertical-align:middle">
+                    <div>
+                        <span class="font-semibold">{{ $customer?->customer_code }}</span>
+                        @if ($customer?->owner_cnic)<span class="text-xs"> | CNIC {{ $customer->owner_cnic }}</span>@endif
+                    </div>
+                    <div class="font-medium">{{ $customer?->business_name ?: $customer?->customer_name }}</div>
+                    @if ($address)<div class="text-xs text-gray-500">{{ $address }}</div>@endif
                 </td>
-                <td class="px-2 whitespace-nowrap">{{ $customer?->ntn ?: '—' }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['sale'], 2) }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['advance_tax'], 2) }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['benefits'], 2) }}</td>
-                <td class="text-right font-mono px-2">{{ number_format($row['received'], 2) }}</td>
+                <td class="px-2 whitespace-nowrap text-center" style="vertical-align:middle">{{ $customer?->ntn ?: '—' }}</td>
+                <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['sale'], 2) }}</td>
+                <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['advance_tax'], 2) }}</td>
+                <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['benefits'], 2) }}</td>
+                <td class="text-right font-mono px-2" style="vertical-align:middle">{{ number_format($row['received'], 2) }}</td>
             </tr>
         @empty
             <tr>
-                <td colspan="7" class="text-center italic  px-2 py-2">No advance tax entries found for this company and period.</td>
+                <td colspan="7" class="text-center italic text-gray-500 px-2 py-2">No advance tax entries found for this company and period.</td>
             </tr>
         @endforelse
     </tbody>
@@ -64,23 +68,23 @@
 <table class="report-table">
     <thead>
         <tr>
-            <th class="text-center font-bold px-2" style="width:38%">Customer</th>
-            <th class="text-center font-bold px-2 whitespace-nowrap" style="width:11%">NTN</th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:38%">Customer</th>
+            <th class="text-center font-bold px-2 whitespace-nowrap" style="vertical-align:middle;width:11%">NTN</th>
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Sale
-                <div class="text-xs font-normal">Total Sales − NTN sale</div>
+                <div class="text-xs font-normal text-gray-500">Total Sales − NTN sale</div>
             </th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Advance Tax (2.5%)
-                <div class="text-xs font-normal">Sale × 2.5%</div>
+                <div class="text-xs font-normal text-gray-500">Sale × 2.5%</div>
             </th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Advance Tax Benefits<br>(NTN Customer)
-                <div class="text-xs font-normal">Account 1161</div>
+                <div class="text-xs font-normal text-gray-500">Account 1161</div>
             </th>
-            <th class="text-center font-bold px-2" style="width:12.75%">
+            <th class="text-center font-bold px-2" style="vertical-align:middle;width:12.75%">
                 Advance Tax<br>Received From Customer
-                <div class="text-xs font-normal">Adv. Tax − Benefits</div>
+                <div class="text-xs font-normal text-gray-500">Adv. Tax − Benefits</div>
             </th>
         </tr>
     </thead>

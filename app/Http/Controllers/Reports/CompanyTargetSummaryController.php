@@ -96,7 +96,7 @@ class CompanyTargetSummaryController extends Controller implements HasMiddleware
             ['label' => 'Achieved', 'value' => 'Rs '.SvgChart::money($totals['achieved']), 'note' => number_format($totals['achieved']), 'color' => '#16a34a'],
             ['label' => 'Remaining', 'value' => 'Rs '.SvgChart::money($remaining), 'note' => 'Rs '.SvgChart::money($totals['remaining_per_day']).' a day', 'color' => '#f97316'],
             ['label' => 'Achievement', 'value' => number_format($totals['percentage'], 1).'%', 'note' => $summary['rows']->count().' salesmen', 'color' => '#7c3aed'],
-            ['label' => 'Days left', 'value' => (string) $summary['days_left'], 'note' => 'to the end date', 'color' => '#0891b2'],
+            ['label' => 'Days left', 'value' => (string) $summary['days_left'], 'note' => 'working days, Mon-Sat', 'color' => '#0891b2'],
         ];
     }
 

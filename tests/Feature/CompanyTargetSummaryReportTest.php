@@ -58,7 +58,7 @@ it('adds up posted sales inside the dates only, then works out remaining per day
     $summary = $response->viewData('summary');
     $tayyab = $summary['rows']->firstWhere('employee', 'Tayyab Ali');
 
-    expect($summary['days_left'])->toBe(18)
+    expect($summary['days_left'])->toBe(16)
         ->and($tayyab['total'])->toBe(6014521.0)
         ->and($tayyab['achieved'])->toBe(10179281.0)
         ->and($tayyab['remaining_per_day'])->toBe(0.0)
@@ -72,12 +72,12 @@ it('adds up posted sales inside the dates only, then works out remaining per day
         ->and(round($tayyab['percentage']))->toBe(20.0);
 });
 
-it('spreads what is left over the days to the end date', function () {
+it('spreads what is left over the working days (Monday to Saturday) to the end date', function () {
     CompanyTargetLine::query()->where('employee_id', $this->tayyab->id)->update(['target_amount' => 20000000]);
     $response = $this->actingAs($this->admin)->get(route('reports.company-target-summary.index', array_merge($this->query, ['to' => '2026-10-31'])));
 
     $tayyab = $response->viewData('summary')['rows']->firstWhere('employee', 'Tayyab Ali');
-    expect(round($tayyab['remaining_per_day']))->toBe(round((20000000 - 10179281) / 18));
+    expect(round($tayyab['remaining_per_day']))->toBe(round((20000000 - 10179281) / 16));
 });
 
 it('shows zero percent for a zero target without dividing by zero', function () {

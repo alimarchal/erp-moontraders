@@ -62,3 +62,17 @@ it('exposes searchable keywords on every link', function () {
         ->assertSuccessful()
         ->assertSee('data-search="bank accounts company bank accounts &amp; balances accounting setup', false);
 });
+
+it('does not duplicate links that already live in the main navigation', function () {
+    $user = settingsUserWith(['goods-issue-list', 'sales-settlement-list', 'goods-receipt-note-list', 'inventory-view', 'stock-adjustment-list']);
+
+    $this->actingAs($user)
+        ->get(route('settings.index'))
+        ->assertSuccessful()
+        ->assertSee(route('stock-adjustments.index'), false)
+        ->assertDontSee(route('goods-issues.index'), false)
+        ->assertDontSee(route('sales-settlements.index'), false)
+        ->assertDontSee(route('goods-receipt-notes.index'), false)
+        ->assertDontSee(route('inventory.current-stock.index'), false)
+        ->assertDontSee('Sales & Distribution');
+});

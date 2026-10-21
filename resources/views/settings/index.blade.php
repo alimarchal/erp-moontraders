@@ -56,40 +56,6 @@
                 </div>
 
                 <div class="columns-1 md:columns-2 lg:columns-3 gap-6">
-                @canany(['goods-issue-list', 'sales-settlement-list'])
-                    <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
-                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Sales &amp; Distribution</p>
-                        <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
-                            @can('goods-issue-list')
-                                <x-settings-row data-settings-item data-search="goods issues outbound dispatch & delivery sales & distribution dispatch and daily settlement" x-bind:hidden="! matches($el)" href="{{ route('goods-issues.index') }}" label="Goods Issues"
-                                    description="Outbound dispatch & delivery" :count="\App\Models\GoodsIssue::count()"
-                                    icon-bg="bg-sky-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m-3-3l-3 3m0 0l3 3m-3-3h11.25" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('sales-settlement-list')
-                                <x-settings-row data-settings-item data-search="sales settlements van sales & cash reconciliation sales & distribution dispatch and daily settlement" x-bind:hidden="! matches($el)" href="{{ route('sales-settlements.index') }}" label="Sales Settlements"
-                                    description="Van sales & cash reconciliation" :count="\App\Models\SalesSettlement::count()"
-                                    icon-bg="bg-green-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                        </div>
-                    </section>
-                @endcanany
-
                 @canany(['category-list', 'product-list', 'uom-list'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Product Catalog</p>
@@ -176,6 +142,53 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                        </div>
+                    </section>
+                @endcanany
+
+                @canany(['claim-register-list', 'product-recall-list', 'stock-adjustment-list'])
+                    <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Stock Control</p>
+                        <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
+                            @can('stock-adjustment-list')
+                                <x-settings-row data-settings-item data-search="stock adjustments damage, theft, expiry & variance stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('stock-adjustments.index') }}" label="Stock Adjustments"
+                                    description="Damage, theft, expiry & variance" :count="\App\Models\StockAdjustment::count()"
+                                    icon-bg="bg-red-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('product-recall-list')
+                                <x-settings-row data-settings-item data-search="product recalls supplier recalls & quality issues stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('product-recalls.index') }}" label="Product Recalls"
+                                    description="Supplier recalls & quality issues" :count="\App\Models\ProductRecall::count()"
+                                    icon-bg="bg-orange-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('claim-register-list')
+                                <x-settings-row data-settings-item data-search="claim register supplier & damage claims log stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('claim-registers.index') }}" label="Claim Register"
+                                    description="Supplier & damage claims log" :count="\App\Models\ClaimRegister::count()"
+                                    icon-bg="bg-rose-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>
@@ -317,7 +330,7 @@
                     </section>
                 @endcanany
 
-                @canany(['company-target-list', 'customer-list', 'employee-list', 'opening-customer-balance-list', 'promotional-campaign-list', 'supplier-list'])
+                @canany(['company-target-list', 'customer-list', 'employee-list', 'opening-customer-balance-list', 'promotional-campaign-list', 'supplier-list', 'supplier-payment-list'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Business Partners</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -330,6 +343,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('supplier-payment-list')
+                                <x-settings-row data-settings-item data-search="supplier payments payment vouchers & records business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('supplier-payments.index') }}" label="Supplier Payments"
+                                    description="Payment vouchers & records" :count="\App\Models\SupplierPayment::count()"
+                                    icon-bg="bg-amber-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>
@@ -396,91 +422,6 @@
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                        </div>
-                    </section>
-                @endcanany
-
-                @canany(['claim-register-list', 'goods-receipt-note-list', 'inventory-view', 'product-recall-list', 'stock-adjustment-list', 'supplier-payment-list'])
-                    <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
-                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Procurement &amp; Stock</p>
-                        <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
-                            @can('goods-receipt-note-list')
-                                <x-settings-row data-settings-item data-search="goods receipt notes inbound stock & supplier deliveries procurement & stock inbound stock, payments and stock control" x-bind:hidden="! matches($el)" href="{{ route('goods-receipt-notes.index') }}" label="Goods Receipt Notes"
-                                    description="Inbound stock & supplier deliveries"
-                                    :count="\App\Models\GoodsReceiptNote::count()" icon-bg="bg-cyan-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m0-3l-3-3m0 0l-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('supplier-payment-list')
-                                <x-settings-row data-settings-item data-search="supplier payments payment vouchers & records procurement & stock inbound stock, payments and stock control" x-bind:hidden="! matches($el)" href="{{ route('supplier-payments.index') }}" label="Supplier Payments"
-                                    description="Payment vouchers & records" :count="\App\Models\SupplierPayment::count()"
-                                    icon-bg="bg-amber-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('inventory-view')
-                                <x-settings-row data-settings-item data-search="current stock live inventory levels by product procurement & stock inbound stock, payments and stock control" x-bind:hidden="! matches($el)" href="{{ route('inventory.current-stock.index') }}" label="Current Stock"
-                                    description="Live inventory levels by product" icon-bg="bg-green-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('stock-adjustment-list')
-                                <x-settings-row data-settings-item data-search="stock adjustments damage, theft, expiry & variance procurement & stock inbound stock, payments and stock control" x-bind:hidden="! matches($el)" href="{{ route('stock-adjustments.index') }}" label="Stock Adjustments"
-                                    description="Damage, theft, expiry & variance" :count="\App\Models\StockAdjustment::count()"
-                                    icon-bg="bg-red-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('product-recall-list')
-                                <x-settings-row data-settings-item data-search="product recalls supplier recalls & quality issues procurement & stock inbound stock, payments and stock control" x-bind:hidden="! matches($el)" href="{{ route('product-recalls.index') }}" label="Product Recalls"
-                                    description="Supplier recalls & quality issues" :count="\App\Models\ProductRecall::count()"
-                                    icon-bg="bg-orange-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('claim-register-list')
-                                <x-settings-row data-settings-item data-search="claim register supplier & damage claims log procurement & stock inbound stock, payments and stock control" x-bind:hidden="! matches($el)" href="{{ route('claim-registers.index') }}" label="Claim Register"
-                                    description="Supplier & damage claims log" :count="\App\Models\ClaimRegister::count()"
-                                    icon-bg="bg-rose-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0118 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3l1.5 1.5 3-3.75" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

@@ -6,7 +6,7 @@ use App\Models\BankCheque;
 use App\Models\BankEntryRule;
 use App\Models\BankPartyAlias;
 use App\Models\BankStatementEntry;
-use App\Models\Company;
+use App\Models\Supplier;
 use Illuminate\Support\Collection;
 
 /**
@@ -210,13 +210,13 @@ class BankEntryClassifier
     /**
      * Resolve a company by exact name, used when the sheet carries a principal's name.
      */
-    public function companyByName(?string $name): ?Company
+    public function companyByName(?string $name): ?Supplier
     {
         if (! $name) {
             return null;
         }
 
-        $matches = Company::query()->whereRaw('LOWER(company_name) = ?', [mb_strtolower(trim($name))])->limit(2)->get();
+        $matches = Supplier::query()->whereRaw('LOWER(supplier_name) = ?', [mb_strtolower(trim($name))])->limit(2)->get();
 
         return $matches->count() === 1 ? $matches->first() : null;
     }

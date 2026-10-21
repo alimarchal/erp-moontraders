@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('alias_name')->unique()->comment('Normalized spelling as it appears on the bank statement.');
             $table->string('canonical_name');
-            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->nullableMorphs('counterparty');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

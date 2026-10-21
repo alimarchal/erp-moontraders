@@ -6,7 +6,7 @@ use App\Models\BankEntryCategory;
 use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
-use App\Models\Company;
+use App\Models\Supplier;
 use App\Services\BankRegister\BankReportService;
 use App\Services\BankRegister\BankStatementSearch;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +16,7 @@ beforeEach(function () {
     $this->search = app(BankStatementSearch::class);
 
     $this->unilever = $this->fixture['company'];
-    $this->dalda = Company::factory()->create(['company_name' => 'Dalda Foods']);
+    $this->dalda = Supplier::factory()->create(['supplier_name' => 'Dalda Foods', 'disabled' => false]);
     $this->charges = BankEntryCategory::where('slug', 'bank-charges')->first();
 
     $make = fn (array $a) => BankStatementEntry::factory()->create($a + ['bank_account_id' => $this->fixture['bank']->id]);

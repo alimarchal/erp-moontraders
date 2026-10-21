@@ -4,6 +4,10 @@
             createPermission="bank-entry-rule-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Auto-classify Rules" /></div>
+
     <x-filter-section :action="route('bank-entry-rules.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -16,7 +20,7 @@
             </div>
             <div>
                 <x-label for="filter_bank_entry_category_id" value="Category" />
-                <select id="filter_bank_entry_category_id" name="filter[bank_entry_category_id]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_bank_entry_category_id" name="filter[bank_entry_category_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category->id }}" @selected((string) request('filter.bank_entry_category_id') === (string) $category->id)>{{ $category->name }}</option>
@@ -45,7 +49,7 @@
                     <span class="text-xs text-gray-500">({{ strtolower(\App\Models\BankEntryRule::DIRECTIONS[$rule->direction]) }})</span>
                 </td>
                 <td class="py-2 px-2 font-normal">
-                    {{ $rule->category?->name }}@if ($rule->company) <span class="text-gray-500">· {{ $rule->company->company_name }}</span>@endif
+                    {{ $rule->category?->name }}@if ($rule->company) <span class="text-gray-500">· {{ $rule->company->supplier_name }}</span>@endif
                 </td>
                 <td class="py-2 px-2 text-center">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $rule->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ $rule->is_active ? 'Active' : 'Inactive' }}</span>

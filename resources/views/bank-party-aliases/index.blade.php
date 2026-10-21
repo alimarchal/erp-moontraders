@@ -4,6 +4,10 @@
             createPermission="bank-party-alias-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Party Aliases" /></div>
+
     <x-filter-section :action="route('bank-party-aliases.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -16,10 +20,10 @@
             </div>
             <div>
                 <x-label for="filter_company_id" value="Company" />
-                <select id="filter_company_id" name="filter[company_id]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_company_id" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($companies as $company)
-                        <option value="{{ $company->id }}" @selected((string) request('filter.company_id') === (string) $company->id)>{{ $company->company_name }}</option>
+                        <option value="{{ $company->id }}" @selected((string) request('filter.company_id') === (string) $company->id)>{{ $company->supplier_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -39,7 +43,7 @@
                 <td class="py-2 px-2 text-center">{{ $aliases->firstItem() + $index }}</td>
                 <td class="py-2 px-2" dir="auto">{{ $alias->alias_name }}</td>
                 <td class="py-2 px-2 font-normal" dir="auto">{{ $alias->canonical_name }}</td>
-                <td class="py-2 px-2 font-normal">{{ $alias->company?->company_name ?? '—' }}</td>
+                <td class="py-2 px-2 font-normal">{{ $alias->company?->supplier_name ?? '—' }}</td>
                 <td class="py-2 px-2 text-center">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $alias->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ $alias->is_active ? 'Active' : 'Inactive' }}</span>
                 </td>

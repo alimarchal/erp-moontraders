@@ -4,6 +4,10 @@
             createPermission="bank-cheque-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Bank Cheque Register" /></div>
+
     <x-filter-section :action="route('bank-cheques.index')">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -12,7 +16,7 @@
             </div>
             <div>
                 <x-label for="filter_bank_account_id" value="Bank account" />
-                <select id="filter_bank_account_id" name="filter[bank_account_id]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($bankAccounts as $account)
                         <option value="{{ $account->id }}" @selected((string) request('filter.bank_account_id') === (string) $account->id)>{{ $account->account_name }}</option>
@@ -21,7 +25,7 @@
             </div>
             <div>
                 <x-label for="filter_direction" value="Direction" />
-                <select id="filter_direction" name="filter[direction]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_direction" name="filter[direction]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach (\App\Models\BankCheque::DIRECTIONS as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.direction') === $value)>{{ $label }}</option>
@@ -30,7 +34,7 @@
             </div>
             <div>
                 <x-label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_status" name="filter[status]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach (\App\Models\BankCheque::STATUSES as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.status') === $value)>{{ $label }}</option>
@@ -55,7 +59,7 @@
                 <td class="py-2 px-2">{{ $cheque->cheque_no }}</td>
                 <td class="py-2 px-2 font-normal">{{ $cheque->cheque_date->format('d-m-Y') }}</td>
                 <td class="py-2 px-2 font-normal">{{ \App\Models\BankCheque::DIRECTIONS[$cheque->direction] }}</td>
-                <td class="py-2 px-2 font-normal" dir="auto">{{ $cheque->company?->company_name ?? $cheque->payee_name ?? '—' }}</td>
+                <td class="py-2 px-2 font-normal" dir="auto">{{ $cheque->company?->supplier_name ?? $cheque->payee_name ?? '—' }}</td>
                 <td class="py-2 px-2 font-normal">{{ $cheque->bankAccount->account_name }}</td>
                 <td class="py-2 px-2 text-right"><x-bank.money :value="$cheque->amount" /></td>
                 <td class="py-2 px-2 text-center">

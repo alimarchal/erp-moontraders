@@ -15,6 +15,9 @@
     </x-slot>
 
     <div class="py-6">
+    <x-bank.print-styles />
+    <x-bank.subnav inside />
+    <x-bank.print-title title="Receipt Scan Inbox" />
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-status-message />
 
@@ -44,7 +47,7 @@
                         </div>
                         <div>
                             <x-label for="bank_account_id" value="Bank account (if known)" />
-                            <select id="bank_account_id" name="bank_account_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                            <select id="bank_account_id" name="bank_account_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                 <option value="">Not sure yet</option>
                                 @foreach ($bankAccounts as $account)<option value="{{ $account->id }}" @selected((int) old('bank_account_id') === $account->id)>{{ $account->account_name }}</option>@endforeach
                             </select>
@@ -56,7 +59,7 @@
                             </div>
                             <div>
                                 <x-label for="direction" value="Money" />
-                                <select id="direction" name="direction" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                                <select id="direction" name="direction" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">—</option>
                                     <option value="credit" @selected(old('direction') === 'credit')>Received</option>
                                     <option value="debit" @selected(old('direction') === 'debit')>Paid out</option>

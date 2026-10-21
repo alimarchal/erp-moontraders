@@ -13,7 +13,7 @@ use App\Models\BankEntryRule;
 use App\Models\BankPartyAlias;
 use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
-use App\Models\Company;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Services\BankRegister\BankApprovalRules;
 use App\Services\BankRegister\BankEntryApprovalService;
@@ -91,7 +91,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
                 'amount' => $request->old('amount', $scan?->amount),
                 'description' => $request->old('description', $scan?->note),
             ],
-        ] + $this->options());
+        ] + $this->options(true));
     }
 
     public function store(
@@ -209,7 +209,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
                 ->with('error', 'A posted entry is part of the books and cannot be edited. Reverse it first.');
         }
 
-        return view('bank-statement-entries.edit', ['entry' => $bankStatementEntry] + $this->options());
+        return view('bank-statement-entries.edit', ['entry' => $bankStatementEntry] + $this->options(true));
     }
 
     public function update(BankStatementEntryRequest $request, BankStatementEntry $bankStatementEntry, BankEntryApprovalService $approvals): RedirectResponse
@@ -526,11 +526,15 @@ class BankStatementEntryController extends Controller implements HasMiddleware
     /**
      * @return array<string, mixed>
      */
-    private function options(): array
+    private function options(bool $forPosting = false): array
     {
         return [
-            'bankAccounts' => BankAccount::orderBy('account_name')->get(['id', 'account_name', 'account_number']),
-            'companies' => Company::orderBy('company_name')->get(['id', 'company_name']),
+            // the register and its filters list every account that has entries; a new or edited entry only the active ones
+            'bankAccounts' => BankAccount::query()
+                ->when($forPosting, fn ($q) => $q->where('is_active', true))
+                ->unless($forPosting, fn ($q) => $q->where(fn ($w) => $w->where('is_active', true)->orWhereIn('id', BankStatementEntry::withTrashed()->select('bank_account_id'))))
+                ->orderBy('account_name')->get(['id', 'account_name', 'account_number']),
+            'companies' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'categories' => BankEntryCategory::active()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'type']),
             'users' => User::orderBy('name')->get(['id', 'name']),
             'statuses' => BankStatementEntry::STATUSES,

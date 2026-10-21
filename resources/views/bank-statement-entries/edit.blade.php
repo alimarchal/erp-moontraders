@@ -28,7 +28,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                             <div>
                                 <x-label for="direction" value="Money" />
-                                <select id="direction" name="direction" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                                <select data-allow-clear="false" id="direction" name="direction" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="credit" @selected(old('direction', $entry->direction) === 'credit')>Received</option>
                                     <option value="debit" @selected(old('direction', $entry->direction) === 'debit')>Paid out</option>
                                 </select>
@@ -61,17 +61,17 @@
                     @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <x-label for="company_id" value="Company" />
-                            <select id="company_id" name="company_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                            <x-label for="company_id" value="Company / principal" />
+                            <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                 <option value="">—</option>
                                 @foreach ($companies as $company)
-                                    <option value="{{ $company->id }}" @selected((int) old('company_id', $entry->company_id) === $company->id)>{{ $company->company_name }}</option>
+                                    <option value="{{ $company->id }}" @selected((int) old('company_id', $entry->company_id) === $company->id)>{{ $company->supplier_name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <x-label for="bank_entry_category_id" value="Category" />
-                            <select id="bank_entry_category_id" name="bank_entry_category_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                            <select id="bank_entry_category_id" name="bank_entry_category_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                 <option value="">—</option>
                                 @foreach ($categories->filter(fn ($c) => in_array($c->type, ['both', $entry->direction === 'credit' ? 'receipt' : 'payment'], true)) as $category)
                                     <option value="{{ $category->id }}" @selected((int) old('bank_entry_category_id', $entry->bank_entry_category_id) === $category->id)>{{ $category->name }}</option>

@@ -29,7 +29,7 @@ return new class extends Migration
 
             $table->string('party_name_in_statement')->nullable();
             $table->foreignId('bank_party_alias_id')->nullable()->constrained('bank_party_aliases')->nullOnDelete();
-            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->nullableMorphs('counterparty');
             $table->foreignId('bank_entry_category_id')->nullable()->constrained('bank_entry_categories')->nullOnDelete();
             $table->string('classification_source', 20)->default('unresolved')->comment('original, client_applied or unresolved');

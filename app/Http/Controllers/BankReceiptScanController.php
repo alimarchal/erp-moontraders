@@ -52,7 +52,7 @@ class BankReceiptScanController extends Controller implements HasMiddleware
             'filters' => $filters + ['status' => $status],
             'suggestions' => $status === BankReceiptScan::STATUS_PENDING ? $scans->getCollection()->mapWithKeys(fn (BankReceiptScan $s) => [$s->id => $service->suggestions($s)]) : collect(),
             'pendingCount' => BankReceiptScan::where('status', BankReceiptScan::STATUS_PENDING)->count(),
-            'bankAccounts' => BankAccount::orderBy('account_name')->get(['id', 'account_name']),
+            'bankAccounts' => BankAccount::active()->orderBy('account_name')->get(['id', 'account_name']),
         ]);
     }
 

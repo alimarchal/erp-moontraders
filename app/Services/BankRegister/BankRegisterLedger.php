@@ -6,8 +6,8 @@ use App\Models\AccountType;
 use App\Models\BankAccount;
 use App\Models\BankStatementEntry;
 use App\Models\ChartOfAccount;
-use App\Models\Company;
 use App\Models\Currency;
+use App\Models\Supplier;
 use Illuminate\Support\Collection;
 
 /**
@@ -150,7 +150,7 @@ class BankRegisterLedger
      * One register account per company: payments to it are debits, receipts from it are credits, so its balance
      * is what the register has paid out to that company minus what it has received.
      */
-    public function companyAccount(Company $company): ChartOfAccount
+    public function companyAccount(Supplier $company): ChartOfAccount
     {
         if (! $this->ensureStructure()) {
             throw new BankRegisterException('There is no base currency yet, so the register accounts cannot be created.');
@@ -158,7 +158,7 @@ class BankRegisterLedger
 
         $group = ChartOfAccount::query()->where('account_name', self::GROUPS['company'][1])->firstOrFail();
 
-        return $this->ensure("BR - {$company->company_name}", (string) ((int) $group->account_code + 1), 'debit', $group->id, false, (int) $group->account_code + 99);
+        return $this->ensure("BR - {$company->supplier_name}", (string) ((int) $group->account_code + 1), 'debit', $group->id, false, (int) $group->account_code + 99);
     }
 
     /**
@@ -196,7 +196,7 @@ class BankRegisterLedger
     {
         $parts = array_filter([
             $receiptNo,
-            $entry->company?->company_name ?: $entry->party_name_in_statement,
+            $entry->company?->supplier_name ?: $entry->party_name_in_statement,
             $entry->reference,
             $entry->description ?: $entry->narration,
         ], fn ($part) => filled($part));

@@ -165,7 +165,7 @@ class BankStatementEntry extends Model
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Supplier::class, 'company_id');
     }
 
     public function counterparty(): MorphTo

@@ -17,11 +17,11 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-            <form method="GET" action="{{ route('reports.bank.show', $slug) }}" class="bg-white shadow rounded-lg p-4 flex flex-wrap items-end gap-3">
+            <form method="GET" action="{{ route('reports.bank.show', $slug) }}" class="bank-noprint bg-white shadow rounded-lg p-4 flex flex-wrap items-end gap-3">
                 @if ($uses('type'))
                     <div>
                         <x-label for="r_type" value="Money" />
-                        <select id="r_type" name="filter[type]" class="border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-allow-clear="false" data-width="230px" id="r_type" name="filter[type]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="credit" @selected(($filters['type'] ?? 'credit') === 'credit')>Received (credit)</option>
                             <option value="debit" @selected(($filters['type'] ?? '') === 'debit')>Paid (debit)</option>
                         </select>
@@ -30,7 +30,7 @@
                 @if ($uses('bank_account_id'))
                     <div>
                         <x-label for="r_bank" value="Bank account" />
-                        <select id="r_bank" name="filter[bank_account_id]" class="border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-width="230px" id="r_bank" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="">All</option>
                             @foreach ($bankAccounts as $account)<option value="{{ $account->id }}" @selected((string) ($filters['bank_account_id'] ?? '') === (string) $account->id)>{{ $account->account_name }}</option>@endforeach
                         </select>
@@ -39,16 +39,16 @@
                 @if ($uses('company_id'))
                     <div>
                         <x-label for="r_company" value="Company" />
-                        <select id="r_company" name="filter[company_id]" class="border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-width="230px" id="r_company" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="">Choose…</option>
-                            @foreach ($companies as $company)<option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->company_name }}</option>@endforeach
+                            @foreach ($companies as $company)<option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->supplier_name }}</option>@endforeach
                         </select>
                     </div>
                 @endif
                 @if ($uses('reconciliation_id'))
                     <div>
                         <x-label for="r_rec" value="Reconciliation" />
-                        <select id="r_rec" name="filter[reconciliation_id]" class="border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-width="230px" id="r_rec" name="filter[reconciliation_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="">Choose…</option>
                             @foreach ($reconciliations as $reconciliation)<option value="{{ $reconciliation->id }}" @selected((string) ($filters['reconciliation_id'] ?? '') === (string) $reconciliation->id)>{{ $reconciliation->bankAccount->account_name }} · {{ $reconciliation->period_from->format('d-m-Y') }} → {{ $reconciliation->period_to->format('d-m-Y') }}</option>@endforeach
                         </select>

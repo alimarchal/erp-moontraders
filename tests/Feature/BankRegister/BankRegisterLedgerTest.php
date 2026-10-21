@@ -5,10 +5,10 @@ use App\Models\BankAccount;
 use App\Models\BankEntryCategory;
 use App\Models\BankStatementEntry;
 use App\Models\ChartOfAccount;
-use App\Models\Company;
 use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryDetail;
+use App\Models\Supplier;
 use App\Services\BankRegister\BankEntryApprovalService;
 use App\Services\BankRegister\BankRegisterLedger;
 use App\Services\BankRegister\BankReportService;
@@ -90,7 +90,7 @@ test('every bank account gets its own register ledger, separate from its live le
 });
 
 test('each company has its own register account and the companies keep their own balances', function () {
-    $dalda = Company::factory()->create(['company_name' => 'Dalda Foods']);
+    $dalda = Supplier::factory()->create(['supplier_name' => 'Dalda Foods', 'disabled' => false]);
 
     postRegisterEntry($this->fixture, $this->maker, ['credit' => 1000]);
     postRegisterEntry($this->fixture, $this->maker, ['credit' => 0, 'debit' => 400, 'company_id' => $dalda->id]);

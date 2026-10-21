@@ -38,7 +38,7 @@ class BankEntryRule extends Model
 
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Supplier::class, 'company_id');
     }
 
     public function category(): BelongsTo

@@ -28,7 +28,7 @@ class BankChequeRequest extends FormRequest
             'direction' => ['required', Rule::in(['issued', 'received'])],
             'cheque_date' => ['required', 'date'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'company_id' => ['nullable', 'exists:companies,id'],
+            'company_id' => ['nullable', 'exists:suppliers,id'],
             'payee_name' => ['nullable', 'string', 'max:191'],
             'status' => ['required', Rule::in(['pending', 'cleared', 'bounced', 'cancelled', 'stale'])],
             'cleared_date' => ['nullable', 'date'],

@@ -11,7 +11,7 @@
                     @csrf
                     <div>
                         <x-label for="bank_account_id" value="Bank account" :required="true" />
-                        <select id="bank_account_id" name="bank_account_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
+                        <select data-allow-clear="false" id="bank_account_id" name="bank_account_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
                             @foreach ($bankAccounts as $account)
                                 <option value="{{ $account->id }}" @selected((int) old('bank_account_id') === $account->id)>{{ $account->account_name }} ({{ $account->account_number }})</option>
                             @endforeach

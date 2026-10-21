@@ -7,7 +7,7 @@ use App\Helpers\ReportPdf;
 use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use App\Models\BankReconciliation;
-use App\Models\Company;
+use App\Models\Supplier;
 use App\Services\BankRegister\BankReportService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,7 +35,7 @@ class BankReportController extends Controller
             'data' => $service->build($report, $this->filters($request)),
             'filters' => $this->filters($request),
             'bankAccounts' => BankAccount::orderBy('account_name')->get(['id', 'account_name']),
-            'companies' => Company::orderBy('company_name')->get(['id', 'company_name']),
+            'companies' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'reconciliations' => BankReconciliation::with('bankAccount')->where('status', '!=', 'cancelled')->latest('period_to')->get(),
         ]);
     }

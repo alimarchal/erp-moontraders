@@ -13,11 +13,11 @@
 </div>
 
 <div class="mt-4">
-    <x-label for="company_id" value="Company" />
-    <select id="company_id" name="company_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+    <x-label for="company_id" value="Company / principal" />
+    <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
         <option value="">Not linked to a company</option>
         @foreach ($companies as $company)
-            <option value="{{ $company->id }}" @selected((int) old('company_id', $alias?->company_id) === $company->id)>{{ $company->company_name }}</option>
+            <option value="{{ $company->id }}" @selected((int) old('company_id', $alias?->company_id) === $company->id)>{{ $company->supplier_name }}</option>
         @endforeach
     </select>
     <p class="mt-1 text-xs text-gray-500">Entries with this name get this company automatically on import or "Auto-classify".</p>

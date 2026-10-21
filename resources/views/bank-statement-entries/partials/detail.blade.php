@@ -20,7 +20,7 @@
     {{-- Facts --}}
     <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
         <div><dt class="text-xs uppercase text-gray-500">Party on statement</dt><dd class="font-semibold" dir="auto">{{ $entry->party_name_in_statement ?? '—' }}</dd></div>
-        <div><dt class="text-xs uppercase text-gray-500">Company</dt><dd class="font-semibold" dir="auto">{{ $entry->company?->company_name ?? '—' }}</dd></div>
+        <div><dt class="text-xs uppercase text-gray-500">Company</dt><dd class="font-semibold" dir="auto">{{ $entry->company?->supplier_name ?? '—' }}</dd></div>
         <div><dt class="text-xs uppercase text-gray-500">Category</dt><dd class="font-semibold">{{ $entry->category?->name ?? '—' }}</dd></div>
         <div><dt class="text-xs uppercase text-gray-500">Reference</dt><dd class="font-semibold break-all">{{ $entry->reference ?? '—' }}</dd></div>
         <div class="col-span-2"><dt class="text-xs uppercase text-gray-500">Narration</dt><dd dir="auto" class="text-gray-700">{{ $entry->narration ?? '—' }}</dd></div>
@@ -63,7 +63,7 @@
     </div>
 
     {{-- Actions --}}
-    <div class="flex flex-wrap gap-2">
+    <div class="bank-noprint flex flex-wrap gap-2">
         <a href="{{ route('bank-statement-entries.show', $entry) }}" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-gray-700 hover:bg-gray-50">Open full page</a>
         @can('bank-statement-entry-edit')
             @if ($canEdit)<a href="{{ route('bank-statement-entries.edit', $entry) }}" class="rounded-md bg-blue-950 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-900">Edit / classify</a>@endif
@@ -91,7 +91,7 @@
 
     @can('bank-statement-entry-reject')
         @if ($entry->status === 'pending_approval')
-            <form method="POST" action="{{ route('bank-approvals.reject', $entry) }}" class="flex gap-2">@csrf
+            <form method="POST" action="{{ route('bank-approvals.reject', $entry) }}" class="bank-noprint flex gap-2">@csrf
                 <input name="reason" required maxlength="500" dir="auto" placeholder="Reason for rejecting" class="flex-1 rounded-md border-gray-300 text-sm">
                 <button class="rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-white hover:bg-red-800">Reject</button>
             </form>
@@ -100,7 +100,7 @@
 
     @can('bank-statement-entry-reverse')
         @if ($entry->status === 'posted')
-            <form method="POST" action="{{ route('bank-statement-entries.reverse', $entry) }}" class="flex gap-2" onsubmit="return confirm('Reverse this entry? A reversing journal entry will be posted.')">@csrf
+            <form method="POST" action="{{ route('bank-statement-entries.reverse', $entry) }}" class="bank-noprint flex gap-2" onsubmit="return confirm('Reverse this entry? A reversing journal entry will be posted.')">@csrf
                 <input name="reason" required maxlength="500" dir="auto" placeholder="Reason for reversing" class="flex-1 rounded-md border-gray-300 text-sm">
                 <button class="rounded-md border border-purple-400 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-purple-800 hover:bg-purple-50">Reverse</button>
             </form>
@@ -117,7 +117,7 @@
                     <p class="text-xs text-gray-500" dir="auto">{{ \App\Models\Attachment::LABELS[$attachment->label] ?? $attachment->label }} · {{ number_format(($attachment->file_size ?? 0) / 1024, 1) }} KB · {{ $attachment->uploader?->name }}@if ($attachment->description) · {{ $attachment->description }}@endif</p>
                 </div>
                 @can('bank-statement-entry-attach')
-                    <form method="POST" action="{{ route('bank-attachments.destroy', $attachment) }}" onsubmit="return confirm('Remove this file?')">@csrf @method('DELETE')<button class="text-xs text-red-600 hover:underline">Remove</button></form>
+                    <form method="POST" class="bank-noprint" action="{{ route('bank-attachments.destroy', $attachment) }}" onsubmit="return confirm('Remove this file?')">@csrf @method('DELETE')<button class="text-xs text-red-600 hover:underline">Remove</button></form>
                 @endcan
             </div>
         @empty
@@ -126,11 +126,11 @@
 
         @can('bank-statement-entry-attach')
             @if ($entry->status !== 'reconciled')
-                <form method="POST" action="{{ route('bank-statement-entries.attachments.store', $entry) }}" enctype="multipart/form-data" class="mt-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 space-y-2">
+                <form method="POST" action="{{ route('bank-statement-entries.attachments.store', $entry) }}" enctype="multipart/form-data" class="bank-noprint mt-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 space-y-2">
                     @csrf
                     <input type="file" name="files[]" multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv" class="block w-full text-xs">
                     <div class="flex gap-2">
-                        <select name="label" class="rounded-md border-gray-300 text-sm py-1.5">
+                        <select data-allow-clear="false" data-width="230px" name="label" class="select2 bank-select rounded-md border-gray-300 text-sm py-1.5">
                             @foreach (\App\Models\Attachment::LABELS as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
                         </select>
                         <input name="description" maxlength="500" dir="auto" placeholder="Description (optional)" class="flex-1 rounded-md border-gray-300 text-sm py-1.5">

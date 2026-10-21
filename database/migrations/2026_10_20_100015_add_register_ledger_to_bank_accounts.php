@@ -18,11 +18,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('bank_accounts', function (Blueprint $table) {
-            $table->foreignId('register_chart_of_account_id')->nullable()->after('chart_of_account_id')
-                ->constrained('chart_of_accounts')->nullOnDelete()
-                ->comment('Own ledger of the Bank Register for this account; the live ledger is chart_of_account_id.');
-        });
+        if (! Schema::hasColumn('bank_accounts', 'register_chart_of_account_id')) {
+            Schema::table('bank_accounts', function (Blueprint $table) {
+                $table->foreignId('register_chart_of_account_id')->nullable()->after('chart_of_account_id')
+                    ->constrained('chart_of_accounts')->nullOnDelete()
+                    ->comment('Own ledger of the Bank Register for this account; the live ledger is chart_of_account_id.');
+            });
+        }
 
         $this->allowRegisterReportGroup();
 

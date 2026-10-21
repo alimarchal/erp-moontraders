@@ -18,7 +18,7 @@ class BankStatementEntryRequest extends FormRequest
     {
         return [
             'description' => ['nullable', 'string', 'max:2000'],
-            'company_id' => ['nullable', 'exists:companies,id'],
+            'company_id' => ['nullable', 'exists:suppliers,id'],
             'bank_entry_category_id' => ['nullable', 'exists:bank_entry_categories,id'],
             'needs_review' => ['nullable', 'boolean'],
 

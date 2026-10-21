@@ -5,9 +5,9 @@ use App\Models\AccountType;
 use App\Models\BankAccount;
 use App\Models\BankEntryCategory;
 use App\Models\ChartOfAccount;
-use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Currency;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Services\BankRegister\BankRegisterLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -127,7 +127,7 @@ function seedGrnPostingAccounts(): void
  * The "live" accounts (bank ledger, receivable, payable) stand for the ones GRN, settlement and the rest use; the
  * register must never post to them. `bankLedger` is the register's own ledger for the bank account.
  *
- * @return array{bank: BankAccount, company: Company, category: BankEntryCategory, bankLedger: ChartOfAccount, liveLedger: ChartOfAccount, liveReceivable: ChartOfAccount, livePayable: ChartOfAccount}
+ * @return array{bank: BankAccount, company: Supplier, category: BankEntryCategory, bankLedger: ChartOfAccount, liveLedger: ChartOfAccount, liveReceivable: ChartOfAccount, livePayable: ChartOfAccount}
  */
 function bankRegisterFixture(): array
 {
@@ -170,11 +170,7 @@ function bankRegisterFixture(): array
 
     return [
         'bank' => $bank,
-        'company' => Company::factory()->create([
-            'company_name' => 'Unilever',
-            'default_receivable_account_id' => $receivable->id,
-            'default_payable_account_id' => $payable->id,
-        ]),
+        'company' => Supplier::factory()->create(['supplier_name' => 'Unilever', 'disabled' => false]),
         'category' => BankEntryCategory::query()->where('slug', 'customer-receipt')->firstOrFail(),
         'bankLedger' => app(BankRegisterLedger::class)->ledgerForBank($bank),
         'liveLedger' => $liveLedger,

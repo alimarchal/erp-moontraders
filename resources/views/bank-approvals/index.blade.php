@@ -3,6 +3,10 @@
         <x-page-header title="Approvals — waiting for a checker" :showSearch="false" :showRefresh="true" backRoute="bank-statement-entries.index" />
     </x-slot>
 
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Pending Approvals" /></div>
+
     <div class="py-6" x-data="{ ids: [] }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-status-message />
@@ -36,7 +40,7 @@
                                 @if ($actionable)<input type="checkbox" name="ids[]" value="{{ $entry->id }}" x-model="ids" class="rounded border-gray-300">@else<span class="inline-block w-4"></span>@endif
                             </div>
                             <div class="flex-1 min-w-[16rem]">
-                                <a href="{{ route('bank-statement-entries.show', $entry) }}" class="font-semibold text-blue-800 hover:underline" dir="auto">{{ $entry->company?->company_name ?? $entry->party_name_in_statement }}</a>
+                                <a href="{{ route('bank-statement-entries.show', $entry) }}" class="font-semibold text-blue-800 hover:underline" dir="auto">{{ $entry->company?->supplier_name ?? $entry->party_name_in_statement }}</a>
                                 <p class="text-xs text-gray-500">{{ $entry->posting_date->format('d-m-Y') }} · {{ $entry->reference }} · {{ $entry->category?->name }} · {{ $entry->bankAccount->account_name }}</p>
                                 <p class="text-xs text-gray-500">Submitted by <b>{{ $entry->submitter?->name }}</b> {{ $entry->submitted_at?->diffForHumans() }} · {{ $entry->attachments->count() }} file(s)</p>
                                 @if ($entry->attachments->isNotEmpty())

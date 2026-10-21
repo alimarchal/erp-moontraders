@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BankChequeRequest;
 use App\Models\BankAccount;
 use App\Models\BankCheque;
-use App\Models\Company;
+use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -86,7 +86,7 @@ class BankChequeController extends Controller implements HasMiddleware
     {
         return [
             'bankAccounts' => BankAccount::active()->orderBy('account_name')->get(['id', 'account_name', 'account_number']),
-            'companies' => Company::orderBy('company_name')->get(['id', 'company_name']),
+            'companies' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
         ];
     }
 }

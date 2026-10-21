@@ -4,6 +4,10 @@
             createPermission="bank-entry-category-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Bank Entry Categories" /></div>
+
     <x-filter-section :action="route('bank-entry-categories.index')">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -12,7 +16,7 @@
             </div>
             <div>
                 <x-label for="filter_type" value="Used for" />
-                <select id="filter_type" name="filter[type]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_type" name="filter[type]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach (\App\Models\BankEntryCategory::TYPES as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.type') === $value)>{{ $label }}</option>
@@ -21,7 +25,7 @@
             </div>
             <div>
                 <x-label for="filter_is_active" value="Status" />
-                <select id="filter_is_active" name="filter[is_active]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_is_active" name="filter[is_active]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     <option value="1" @selected(request('filter.is_active') === '1')>Active</option>
                     <option value="0" @selected(request('filter.is_active') === '0')>Inactive</option>

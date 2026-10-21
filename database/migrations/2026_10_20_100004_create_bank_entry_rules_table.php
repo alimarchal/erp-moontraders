@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('match_type', 20)->default('contains')->comment('contains, starts_with or equals');
             $table->string('match_value');
             $table->string('direction', 10)->default('any')->comment('any, debit or credit');
-            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->foreignId('bank_entry_category_id')->nullable()->constrained('bank_entry_categories')->nullOnDelete();
             $table->unsignedSmallInteger('priority')->default(100);
             $table->boolean('is_active')->default(true);

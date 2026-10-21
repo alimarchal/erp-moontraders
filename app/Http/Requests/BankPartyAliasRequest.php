@@ -30,7 +30,7 @@ class BankPartyAliasRequest extends FormRequest
         return [
             'alias_name' => ['required', 'string', 'max:191', Rule::unique('bank_party_aliases', 'alias_name')->ignore($alias)],
             'canonical_name' => ['required', 'string', 'max:191'],
-            'company_id' => ['nullable', 'exists:companies,id'],
+            'company_id' => ['nullable', 'exists:suppliers,id'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

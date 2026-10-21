@@ -66,7 +66,7 @@ class BankStatementSearch
                     $q->orWhereRaw("LOWER(COALESCE({$column}, '')) LIKE ?", [$term]);
                 }
 
-                $q->orWhereHas('company', fn (Builder $c) => $c->whereRaw('LOWER(company_name) LIKE ?', [$term]))
+                $q->orWhereHas('company', fn (Builder $c) => $c->whereRaw('LOWER(supplier_name) LIKE ?', [$term]))
                     ->orWhereHas('attachments', fn (Builder $a) => $a
                         ->whereRaw('LOWER(file_name) LIKE ?', [$term])
                         ->orWhereRaw("LOWER(COALESCE(description, '')) LIKE ?", [$term]));

@@ -3,7 +3,7 @@
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div>
         <x-label for="bank_account_id" value="Bank account" :required="true" />
-        <select id="bank_account_id" name="bank_account_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
+        <select data-allow-clear="false" id="bank_account_id" name="bank_account_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
             @foreach ($bankAccounts as $account)
                 <option value="{{ $account->id }}" @selected((int) old('bank_account_id', $cheque?->bank_account_id) === $account->id)>{{ $account->account_name }} ({{ $account->account_number }})</option>
             @endforeach
@@ -11,7 +11,7 @@
     </div>
     <div>
         <x-label for="direction" value="Direction" :required="true" />
-        <select id="direction" name="direction" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <select data-allow-clear="false" id="direction" name="direction" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             @foreach (\App\Models\BankCheque::DIRECTIONS as $value => $label)
                 <option value="{{ $value }}" @selected(old('direction', $cheque?->direction ?? 'issued') === $value)>{{ $label }}</option>
             @endforeach
@@ -34,7 +34,7 @@
     </div>
     <div>
         <x-label for="status" value="Status" :required="true" />
-        <select id="status" name="status" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <select data-allow-clear="false" id="status" name="status" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             @foreach (\App\Models\BankCheque::STATUSES as $value => $label)
                 <option value="{{ $value }}" @selected(old('status', $cheque?->status ?? 'pending') === $value)>{{ $label }}</option>
             @endforeach
@@ -44,11 +44,11 @@
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
     <div>
-        <x-label for="company_id" value="Company" />
-        <select id="company_id" name="company_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <x-label for="company_id" value="Company / principal" />
+        <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             <option value="">—</option>
             @foreach ($companies as $company)
-                <option value="{{ $company->id }}" @selected((int) old('company_id', $cheque?->company_id) === $company->id)>{{ $company->company_name }}</option>
+                <option value="{{ $company->id }}" @selected((int) old('company_id', $cheque?->company_id) === $company->id)>{{ $company->supplier_name }}</option>
             @endforeach
         </select>
     </div>

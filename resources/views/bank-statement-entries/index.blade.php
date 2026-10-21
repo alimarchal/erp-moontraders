@@ -16,23 +16,17 @@
                 @can('bank-statement-import-create')
                     <a href="{{ route('bank-statement-imports.create') }}" class="inline-flex items-center px-3 py-2 bg-blue-950 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">Import statement</a>
                 @endcan
-                @can('bank-statement-entry-approve')
-                    <a href="{{ route('bank-approvals.index') }}" class="inline-flex items-center px-3 py-2 bg-amber-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700">Approvals @if(($summary['pending_approval']['count'] ?? 0) > 0)<span class="ms-1 rounded-full bg-white/90 text-amber-800 px-1.5">{{ $summary['pending_approval']['count'] }}</span>@endif</a>
-                @endcan
-                @can('bank-receipt-scan-list')
-                    <a href="{{ route('bank-receipt-scans.index') }}" class="inline-flex items-center px-3 py-2 bg-sky-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-sky-800">Scan inbox @if(($pendingScans ?? 0) > 0)<span class="ms-1 rounded-full bg-white/90 text-sky-800 px-1.5">{{ $pendingScans }}</span>@endif</a>
-                @endcan
-                @can('bank-reconciliation-list')
-                    <a href="{{ route('bank-reconciliations.index') }}" class="inline-flex items-center px-3 py-2 bg-teal-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-teal-800">Reconcile</a>
-                @endcan
                 @can('bank-statement-entry-export')
                     <a href="{{ route('bank-statement-entries.export', $query()) }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Export</a>
                 @endcan
-                <a href="{{ route('bank-register.help') }}" target="_blank" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">مدد (Urdu help)</a>
                 <button id="toggle" type="button" class="inline-flex items-center px-3 py-2 bg-blue-950 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">Filters</button>
             </div>
         </div>
     </x-slot>
+
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Bank Statement Register" /></div>
 
     <x-filter-section :action="route('bank-statement-entries.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -50,7 +44,7 @@
             </div>
             <div>
                 <x-label for="f_bank_account_id" value="Bank account" />
-                <select id="f_bank_account_id" name="filter[bank_account_id]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="f_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($bankAccounts as $account)
                         <option value="{{ $account->id }}" @selected((string) ($filters['bank_account_id'] ?? '') === (string) $account->id)>{{ $account->account_name }}</option>
@@ -58,18 +52,18 @@
                 </select>
             </div>
             <div>
-                <x-label for="f_company_id" value="Company" />
-                <select id="f_company_id" name="filter[company_id]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <x-label for="f_company_id" value="Company / principal" />
+                <select id="f_company_id" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="none" @selected(($filters['company_id'] ?? '') === 'none')>— no company —</option>
                     @foreach ($companies as $company)
-                        <option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->company_name }}</option>
+                        <option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->supplier_name }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
                 <x-label for="f_category_id" value="Category" />
-                <select id="f_category_id" name="filter[category_id]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="f_category_id" name="filter[category_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="none" @selected(($filters['category_id'] ?? '') === 'none')>— no category —</option>
                     @foreach ($categories as $category)
@@ -79,7 +73,7 @@
             </div>
             <div>
                 <x-label for="f_direction" value="Money" />
-                <select id="f_direction" name="filter[direction]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="f_direction" name="filter[direction]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">In and out</option>
                     <option value="credit" @selected(($filters['direction'] ?? '') === 'credit')>Received (credit)</option>
                     <option value="debit" @selected(($filters['direction'] ?? '') === 'debit')>Paid (debit)</option>
@@ -103,7 +97,7 @@
             </div>
             <div>
                 <x-label for="f_has_attachment" value="Attachment" />
-                <select id="f_has_attachment" name="filter[has_attachment]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="f_has_attachment" name="filter[has_attachment]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Any</option>
                     <option value="yes" @selected(($filters['has_attachment'] ?? '') === 'yes')>Has attachment</option>
                     <option value="no" @selected(($filters['has_attachment'] ?? '') === 'no')>No attachment</option>
@@ -111,7 +105,7 @@
             </div>
             <div>
                 <x-label for="f_needs_review" value="Review flag" />
-                <select id="f_needs_review" name="filter[needs_review]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="f_needs_review" name="filter[needs_review]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Any</option>
                     <option value="yes" @selected(($filters['needs_review'] ?? '') === 'yes')>Needs review</option>
                     <option value="no" @selected(($filters['needs_review'] ?? '') === 'no')>Not flagged</option>
@@ -119,7 +113,7 @@
             </div>
             <div>
                 <x-label for="f_submitted_by" value="Maker" />
-                <select id="f_submitted_by" name="filter[submitted_by]" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select id="f_submitted_by" name="filter[submitted_by]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Anyone</option>
                     @foreach ($users as $user)
                         <option value="{{ $user->id }}" @selected((string) ($filters['submitted_by'] ?? '') === (string) $user->id)>{{ $user->name }}</option>
@@ -139,6 +133,7 @@
             this.drawer = true; this.loading = true; this.html = '';
             const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             this.html = await response.text(); this.loading = false;
+            this.$nextTick(() => window.initSelect2 && window.initSelect2(this.$root));
         },
         toggleAll(checked) { this.ids = checked ? [...document.querySelectorAll('input[name=\'ids[]\']')].map(e => e.value) : []; }
     }" @keydown.escape.window="drawer = false">
@@ -163,7 +158,7 @@
 
         {{-- Account switcher (only when there is more than one account) --}}
         @if ($bankAccounts->count() > 1)
-            <div class="flex flex-wrap items-center gap-2 mb-2 text-sm">
+            <div class="bank-noprint flex flex-wrap items-center gap-2 mb-2 text-sm">
                 <span class="text-gray-500">Account:</span>
                 <a href="{{ route('bank-statement-entries.index', $query(['bank_account_id' => null])) }}" class="rounded-md px-2.5 py-0.5 border {{ empty($filters['bank_account_id']) ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">All accounts</a>
                 @foreach ($bankAccounts as $account)
@@ -173,7 +168,7 @@
         @endif
 
         {{-- Status chips --}}
-        <div class="flex flex-wrap items-center gap-2 mb-3">
+        <div class="bank-noprint flex flex-wrap items-center gap-2 mb-3">
             <a href="{{ route('bank-statement-entries.index', $query(['status' => null])) }}" class="rounded-full px-3 py-1 text-sm border {{ $activeStatus ? 'bg-white text-gray-700 border-gray-300' : 'bg-blue-950 text-white border-blue-950' }}">All <b class="tabular-nums">{{ number_format($totalCount) }}</b></a>
             @foreach ($statusOrder as $status)
                 @if (isset($summary[$status]))
@@ -195,20 +190,20 @@
         <form method="POST" id="bulk-form">
             @csrf
             {{-- Bulk toolbar --}}
-            <div x-show="ids.length" x-cloak class="sticky top-0 z-20 mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 shadow">
+            <div x-show="ids.length" x-cloak class="bank-noprint sticky top-0 z-20 mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 shadow">
                 <div class="flex flex-wrap items-end gap-3">
                     <p class="text-sm font-semibold text-blue-900"><span x-text="ids.length"></span> selected</p>
                     @can('bank-statement-entry-classify')
                         <div>
                             <label class="block text-xs text-blue-900">Company</label>
-                            <select name="company_id" class="border-gray-300 rounded-md text-sm py-1.5">
+                            <select data-width="230px" name="company_id" class="select2 bank-select border-gray-300 rounded-md text-sm py-1.5">
                                 <option value="">—</option>
-                                @foreach ($companies as $company)<option value="{{ $company->id }}">{{ $company->company_name }}</option>@endforeach
+                                @foreach ($companies as $company)<option value="{{ $company->id }}">{{ $company->supplier_name }}</option>@endforeach
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs text-blue-900">Category</label>
-                            <select name="bank_entry_category_id" class="border-gray-300 rounded-md text-sm py-1.5">
+                            <select data-width="230px" name="bank_entry_category_id" class="select2 bank-select border-gray-300 rounded-md text-sm py-1.5">
                                 <option value="">—</option>
                                 @foreach ($categories as $category)<option value="{{ $category->id }}">{{ $category->name }}</option>@endforeach
                             </select>
@@ -229,7 +224,7 @@
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr class="bg-green-800 text-white uppercase text-xs">
-                                    <th class="py-2 px-2 w-8"><input type="checkbox" x-model="all" @change="toggleAll($event.target.checked)" class="rounded border-gray-300"></th>
+                                    <th class="bank-noprint py-2 px-2 w-8"><input type="checkbox" x-model="all" @change="toggleAll($event.target.checked)" class="rounded border-gray-300"></th>
                                     <th class="py-2 px-2 text-left">Date</th>
                                     <th class="py-2 px-2 text-left">Party / company</th>
                                     <th class="py-2 px-2 text-left">Reference</th>
@@ -244,11 +239,11 @@
                                 @foreach ($entries as $index => $entry)
                                     <tr class="border-t cursor-pointer hover:bg-blue-50 {{ $entry->needs_review ? 'bg-yellow-50' : ($index % 2 ? 'bg-gray-50' : 'bg-white') }}"
                                         @click="if (! $event.target.closest('input, a, button')) open('{{ route('bank-statement-entries.drawer', $entry) }}')">
-                                        <td class="py-2 px-2"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" x-model="ids" class="rounded border-gray-300"></td>
+                                        <td class="bank-noprint py-2 px-2"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" x-model="ids" class="rounded border-gray-300"></td>
                                         <td class="py-2 px-2 whitespace-nowrap">{{ $entry->posting_date->format('d-m-Y') }}</td>
                                         <td class="py-2 px-2 max-w-xs">
-                                            <div class="font-semibold truncate" dir="auto">{{ $entry->company?->company_name ?? $entry->party_name_in_statement ?? '—' }}</div>
-                                            @if ($entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->company_name) !== mb_strtolower($entry->party_name_in_statement))<div class="text-xs text-gray-500 truncate" dir="auto">{{ $entry->party_name_in_statement }}</div>@endif
+                                            <div class="font-semibold truncate" dir="auto">{{ $entry->company?->supplier_name ?? $entry->party_name_in_statement ?? '—' }}</div>
+                                            @if ($entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->supplier_name) !== mb_strtolower($entry->party_name_in_statement))<div class="text-xs text-gray-500 truncate" dir="auto">{{ $entry->party_name_in_statement }}</div>@endif
                                         </td>
                                         <td class="py-2 px-2 text-xs text-gray-600 whitespace-nowrap">{{ $entry->reference }}@if ($entry->receipt_no)<div class="text-emerald-700 font-semibold">{{ $entry->receipt_no }}</div>@endif</td>
                                         <td class="py-2 px-2">{{ $entry->category?->name ?? '—' }}</td>
@@ -269,7 +264,7 @@
         </form>
 
         {{-- Side drawer --}}
-        <div x-show="drawer" x-cloak class="fixed inset-0 z-40 flex justify-end" aria-modal="true">
+        <div x-show="drawer" x-cloak class="bank-noprint fixed inset-0 z-40 flex justify-end" aria-modal="true">
             <div class="absolute inset-0 bg-black/40" @click="drawer = false"></div>
             <aside class="relative w-full max-w-xl bg-white shadow-2xl overflow-y-auto" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
                 <button type="button" @click="drawer = false" class="absolute end-3 top-3 z-10 rounded-full bg-gray-100 px-2.5 py-1 text-sm hover:bg-gray-200" aria-label="Close">✕</button>

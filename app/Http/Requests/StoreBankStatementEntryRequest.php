@@ -28,7 +28,7 @@ class StoreBankStatementEntryRequest extends FormRequest
             'party_name_in_statement' => ['nullable', 'string', 'max:191'],
             'narration' => ['nullable', 'string', 'max:2000'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'company_id' => ['nullable', 'exists:companies,id'],
+            'company_id' => ['nullable', 'exists:suppliers,id'],
             'bank_entry_category_id' => ['nullable', 'exists:bank_entry_categories,id'],
             'confirm_duplicate' => ['nullable', 'boolean'],
             'scan_id' => ['nullable', 'exists:bank_receipt_scans,id'],

@@ -7,7 +7,7 @@
     </div>
     <div>
         <x-label for="type" value="Used for" :required="true" />
-        <select id="type" name="type" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+        <select data-allow-clear="false" id="type" name="type" class="select2 bank-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             @foreach (\App\Models\BankEntryCategory::TYPES as $value => $label)
                 <option value="{{ $value }}" @selected(old('type', $category?->type ?? 'both') === $value)>{{ $label }}</option>
             @endforeach
@@ -17,7 +17,7 @@
 
 <div class="mt-4">
     <x-label for="default_chart_of_account_id" value="Own ledger account (optional)" />
-    <select id="default_chart_of_account_id" name="default_chart_of_account_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+    <select id="default_chart_of_account_id" name="default_chart_of_account_id" class="select2 bank-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
         <option value="">Use the register's own account (recommended)</option>
         @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" @selected((int) old('default_chart_of_account_id', $category?->default_chart_of_account_id) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>

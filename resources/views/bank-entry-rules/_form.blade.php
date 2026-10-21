@@ -8,7 +8,7 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
     <div>
         <x-label for="match_field" value="Look in" :required="true" />
-        <select id="match_field" name="match_field" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <select data-allow-clear="false" id="match_field" name="match_field" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             @foreach (\App\Models\BankEntryRule::FIELDS as $value => $label)
                 <option value="{{ $value }}" @selected(old('match_field', $rule?->match_field ?? 'narration') === $value)>{{ $label }}</option>
             @endforeach
@@ -16,7 +16,7 @@
     </div>
     <div>
         <x-label for="match_type" value="Match" :required="true" />
-        <select id="match_type" name="match_type" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <select data-allow-clear="false" id="match_type" name="match_type" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             @foreach (\App\Models\BankEntryRule::MATCH_TYPES as $value => $label)
                 <option value="{{ $value }}" @selected(old('match_type', $rule?->match_type ?? 'contains') === $value)>{{ $label }}</option>
             @endforeach
@@ -31,7 +31,7 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
     <div>
         <x-label for="direction" value="Applies to" :required="true" />
-        <select id="direction" name="direction" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <select data-allow-clear="false" id="direction" name="direction" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             @foreach (\App\Models\BankEntryRule::DIRECTIONS as $value => $label)
                 <option value="{{ $value }}" @selected(old('direction', $rule?->direction ?? 'any') === $value)>{{ $label }}</option>
             @endforeach
@@ -39,7 +39,7 @@
     </div>
     <div class="md:col-span-2">
         <x-label for="bank_entry_category_id" value="Then set category" :required="true" />
-        <select id="bank_entry_category_id" name="bank_entry_category_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
+        <select id="bank_entry_category_id" name="bank_entry_category_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Choose…</option>
             @foreach ($categories as $category)
                 <option value="{{ $category->id }}" @selected((int) old('bank_entry_category_id', $rule?->bank_entry_category_id) === $category->id)>{{ $category->name }}</option>
@@ -54,10 +54,10 @@
 
 <div class="mt-4">
     <x-label for="company_id" value="And set company (optional)" />
-    <select id="company_id" name="company_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+    <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
         <option value="">Leave company as it is</option>
         @foreach ($companies as $company)
-            <option value="{{ $company->id }}" @selected((int) old('company_id', $rule?->company_id) === $company->id)>{{ $company->company_name }}</option>
+            <option value="{{ $company->id }}" @selected((int) old('company_id', $rule?->company_id) === $company->id)>{{ $company->supplier_name }}</option>
         @endforeach
     </select>
 </div>

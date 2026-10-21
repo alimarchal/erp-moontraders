@@ -84,6 +84,7 @@
                     <li><a href="#recon">بینک ریکنسیلی ایشن</a></li>
                     <li><a href="#masters">سیٹنگز: کیٹیگری، الیاس، رولز، چیک</a></li>
                     <li><a href="#reports">رپورٹس</a></li>
+                    <li><a href="#print">پرنٹ کرنا</a></li>
                     <li><a href="#faq">عام سوالات اور مسائل</a></li>
                 </ol>
             </div>
@@ -169,6 +170,8 @@
 
         <section id="register">
             <h2>۴۔ رجسٹر اور تلاش</h2>
+            <p>ہر صفحے کے اوپر ایک پٹی ہے: <span class="en">Register · Approvals · Receipt scans · Reconciliation · Reports · Ledger accounts · Categories &amp; rules</span>۔ موجودہ صفحہ گہرے نیلے رنگ میں ہوتا ہے، اور <span class="en">Approvals</span> / <span class="en">Receipt scans</span> کے ساتھ باقی کام کی گنتی۔ وہی حصے نظر آتے ہیں جن کی آپ کو اجازت ہے۔</p>
+            <figure><img src="{{ asset('icons-images/bank-register-help/34-subnav.jpg') }}" alt="اوپر کی پٹی" loading="lazy"><figcaption>ہر صفحے پر اوپر کی پٹی</figcaption></figure>
             <p>رجسٹر کی سکرین پر سب سے اوپر چار ڈبے ہیں: <b>درجہ بندی باقی</b>، <b>منظوری کے انتظار میں</b>، <b>پوسٹ مگر ریکنسائل نہیں</b>، اور <b>ریکنسائل</b>۔ ہر ڈبے پر کلک کریں تو صرف وہی انٹریاں دکھتی ہیں۔ ان کے نیچے حالت کی گولیاں (<span class="en">chips</span>) ہیں جن پر تعداد اور رقم لکھی ہے۔</p>
             <figure><img src="{{ asset('icons-images/bank-register-help/01-register.jpg') }}" alt="رجسٹر" loading="lazy"><figcaption>رجسٹر: ڈبے، حالت کی گولیاں اور انٹریوں کی فہرست</figcaption></figure>
             <h3>تلاش کے فلٹر</h3>
@@ -186,6 +189,8 @@
 
         <section id="classify">
             <h2>۵۔ کمپنی اور کیٹیگری لگانا</h2>
+            <div class="tip"><b>کمپنی</b> سے مراد پرنسپل / سپلائر (مثلاً یونی لیور، ڈالڈا، اینگرو) ہے۔ فہرست سسٹم کی <span class="en">Suppliers</span> سے آتی ہے، اس لیے وہی نام ہر جگہ چلتا ہے۔ ہر <b>ڈراپ ڈاؤن</b> میں تلاش کا خانہ ہے: ڈبے پر کلک کریں، چند حروف ٹائپ کریں، اور نتیجے پر کلک کریں۔ خانہ خالی کرنے کے لیے ✕ دبائیں۔</div>
+            <figure><img src="{{ asset('icons-images/bank-register-help/31-select2-dropdown.jpg') }}" alt="ڈراپ ڈاؤن میں تلاش" loading="lazy"><figcaption>ڈراپ ڈاؤن میں ٹائپ کر کے تلاش</figcaption></figure>
             <h3>ایک ایک کر کے</h3>
             <p>تفصیل کی پٹی میں <span class="en">Edit / classify</span> دبائیں، کمپنی اور کیٹیگری چنیں، چاہیں تو نوٹ لکھیں اور <span class="en">Save</span> دبائیں۔ کیٹیگری لگتے ہی انٹری <span class="badge b-blue">Classified</span> ہو جاتی ہے۔</p>
             <figure><img src="{{ asset('icons-images/bank-register-help/07-edit-entry.jpg') }}" alt="انٹری کی درجہ بندی" loading="lazy"><figcaption>انٹری کی درجہ بندی</figcaption></figure>
@@ -342,8 +347,21 @@
             <p>ہر رپورٹ اسی کو نظر آتی ہے جسے اس کی اجازت ہو۔ میکر، چیکر اور آڈیٹر سب رپورٹیں دیکھتے ہیں؛ سینئر منظور کنندہ صرف فیصلے کے لیے ضروری رپورٹیں۔</p>
         </section>
 
+        <section id="print">
+            <h2>۱۴۔ پرنٹ کرنا</h2>
+            <p>ہر صفحہ براؤزر کے <span class="en">Print</span> (<span class="en">Ctrl + P</span>) سے صاف کاغذ پر چھپتا ہے: مینو، بٹن، فلٹر اور ٹِک باکس خود چھپنے سے ہٹ جاتے ہیں، اوپر کمپنی کا نام، رپورٹ کا عنوان، پرنٹ کی تاریخ اور پرنٹ کرنے والے کا نام آ جاتا ہے، ٹیبل پورے صفحے پر اور ہر صفحے پر عنوان کی قطار دوبارہ آتی ہے، اور صفحہ <span class="en">A4 Landscape</span> میں سیٹ ہوتا ہے۔</p>
+            <ul>
+                <li><b>رجسٹر:</b> فلٹر لگا کر پرنٹ کریں تو وہی انٹریاں چھپتی ہیں جو اسکرین پر ہیں۔</li>
+                <li><b>ایک انٹری:</b> انٹری کھول کر پرنٹ کریں؛ رسید نمبر، جرنل، منظوری اور ہسٹری سب شامل ہوتے ہیں۔</li>
+                <li><b>رپورٹس:</b> ہر رپورٹ میں <span class="en">Excel</span> اور <span class="en">PDF</span> کے بٹن ہیں؛ سادہ پرنٹ کے لیے براؤزر کا پرنٹ بھی چلتا ہے۔</li>
+                <li><b>یہ رہنمائی:</b> اوپر کے <span class="en">🖨 پرنٹ کریں</span> سے پوری گائیڈ چھپتی ہے۔</li>
+            </ul>
+            <figure><img src="{{ asset('icons-images/bank-register-help/32-print-register.jpg') }}" alt="پرنٹ کا منظر" loading="lazy"><figcaption>رجسٹر کا پرنٹ: صاف عنوان، پورا ٹیبل، بغیر بٹن</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/33-print-entry.jpg') }}" alt="انٹری کا پرنٹ" loading="lazy"><figcaption>ایک انٹری کا پرنٹ</figcaption></figure>
+        </section>
+
         <section id="faq">
-            <h2>۱۴۔ عام سوالات اور مسائل</h2>
+            <h2>۱۵۔ عام سوالات اور مسائل</h2>
             <table>
                 <tr><th>مسئلہ</th><th>حل</th></tr>
                 <tr><td>امپورٹ "Does not tally" کہتی ہے</td><td>پرنٹ شدہ سٹیٹمنٹ کے کل ڈیبٹ/کریڈٹ دوبارہ دیکھیں، یا فائل میں کوئی قطار رہ گئی ہو۔ غلط قطاروں کی فہرست خلاصے میں نیچے ہوتی ہے۔</td></tr>

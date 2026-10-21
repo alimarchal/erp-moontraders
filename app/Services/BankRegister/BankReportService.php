@@ -8,8 +8,8 @@ use App\Models\BankReceiptScan;
 use App\Models\BankReconciliation;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
-use App\Models\Company;
 use App\Models\JournalEntryDetail;
+use App\Models\Supplier;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -93,11 +93,11 @@ class BankReportService
     {
         $type = ($filters['type'] ?? 'credit') === 'debit' ? 'debit' : 'credit';
         $label = $by === 'company'
-            ? "COALESCE(companies.company_name, NULLIF(bank_statement_entries.party_name_in_statement, ''), 'Unassigned')"
+            ? "COALESCE(suppliers.supplier_name, NULLIF(bank_statement_entries.party_name_in_statement, ''), 'Unassigned')"
             : "COALESCE(bank_entry_categories.name, 'Uncategorised')";
 
         $query = $this->base($filters)
-            ->leftJoin('companies', 'companies.id', '=', 'bank_statement_entries.company_id')
+            ->leftJoin('suppliers', 'suppliers.id', '=', 'bank_statement_entries.company_id')
             ->leftJoin('bank_entry_categories', 'bank_entry_categories.id', '=', 'bank_statement_entries.bank_entry_category_id')
             ->where("bank_statement_entries.{$type}", '>', 0)
             ->select(['bank_statement_entries.posting_date', "bank_statement_entries.{$type} as line_amount", DB::raw("{$label} as label")]);
@@ -174,7 +174,7 @@ class BankReportService
             return $this->shape('Company ledger', 'Choose a company to see its ledger.', ['Date', 'Receipt / reference', 'Narration', 'Paid out', 'Received', 'Balance'], [3, 4, 5], [], null, []);
         }
 
-        $company = Company::find($filters['company_id']);
+        $company = Supplier::find($filters['company_id']);
         $balance = 0.0;
         $rows = [];
 
@@ -184,7 +184,7 @@ class BankReportService
         }
 
         return $this->shape(
-            'Company ledger - '.($company?->company_name ?? ''),
+            'Company ledger - '.($company?->supplier_name ?? ''),
             $this->subtitle($filters),
             ['Date', 'Receipt / reference', 'Narration', 'Paid out', 'Received', 'Balance'],
             [3, 4, 5],
@@ -245,7 +245,7 @@ class BankReportService
 
         $rows = $entries->map(fn (BankStatementEntry $e) => [
             $e->posting_date->format('d-m-Y'),
-            $e->company?->company_name ?: $e->party_name_in_statement,
+            $e->company?->supplier_name ?: $e->party_name_in_statement,
             $e->reference,
             $e->category?->name ?? '-',
             $e->status_label,
@@ -268,7 +268,7 @@ class BankReportService
 
         $rows = $entries->map(fn (BankStatementEntry $e) => [
             $e->submitted_at?->format('d-m-Y H:i'),
-            $e->company?->company_name ?: $e->party_name_in_statement,
+            $e->company?->supplier_name ?: $e->party_name_in_statement,
             $e->reference,
             $e->submitter?->name ?? '-',
             $e->approval_level_required === 2 ? 'Checker + senior' : 'Checker',
@@ -323,9 +323,9 @@ class BankReportService
 
         foreach (['credit' => 'Received from', 'debit' => 'Paid to'] as $column => $label) {
             $this->base($filters)
-                ->leftJoin('companies', 'companies.id', '=', 'bank_statement_entries.company_id')
+                ->leftJoin('suppliers', 'suppliers.id', '=', 'bank_statement_entries.company_id')
                 ->where("bank_statement_entries.{$column}", '>', 0)
-                ->selectRaw("COALESCE(companies.company_name, NULLIF(bank_statement_entries.party_name_in_statement, ''), 'Unassigned') as party, COUNT(*) as entries, SUM(bank_statement_entries.{$column}) as total")
+                ->selectRaw("COALESCE(suppliers.supplier_name, NULLIF(bank_statement_entries.party_name_in_statement, ''), 'Unassigned') as party, COUNT(*) as entries, SUM(bank_statement_entries.{$column}) as total")
                 ->groupBy('party')
                 ->orderByDesc('total')
                 ->limit(25)
@@ -485,7 +485,7 @@ class BankReportService
                     $rows[] = [
                         $account->account_name,
                         $entry->posting_date->format('d-m-Y'),
-                        $entry->company?->company_name ?: $entry->party_name_in_statement,
+                        $entry->company?->supplier_name ?: $entry->party_name_in_statement,
                         $entry->reference,
                         $entry->category?->name ?? '-',
                         $entry->receipt_no ?: '-',

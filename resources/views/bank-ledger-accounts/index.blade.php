@@ -4,6 +4,9 @@
     </x-slot>
 
     <div class="py-6">
+    <x-bank.print-styles />
+    <x-bank.subnav inside />
+    <x-bank.print-title title="Bank Register Ledger Accounts" />
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <div class="rounded-lg bg-blue-50 border border-blue-200 p-4 text-sm text-blue-900">
                 <p class="font-semibold">The Bank Register keeps its own books.</p>

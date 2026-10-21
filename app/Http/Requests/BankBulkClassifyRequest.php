@@ -19,7 +19,7 @@ class BankBulkClassifyRequest extends FormRequest
         return [
             'ids' => ['required', 'array', 'min:1', 'max:500'],
             'ids.*' => ['integer', 'exists:bank_statement_entries,id'],
-            'company_id' => ['nullable', 'exists:companies,id'],
+            'company_id' => ['nullable', 'exists:suppliers,id'],
             'bank_entry_category_id' => ['nullable', 'exists:bank_entry_categories,id'],
             'remember_alias' => ['nullable', 'boolean'],
         ];

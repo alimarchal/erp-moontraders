@@ -4,6 +4,10 @@
             createPermission="bank-statement-import-create" :showSearch="false" :showRefresh="true" backRoute="bank-statement-entries.index" />
     </x-slot>
 
+    <x-bank.print-styles />
+    <x-bank.subnav />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Statement Imports" /></div>
+
     <x-data-table :items="$imports" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'File', 'align' => 'text-left'],

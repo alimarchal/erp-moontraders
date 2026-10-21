@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BankPartyAliasRequest;
 use App\Models\BankPartyAlias;
-use App\Models\Company;
+use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -74,6 +74,6 @@ class BankPartyAliasController extends Controller implements HasMiddleware
 
     private function companies()
     {
-        return Company::orderBy('company_name')->get(['id', 'company_name']);
+        return Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
     }
 }

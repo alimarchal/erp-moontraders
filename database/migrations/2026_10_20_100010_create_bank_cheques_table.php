@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('direction', 10)->comment('issued or received');
             $table->date('cheque_date');
             $table->decimal('amount', 15, 2);
-            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->nullableMorphs('counterparty');
             $table->string('payee_name')->nullable();
             $table->string('status', 15)->default('pending')->comment('pending, cleared, bounced, cancelled or stale');

@@ -69,7 +69,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         <div>
                             <x-label for="bank_account_id" value="Bank account" :required="true" />
-                            <select id="bank_account_id" name="bank_account_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
+                            <select data-allow-clear="false" id="bank_account_id" name="bank_account_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
                                 @foreach ($bankAccounts as $account)
                                     <option value="{{ $account->id }}" @selected((int) $defaults['bank_account_id'] === $account->id)>{{ $account->account_name }} ({{ $account->account_number }})</option>
                                 @endforeach
@@ -100,17 +100,17 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
-                            <x-label for="company_id" value="Company" />
-                            <select id="company_id" name="company_id" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                            <x-label for="company_id" value="Company / principal" />
+                            <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                 <option value="">—</option>
                                 @foreach ($companies as $company)
-                                    <option value="{{ $company->id }}" @selected((int) old('company_id') === $company->id)>{{ $company->company_name }}</option>
+                                    <option value="{{ $company->id }}" @selected((int) old('company_id') === $company->id)>{{ $company->supplier_name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <x-label for="bank_entry_category_id" value="Category" />
-                            <select id="bank_entry_category_id" name="bank_entry_category_id" x-model="category" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                            <select id="bank_entry_category_id" name="bank_entry_category_id" x-model="category" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                                 <option value="">— decide later —</option>
                                 <template x-for="option in options" :key="option.id">
                                     <option :value="option.id" x-text="option.name" :selected="String(option.id) === String(category)"></option>
@@ -135,7 +135,7 @@
                             <p class="text-sm font-semibold text-gray-800">Receipt / attachment <span class="font-normal text-gray-500">(optional, you can add it later)</span></p>
                             <div class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <input type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv" class="md:col-span-3 block w-full text-sm">
-                                <select name="label" class="rounded-md border-gray-300 text-sm">
+                                <select data-allow-clear="false" data-width="230px" name="label" class="select2 bank-select rounded-md border-gray-300 text-sm">
                                     @foreach (\App\Models\Attachment::LABELS as $value => $label)<option value="{{ $value }}" @selected($value === 'receipt')>{{ $label }}</option>@endforeach
                                 </select>
                                 <input name="attachment_description" maxlength="500" dir="auto" placeholder="Description of the file" class="md:col-span-2 rounded-md border-gray-300 text-sm">

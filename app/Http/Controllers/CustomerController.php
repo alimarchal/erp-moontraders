@@ -322,25 +322,27 @@ class CustomerController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
+     * "Delete" only deactivates the customer; records are never removed. Super admins only.
      */
     public function destroy(Customer $customer)
     {
+        $user = auth()->user();
+        abort_unless($user->is_super_admin === 'Yes' || $user->hasRole('super-admin'), 403);
+
         try {
-            $name = $customer->customer_name;
-            $customer->delete();
+            $customer->update(['is_active' => false]);
 
             return redirect()
                 ->route('customers.index')
-                ->with('success', "Customer '{$name}' deleted successfully.");
+                ->with('success', "Customer '{$customer->customer_name}' deactivated. Its history is kept.");
         } catch (\Throwable $e) {
-            Log::error('Error deleting customer', [
+            Log::error('Error deactivating customer', [
                 'customer_id' => $customer->id,
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->with('error', 'Failed to delete customer. Please try again.');
+            return back()->with('error', 'Failed to deactivate customer. Please try again.');
         }
     }
 

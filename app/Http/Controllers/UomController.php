@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUomRequest;
 use App\Http\Requests\UpdateUomRequest;
+use App\Models\Product;
 use App\Models\Uom;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -34,25 +35,23 @@ class UomController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        $statusOptions = ['1' => 'Enabled', '0' => 'Disabled'];
-        $quantityOptions = ['1' => 'Whole Numbers', '0' => 'Any Quantity'];
+        $perPage = (int) $request->input('per_page', 25);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
+            $perPage = 25;
+        }
 
         $uoms = QueryBuilder::for(Uom::query())
-            ->allowedFilters([
-                AllowedFilter::partial('uom_name'),
-                AllowedFilter::partial('symbol'),
-                AllowedFilter::partial('description'),
-                AllowedFilter::exact('enabled'),
-                AllowedFilter::exact('must_be_whole_number'),
-            ])
-            ->orderBy('uom_name')
-            ->paginate(15)
+            ->allowedFilters($this->allowedFilters())
+            ->allowedSorts(['uom_name'])
+            ->defaultSort('uom_name')
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('uoms.index', [
             'uoms' => $uoms,
-            'statusOptions' => $statusOptions,
-            'quantityOptions' => $quantityOptions,
+            'stats' => $this->listStats($request),
+            'perPage' => $perPage,
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ]);
     }
 
@@ -125,7 +124,11 @@ class UomController extends Controller implements HasMiddleware
      */
     public function show(Uom $uom)
     {
-        return view('uoms.show', compact('uom'));
+        return view('uoms.show', [
+            'uom' => $uom,
+            'baseCount' => Product::where('uom_id', $uom->id)->count(),
+            'salesCount' => Product::where('sales_uom_id', $uom->id)->count(),
+        ]);
     }
 
     /**
@@ -203,24 +206,70 @@ class UomController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
+     * "Delete" only disables the unit; records are never removed.
      */
     public function destroy(Uom $uom)
     {
         try {
-            $uom->delete();
+            $uom->update(['enabled' => false]);
 
             return redirect()
                 ->route('uoms.index')
-                ->with('success', "Unit '{$uom->uom_name}' deleted successfully.");
+                ->with('success', "Unit '{$uom->uom_name}' disabled. Products using it are unchanged.");
         } catch (\Throwable $e) {
-            Log::error('Error deleting UOM', [
+            Log::error('Error disabling UOM', [
                 'uom_id' => $uom->id,
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->with('error', 'Failed to delete unit. Please try again.');
+            return back()->with('error', 'Failed to disable unit. Please try again.');
         }
+    }
+
+    private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
+    /**
+     * @return array<int, AllowedFilter>
+     */
+    private function allowedFilters(): array
+    {
+        return [
+            AllowedFilter::callback('search', fn ($query, $value) => $query->where(function ($q) use ($value) {
+                $term = '%'.trim((string) $value).'%';
+                $q->where('uom_name', 'like', $term)
+                    ->orWhere('symbol', 'like', $term)
+                    ->orWhere('description', 'like', $term);
+            })),
+            AllowedFilter::partial('uom_name'),
+            AllowedFilter::partial('symbol'),
+            AllowedFilter::exact('must_be_whole_number'),
+            AllowedFilter::exact('enabled'),
+        ];
+    }
+
+    /**
+     * Headline numbers for the list; counts follow the search but not the status tab.
+     *
+     * @return array{total: int, active: int, inactive: int}
+     */
+    private function listStats(Request $request): array
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        unset($filters['enabled']);
+
+        $byStatus = QueryBuilder::for(Uom::class, new Request(['filter' => $filters]))
+            ->allowedFilters($this->allowedFilters())
+            ->getEloquentBuilder()
+            ->reorder()
+            ->selectRaw('enabled, COUNT(*) as aggregate')
+            ->groupBy('enabled')
+            ->pluck('aggregate', 'enabled');
+
+        return [
+            'total' => (int) $byStatus->sum(),
+            'active' => (int) ($byStatus[1] ?? 0),
+            'inactive' => (int) ($byStatus[0] ?? 0),
+        ];
     }
 }

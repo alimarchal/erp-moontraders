@@ -1,48 +1,43 @@
+{{-- Settings -> Products -> Edit. Saving first shows the "Confirm Update" change list (unchanged behaviour). --}}
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Edit Product: {{ $product->product_name }}
-        </h2>
-        <div class="flex justify-center items-center float-right">
-            <a href="{{ route('products.index') }}"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span>
+                    <a href="{{ route('products.index') }}">Products</a><span aria-hidden="true">›</span><span>Edit</span>
+                </nav>
+                <h1 class="ak-title">Edit Product: {{ $product->product_name }}</h1>
+                <p class="ak-sub">{{ $product->product_code }} · {{ $product->is_active ? 'Active' : 'Inactive' }}</p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('products.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <a href="{{ route('products.show', $product) }}" class="ak-btn ak-btn-outline">View</a>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6 space-y-6">
-                    <x-validation-errors class="mb-4 mt-4" />
-                    <div x-data="productEditForm()">
-                        <form method="POST" action="{{ route('products.update', $product) }}" id="edit-product-form"
-                            x-on:submit.prevent="openConfirm()">
-                            @csrf
-                            @method('PUT')
+    @include('settings.partials.ui-style')
 
-                            @include('products.partials.form-fields', [
-                                'product' => $product,
-                                'supplierOptions' => $supplierOptions,
-                                'uomOptions' => $uomOptions,
-                                'valuationMethods' => $valuationMethods,
-                            ])
+    <div class="ak-page">
+        <x-status-message />
+        <div x-data="productEditForm()">
+            <form method="POST" action="{{ route('products.update', $product) }}" id="edit-product-form"
+                x-on:submit.prevent="openConfirm()">
+                @csrf
+                @method('PUT')
 
-                            <div class="flex items-center justify-end mt-6">
-                                <button type="submit"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 ml-4">
-                                    Update Product
-                                </button>
-                            </div>
-                        </form>
+                @include('products.partials.form-fields', [
+                    'product' => $product,
+                    'supplierOptions' => $supplierOptions,
+                    'categoryOptions' => $categoryOptions,
+                    'uomOptions' => $uomOptions,
+                    'valuationMethods' => $valuationMethods,
+                    'submitLabel' => 'Update product',
+                ])
+            </form>
 
-                        {{-- Confirmation Modal --}}
+            {{-- Confirmation Modal --}}
                         <div x-show="showConfirm" x-cloak x-on:keydown.escape.window="showConfirm = false"
                             class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
                             <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" @click="showConfirm = false"></div>
@@ -113,11 +108,8 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
         </div>
-     </div>
+    </div>
 
     @push('scripts')
         <script>

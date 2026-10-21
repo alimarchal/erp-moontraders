@@ -6,13 +6,15 @@
     $settingsRoutePatterns = [
         'settings.*', 'account-types.*', 'accounting-periods.*', 'investment-opening-balances.*', 'chart-of-accounts.*',
         'currencies.*', 'cost-centers.*', 'bank-accounts.*', 'journal-entries.*', 'tax-codes.*', 'tax-rates.*',
-        'tax-transactions.*', 'product-tax-mappings.*', 'expense-details.*', 'category-revenue.*', 'profit-categories.*',
+        'tax-transactions.*', 'product-tax-mappings.*', 'category-revenue.*', 'profit-categories.*',
         'companies.*', 'users.*', 'roles.*', 'permissions.*', 'suppliers.*', 'supplier-payments.*', 'customers.*',
         'opening-customer-balances.*', 'employees.*', 'company-targets.*', 'promotional-campaigns.*', 'products.*',
         'product-categories.*', 'categories.*', 'uoms.*', 'warehouses.*', 'warehouse-types.*', 'vehicles.*',
         'stock-adjustments.*', 'product-recalls.*', 'claim-registers.*',
     ];
     $isSettingsSection = request()->routeIs($settingsRoutePatterns) || request()->is('settings', 'settings/*');
+    // Expense records are managed from the Expense Detail report, so they belong to the Reports menu item.
+    $isReportsSection = request()->routeIs('reports.*', 'expense-details.*');
 @endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 print:hidden">
     <!-- Primary Navigation Menu -->
@@ -78,7 +80,7 @@
                         </x-nav-link>
                     @endcan
                     @can('view-any-report')
-                        <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
+                        <x-nav-link href="{{ route('reports.index') }}" :active="$isReportsSection">
                             {{ __('Reports') }}
                         </x-nav-link>
                     @endcan
@@ -261,7 +263,7 @@
             @endcan
             @can('view-any-report')
                 <x-responsive-nav-link href="{{ route('reports.index') }}"
-                    :active="request()->routeIs('reports.*')">
+                    :active="$isReportsSection">
                     {{ __('Reports') }}
                 </x-responsive-nav-link>
             @endcan

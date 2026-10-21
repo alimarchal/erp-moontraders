@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Exports\ProductExport;
+use App\Exports\ProductImportTemplateExport;
+use App\Http\Requests\ImportProductRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Imports\ProductImport;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductPriceChangeLog;
@@ -31,7 +34,7 @@ class ProductController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('can:product-list', only: ['index', 'show', 'exportExcel']),
-            new Middleware('can:product-create', only: ['create', 'store']),
+            new Middleware('can:product-create', only: ['create', 'store', 'importForm', 'import', 'importTemplate']),
             new Middleware('can:product-edit', only: ['edit', 'update']),
             new Middleware('can:product-delete', only: ['destroy']),
         ];
@@ -39,7 +42,7 @@ class ProductController extends Controller implements HasMiddleware
 
     private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
 
-    private const DEFAULT_PER_PAGE = 40;
+    private const DEFAULT_PER_PAGE = 25;
 
     public function __construct(private ProductPricingService $pricing) {}
 
@@ -59,14 +62,89 @@ class ProductController extends Controller implements HasMiddleware
 
         return view('products.index', [
             'products' => $products,
-            'productOptions' => $this->productOptions(),
             'supplierOptions' => $this->supplierOptions(),
             'categoryOptions' => $this->categoryOptions(),
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
             'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'perPage' => $perPage,
+            'stats' => $this->listStats($request),
         ]);
+    }
+
+    /**
+     * Headline numbers for the list; counts follow the filters except the status tab.
+     *
+     * @return array{total: int, active: int, inactive: int}
+     */
+    private function listStats(Request $request): array
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        unset($filters['is_active']);
+
+        $byStatus = QueryBuilder::for($this->baseQuery(), new Request(['filter' => $filters]))
+            ->allowedFilters($this->allowedFilters())
+            ->getEloquentBuilder()
+            ->reorder()
+            ->selectRaw('is_active, COUNT(*) as aggregate')
+            ->groupBy('is_active')
+            ->pluck('aggregate', 'is_active');
+
+        return [
+            'total' => (int) $byStatus->sum(),
+            'active' => (int) ($byStatus[1] ?? 0),
+            'inactive' => (int) ($byStatus[0] ?? 0),
+        ];
+    }
+
+    /**
+     * Excel import screen.
+     */
+    public function importForm()
+    {
+        return view('products.import', [
+            'valuationMethods' => Product::VALUATION_METHODS,
+        ]);
+    }
+
+    /**
+     * Download the blank import template.
+     */
+    public function importTemplate()
+    {
+        return Excel::download(new ProductImportTemplateExport, 'products_import_template.xlsx');
+    }
+
+    /**
+     * Import products from Excel. Existing product codes are skipped, never overwritten.
+     */
+    public function import(ImportProductRequest $request)
+    {
+        $dryRun = $request->boolean('dry_run');
+        $import = new ProductImport($dryRun, $this->getUserSupplierScope());
+
+        DB::beginTransaction();
+
+        try {
+            Excel::import($import, $request->file('import_file'));
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Error importing products', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
+            return back()->withErrors(['import_file' => 'The file could not be read. Please use the template and try again.']);
+        }
+
+        return redirect()
+            ->route('products.import.form')
+            ->with('import_result', [
+                'dry_run' => $dryRun,
+                'counts' => $import->counts(),
+                'report' => $import->report(),
+                'file' => $request->file('import_file')->getClientOriginalName(),
+            ]);
     }
 
     /**
@@ -304,25 +382,24 @@ class ProductController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
+     * "Delete" only deactivates the product; records are never removed.
      */
     public function destroy(Product $product)
     {
         try {
-            $name = $product->product_name;
-            $product->delete();
+            $product->update(['is_active' => false]);
 
             return redirect()
                 ->route('products.index')
-                ->with('success', "Product '{$name}' deleted successfully.");
+                ->with('success', "Product '{$product->product_name}' deactivated. Its history is kept.");
         } catch (\Throwable $e) {
-            Log::error('Error deleting product', [
+            Log::error('Error deactivating product', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->with('error', 'Failed to delete product. Please try again.');
+            return back()->with('error', 'Failed to deactivate product. Please try again.');
         }
     }
 
@@ -342,32 +419,55 @@ class ProductController extends Controller implements HasMiddleware
     }
 
     /**
+     * Products visible to the current user (supplier-scoped users only see their own).
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<Product>
+     */
+    private function baseQuery()
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        return Product::query()
+            ->with(['supplier', 'uom', 'salesUom', 'category'])
+            ->when($userSupplierId, fn ($q, $supplierId) => $q->where('supplier_id', $supplierId));
+    }
+
+    /**
+     * @return array<int, AllowedFilter>
+     */
+    private function allowedFilters(): array
+    {
+        return [
+            AllowedFilter::callback('search', fn ($query, $value) => $query->where(function ($q) use ($value) {
+                $term = '%'.trim((string) $value).'%';
+                $q->where('product_name', 'like', $term)
+                    ->orWhere('product_code', 'like', $term)
+                    ->orWhere('brand', 'like', $term)
+                    ->orWhere('barcode', 'like', $term);
+            })),
+            AllowedFilter::exact('product_name'),
+            AllowedFilter::exact('product_code'),
+            AllowedFilter::partial('brand'),
+            AllowedFilter::partial('barcode'),
+            AllowedFilter::partial('pack_size'),
+            AllowedFilter::exact('supplier_id'),
+            AllowedFilter::exact('category_id'),
+            AllowedFilter::exact('uom_id'),
+            AllowedFilter::exact('sales_uom_id'),
+            AllowedFilter::exact('valuation_method'),
+            AllowedFilter::exact('is_active'),
+            AllowedFilter::exact('is_powder'),
+            AllowedFilter::exact('expiry_price'),
+        ];
+    }
+
+    /**
      * Build the filtered query shared by index and export.
      */
     private function buildFilteredQuery(): QueryBuilder
     {
-        $userSupplierId = $this->getUserSupplierScope();
-
-        $baseQuery = Product::query()
-            ->with(['supplier', 'uom', 'salesUom', 'category'])
-            ->when($userSupplierId, fn ($q, $supplierId) => $q->where('supplier_id', $supplierId));
-
-        return QueryBuilder::for($baseQuery)
-            ->allowedFilters([
-                AllowedFilter::exact('product_name'),
-                AllowedFilter::exact('product_code'),
-                AllowedFilter::partial('brand'),
-                AllowedFilter::partial('barcode'),
-                AllowedFilter::partial('pack_size'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('category_id'),
-                AllowedFilter::exact('uom_id'),
-                AllowedFilter::exact('sales_uom_id'),
-                AllowedFilter::exact('valuation_method'),
-                AllowedFilter::exact('is_active'),
-                AllowedFilter::exact('is_powder'),
-                AllowedFilter::exact('expiry_price'),
-            ])
+        return QueryBuilder::for($this->baseQuery())
+            ->allowedFilters($this->allowedFilters())
             ->allowedSorts([
                 AllowedSort::field('product_name'),
                 AllowedSort::field('product_code'),
@@ -397,12 +497,5 @@ class ProductController extends Controller implements HasMiddleware
     protected function uomOptions()
     {
         return Uom::orderBy('uom_name')->get(['id', 'uom_name', 'symbol']);
-    }
-
-    protected function productOptions()
-    {
-        return Product::where('is_active', true)
-            ->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name']);
     }
 }

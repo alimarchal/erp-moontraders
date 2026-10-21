@@ -740,6 +740,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         /* Products & Inventory */
         Route::get('products/export/excel', [ProductController::class, 'exportExcel'])->name('products.export.excel');
+        Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import.form');
+        Route::get('products/import/template', [ProductController::class, 'importTemplate'])->name('products.import.template');
+        Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
         Route::resource('products', ProductController::class);
         Route::resource('categories', CategoryController::class);
         Route::resource('uoms', UomController::class);

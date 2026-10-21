@@ -78,3 +78,13 @@ it('keeps the Reports menu item highlighted on a report page', function () {
 
     expect($active)->toBeTrue();
 });
+
+it('does not double-escape ampersands in report labels', function () {
+    $user = reportsUserWith(['report-sales-scheme-discount']);
+
+    $this->actingAs($user)
+        ->get(route('reports.index'))
+        ->assertSuccessful()
+        ->assertSee('Schemes &amp; Discounts', false)
+        ->assertDontSee('&amp;amp;', false);
+});

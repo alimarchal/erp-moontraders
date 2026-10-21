@@ -118,3 +118,37 @@ it('does not highlight Settings on unrelated pages', function () {
 
     expect(settingsNavItemIsActive($html))->toBeFalse();
 });
+
+it('does not list Expense Details, which only redirects to the Expense Detail report', function () {
+    $user = settingsUserWith(['expense-detail-list', 'tax-list']);
+
+    $html = $this->actingAs($user)
+        ->get(route('settings.index'))
+        ->assertSuccessful()
+        ->getContent();
+
+    preg_match_all('#<a\s[^>]*data-settings-item[^>]*>#', $html, $anchors);
+
+    expect(implode("\n", $anchors[0]))
+        ->toContain(route('tax-codes.index'))
+        ->not->toContain(route('expense-details.index'));
+});
+
+it('highlights Reports, not Settings, on expense detail pages', function () {
+    foreach (['expense-detail-create', 'report-audit-expense-detail'] as $permission) {
+        Permission::findOrCreate($permission);
+    }
+    $user = settingsUserWith(['expense-detail-create', 'report-audit-expense-detail']);
+
+    $html = $this->actingAs($user)
+        ->get(route('expense-details.create'))
+        ->assertSuccessful()
+        ->getContent();
+
+    expect(settingsNavItemIsActive($html))->toBeFalse();
+    preg_match_all('#<a\s[^>]*>#', $html, $anchors);
+    $reportsActive = collect($anchors[0])->contains(
+        fn (string $a) => str_contains($a, 'href="'.route('reports.index').'"') && str_contains($a, 'border-indigo-400')
+    );
+    expect($reportsActive)->toBeTrue();
+});

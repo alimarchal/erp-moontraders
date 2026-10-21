@@ -21,14 +21,14 @@ it('requires the setting-view permission', function () {
         ->assertForbidden();
 });
 
-it('renders the search box and groups links by area', function () {
+it('renders the search box and groups links by area, smaller groups first', function () {
     $user = settingsUserWith(['user-list', 'chart-of-account-list', 'supplier-list']);
 
     $this->actingAs($user)
         ->get(route('settings.index'))
         ->assertSuccessful()
         ->assertSee('id="settings-search"', false)
-        ->assertSeeInOrder(['Organization & Access', 'Users', 'Accounting Setup', 'Chart of Accounts', 'Business Partners', 'Suppliers'], false)
+        ->assertSeeInOrder(['Organization & Access', 'Users', 'Business Partners', 'Suppliers', 'Accounting Setup', 'Chart of Accounts'])
         ->assertSee(route('users.index'), false)
         ->assertSee('data-settings-item', false);
 });

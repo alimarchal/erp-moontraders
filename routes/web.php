@@ -683,6 +683,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('company-targets/help', [CompanyTargetController::class, 'help'])->name('company-targets.help');
         Route::resource('company-targets', CompanyTargetController::class);
         Route::get('customers/export/excel', [CustomerController::class, 'exportExcel'])->name('customers.export.excel');
+        Route::get('customers/import', [CustomerController::class, 'importForm'])->name('customers.import.form');
+        Route::get('customers/import/template', [CustomerController::class, 'importTemplate'])->name('customers.import.template');
+        Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
         Route::resource('customers', CustomerController::class);
 
         /* RBAC — Users, Roles & Permissions */

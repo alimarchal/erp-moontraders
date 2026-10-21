@@ -10,11 +10,17 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Bank Statement Register</h2>
             <div class="flex flex-wrap items-center gap-2">
+                @can('bank-statement-entry-create')
+                    <a href="{{ route('bank-statement-entries.create') }}" class="inline-flex items-center px-3 py-2 bg-green-800 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">＋ Add entry</a>
+                @endcan
                 @can('bank-statement-import-create')
                     <a href="{{ route('bank-statement-imports.create') }}" class="inline-flex items-center px-3 py-2 bg-blue-950 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">Import statement</a>
                 @endcan
                 @can('bank-statement-entry-approve')
                     <a href="{{ route('bank-approvals.index') }}" class="inline-flex items-center px-3 py-2 bg-amber-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700">Approvals @if(($summary['pending_approval']['count'] ?? 0) > 0)<span class="ms-1 rounded-full bg-white/90 text-amber-800 px-1.5">{{ $summary['pending_approval']['count'] }}</span>@endif</a>
+                @endcan
+                @can('bank-receipt-scan-list')
+                    <a href="{{ route('bank-receipt-scans.index') }}" class="inline-flex items-center px-3 py-2 bg-sky-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-sky-800">Scan inbox @if(($pendingScans ?? 0) > 0)<span class="ms-1 rounded-full bg-white/90 text-sky-800 px-1.5">{{ $pendingScans }}</span>@endif</a>
                 @endcan
                 @can('bank-reconciliation-list')
                     <a href="{{ route('bank-reconciliations.index') }}" class="inline-flex items-center px-3 py-2 bg-teal-700 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-teal-800">Reconcile</a>
@@ -155,6 +161,17 @@
             @endforeach
         </div>
 
+        {{-- Account switcher (only when there is more than one account) --}}
+        @if ($bankAccounts->count() > 1)
+            <div class="flex flex-wrap items-center gap-2 mb-2 text-sm">
+                <span class="text-gray-500">Account:</span>
+                <a href="{{ route('bank-statement-entries.index', $query(['bank_account_id' => null])) }}" class="rounded-md px-2.5 py-0.5 border {{ empty($filters['bank_account_id']) ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">All accounts</a>
+                @foreach ($bankAccounts as $account)
+                    <a href="{{ route('bank-statement-entries.index', $query(['bank_account_id' => $account->id])) }}" class="rounded-md px-2.5 py-0.5 border {{ (string) ($filters['bank_account_id'] ?? '') === (string) $account->id ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">{{ $account->account_name }}</a>
+                @endforeach
+            </div>
+        @endif
+
         {{-- Status chips --}}
         <div class="flex flex-wrap items-center gap-2 mb-3">
             <a href="{{ route('bank-statement-entries.index', $query(['status' => null])) }}" class="rounded-full px-3 py-1 text-sm border {{ $activeStatus ? 'bg-white text-gray-700 border-gray-300' : 'bg-blue-950 text-white border-blue-950' }}">All <b class="tabular-nums">{{ number_format($totalCount) }}</b></a>
@@ -166,6 +183,7 @@
                     </a>
                 @endif
             @endforeach
+            <a href="{{ route('bank-statement-entries.index', $query(['has_attachment' => ($filters['has_attachment'] ?? '') === 'no' ? null : 'no'])) }}" class="rounded-full px-3 py-1 text-sm border {{ ($filters['has_attachment'] ?? '') === 'no' ? 'bg-amber-600 text-white border-amber-600' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100' }}" title="Entries that have no receipt or file yet">📎 No receipt <b class="tabular-nums">{{ number_format($withoutReceipt) }}</b></a>
             @can('bank-statement-entry-classify')
                 <form method="POST" action="{{ route('bank-statement-entries.auto-classify') }}" class="ms-auto">
                     @csrf
@@ -245,7 +263,7 @@
                     </div>
                     @if ($entries->hasPages())<div class="px-2 py-2">{{ $entries->links() }}</div>@endif
                 @else
-                    <p class="text-center text-gray-700 py-10">No entries match. @can('bank-statement-import-create')<a href="{{ route('bank-statement-imports.create') }}" class="text-blue-700 hover:underline">Import a statement</a>@endcan</p>
+                    <p class="text-center text-gray-700 py-10">No entries match. @can('bank-statement-entry-create')<a href="{{ route('bank-statement-entries.create') }}" class="text-blue-700 hover:underline">Add an entry</a> or @endcan @can('bank-statement-import-create')<a href="{{ route('bank-statement-imports.create') }}" class="text-blue-700 hover:underline">Import a statement</a>@endcan</p>
                 @endif
             </div>
         </form>

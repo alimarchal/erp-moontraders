@@ -20,6 +20,7 @@ class BankReportController extends Controller
     public function index(): View
     {
         $reports = collect(BankReportService::REPORTS)->filter(fn (array $report) => auth()->user()->can($report['permission']));
+        abort_if($reports->isEmpty(), 403);
 
         return view('reports.bank.index', ['reports' => $reports]);
     }

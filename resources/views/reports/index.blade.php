@@ -755,7 +755,7 @@
 
 
                 {{-- ─── Bank Register ─── --}}
-                @canany(['report-bank-company-month-summary', 'report-bank-category-month-summary', 'report-bank-company-ledger', 'report-bank-reconciliation-statement', 'report-bank-unclassified', 'report-bank-unreconciled', 'report-bank-missing-attachments', 'report-bank-pending-approvals', 'report-bank-cash-flow', 'report-bank-charges-tax', 'report-bank-top-parties', 'report-bank-audit-log'])
+                @canany(['report-bank-company-month-summary', 'report-bank-category-month-summary', 'report-bank-company-ledger', 'report-bank-reconciliation-statement', 'report-bank-unclassified', 'report-bank-unreconciled', 'report-bank-missing-attachments', 'report-bank-pending-approvals', 'report-bank-cash-flow', 'report-bank-charges-tax', 'report-bank-top-parties', 'report-bank-audit-log', 'report-bank-account-summary', 'report-bank-daily-book', 'report-bank-unlinked-scans'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Bank Register</p>
                         <div class="bg-white rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">

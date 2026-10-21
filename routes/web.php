@@ -19,6 +19,7 @@ use App\Http\Controllers\BankEntryAttachmentController;
 use App\Http\Controllers\BankEntryCategoryController;
 use App\Http\Controllers\BankEntryRuleController;
 use App\Http\Controllers\BankPartyAliasController;
+use App\Http\Controllers\BankReceiptScanController;
 use App\Http\Controllers\BankReconciliationController;
 use App\Http\Controllers\BankRegisterHelpController;
 use App\Http\Controllers\BankStatementEntryController;
@@ -661,10 +662,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('bank-statement-entries/{bankStatementEntry}/submit', [BankStatementEntryController::class, 'submit'])->name('bank-statement-entries.submit');
     Route::post('bank-statement-entries/{bankStatementEntry}/reverse', [BankStatementEntryController::class, 'reverse'])->name('bank-statement-entries.reverse');
     Route::post('bank-statement-entries/{bankStatementEntry}/attachments', [BankEntryAttachmentController::class, 'store'])->name('bank-statement-entries.attachments.store');
-    Route::resource('bank-statement-entries', BankStatementEntryController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
+    Route::resource('bank-statement-entries', BankStatementEntryController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
     Route::get('bank-attachments/{attachment}/download', [BankEntryAttachmentController::class, 'download'])->name('bank-attachments.download');
     Route::delete('bank-attachments/{attachment}', [BankEntryAttachmentController::class, 'destroy'])->name('bank-attachments.destroy');
+
+    Route::get('bank-receipt-scans/{bankReceiptScan}/file', [BankReceiptScanController::class, 'file'])->name('bank-receipt-scans.file');
+    Route::post('bank-receipt-scans/{bankReceiptScan}/link', [BankReceiptScanController::class, 'link'])->name('bank-receipt-scans.link');
+    Route::resource('bank-receipt-scans', BankReceiptScanController::class)->only(['index', 'store', 'destroy'])->parameters(['bank-receipt-scans' => 'bankReceiptScan']);
 
     Route::get('bank-approvals', [BankApprovalController::class, 'index'])->name('bank-approvals.index');
     Route::post('bank-approvals/bulk-approve', [BankApprovalController::class, 'bulkApprove'])->name('bank-approvals.bulk-approve');

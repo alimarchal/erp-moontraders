@@ -4,6 +4,7 @@ namespace App\Services\BankRegister;
 
 use App\Models\BankAccount;
 use App\Models\BankEntryAuditLog;
+use App\Models\BankReceiptScan;
 use App\Models\BankReconciliation;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
@@ -37,6 +38,9 @@ class BankReportService
         'cash-flow' => ['title' => 'Cash-flow summary', 'permission' => 'report-bank-cash-flow', 'description' => 'Receipts and payments per category.', 'filters' => ['bank_account_id', 'date_from', 'date_to']],
         'charges-tax' => ['title' => 'Bank charges and tax', 'permission' => 'report-bank-charges-tax', 'description' => 'Month-wise bank charges and tax / government payments.', 'filters' => ['bank_account_id', 'date_from', 'date_to']],
         'top-parties' => ['title' => 'Top parties', 'permission' => 'report-bank-top-parties', 'description' => 'The 25 biggest paying and paid parties.', 'filters' => ['bank_account_id', 'date_from', 'date_to']],
+        'account-summary' => ['title' => 'All accounts at a glance', 'permission' => 'report-bank-account-summary', 'description' => 'For every bank account: entries, money in and out, what is unclassified, waiting for approval or still without a receipt.', 'filters' => ['date_from', 'date_to']],
+        'daily-book' => ['title' => 'Daily book (day by day)', 'permission' => 'report-bank-daily-book', 'description' => 'One account day by day: received, paid out and the closing balance after each day.', 'filters' => ['bank_account_id', 'date_from', 'date_to', 'opening_balance']],
+        'unlinked-scans' => ['title' => 'Scanned receipts not yet linked', 'permission' => 'report-bank-unlinked-scans', 'description' => 'Receipts waiting in the scan inbox, oldest first, so none is forgotten.', 'filters' => ['bank_account_id']],
         'audit-log' => ['title' => 'Audit log', 'permission' => 'report-bank-audit-log', 'description' => 'Who classified, submitted, approved, posted or reversed what, and when.', 'filters' => ['date_from', 'date_to']],
     ];
 
@@ -58,6 +62,9 @@ class BankReportService
             'cash-flow' => $this->cashFlow($filters),
             'charges-tax' => $this->chargesTax($filters),
             'top-parties' => $this->topParties($filters),
+            'account-summary' => $this->accountSummary($filters),
+            'daily-book' => $this->dailyBook($filters),
+            'unlinked-scans' => $this->unlinkedScans($filters),
             'audit-log' => $this->auditLog($filters),
             default => throw new BankRegisterException('Unknown report.'),
         };
@@ -332,6 +339,98 @@ class BankReportService
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
+    private function accountSummary(array $filters): array
+    {
+        $rows = [];
+
+        foreach (BankAccount::orderBy('account_name')->get() as $account) {
+            $entries = $this->base($filters)->where('bank_account_id', $account->id);
+
+            $rows[] = [
+                $account->account_name.' ('.$account->account_number.')',
+                (clone $entries)->count(),
+                round((float) (clone $entries)->sum('credit'), 2),
+                round((float) (clone $entries)->sum('debit'), 2),
+                round((float) (clone $entries)->sum('credit') - (float) (clone $entries)->sum('debit'), 2),
+                (clone $entries)->whereIn('status', ['unclassified', 'rejected'])->count(),
+                (clone $entries)->where('status', BankStatementEntry::STATUS_PENDING_APPROVAL)->count(),
+                (clone $entries)->doesntHave('attachments')->count(),
+                (clone $entries)->max('posting_date') ? Carbon::parse((clone $entries)->max('posting_date'))->format('d-m-Y') : '-',
+            ];
+        }
+
+        $sum = fn (int $i) => array_sum(array_column($rows, $i));
+
+        return $this->shape('All accounts at a glance', $this->subtitle($filters), ['Account', 'Entries', 'Received', 'Paid out', 'Net', 'Unclassified', 'Pending approval', 'No receipt', 'Last entry'], [1, 2, 3, 4, 5, 6, 7], $rows, ['Total', $sum(1), round($sum(2), 2), round($sum(3), 2), round($sum(4), 2), $sum(5), $sum(6), $sum(7), ''], []);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    private function dailyBook(array $filters): array
+    {
+        if (empty($filters['bank_account_id'])) {
+            return $this->shape('Daily book', 'Choose a bank account.', ['Date', 'Entries', 'Received', 'Paid out', 'Net', 'Closing balance'], [1, 2, 3, 4, 5], [], null, []);
+        }
+
+        $opening = (float) ($filters['opening_balance'] ?? 0);
+
+        // money moved before the first day shown is part of the opening position
+        if (! empty($filters['date_from'])) {
+            $before = BankStatementEntry::query()->where('bank_account_id', $filters['bank_account_id'])->whereDate('posting_date', '<', $filters['date_from']);
+            $opening += (float) (clone $before)->sum('credit') - (float) (clone $before)->sum('debit');
+        }
+
+        $days = [];
+        foreach ($this->base($filters)->orderBy('posting_date')->get(['posting_date', 'debit', 'credit']) as $entry) {
+            $key = $entry->posting_date->toDateString();
+            $days[$key]['entries'] = ($days[$key]['entries'] ?? 0) + 1;
+            $days[$key]['in'] = ($days[$key]['in'] ?? 0) + (float) $entry->credit;
+            $days[$key]['out'] = ($days[$key]['out'] ?? 0) + (float) $entry->debit;
+        }
+        ksort($days);
+
+        $balance = $opening;
+        $rows = [['Opening balance', '', '', '', '', round($opening, 2)]];
+        foreach ($days as $date => $day) {
+            $balance += $day['in'] - $day['out'];
+            $rows[] = [Carbon::parse($date)->format('d-m-Y'), $day['entries'], round($day['in'], 2), round($day['out'], 2), round($day['in'] - $day['out'], 2), round($balance, 2)];
+        }
+
+        $totals = array_slice($rows, 1);
+
+        return $this->shape('Daily book', $this->subtitle($filters), ['Date', 'Entries', 'Received', 'Paid out', 'Net', 'Closing balance'], [1, 2, 3, 4, 5], $rows, ['Total', array_sum(array_column($totals, 1)), round(array_sum(array_column($totals, 2)), 2), round(array_sum(array_column($totals, 3)), 2), round(array_sum(array_column($totals, 4)), 2), round($balance, 2)], []);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    private function unlinkedScans(array $filters): array
+    {
+        $scans = BankReceiptScan::query()->with(['bankAccount', 'uploader'])
+            ->where('status', BankReceiptScan::STATUS_PENDING)
+            ->when($filters['bank_account_id'] ?? null, fn (Builder $q, $v) => $q->where('bank_account_id', $v))
+            ->orderBy('scan_date')->get();
+
+        $rows = $scans->map(fn (BankReceiptScan $scan) => [
+            $scan->scan_date->format('d-m-Y'),
+            (int) $scan->scan_date->diffInDays(now()),
+            $scan->file_name,
+            $scan->bankAccount?->account_name ?? '-',
+            $scan->note ?? '-',
+            $scan->uploader?->name ?? '-',
+            $scan->amount ? (float) $scan->amount : 0.0,
+        ])->all();
+
+        return $this->shape('Scanned receipts not yet linked', 'Oldest first', ['Scanned on', 'Days waiting', 'File', 'Account', 'Note', 'Uploaded by', 'Amount'], [1, 6], $rows, null, []);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
     private function auditLog(array $filters): array
     {
         $logs = BankEntryAuditLog::query()
@@ -379,6 +478,10 @@ class BankReportService
 
         if (! empty($filters['bank_account_id']) && $account = BankAccount::find($filters['bank_account_id'])) {
             $parts[] = $account->account_name;
+        }
+
+        if (isset($filters['opening_balance']) && $filters['opening_balance'] !== '') {
+            $parts[] = 'Opening balance '.number_format((float) $filters['opening_balance'], 2);
         }
 
         return implode(' | ', $parts) ?: 'All dates, all bank accounts';

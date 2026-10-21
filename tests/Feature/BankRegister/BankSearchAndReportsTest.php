@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Attachment;
+use App\Models\BankAccount;
 use App\Models\BankEntryCategory;
+use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
 use App\Models\Company;
@@ -123,10 +125,54 @@ test('every report builds and renders for a user who may see it', function () {
     }
 });
 
+test('the report list is refused to a user who may open none of them', function () {
+    $this->actingAs(bankUser([]));
+
+    $this->get(route('reports.bank.index'))->assertForbidden();
+});
+
 test('a report is forbidden without its permission', function () {
     $this->actingAs(bankUser(['report-bank-cash-flow']));
 
     $this->get(route('reports.bank.show', 'cash-flow'))->assertOk();
     $this->get(route('reports.bank.show', 'audit-log'))->assertForbidden();
     $this->get(route('reports.bank.show', 'nonsense'))->assertNotFound();
+});
+
+test('the account summary shows each account with its open work and missing receipts', function () {
+    $other = BankAccount::factory()->create(['account_name' => 'Wallet Account', 'account_number' => 'W-1']);
+    BankStatementEntry::factory()->create(['bank_account_id' => $other->id, 'posting_date' => '2024-08-01', 'credit' => 900, 'debit' => 0, 'status' => 'pending_approval']);
+    Attachment::factory()->create(['journal_entry_id' => null, 'attachable_type' => BankStatementEntry::class, 'attachable_id' => $this->e1->id]);
+
+    $report = app(BankReportService::class)->build('account-summary', []);
+    $main = collect($report['rows'])->first(fn ($row) => str_contains($row[0], $this->fixture['bank']->account_number));
+    $wallet = collect($report['rows'])->first(fn ($row) => str_contains($row[0], 'W-1'));
+
+    expect($main[1])->toBe(3)->and($main[2])->toBe(570000.0)->and($main[3])->toBe(1500000.0)->and($main[5])->toBe(3)->and($main[7])->toBe(2)
+        ->and($wallet[1])->toBe(1)->and($wallet[6])->toBe(1)->and($wallet[7])->toBe(1)
+        ->and($report['totals'][1])->toBe(4)->and($report['totals'][7])->toBe(3);
+});
+
+test('the daily book carries a closing balance from an opening balance and from earlier entries', function () {
+    $report = app(BankReportService::class)->build('daily-book', ['bank_account_id' => $this->fixture['bank']->id, 'opening_balance' => 1000000]);
+
+    expect($report['rows'][0])->toBe(['Opening balance', '', '', '', '', 1000000.0])
+        ->and($report['rows'][1])->toBe(['02-07-2024', 1, 500000.0, 0.0, 500000.0, 1500000.0])
+        ->and($report['rows'][2][5])->toBe(0.0)      // the 15 Aug payment of 1.5M takes the balance back to zero
+        ->and($report['totals'][5])->toBe(70000.0);  // then the 70,000 cash deposit of 20 Aug
+
+    $later = app(BankReportService::class)->build('daily-book', ['bank_account_id' => $this->fixture['bank']->id, 'date_from' => '2024-08-01', 'opening_balance' => 0]);
+    expect($later['rows'][0][5])->toBe(500000.0);
+
+    expect(app(BankReportService::class)->build('daily-book', [])['subtitle'])->toBe('Choose a bank account.');
+});
+
+test('the unlinked scans report lists waiting receipts oldest first', function () {
+    BankReceiptScan::factory()->create(['scan_date' => now()->subDays(9)->toDateString(), 'file_name' => 'old.jpg']);
+    BankReceiptScan::factory()->create(['scan_date' => now()->toDateString(), 'file_name' => 'new.jpg']);
+    BankReceiptScan::factory()->create(['status' => 'linked', 'file_name' => 'done.jpg']);
+
+    $report = app(BankReportService::class)->build('unlinked-scans', []);
+
+    expect($report['rows'])->toHaveCount(2)->and($report['rows'][0][2])->toBe('old.jpg')->and($report['rows'][0][1])->toBe(9);
 });

@@ -39,6 +39,18 @@
                                 <a href="{{ route('bank-statement-entries.show', $entry) }}" class="font-semibold text-blue-800 hover:underline" dir="auto">{{ $entry->company?->company_name ?? $entry->party_name_in_statement }}</a>
                                 <p class="text-xs text-gray-500">{{ $entry->posting_date->format('d-m-Y') }} · {{ $entry->reference }} · {{ $entry->category?->name }} · {{ $entry->bankAccount->account_name }}</p>
                                 <p class="text-xs text-gray-500">Submitted by <b>{{ $entry->submitter?->name }}</b> {{ $entry->submitted_at?->diffForHumans() }} · {{ $entry->attachments->count() }} file(s)</p>
+                                @if ($entry->attachments->isNotEmpty())
+                                    <div class="mt-1 flex flex-wrap gap-2">
+                                        @foreach ($entry->attachments as $attachment)
+                                            <a href="{{ route('bank-attachments.download', ['attachment' => $attachment, 'inline' => 1]) }}" target="_blank" class="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-blue-800 hover:bg-blue-50" title="{{ $attachment->description }}">
+                                                @if (str_starts_with((string) $attachment->file_type, 'image/'))<img src="{{ route('bank-attachments.download', ['attachment' => $attachment, 'inline' => 1]) }}" alt="" class="h-6 w-6 rounded object-cover">@else 📄 @endif
+                                                {{ \Illuminate\Support\Str::limit($attachment->file_name, 28) }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="mt-1 text-xs text-amber-700">No receipt or file attached.</p>
+                                @endif
                                 <div class="mt-1 flex gap-1 text-xs">
                                     <span class="rounded px-2 py-0.5 {{ $approved->count() >= 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600' }}">Checker {{ $approved->count() >= 1 ? '✓ '.$approved->first()->user?->name : 'pending' }}</span>
                                     @if ($entry->approval_level_required === 2)

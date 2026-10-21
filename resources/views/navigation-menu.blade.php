@@ -40,7 +40,7 @@
                     @endcan
                     @can('bank-statement-entry-list')
                         @php($pendingBank = \App\Models\BankStatementEntry::query()->where('status', 'pending_approval')->count())
-                        <x-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*') || request()->routeIs('reports.bank.*')">
+                        <x-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*') || request()->routeIs('bank-receipt-scans.*') || request()->routeIs('reports.bank.*')">
                             {{ __('Bank Register') }}
                             @if ($pendingBank > 0)
                                 <span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{{ $pendingBank }}</span>
@@ -234,7 +234,7 @@
                 </x-responsive-nav-link>
             @endcan
             @can('bank-statement-entry-list')
-                <x-responsive-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*')">
+                <x-responsive-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*') || request()->routeIs('bank-receipt-scans.*')">
                     {{ __('Bank Register') }}
                 </x-responsive-nav-link>
             @endcan

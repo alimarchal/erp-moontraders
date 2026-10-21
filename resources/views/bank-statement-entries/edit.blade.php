@@ -8,11 +8,15 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <x-validation-errors class="mb-4" />
 
-                <div class="mb-5 rounded-lg bg-gray-50 border border-gray-200 p-4 text-sm">
-                    <p class="text-2xl font-bold tabular-nums {{ $entry->direction === 'credit' ? 'text-emerald-700' : 'text-red-700' }}">{{ $entry->direction === 'credit' ? '+' : '−' }} PKR {{ number_format($entry->amount, 2) }}</p>
-                    <p class="text-gray-600">{{ $entry->posting_date->format('d-m-Y') }} · {{ $entry->reference }}</p>
-                    <p class="mt-1 text-gray-700" dir="auto">{{ $entry->narration }}</p>
-                </div>
+                @if ($entry->import_id === null)
+                    <p class="mb-4 rounded bg-blue-50 border border-blue-200 p-3 text-sm text-blue-900">This entry was typed in by hand, so you can still correct its date, amount and details until it is posted.</p>
+                @else
+                    <div class="mb-5 rounded-lg bg-gray-50 border border-gray-200 p-4 text-sm">
+                        <p class="text-2xl font-bold tabular-nums {{ $entry->direction === 'credit' ? 'text-emerald-700' : 'text-red-700' }}">{{ $entry->direction === 'credit' ? '+' : '−' }} PKR {{ number_format($entry->amount, 2) }}</p>
+                        <p class="text-gray-600">{{ $entry->posting_date->format('d-m-Y') }} · {{ $entry->reference }}</p>
+                        <p class="mt-1 text-gray-700" dir="auto">{{ $entry->narration }}</p>
+                    </div>
+                @endif
 
                 @if ($entry->status === 'pending_approval')
                     <p class="mb-4 rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">This entry is waiting for approval. Changing the company or category will withdraw it from the approval queue and the maker must submit it again.</p>
@@ -20,6 +24,41 @@
 
                 <form method="POST" action="{{ route('bank-statement-entries.update', $entry) }}">
                     @csrf @method('PUT')
+                    @if ($entry->import_id === null)
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div>
+                                <x-label for="direction" value="Money" />
+                                <select id="direction" name="direction" class="border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="credit" @selected(old('direction', $entry->direction) === 'credit')>Received</option>
+                                    <option value="debit" @selected(old('direction', $entry->direction) === 'debit')>Paid out</option>
+                                </select>
+                            </div>
+                            <div>
+                                <x-label for="amount" value="Amount (PKR)" :required="true" />
+                                <x-input id="amount" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block w-full" required :value="old('amount', $entry->amount)" />
+                            </div>
+                            <div>
+                                <x-label for="posting_date" value="Date" :required="true" />
+                                <x-input id="posting_date" name="posting_date" type="date" class="mt-1 block w-full" required :value="old('posting_date', $entry->posting_date->format('Y-m-d'))" />
+                            </div>
+                            <div>
+                                <x-label for="value_date" value="Value date" />
+                                <x-input id="value_date" name="value_date" type="date" class="mt-1 block w-full" :value="old('value_date', $entry->value_date?->format('Y-m-d'))" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <x-label for="party_name_in_statement" value="Party name" />
+                                <x-input id="party_name_in_statement" name="party_name_in_statement" type="text" dir="auto" class="mt-1 block w-full" :value="old('party_name_in_statement', $entry->party_name_in_statement)" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <x-label for="reference" value="Reference / cheque no." />
+                                <x-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference', $entry->reference)" />
+                            </div>
+                            <div class="md:col-span-4">
+                                <x-label for="narration" value="Narration" />
+                                <x-input id="narration" name="narration" type="text" dir="auto" class="mt-1 block w-full" :value="old('narration', $entry->narration)" />
+                            </div>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label for="company_id" value="Company" />

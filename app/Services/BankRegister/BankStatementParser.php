@@ -29,6 +29,8 @@ class BankStatementParser
         'pdf_page' => ['pdf page'],
         'response_status' => ['response status'],
         'balance' => ['balance', 'running balance'],
+        'amount' => ['amount', 'amount (pkr)', 'txn amount'],
+        'dr_cr' => ['dr/cr', 'dr cr', 'type', 'debit/credit', 'cr/dr'],
     ];
 
     /**
@@ -64,6 +66,15 @@ class BankStatementParser
 
             $debit = $this->amount($get('debit'));
             $credit = $this->amount($get('credit'));
+
+            // layouts with one Amount column: a Dr/Cr marker, or a minus sign for money out
+            if (isset($columns['amount']) && ! isset($columns['debit']) && ! isset($columns['credit'])) {
+                $single = $this->amount($get('amount'));
+                $marker = mb_strtolower((string) $this->text($get('dr_cr')));
+                $isDebit = $marker !== '' ? str_starts_with($marker, 'd') : $single < 0;
+                $debit = $isDebit ? abs($single) : 0.0;
+                $credit = $isDebit ? 0.0 : abs($single);
+            }
 
             if (! $date) {
                 $errors[] = ['row' => $lineNo, 'message' => 'Posting date is missing or not a date.'];
@@ -134,7 +145,7 @@ class BankStatementParser
                 }
             }
 
-            if (isset($columns['posting_date']) && (isset($columns['debit']) || isset($columns['credit']))) {
+            if (isset($columns['posting_date']) && (isset($columns['debit']) || isset($columns['credit']) || isset($columns['amount']))) {
                 return [$index, $columns];
             }
         }
@@ -160,7 +171,22 @@ class BankStatementParser
             return Carbon::instance(ExcelDate::excelToDateTimeObject((float) $value))->startOfDay();
         }
 
-        return Carbon::parse((string) $value)->startOfDay();
+        $text = trim((string) $value);
+
+        // Pakistani statements print day first: 15/10/2026, 15-10-2026, 15-Oct-2026
+        foreach (['d/m/Y', 'd-m-Y', 'd.m.Y', 'd-M-Y', 'd M Y', 'd/m/y', 'd-m-y'] as $format) {
+            try {
+                $parsed = Carbon::createFromFormat('!'.$format, $text);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ($parsed->format($format) === $text) {
+                return $parsed;
+            }
+        }
+
+        return Carbon::parse($text)->startOfDay();
     }
 
     private function safeDate(mixed $value): ?string

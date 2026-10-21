@@ -163,3 +163,34 @@ test('a user without the import permission cannot import', function () {
     $this->get(route('bank-statement-imports.create'))->assertForbidden();
     $this->post(route('bank-statement-imports.store'), [])->assertForbidden();
 });
+
+test('a statement with one signed Amount column and day-first dates is understood', function () {
+    $sheet = new Spreadsheet;
+    $sheet->getActiveSheet()->fromArray([
+        ['Date', 'Description', 'Amount', 'Cheque No'],
+        ['15/10/2026', 'Deposit from retailer', 50000, '123456'],
+        ['16-Oct-2026', 'Transfer to Dalda', -125000.5, ''],
+        ['17.10.2026', 'Service charge', '-1,250.00', ''],
+    ], null, 'A1');
+    $path = tempnam(sys_get_temp_dir(), 'amt').'.xlsx';
+    (new Xlsx($sheet))->save($path);
+
+    $import = app(BankStatementImportService::class)->preview($this->fixture['bank'], new UploadedFile($path, 'amount.xlsx', null, null, true), [], $this->user);
+
+    expect($import->preview['valid_rows'])->toBe(3)->and($import->preview['error_rows'])->toBe(0)
+        ->and($import->preview['total_credit'])->toEqual(50000)
+        ->and($import->preview['total_debit'])->toEqual(126250.5)
+        ->and($import->preview['date_from'])->toBe('2026-10-15')->and($import->preview['date_to'])->toBe('2026-10-17');
+});
+
+test('a statement with Dr/Cr marker, a CSV file and Pakistani column names is understood', function () {
+    $path = tempnam(sys_get_temp_dir(), 'csv').'.csv';
+    file_put_contents($path, "Txn Date,Narration,Amount,Dr/Cr\n05/10/2026,CHQ DEPOSIT 5521,275000,CR\n06/10/2026,FUNDS TRANSFER,90000,DR\n");
+
+    $import = app(BankStatementImportService::class)->preview($this->fixture['bank'], new UploadedFile($path, 'bank.csv', null, null, true), [], $this->user);
+
+    expect($import->preview['total_credit'])->toEqual(275000)->and($import->preview['total_debit'])->toEqual(90000);
+
+    $committed = app(BankStatementImportService::class)->commit($import, $this->user);
+    expect($committed->imported_rows)->toBe(2)->and(BankStatementEntry::where('narration', 'FUNDS TRANSFER')->first()->direction)->toBe('debit');
+});

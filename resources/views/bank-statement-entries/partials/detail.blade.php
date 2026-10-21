@@ -113,7 +113,7 @@
         @forelse ($entry->attachments as $attachment)
             <div class="flex items-center justify-between gap-2 border-b py-1.5">
                 <div class="min-w-0">
-                    <a href="{{ route('bank-attachments.download', $attachment) }}" class="font-semibold text-blue-700 hover:underline truncate block">{{ $attachment->file_name }}</a>
+                    <a href="{{ route('bank-attachments.download', ['attachment' => $attachment, 'inline' => 1]) }}" target="_blank" class="font-semibold text-blue-700 hover:underline truncate block">{{ $attachment->file_name }}</a>
                     <p class="text-xs text-gray-500" dir="auto">{{ \App\Models\Attachment::LABELS[$attachment->label] ?? $attachment->label }} · {{ number_format(($attachment->file_size ?? 0) / 1024, 1) }} KB · {{ $attachment->uploader?->name }}@if ($attachment->description) · {{ $attachment->description }}@endif</p>
                 </div>
                 @can('bank-statement-entry-attach')

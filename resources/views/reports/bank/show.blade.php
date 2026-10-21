@@ -54,6 +54,9 @@
                         </select>
                     </div>
                 @endif
+                @if ($uses('opening_balance'))
+                    <div><x-label for="r_open" value="Opening balance" /><x-input id="r_open" name="filter[opening_balance]" type="number" step="0.01" class="mt-1 w-40" :value="$filters['opening_balance'] ?? ''" placeholder="0.00" /></div>
+                @endif
                 @if ($uses('date_from'))
                     <div><x-label for="r_from" value="From" /><x-input id="r_from" name="filter[date_from]" type="date" class="mt-1" :value="$filters['date_from'] ?? ''" /></div>
                     <div><x-label for="r_to" value="To" /><x-input id="r_to" name="filter[date_to]" type="date" class="mt-1" :value="$filters['date_to'] ?? ''" /></div>

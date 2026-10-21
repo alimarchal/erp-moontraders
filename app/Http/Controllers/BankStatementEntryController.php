@@ -5,18 +5,22 @@ namespace App\Http\Controllers;
 use App\Exports\BankEntriesExport;
 use App\Http\Requests\BankBulkClassifyRequest;
 use App\Http\Requests\BankStatementEntryRequest;
+use App\Http\Requests\StoreBankStatementEntryRequest;
 use App\Models\BankAccount;
 use App\Models\BankEntryAuditLog;
 use App\Models\BankEntryCategory;
 use App\Models\BankEntryRule;
 use App\Models\BankPartyAlias;
+use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\BankRegister\BankApprovalRules;
 use App\Services\BankRegister\BankEntryApprovalService;
+use App\Services\BankRegister\BankEntryAttachmentService;
 use App\Services\BankRegister\BankEntryClassifier;
 use App\Services\BankRegister\BankEntryPostingService;
+use App\Services\BankRegister\BankReceiptScanService;
 use App\Services\BankRegister\BankRegisterException;
 use App\Services\BankRegister\BankStatementSearch;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +39,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('can:bank-statement-entry-list', only: ['index', 'show', 'drawer']),
+            new Middleware('can:bank-statement-entry-create', only: ['create', 'store']),
             new Middleware('can:bank-statement-entry-export', only: ['export']),
             new Middleware('can:bank-statement-entry-edit', only: ['edit', 'update']),
             new Middleware('can:bank-statement-entry-delete', only: ['destroy']),
@@ -57,13 +62,131 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             ->withQueryString();
 
         $summary = $search->statusSummary($filters);
+        $withoutReceipt = $search->query(array_merge(array_diff_key($filters, ['status' => 1]), ['has_attachment' => 'no']))->count();
 
         return view('bank-statement-entries.index', [
             'entries' => $entries,
             'summary' => $summary,
+            'withoutReceipt' => $withoutReceipt,
+            'pendingScans' => BankReceiptScan::where('status', BankReceiptScan::STATUS_PENDING)->count(),
             'tiles' => $this->tiles($summary),
             'filters' => $filters,
         ] + $this->options());
+    }
+
+    /**
+     * Type in one bank line by hand (a line the statement file does not have, or a quick correction).
+     */
+    public function create(Request $request): View
+    {
+        // arriving from the scan inbox: the scan pre-fills what is known and is attached when the entry is saved
+        $scan = BankReceiptScan::query()->where('status', BankReceiptScan::STATUS_PENDING)->find($request->old('scan_id', $request->query('scan_id')));
+
+        return view('bank-statement-entries.create', [
+            'scan' => $scan,
+            'defaults' => [
+                'bank_account_id' => $request->old('bank_account_id', $request->query('bank_account_id', $scan?->bank_account_id)),
+                'posting_date' => $request->old('posting_date', $request->query('posting_date', $scan?->scan_date->toDateString() ?? now()->toDateString())),
+                'direction' => $request->old('direction', $request->query('direction', $scan?->direction ?? 'credit')),
+                'amount' => $request->old('amount', $scan?->amount),
+                'description' => $request->old('description', $scan?->note),
+            ],
+        ] + $this->options());
+    }
+
+    public function store(
+        StoreBankStatementEntryRequest $request,
+        BankEntryClassifier $classifier,
+        BankEntryAttachmentService $attachments,
+        BankEntryApprovalService $approvals,
+        BankApprovalRules $rules,
+        BankReceiptScanService $scans,
+    ): RedirectResponse {
+        $data = $request->validated();
+        $debit = $data['direction'] === 'debit' ? (float) $data['amount'] : 0.0;
+        $credit = $data['direction'] === 'credit' ? (float) $data['amount'] : 0.0;
+
+        $duplicates = $this->possibleDuplicates((int) $data['bank_account_id'], $data['posting_date'], $data['reference'] ?? null, $debit, $credit);
+
+        if ($duplicates->isNotEmpty() && ! $request->boolean('confirm_duplicate')) {
+            return back()->withInput()->with('possible_duplicates', $duplicates->map(fn (BankStatementEntry $e) => [
+                'id' => $e->id,
+                'text' => $e->posting_date->format('d-m-Y').' · '.($e->reference ?: '—').' · '.number_format($e->amount, 2).' · '.$e->status_label,
+            ])->all());
+        }
+
+        $entry = DB::transaction(function () use ($request, $data, $debit, $credit, $classifier, $attachments) {
+            $user = $request->user();
+
+            $entry = BankStatementEntry::create([
+                'bank_account_id' => $data['bank_account_id'],
+                'posting_date' => $data['posting_date'],
+                'value_date' => $data['value_date'] ?? null,
+                'reference' => $data['reference'] ?? null,
+                'narration' => $data['narration'] ?? null,
+                'description' => $data['description'] ?? null,
+                'debit' => $debit,
+                'credit' => $credit,
+                'party_name_in_statement' => $data['party_name_in_statement'] ?? null,
+                'company_id' => $data['company_id'] ?? null,
+                'bank_entry_category_id' => $data['bank_entry_category_id'] ?? null,
+                'classification_source' => 'original',
+                'source_statement' => 'Manual entry',
+                'status' => BankStatementEntry::STATUS_UNCLASSIFIED,
+                'dedupe_hash' => $this->uniqueHash((int) $data['bank_account_id'], $data['posting_date'], $data['reference'] ?? null, $debit, $credit, $data['narration'] ?? null),
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+
+            // Aliases and rules fill in what the person left empty; what they chose is never overwritten.
+            if ($entry->bank_entry_category_id) {
+                $entry->forceFill(['status' => BankStatementEntry::STATUS_CLASSIFIED, 'classified_by' => $user->id, 'classified_at' => now()])->save();
+            } else {
+                $classifier->classify($entry);
+            }
+
+            BankEntryAuditLog::record($entry, 'created_manually', null, $entry->only(['posting_date', 'debit', 'credit', 'reference']), $user->id);
+
+            if ($request->hasFile('files')) {
+                $attachments->attach($entry, $request->file('files'), $request->input('label', 'receipt'), $request->input('attachment_description'), $user);
+            }
+
+            return $entry;
+        });
+
+        if ($request->filled('scan_id')) {
+            $scan = BankReceiptScan::find($request->integer('scan_id'));
+
+            if ($scan && $scan->status === BankReceiptScan::STATUS_PENDING) {
+                $scans->link($scan, $entry, $request->user());
+            }
+        }
+
+        $after = $request->input('after', 'save');
+        $message = 'Entry saved.';
+
+        if ($after === 'submit') {
+            if (! $request->user()->can('bank-statement-entry-submit')) {
+                $message .= ' You do not have permission to submit it, so it was left for the maker.';
+            } else {
+                try {
+                    $entry = $this->submitEntry($entry->refresh(), $request->user(), $approvals, $rules);
+                    $message = $entry->status === BankStatementEntry::STATUS_POSTED ? "Entry saved and posted. Receipt {$entry->receipt_no}." : 'Entry saved and sent for approval.';
+                } catch (BankRegisterException $e) {
+                    return redirect()->route('bank-statement-entries.show', $entry)->with('success', 'Entry saved.')->with('warning', 'Not submitted: '.$e->getMessage());
+                }
+            }
+        }
+
+        if ($after === 'another') {
+            return redirect()->route('bank-statement-entries.create', [
+                'bank_account_id' => $entry->bank_account_id,
+                'posting_date' => $entry->posting_date->toDateString(),
+                'direction' => $entry->direction,
+            ])->with('success', "{$message} Add the next one below.");
+        }
+
+        return redirect()->route('bank-statement-entries.show', $entry)->with('success', $message);
     }
 
     public function show(BankStatementEntry $bankStatementEntry, BankApprovalRules $rules): View
@@ -96,9 +219,11 @@ class BankStatementEntryController extends Controller implements HasMiddleware
         }
 
         $data = $request->validated();
-        $old = $bankStatementEntry->only(['description', 'company_id', 'bank_entry_category_id', 'needs_review']);
+        $isManual = $bankStatementEntry->import_id === null && $request->filled('amount');
+        $data['direction'] ??= $bankStatementEntry->direction;
+        $old = $bankStatementEntry->only(['description', 'company_id', 'bank_entry_category_id', 'needs_review', 'posting_date', 'debit', 'credit', 'reference', 'party_name_in_statement', 'narration']);
 
-        DB::transaction(function () use ($bankStatementEntry, $data, $request, $approvals, $old) {
+        DB::transaction(function () use ($bankStatementEntry, $data, $request, $approvals, $old, $isManual) {
             $bankStatementEntry->fill([
                 'description' => $data['description'] ?? null,
                 'company_id' => $data['company_id'] ?? null,
@@ -107,10 +232,39 @@ class BankStatementEntryController extends Controller implements HasMiddleware
                 'updated_by' => $request->user()->id,
             ]);
 
+            if ($isManual) {
+                $debit = $data['direction'] === 'debit' ? (float) $data['amount'] : 0.0;
+                $credit = $data['direction'] === 'credit' ? (float) $data['amount'] : 0.0;
+                $bankStatementEntry->fill([
+                    'posting_date' => $data['posting_date'] ?? $bankStatementEntry->posting_date,
+                    'value_date' => $data['value_date'] ?? null,
+                    'debit' => $debit,
+                    'credit' => $credit,
+                    'reference' => $data['reference'] ?? null,
+                    'party_name_in_statement' => $data['party_name_in_statement'] ?? null,
+                    'narration' => $data['narration'] ?? null,
+                ]);
+                $bankStatementEntry->dedupe_hash = $this->uniqueHash(
+                    $bankStatementEntry->bank_account_id,
+                    $bankStatementEntry->posting_date->toDateString(),
+                    $bankStatementEntry->reference,
+                    $debit,
+                    $credit,
+                    $bankStatementEntry->narration,
+                    $bankStatementEntry->id,
+                );
+            }
+
             $this->syncClassificationStatus($bankStatementEntry, $request->user()->id);
             $bankStatementEntry->save();
 
-            if ($old['company_id'] !== $bankStatementEntry->company_id || $old['bank_entry_category_id'] !== $bankStatementEntry->bank_entry_category_id) {
+            $changed = $old['company_id'] !== $bankStatementEntry->company_id
+                || $old['bank_entry_category_id'] !== $bankStatementEntry->bank_entry_category_id
+                || (float) $old['debit'] !== (float) $bankStatementEntry->debit
+                || (float) $old['credit'] !== (float) $bankStatementEntry->credit
+                || ! $old['posting_date']->equalTo($bankStatementEntry->posting_date);
+
+            if ($changed) {
                 $approvals->resetApproval($bankStatementEntry, $request->user()->id);
             }
 
@@ -243,6 +397,38 @@ class BankStatementEntryController extends Controller implements HasMiddleware
         }
 
         return back()->with('success', 'Entry reversed. A reversing journal entry was posted and the line can be corrected and submitted again.');
+    }
+
+    /**
+     * Lines already in the register with the same account, date, reference and amount.
+     *
+     * @return Collection<int, BankStatementEntry>
+     */
+    private function possibleDuplicates(int $bankAccountId, string $date, ?string $reference, float $debit, float $credit)
+    {
+        return BankStatementEntry::query()
+            ->where('bank_account_id', $bankAccountId)
+            ->whereDate('posting_date', $date)
+            ->where('debit', $debit)
+            ->where('credit', $credit)
+            ->when($reference, fn ($q) => $q->where('reference', $reference))
+            ->limit(5)
+            ->get();
+    }
+
+    /**
+     * A dedupe hash that does not collide with a line already saved (a second identical manual line is legitimate).
+     */
+    private function uniqueHash(int $bankAccountId, string $date, ?string $reference, float $debit, float $credit, ?string $narration, ?int $ignoreId = null): string
+    {
+        $occurrence = 1;
+
+        do {
+            $hash = BankStatementEntry::makeDedupeHash($bankAccountId, $date, $reference, $debit, $credit, $narration, $occurrence++);
+            $taken = BankStatementEntry::withTrashed()->where('dedupe_hash', $hash)->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists();
+        } while ($taken);
+
+        return $hash;
     }
 
     /**

@@ -140,18 +140,25 @@
 
         <x-status-message class="mb-3" />
 
-        {{-- Figure tiles --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        {{-- Work pipeline: where the money is in the daily flow --}}
+        <div class="bank-noprint mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
             @foreach ([
-                ['Waiting to be classified', $tiles['unclassified'], 'unclassified', 'border-gray-400', 'text-gray-900'],
-                ['Waiting for approval', $tiles['pending'], 'pending_approval', 'border-amber-500', 'text-amber-700'],
-                ['Posted, not reconciled', $tiles['unreconciled'], 'posted', 'border-emerald-500', 'text-emerald-700'],
-                ['Reconciled', $tiles['reconciled'], 'reconciled', 'border-teal-500', 'text-teal-700'],
-            ] as [$label, $tile, $status, $border, $color])
-                <a href="{{ route('bank-statement-entries.index', $query(['status' => $status])) }}" class="bg-white rounded-lg shadow border-l-4 {{ $border }} p-4 hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-wide text-gray-500">{{ $label }}</p>
-                    <p class="text-2xl font-bold {{ $color }} tabular-nums">{{ number_format($tile['count']) }}</p>
-                    <p class="text-xs text-gray-500 tabular-nums">PKR {{ number_format($tile['amount'], 2) }}</p>
+                ['1', 'To classify', 'Waiting for a company / category', $tiles['unclassified'], 'unclassified', 'slate'],
+                ['2', 'Waiting for approval', 'With a checker or senior approver', $tiles['pending'], 'pending_approval', 'amber'],
+                ['3', 'Posted', 'In the books, not yet reconciled', $tiles['unreconciled'], 'posted', 'emerald'],
+                ['4', 'Reconciled', 'Matched with the bank statement', $tiles['reconciled'], 'reconciled', 'teal'],
+            ] as [$step, $label, $hint, $tile, $status, $tone])
+                @php($active = ($filters['status'] ?? '') === $status)
+                <a href="{{ route('bank-statement-entries.index', $query(['status' => $active ? null : $status])) }}"
+                    class="group relative overflow-hidden rounded-xl bg-white p-4 shadow-sm ring-1 transition hover:-translate-y-0.5 hover:shadow-md {{ $active ? 'ring-2 ring-blue-900' : 'ring-gray-200' }}">
+                    <span class="absolute inset-x-0 top-0 h-1 {{ ['slate' => 'bg-slate-400', 'amber' => 'bg-amber-500', 'emerald' => 'bg-emerald-500', 'teal' => 'bg-teal-500'][$tone] }}"></span>
+                    <div class="flex items-start justify-between gap-2">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{{ $label }}</p>
+                        <span class="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500">{{ $step }}</span>
+                    </div>
+                    <p class="mt-1 text-3xl font-bold leading-none tabular-nums text-gray-900">{{ number_format($tile['count']) }}</p>
+                    <p class="mt-1.5 text-xs font-medium tabular-nums text-gray-700">PKR {{ number_format($tile['amount'], 2) }}</p>
+                    <p class="mt-0.5 text-[11px] text-gray-400">{{ $hint }}</p>
                 </a>
             @endforeach
         </div>
@@ -218,39 +225,82 @@
                 </div>
             </div>
 
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200">
+                {{-- Card toolbar: what is shown, the totals of it, and a quick search --}}
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50/70 px-4 py-3">
+                    <div class="flex flex-wrap items-center gap-x-6 gap-y-1">
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Entries</p>
+                            <p class="text-lg font-bold leading-tight tabular-nums text-gray-900">{{ number_format($totals->total_count) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Received</p>
+                            <p class="text-lg font-bold leading-tight tabular-nums text-emerald-700">{{ number_format($totals->total_in, 2) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Paid out</p>
+                            <p class="text-lg font-bold leading-tight tabular-nums text-red-700">{{ number_format($totals->total_out, 2) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Net</p>
+                            <p class="text-lg font-bold leading-tight tabular-nums {{ $totals->total_in - $totals->total_out < 0 ? 'text-red-700' : 'text-gray-900' }}">{{ number_format($totals->total_in - $totals->total_out, 2) }}</p>
+                        </div>
+                    </div>
+                    <form method="GET" action="{{ route('bank-statement-entries.index') }}" class="bank-noprint flex items-center gap-2" role="search">
+                        @foreach (collect($filters)->except('q') as $key => $value)
+                            @if (is_array($value))
+                                @foreach ($value as $item)
+                                    @if (is_scalar($item) && $item !== '')<input type="hidden" name="filter[{{ $key }}][]" value="{{ $item }}">@endif
+                                @endforeach
+                            @elseif (is_scalar($value) && $value !== '')
+                                <input type="hidden" name="filter[{{ $key }}]" value="{{ $value }}">
+                            @endif
+                        @endforeach
+                        <div class="relative">
+                            <svg class="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 110-15 7.5 7.5 0 010 15z"/></svg>
+                            <input type="search" name="filter[q]" value="{{ $filters['q'] ?? '' }}" dir="auto" placeholder="Search party, reference, receipt…" class="w-72 rounded-lg border-gray-300 py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-900 focus:ring-blue-900">
+                        </div>
+                        <button class="rounded-lg bg-blue-950 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white hover:bg-blue-900">Search</button>
+                    </form>
+                </div>
                 @if ($entries->count())
-                    <div class="overflow-x-auto">
+                    <div class="bank-scroll overflow-x-auto">
                         <table class="min-w-full text-sm">
-                            <thead>
-                                <tr class="bg-green-800 text-white uppercase text-xs">
+                            <thead class="sticky top-0 z-10">
+                                <tr class="sticky top-0 z-10 bg-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-100">
                                     <th class="bank-noprint py-2 px-2 w-8"><input type="checkbox" x-model="all" @change="toggleAll($event.target.checked)" class="rounded border-gray-300"></th>
-                                    <th class="py-2 px-2 text-left">Date</th>
-                                    <th class="py-2 px-2 text-left">Party / company</th>
-                                    <th class="py-2 px-2 text-left">Reference</th>
-                                    <th class="py-2 px-2 text-left">Category</th>
-                                    <th class="py-2 px-2 text-right">Paid out</th>
-                                    <th class="py-2 px-2 text-right">Received</th>
-                                    <th class="py-2 px-2 text-center">Status</th>
-                                    <th class="py-2 px-2 text-center" title="Attachments">📎</th>
+                                    <th class="py-2.5 px-3 text-left">Date</th>
+                                    <th class="py-2.5 px-3 text-left">Party / company</th>
+                                    <th class="py-2.5 px-3 text-left">Reference</th>
+                                    <th class="py-2.5 px-3 text-left">Category</th>
+                                    <th class="py-2.5 px-3 text-right">Paid out</th>
+                                    <th class="py-2.5 px-3 text-right">Received</th>
+                                    <th class="py-2.5 px-3 text-center">Status</th>
+                                    <th class="py-2.5 px-3 text-center" title="Attachments (a dot means no receipt yet)">Files</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($entries as $index => $entry)
-                                    <tr class="border-t cursor-pointer hover:bg-blue-50 {{ $entry->needs_review ? 'bg-yellow-50' : ($index % 2 ? 'bg-gray-50' : 'bg-white') }}"
+                                    <tr class="border-t border-gray-100 cursor-pointer transition hover:bg-blue-50/70 {{ $entry->needs_review ? 'bg-amber-50/80' : 'bg-white' }}"
                                         @click="if (! $event.target.closest('input, a, button')) open('{{ route('bank-statement-entries.drawer', $entry) }}')">
-                                        <td class="bank-noprint py-2 px-2"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" x-model="ids" class="rounded border-gray-300"></td>
-                                        <td class="py-2 px-2 whitespace-nowrap">{{ $entry->posting_date->format('d-m-Y') }}</td>
-                                        <td class="py-2 px-2 max-w-xs">
+                                        <td class="bank-noprint py-2.5 px-3"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" x-model="ids" class="rounded border-gray-300"></td>
+                                        <td class="py-2.5 px-3 whitespace-nowrap tabular-nums text-gray-600">{{ $entry->posting_date->format('d-m-Y') }}</td>
+                                        <td class="py-2.5 px-3 max-w-xs">
                                             <div class="font-semibold truncate" dir="auto">{{ $entry->company?->supplier_name ?? $entry->party_name_in_statement ?? '—' }}</div>
                                             @if ($entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->supplier_name) !== mb_strtolower($entry->party_name_in_statement))<div class="text-xs text-gray-500 truncate" dir="auto">{{ $entry->party_name_in_statement }}</div>@endif
                                         </td>
-                                        <td class="py-2 px-2 text-xs text-gray-600 whitespace-nowrap">{{ $entry->reference }}@if ($entry->receipt_no)<div class="text-emerald-700 font-semibold">{{ $entry->receipt_no }}</div>@endif</td>
-                                        <td class="py-2 px-2">{{ $entry->category?->name ?? '—' }}</td>
-                                        <td class="py-2 px-2 text-right text-red-700">@if ((float) $entry->debit > 0)<x-bank.money :value="$entry->debit" />@endif</td>
-                                        <td class="py-2 px-2 text-right text-emerald-700">@if ((float) $entry->credit > 0)<x-bank.money :value="$entry->credit" />@endif</td>
-                                        <td class="py-2 px-2 text-center"><x-bank.status-badge :status="$entry->status" />@if ($entry->needs_review)<div class="text-[10px] text-orange-700 font-semibold">REVIEW</div>@endif</td>
-                                        <td class="py-2 px-2 text-center text-xs text-gray-600">{{ $entry->attachments_count ?: '' }}</td>
+                                        <td class="py-2.5 px-3 text-xs text-gray-600 whitespace-nowrap">{{ $entry->reference }}@if ($entry->receipt_no)<div class="text-emerald-700 font-semibold">{{ $entry->receipt_no }}</div>@endif</td>
+                                        <td class="py-2.5 px-3">{{ $entry->category?->name ?? '—' }}</td>
+                                        <td class="py-2.5 px-3 text-right font-medium tabular-nums text-red-700">@if ((float) $entry->debit > 0)<x-bank.money :value="$entry->debit" />@endif</td>
+                                        <td class="py-2.5 px-3 text-right font-medium tabular-nums text-emerald-700">@if ((float) $entry->credit > 0)<x-bank.money :value="$entry->credit" />@endif</td>
+                                        <td class="py-2.5 px-3 text-center"><x-bank.status-badge :status="$entry->status" />@if ($entry->needs_review)<div class="text-[10px] text-orange-700 font-semibold">REVIEW</div>@endif</td>
+                                        <td class="py-2.5 px-3 text-center text-xs text-gray-500">
+                                            @if ($entry->attachments_count)
+                                                <span class="inline-flex items-center gap-0.5" title="{{ $entry->attachments_count }} file(s) attached"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.4 11.1l-7.2 7.2a4.5 4.5 0 01-6.4-6.4l7.2-7.2a3 3 0 014.2 4.2l-7.2 7.2a1.5 1.5 0 01-2.1-2.1l6.7-6.7"/></svg>{{ $entry->attachments_count }}</span>
+                                            @elseif (in_array($entry->status, ['classified', 'pending_approval', 'posted'], true))
+                                                <span class="inline-block h-2 w-2 rounded-full bg-amber-400" title="No receipt attached yet"></span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

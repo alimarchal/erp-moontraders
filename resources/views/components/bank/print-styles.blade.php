@@ -1,6 +1,7 @@
 {{-- Print layout shared by every Bank Register page: hides controls, prints tables full width and in colour. --}}
 <style>
     .bank-printonly { display: none; }
+    .bank-scroll { max-height: 70vh; overflow: auto; }
     @media print {
         @page { size: A4 landscape; margin: 10mm; }
         html, body, .bg-gray-100 { background: #fff !important; }
@@ -12,7 +13,8 @@
         .shadow, .shadow-lg, .shadow-xl, .shadow-2xl { box-shadow: none !important; }
         .max-w-7xl { max-width: none !important; }
         .py-6, .py-4 { padding-top: 0 !important; padding-bottom: 0 !important; }
-        .overflow-x-auto, .overflow-hidden { overflow: visible !important; }
+        .overflow-x-auto, .overflow-hidden, .bank-scroll { overflow: visible !important; max-height: none !important; }
+        thead.sticky, tr.sticky { position: static !important; }
         table { width: 100% !important; font-size: 10.5px !important; }
         th, td { padding: 3px 5px !important; }
         thead { display: table-header-group; }

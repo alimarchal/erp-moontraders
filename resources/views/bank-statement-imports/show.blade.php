@@ -6,7 +6,7 @@
 
     <div class="py-6">
     <x-bank.print-styles />
-    <x-bank.subnav inside />
+    <x-bank.subnav />
     <x-bank.print-title title="Statement Import" />
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <x-status-message />

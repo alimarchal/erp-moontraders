@@ -61,6 +61,10 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             ->paginate(50)
             ->withQueryString();
 
+        $totals = $search->query($filters)->reorder()
+            ->selectRaw('COALESCE(SUM(credit), 0) as total_in, COALESCE(SUM(debit), 0) as total_out, COUNT(*) as total_count')
+            ->first();
+
         $summary = $search->statusSummary($filters);
         $withoutReceipt = $search->query(array_merge(array_diff_key($filters, ['status' => 1]), ['has_attachment' => 'no']))->count();
 
@@ -68,6 +72,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             'entries' => $entries,
             'summary' => $summary,
             'withoutReceipt' => $withoutReceipt,
+            'totals' => $totals,
             'pendingScans' => BankReceiptScan::where('status', BankReceiptScan::STATUS_PENDING)->count(),
             'tiles' => $this->tiles($summary),
             'filters' => $filters,

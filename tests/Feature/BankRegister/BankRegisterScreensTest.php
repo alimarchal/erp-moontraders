@@ -26,12 +26,12 @@ beforeEach(function () {
     ]);
 });
 
-test('the register lists entries with tiles, status chips and the filter form', function () {
+test('the register lists entries with pipeline tiles, status chips and the filter form', function () {
     $this->actingAs($this->maker)
         ->get(route('bank-statement-entries.index'))
         ->assertOk()
         ->assertSee('Bank Statement Register')
-        ->assertSee('Waiting to be classified')
+        ->assertSee('To classify')
         ->assertSee('NAVEED ANJUM');
 });
 

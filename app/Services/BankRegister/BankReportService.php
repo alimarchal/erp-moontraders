@@ -285,7 +285,7 @@ class BankReportService
         $rows = $this->base($filters)
             ->leftJoin('bank_entry_categories', 'bank_entry_categories.id', '=', 'bank_statement_entries.bank_entry_category_id')
             ->selectRaw("COALESCE(bank_entry_categories.name, 'Uncategorised') as label, COUNT(*) as entries, SUM(credit) as receipts, SUM(debit) as payments")
-            ->groupByRaw("COALESCE(bank_entry_categories.name, 'Uncategorised')")
+            ->groupBy('label')
             ->get()
             ->map(fn ($r) => [$r->label, (int) $r->entries, (float) $r->receipts, (float) $r->payments, (float) $r->receipts - (float) $r->payments])
             ->sortByDesc(fn ($r) => $r[2] + $r[3])->values()->all();
@@ -323,7 +323,7 @@ class BankReportService
                 ->leftJoin('companies', 'companies.id', '=', 'bank_statement_entries.company_id')
                 ->where("bank_statement_entries.{$column}", '>', 0)
                 ->selectRaw("COALESCE(companies.company_name, NULLIF(bank_statement_entries.party_name_in_statement, ''), 'Unassigned') as party, COUNT(*) as entries, SUM(bank_statement_entries.{$column}) as total")
-                ->groupByRaw("COALESCE(companies.company_name, NULLIF(bank_statement_entries.party_name_in_statement, ''), 'Unassigned')")
+                ->groupBy('party')
                 ->orderByDesc('total')
                 ->limit(25)
                 ->get()

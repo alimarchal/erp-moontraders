@@ -1,3 +1,19 @@
+@php
+    /*
+     * Every page reachable from the Settings screen keeps the "Settings" menu item highlighted.
+     * Keep this list in sync with resources/views/settings/index.blade.php.
+     */
+    $settingsRoutePatterns = [
+        'settings.*', 'account-types.*', 'accounting-periods.*', 'investment-opening-balances.*', 'chart-of-accounts.*',
+        'currencies.*', 'cost-centers.*', 'bank-accounts.*', 'journal-entries.*', 'tax-codes.*', 'tax-rates.*',
+        'tax-transactions.*', 'product-tax-mappings.*', 'expense-details.*', 'category-revenue.*', 'profit-categories.*',
+        'companies.*', 'users.*', 'roles.*', 'permissions.*', 'suppliers.*', 'supplier-payments.*', 'customers.*',
+        'opening-customer-balances.*', 'employees.*', 'company-targets.*', 'promotional-campaigns.*', 'products.*',
+        'product-categories.*', 'categories.*', 'uoms.*', 'warehouses.*', 'warehouse-types.*', 'vehicles.*',
+        'stock-adjustments.*', 'product-recalls.*', 'claim-registers.*',
+    ];
+    $isSettingsSection = request()->routeIs($settingsRoutePatterns) || request()->is('settings', 'settings/*');
+@endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 print:hidden">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,7 +64,7 @@
                         </x-nav-link>
                     @endcan
                     @can('setting-view')
-                        <x-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
+                        <x-nav-link href="{{ route('settings.index') }}" :active="$isSettingsSection">
                             {{ __('Settings') }}
                         </x-nav-link>
                     @endcan
@@ -229,7 +245,7 @@
                 </x-responsive-nav-link>
             @endcan
             @can('setting-view')
-                <x-responsive-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
+                <x-responsive-nav-link href="{{ route('settings.index') }}" :active="$isSettingsSection">
                     {{ __('Settings') }}
                 </x-responsive-nav-link>
             @endcan

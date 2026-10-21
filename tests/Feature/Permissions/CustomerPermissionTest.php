@@ -54,3 +54,22 @@ it('denies destroy without customer-delete permission', function () {
     $customer = Customer::factory()->create();
     $this->delete(route('customers.destroy', $customer))->assertForbidden();
 });
+
+it('denies destroy to a non super admin even with customer-delete permission', function () {
+    $this->user->givePermissionTo('customer-delete');
+    $customer = Customer::factory()->create(['is_active' => true]);
+
+    $this->delete(route('customers.destroy', $customer))->assertForbidden();
+
+    expect($customer->fresh()->is_active)->toBeTrue();
+});
+
+it('deactivates instead of deleting when a super admin destroys a customer', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $this->user->givePermissionTo('customer-delete');
+    $customer = Customer::factory()->create(['is_active' => true]);
+
+    $this->delete(route('customers.destroy', $customer))->assertRedirect(route('customers.index'));
+
+    $this->assertDatabaseHas('customers', ['id' => $customer->id, 'is_active' => false, 'deleted_at' => null]);
+});

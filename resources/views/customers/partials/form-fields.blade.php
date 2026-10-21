@@ -144,7 +144,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
                     <label for="channel_type">Channel type <span class="uf-req">*</span></label>
                     <select id="channel_type" name="channel_type" required>
                         @foreach ($channelTypes as $type)
-                            <option value="{{ $type }}" @selected($val('channel_type') === $type)>{{ $type }}</option>
+                            <option value="{{ $type }}" @selected($val('channel_type', $channelTypes[0] ?? null) === $type)>{{ $type }}</option>
                         @endforeach
                     </select>
                     @error('channel_type') <p class="uf-error">{{ $message }}</p> @enderror
@@ -153,7 +153,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
                     <label for="customer_category">Category <span class="uf-req">*</span></label>
                     <select id="customer_category" name="customer_category" required>
                         @foreach ($customerCategories as $category)
-                            <option value="{{ $category }}" @selected($val('customer_category') === $category)>Category {{ $category }}</option>
+                            <option value="{{ $category }}" @selected($val('customer_category', 'C') === $category)>Category {{ $category }}</option>
                         @endforeach
                     </select>
                     @error('customer_category') <p class="uf-error">{{ $message }}</p> @enderror

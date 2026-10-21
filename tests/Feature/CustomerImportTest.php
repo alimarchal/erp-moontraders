@@ -138,3 +138,21 @@ it('renders the redesigned customer view page', function () {
         ->assertSee('Credit available')
         ->assertSee('Kotli');
 });
+
+it('keeps column defaults when optional numeric fields are left blank on create', function () {
+    $this->post(route('customers.store'), [
+        'customer_code' => 'BLANK-1',
+        'customer_name' => 'Blank Fields Shop',
+        'channel_type' => 'General Store',
+        'customer_category' => 'C',
+        'credit_limit' => '',
+        'payment_terms' => '',
+        'country' => '',
+        'is_active' => 1,
+    ])->assertRedirect(route('customers.index'));
+
+    expect(Customer::where('customer_code', 'BLANK-1')->first())
+        ->not->toBeNull()
+        ->payment_terms->toBe(30)
+        ->country->toBe('Pakistan');
+});

@@ -48,17 +48,8 @@ class CustomerImport implements ToCollection, WithHeadingRow
     /** @var array<string, int> */
     private array $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
 
-    /** @var array<string, int|null> lookup key => customer id (null = created earlier in this file) */
+    /** @var array<string, int|null> customer code => customer id (null = created earlier in this file) */
     private array $codeIndex = [];
-
-    /** @var array<string, int|null> */
-    private array $phoneIndex = [];
-
-    /** @var array<string, int|null> */
-    private array $emailIndex = [];
-
-    /** @var array<string, int|null> */
-    private array $nameIndex = [];
 
     /** @var array<int, bool> customer ids that are soft-deleted */
     private array $trashed = [];
@@ -192,9 +183,6 @@ class CustomerImport implements ToCollection, WithHeadingRow
         }
 
         $email = isset($row['email']) ? strtolower($row['email']) : null;
-        if ($email !== null && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error ??= "Email '{$email}' is not valid.";
-        }
 
         foreach (['credit_limit' => [0, null], 'payment_terms' => [0, 365]] as $field => [$min, $max]) {
             $value = $row[$field] ?? null;
@@ -243,22 +231,17 @@ class CustomerImport implements ToCollection, WithHeadingRow
     }
 
     /**
+     * Only the customer code decides whether a row is a duplicate.
+     *
      * @param  array<string, mixed>  $attributes
      * @return array{0: int|null, 1: string|null}
      */
     private function findDuplicate(array $attributes): array
     {
-        $checks = [
-            ['customer code', $this->codeIndex, $attributes['customer_code'] ?? null],
-            ['email', $this->emailIndex, $attributes['email'] ?? null],
-            ['phone', $this->phoneIndex, $this->phoneKey($attributes['phone'] ?? null)],
-            ['name and area', $this->nameIndex, $this->nameKey($attributes)],
-        ];
+        $code = $attributes['customer_code'] ?? null;
 
-        foreach ($checks as [$label, $index, $key]) {
-            if ($key !== null && array_key_exists($key, $index)) {
-                return [$index[$key], $label];
-            }
+        if ($code !== null && array_key_exists($code, $this->codeIndex)) {
+            return [$this->codeIndex[$code], 'customer code'];
         }
 
         return [null, null];
@@ -270,32 +253,14 @@ class CustomerImport implements ToCollection, WithHeadingRow
     private function remember(array $attributes, ?int $id): void
     {
         $this->codeIndex[$attributes['customer_code']] = $id;
-        if (($attributes['email'] ?? null) !== null) {
-            $this->emailIndex[$attributes['email']] = $id;
-        }
-        if (($key = $this->phoneKey($attributes['phone'] ?? null)) !== null) {
-            $this->phoneIndex[$key] = $id;
-        }
-        if (($key = $this->nameKey($attributes)) !== null) {
-            $this->nameIndex[$key] = $id;
-        }
     }
 
     private function buildIndexes(): void
     {
         Customer::withTrashed()
-            ->get(['id', 'customer_code', 'customer_name', 'email', 'phone', 'sub_locality', 'city', 'deleted_at'])
+            ->get(['id', 'customer_code', 'deleted_at'])
             ->each(function (Customer $c) {
                 $this->codeIndex[strtoupper($c->customer_code)] = $c->id;
-                if ($c->email) {
-                    $this->emailIndex[strtolower($c->email)] = $c->id;
-                }
-                if (($key = $this->phoneKey($c->phone)) !== null) {
-                    $this->phoneIndex[$key] ??= $c->id;
-                }
-                if (($key = $this->nameKey($c->only(['customer_name', 'sub_locality', 'city']))) !== null) {
-                    $this->nameIndex[$key] ??= $c->id;
-                }
                 $this->trashed[$c->id] = $c->deleted_at !== null;
 
                 if (preg_match('/^'.preg_quote(self::CODE_PREFIX, '/').'(\d+)$/i', $c->customer_code, $m)) {
@@ -316,26 +281,6 @@ class CustomerImport implements ToCollection, WithHeadingRow
         } while (array_key_exists($code, $this->codeIndex));
 
         return $code;
-    }
-
-    private function phoneKey(?string $phone): ?string
-    {
-        $digits = preg_replace('/\D+/', '', (string) $phone);
-
-        return strlen($digits) >= 7 ? substr($digits, -10) : null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $attributes
-     */
-    private function nameKey(array $attributes): ?string
-    {
-        $name = preg_replace('/\s+/', ' ', mb_strtolower(trim((string) ($attributes['customer_name'] ?? ''))));
-        if ($name === '') {
-            return null;
-        }
-
-        return $name.'|'.mb_strtolower(trim((string) ($attributes['sub_locality'] ?? ''))).'|'.mb_strtolower(trim((string) ($attributes['city'] ?? '')));
     }
 
     private function toBool(mixed $value): bool

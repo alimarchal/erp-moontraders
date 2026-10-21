@@ -51,19 +51,26 @@ it('imports new shops and generates codes when missing', function () {
         ->is_active->toBeFalse();
 });
 
-it('skips duplicates by code, phone and name with area', function () {
+it('skips rows whose shop code already exists, in the system or in the file', function () {
     Customer::factory()->create(['customer_code' => 'C-1', 'customer_name' => 'Existing', 'phone' => '0300-5555555']);
-    Customer::factory()->create(['customer_name' => 'Same Shop', 'sub_locality' => 'Chowk', 'city' => 'Muzaffarabad']);
 
     runCustomerImport([
         ['c-1', 'Other Name', '', '', '', '', '', '', ''],
-        ['', 'Different', '+92 300 5555555', '', '', '', '', '', ''],
-        ['', 'same  shop', '', '', 'Chowk', 'Muzaffarabad', '', '', ''],
-        ['', 'Fresh Shop', '', '', '', '', '', '', ''],
-        ['', 'Fresh Shop', '', '', '', '', '', '', ''],
-    ])->assertSessionHas('import_result.counts', ['created' => 1, 'updated' => 0, 'skipped' => 4, 'errors' => 0]);
+        ['N-1', 'Fresh Shop', '', '', '', '', '', '', ''],
+        ['N-1', 'Fresh Shop Again', '', '', '', '', '', '', ''],
+    ])->assertSessionHas('import_result.counts', ['created' => 1, 'updated' => 0, 'skipped' => 2, 'errors' => 0]);
 
-    expect(Customer::count())->toBe(3);
+    expect(Customer::count())->toBe(2);
+});
+
+it('does not treat same name or phone with a different code as a duplicate', function () {
+    Customer::factory()->create(['customer_code' => 'C-1', 'customer_name' => 'Same Shop', 'phone' => '0300-5555555']);
+
+    runCustomerImport([
+        ['C-2', 'Same Shop', '0300-5555555', '', '', '', '', '', ''],
+    ])->assertSessionHas('import_result.counts.created', 1);
+
+    expect(Customer::count())->toBe(2);
 });
 
 it('updates existing customers in update mode without blanking fields', function () {

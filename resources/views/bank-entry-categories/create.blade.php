@@ -3,7 +3,7 @@
         <x-page-header title="New Entry Category" :showSearch="false" :showRefresh="false" backRoute="bank-entry-categories.index" />
     </x-slot>
     <div class="py-6">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <x-validation-errors class="mb-4" />

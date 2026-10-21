@@ -76,3 +76,38 @@ it('does not duplicate links that already live in the main navigation', function
         ->assertDontSee(route('inventory.current-stock.index'), false)
         ->assertDontSee('Sales & Distribution');
 });
+
+function settingsNavItemIsActive(string $html): bool
+{
+    preg_match_all('#<a\s[^>]*>#', $html, $anchors);
+    $settingsUrl = route('settings.index');
+
+    foreach ($anchors[0] as $anchor) {
+        if (str_contains($anchor, 'href="'.$settingsUrl.'"') && str_contains($anchor, 'border-indigo-400')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+it('keeps the Settings menu item highlighted on pages opened from settings', function (string $routeName) {
+    $user = settingsUserWith(['tax-list', 'expense-detail-list']);
+
+    $html = $this->actingAs($user)
+        ->get(route($routeName))
+        ->assertSuccessful()
+        ->getContent();
+
+    expect(settingsNavItemIsActive($html))->toBeTrue();
+})->with(['tax-rates.index', 'expense-details.index']);
+
+it('does not highlight Settings on unrelated pages', function () {
+    $user = settingsUserWith([]);
+
+    $html = $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->getContent();
+
+    expect(settingsNavItemIsActive($html))->toBeFalse();
+});

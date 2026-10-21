@@ -61,7 +61,7 @@
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Product Catalog</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('product-list')
-                                <x-settings-row data-settings-item data-search="products item master & specifications product catalog items, categories and units" x-bind:hidden="! matches($el)" href="{{ route('products.index') }}" label="Products"
+                                <x-settings-row data-settings-item data-search="products item master and specifications product catalog items, categories and units" x-bind:hidden="! matches($el)" href="{{ route('products.index') }}" label="Products"
                                     description="Item master & specifications" :count="$productCount" icon-bg="bg-indigo-500">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
@@ -108,7 +108,7 @@
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Warehousing &amp; Fleet</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('warehouse-list')
-                                <x-settings-row data-settings-item data-search="warehouses storage locations & facilities warehousing & fleet storage locations and vehicles" x-bind:hidden="! matches($el)" href="{{ route('warehouses.index') }}" label="Warehouses"
+                                <x-settings-row data-settings-item data-search="warehouses storage locations and facilities warehousing and fleet storage locations and vehicles" x-bind:hidden="! matches($el)" href="{{ route('warehouses.index') }}" label="Warehouses"
                                     description="Storage locations & facilities" :count="\App\Models\Warehouse::count()"
                                     icon-bg="bg-orange-500">
                                     <x-slot name="icon">
@@ -121,7 +121,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('warehouse-type-list')
-                                <x-settings-row data-settings-item data-search="warehouse types storage facility classifications warehousing & fleet storage locations and vehicles" x-bind:hidden="! matches($el)" href="{{ route('warehouse-types.index') }}" label="Warehouse Types"
+                                <x-settings-row data-settings-item data-search="warehouse types storage facility classifications warehousing and fleet storage locations and vehicles" x-bind:hidden="! matches($el)" href="{{ route('warehouse-types.index') }}" label="Warehouse Types"
                                     description="Storage facility classifications" :count="\App\Models\WarehouseType::count()"
                                     icon-bg="bg-cyan-500">
                                     <x-slot name="icon">
@@ -134,7 +134,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('vehicle-list')
-                                <x-settings-row data-settings-item data-search="vehicles fleet tracking & details warehousing & fleet storage locations and vehicles" x-bind:hidden="! matches($el)" href="{{ route('vehicles.index') }}" label="Vehicles"
+                                <x-settings-row data-settings-item data-search="vehicles fleet tracking and details warehousing and fleet storage locations and vehicles" x-bind:hidden="! matches($el)" href="{{ route('vehicles.index') }}" label="Vehicles"
                                     description="Fleet tracking & details" :count="\App\Models\Vehicle::count()"
                                     icon-bg="bg-amber-500">
                                     <x-slot name="icon">
@@ -155,7 +155,7 @@
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Stock Control</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('stock-adjustment-list')
-                                <x-settings-row data-settings-item data-search="stock adjustments damage, theft, expiry & variance stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('stock-adjustments.index') }}" label="Stock Adjustments"
+                                <x-settings-row data-settings-item data-search="stock adjustments damage, theft, expiry and variance stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('stock-adjustments.index') }}" label="Stock Adjustments"
                                     description="Damage, theft, expiry & variance" :count="\App\Models\StockAdjustment::count()"
                                     icon-bg="bg-red-500">
                                     <x-slot name="icon">
@@ -168,7 +168,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('product-recall-list')
-                                <x-settings-row data-settings-item data-search="product recalls supplier recalls & quality issues stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('product-recalls.index') }}" label="Product Recalls"
+                                <x-settings-row data-settings-item data-search="product recalls supplier recalls and quality issues stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('product-recalls.index') }}" label="Product Recalls"
                                     description="Supplier recalls & quality issues" :count="\App\Models\ProductRecall::count()"
                                     icon-bg="bg-orange-500">
                                     <x-slot name="icon">
@@ -181,7 +181,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('claim-register-list')
-                                <x-settings-row data-settings-item data-search="claim register supplier & damage claims log stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('claim-registers.index') }}" label="Claim Register"
+                                <x-settings-row data-settings-item data-search="claim register supplier and damage claims log stock control adjustments, recalls and claims" x-bind:hidden="! matches($el)" href="{{ route('claim-registers.index') }}" label="Claim Register"
                                     description="Supplier & damage claims log" :count="\App\Models\ClaimRegister::count()"
                                     icon-bg="bg-rose-500">
                                     <x-slot name="icon">
@@ -202,7 +202,7 @@
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Organization &amp; Access</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('company-list')
-                                <x-settings-row data-settings-item data-search="companies legal entities & details organization & access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('companies.index') }}" label="Companies"
+                                <x-settings-row data-settings-item data-search="companies legal entities and details organization and access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('companies.index') }}" label="Companies"
                                     description="Legal entities & details" :count="\App\Models\Company::count()"
                                     icon-bg="bg-violet-500">
                                     <x-slot name="icon">
@@ -215,7 +215,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('user-list')
-                                <x-settings-row data-settings-item data-search="users manage system users & logins organization & access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('users.index') }}" label="Users"
+                                <x-settings-row data-settings-item data-search="users manage system users and logins organization and access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('users.index') }}" label="Users"
                                     description="Manage system users & logins" :count="\App\Models\User::count()"
                                     icon-bg="bg-indigo-500">
                                     <x-slot name="icon">
@@ -228,7 +228,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('role-list')
-                                <x-settings-row data-settings-item data-search="roles permissions & access levels organization & access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('roles.index') }}" label="Roles"
+                                <x-settings-row data-settings-item data-search="roles permissions and access levels organization and access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('roles.index') }}" label="Roles"
                                     description="Permissions & access levels" :count="\Spatie\Permission\Models\Role::count()"
                                     icon-bg="bg-blue-500">
                                     <x-slot name="icon">
@@ -241,7 +241,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('permission-list')
-                                <x-settings-row data-settings-item data-search="permissions fine-grained access control organization & access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('permissions.index') }}" label="Permissions"
+                                <x-settings-row data-settings-item data-search="permissions fine-grained access control organization and access companies, users, roles and permissions" x-bind:hidden="! matches($el)" href="{{ route('permissions.index') }}" label="Permissions"
                                     description="Fine-grained access control"
                                     :count="\Spatie\Permission\Models\Permission::count()" icon-bg="bg-orange-500">
                                     <x-slot name="icon">
@@ -257,12 +257,12 @@
                     </section>
                 @endcanany
 
-                @canany(['category-revenue-list', 'expense-detail-list', 'profit-category-list', 'tax-list'])
+                @canany(['category-revenue-list', 'profit-category-list', 'tax-list'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Tax &amp; Profitability</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('tax-list')
-                                <x-settings-row data-settings-item data-search="tax codes define vat, sales tax, etc. tax & profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('tax-codes.index') }}" label="Tax Codes"
+                                <x-settings-row data-settings-item data-search="tax codes define vat, sales tax, etc. tax and profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('tax-codes.index') }}" label="Tax Codes"
                                     description="Define VAT, Sales Tax, etc." :count="\App\Models\TaxCode::count()"
                                     icon-bg="bg-red-500">
                                     <x-slot name="icon">
@@ -275,7 +275,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('tax-list')
-                                <x-settings-row data-settings-item data-search="tax rates percentage rates for tax codes tax & profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('tax-rates.index') }}" label="Tax Rates"
+                                <x-settings-row data-settings-item data-search="tax rates percentage rates for tax codes tax and profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('tax-rates.index') }}" label="Tax Rates"
                                     description="Percentage rates for tax codes" :count="\App\Models\TaxRate::count()"
                                     icon-bg="bg-rose-500">
                                     <x-slot name="icon">
@@ -287,21 +287,8 @@
                                     </x-slot>
                                 </x-settings-row>
                             @endcan
-                            @can('expense-detail-list')
-                                <x-settings-row data-settings-item data-search="expense details category-based expense records tax & profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('expense-details.index') }}" label="Expense Details"
-                                    description="Category-based expense records" :count="\App\Models\ExpenseDetail::count()"
-                                    icon-bg="bg-pink-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
                             @can('category-revenue-list')
-                                <x-settings-row data-settings-item data-search="category revenue supplier-wise revenue category setup tax & profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('category-revenue.index') }}" label="Category Revenue"
+                                <x-settings-row data-settings-item data-search="category revenue supplier-wise revenue category setup tax and profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('category-revenue.index') }}" label="Category Revenue"
                                     description="Supplier-wise revenue category setup"
                                     :count="\App\Models\RevenueCategory::count()" icon-bg="bg-emerald-500">
                                     <x-slot name="icon">
@@ -314,7 +301,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('profit-category-list')
-                                <x-settings-row data-settings-item data-search="profit categories supplier-wise profit after taxation category setup tax & profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('profit-categories.index') }}" label="Profit Categories"
+                                <x-settings-row data-settings-item data-search="profit categories supplier-wise profit after taxation category setup tax and profitability tax rules, expenses and profit categories" x-bind:hidden="! matches($el)" href="{{ route('profit-categories.index') }}" label="Profit Categories"
                                     description="Supplier-wise profit after taxation category setup"
                                     :count="\App\Models\ProfitCategory::count()" icon-bg="bg-cyan-600">
                                     <x-slot name="icon">
@@ -335,7 +322,7 @@
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Business Partners</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('supplier-list')
-                                <x-settings-row data-settings-item data-search="suppliers vendor management & profiles business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('suppliers.index') }}" label="Suppliers"
+                                <x-settings-row data-settings-item data-search="suppliers vendor management and profiles business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('suppliers.index') }}" label="Suppliers"
                                     description="Vendor management & profiles" :count="\App\Models\Supplier::count()"
                                     icon-bg="bg-emerald-500">
                                     <x-slot name="icon">
@@ -348,7 +335,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('supplier-payment-list')
-                                <x-settings-row data-settings-item data-search="supplier payments payment vouchers & records business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('supplier-payments.index') }}" label="Supplier Payments"
+                                <x-settings-row data-settings-item data-search="supplier payments payment vouchers and records business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('supplier-payments.index') }}" label="Supplier Payments"
                                     description="Payment vouchers & records" :count="\App\Models\SupplierPayment::count()"
                                     icon-bg="bg-amber-500">
                                     <x-slot name="icon">
@@ -361,7 +348,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('customer-list')
-                                <x-settings-row data-settings-item data-search="customers client database & account history business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('customers.index') }}" label="Customers"
+                                <x-settings-row data-settings-item data-search="customers client database and account history business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('customers.index') }}" label="Customers"
                                     description="Client database & account history" :count="\App\Models\Customer::count()"
                                     icon-bg="bg-pink-500">
                                     <x-slot name="icon">
@@ -387,7 +374,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('employee-list')
-                                <x-settings-row data-settings-item data-search="employees staff records & payroll info business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('employees.index') }}" label="Employees"
+                                <x-settings-row data-settings-item data-search="employees staff records and payroll info business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('employees.index') }}" label="Employees"
                                     description="Staff records & payroll info" :count="\App\Models\Employee::count()"
                                     icon-bg="bg-lime-500">
                                     <x-slot name="icon">
@@ -413,7 +400,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('promotional-campaign-list')
-                                <x-settings-row data-settings-item data-search="promotions campaigns & discount schemes business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('promotional-campaigns.index') }}" label="Promotions"
+                                <x-settings-row data-settings-item data-search="promotions campaigns and discount schemes business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('promotional-campaigns.index') }}" label="Promotions"
                                     description="Campaigns & discount schemes" :count="\App\Models\PromotionalCampaign::count()"
                                     icon-bg="bg-amber-500">
                                     <x-slot name="icon">
@@ -467,7 +454,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('accounting-period-list')
-                                <x-settings-row data-settings-item data-search="fiscal periods manage financial months & years accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('accounting-periods.index') }}" label="Fiscal Periods"
+                                <x-settings-row data-settings-item data-search="fiscal periods manage financial months and years accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('accounting-periods.index') }}" label="Fiscal Periods"
                                     description="Manage financial months & years" :count="\App\Models\AccountingPeriod::count()"
                                     icon-bg="bg-emerald-500">
                                     <x-slot name="icon">
@@ -480,7 +467,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('currency-list')
-                                <x-settings-row data-settings-item data-search="currencies multi-currency setup & rates accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('currencies.index') }}" label="Currencies"
+                                <x-settings-row data-settings-item data-search="currencies multi-currency setup and rates accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('currencies.index') }}" label="Currencies"
                                     description="Multi-currency setup & rates" :count="\App\Models\Currency::count()"
                                     icon-bg="bg-yellow-400">
                                     <x-slot name="icon">
@@ -493,7 +480,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('cost-center-list')
-                                <x-settings-row data-settings-item data-search="cost centers department & project cost tracking accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('cost-centers.index') }}" label="Cost Centers"
+                                <x-settings-row data-settings-item data-search="cost centers department and project cost tracking accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('cost-centers.index') }}" label="Cost Centers"
                                     description="Department & project cost tracking" :count="\App\Models\CostCenter::count()"
                                     icon-bg="bg-fuchsia-500">
                                     <x-slot name="icon">
@@ -506,7 +493,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('bank-account-list')
-                                <x-settings-row data-settings-item data-search="bank accounts company bank accounts & balances accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('bank-accounts.index') }}" label="Bank Accounts"
+                                <x-settings-row data-settings-item data-search="bank accounts company bank accounts and balances accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('bank-accounts.index') }}" label="Bank Accounts"
                                     description="Company bank accounts & balances" :count="\App\Models\BankAccount::count()"
                                     icon-bg="bg-teal-500">
                                     <x-slot name="icon">
@@ -532,7 +519,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('journal-entry-list')
-                                <x-settings-row data-settings-item data-search="journal entries manual gl postings & adjustments accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('journal-entries.index') }}" label="Journal Entries"
+                                <x-settings-row data-settings-item data-search="journal entries manual gl postings and adjustments accounting setup ledger structure, periods and banking" x-bind:hidden="! matches($el)" href="{{ route('journal-entries.index') }}" label="Journal Entries"
                                     description="Manual GL postings & adjustments" :count="\App\Models\JournalEntry::count()"
                                     icon-bg="bg-violet-500">
                                     <x-slot name="icon">

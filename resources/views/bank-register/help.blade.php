@@ -79,7 +79,7 @@
                     <li><a href="#attach">رسید اور اٹیچمنٹ</a></li>
                     <li><a href="#maker">میکر: منظوری کے لیے بھیجنا</a></li>
                     <li><a href="#checker">چیکر: منظور یا مسترد</a></li>
-                    <li><a href="#posting">پوسٹنگ اور ڈبل انٹری</a></li>
+                    <li><a href="#posting">پوسٹنگ، ڈبل انٹری اور رجسٹر کے اکاؤنٹس</a></li>
                     <li><a href="#reverse">غلطی ہو جائے تو ریورس</a></li>
                     <li><a href="#recon">بینک ریکنسیلی ایشن</a></li>
                     <li><a href="#masters">سیٹنگز: کیٹیگری، الیاس، رولز، چیک</a></li>
@@ -246,20 +246,30 @@
         </section>
 
         <section id="posting">
-            <h2>۹۔ پوسٹنگ اور ڈبل انٹری</h2>
-            <p>پوسٹ ہوتے ہی نظام ایک متوازن <span class="en">Journal Entry</span> بناتا ہے (ڈیبٹ = کریڈٹ)۔ بینک کی طرف بینک اکاؤنٹ سے جڑا لیجر، اور دوسری طرف کیٹیگری کا طے شدہ اکاؤنٹ، ورنہ کمپنی کا وصولی/ادائیگی اکاؤنٹ۔</p>
+            <h2>۹۔ پوسٹنگ، ڈبل انٹری اور رجسٹر کے اپنے اکاؤنٹس</h2>
+            <p>پوسٹ ہوتے ہی نظام ایک متوازن <span class="en">Journal Entry</span> بناتا ہے (ڈیبٹ = کریڈٹ)، یعنی وہی جرنل سسٹم جو باقی ماڈیول استعمال کرتے ہیں۔ <b>لیکن رجسٹر کا حساب بالکل الگ ہے:</b> یہ صرف اپنے نئے اکاؤنٹس (کوڈ <span class="en">6000</span> سے شروع) استعمال کرتا ہے۔ جی آر این، سیٹلمنٹ، گڈز ایشو، کسٹمر/سپلائر یا بینک کے لائیو اکاؤنٹس کو نہ چھوا جاتا ہے نہ ان کا بیلنس بدلتا ہے۔</p>
+            <div class="tip">رجسٹر کے اکاؤنٹس کی رپورٹ ٹائپ <span class="en">BankRegister</span> ہے، اس لیے <span class="en">Balance Sheet</span> اور <span class="en">Income Statement</span> میں شامل نہیں ہوتے۔ <span class="en">Account Balances</span>، <span class="en">Trial Balance</span> اور <span class="en">General Ledger</span> میں یہ اپنے الگ گروپ میں نظر آتے ہیں۔ اکاؤنٹس کی فہرست: <span class="en">Settings › Register Ledger Accounts</span>۔</div>
+            <table>
+                <tr><th>کوڈ</th><th>اکاؤنٹ</th><th>کب استعمال ہوتا ہے</th></tr>
+                <tr><td class="en">6100+</td><td>ہر بینک / کیش / والٹ کے لیے الگ اکاؤنٹ (<span class="en">BR - HBL ...</span>)</td><td>بینک کی طرف ہمیشہ یہی؛ ریکنسیلی ایشن کا کتابی بیلنس بھی اسی سے</td></tr>
+                <tr><td class="en">6300+</td><td>ہر کمپنی کا اپنا اکاؤنٹ (<span class="en">BR - کمپنی کا نام</span>)</td><td>کسٹمر رسید، پرنسپل/سپلائر ادائیگی اور <span class="en">Other</span> میں جب انٹری پر کمپنی لگی ہو</td></tr>
+                <tr><td class="en">6201 / 6202</td><td>کسٹمر رسیدیں / کیش جمع</td><td>کمپنی نہ ہو تو</td></tr>
+                <tr><td class="en">6203 / 6210</td><td>نامعلوم آمد / نامعلوم ادائیگی (<span class="en">suspense</span>)</td><td>جہاں اکاؤنٹ یا کمپنی ابھی طے نہیں؛ بعد میں درست کمپنی لگا کر ریورس اور دوبارہ انٹری</td></tr>
+                <tr><td class="en">6204 – 6209</td><td>مالک، سپلائر کلیئرنگ، تنخواہ، بینک چارجز، ٹیکس، منتقلی</td><td>متعلقہ کیٹیگری</td></tr>
+            </table>
             <table>
                 <tr><th>معاملہ</th><th>ڈیبٹ</th><th>کریڈٹ</th></tr>
-                <tr><td>کسٹمر/ریٹیلر سے رقم آئی</td><td>بینک</td><td>کمپنی/کسٹمر وصولی</td></tr>
-                <tr><td>پرنسپل / سپلائر کو ادائیگی</td><td>کمپنی ادائیگی (<span class="en">Payable</span>)</td><td>بینک</td></tr>
-                <tr><td>کیش جمع کروایا</td><td>بینک</td><td>کیش</td></tr>
-                <tr><td>بینک چارجز</td><td>بینک چارجز</td><td>بینک</td></tr>
-                <tr><td>ٹیکس کٹوتی</td><td>ایڈوانس ٹیکس</td><td>بینک</td></tr>
-                <tr><td>تنخواہ</td><td>تنخواہ واجب الادا</td><td>بینک</td></tr>
+                <tr><td>کسٹمر/ریٹیلر سے رقم آئی</td><td>بینک کا رجسٹر اکاؤنٹ</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا کسٹمر رسیدیں کلیئرنگ)</td></tr>
+                <tr><td>پرنسپل / سپلائر کو ادائیگی</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا سپلائر کلیئرنگ)</td><td>بینک کا رجسٹر اکاؤنٹ</td></tr>
+                <tr><td>کیش جمع کروایا</td><td>بینک</td><td>کیش جمع کلیئرنگ</td></tr>
+                <tr><td>بینک چارجز / ٹیکس / تنخواہ</td><td>متعلقہ رجسٹر اکاؤنٹ</td><td>بینک</td></tr>
                 <tr><td>دو بینکوں کے بیچ منتقلی</td><td>وصول کرنے والا بینک</td><td>دینے والا بینک</td></tr>
+                <tr><td>کیٹیگری نہ ہو یا کمپنی نامعلوم</td><td>بینک / نامعلوم ادائیگی</td><td>نامعلوم آمد / بینک</td></tr>
             </table>
+            <p><b>بیان (narration):</b> جرنل کی تفصیل میں خود بخود لکھا جاتا ہے: رسید نمبر | کمپنی/پارٹی | بینک ریفرنس | سٹیٹمنٹ کی عبارت۔ اس سے ہر لائن کو رپورٹ میں پہچانا اور الگ نکالا جا سکتا ہے۔ جس اکاؤنٹ کی کیٹیگری یا کمپنی موجود نہ ہو وہاں انٹری رکی نہیں رہتی، سسپنس اکاؤنٹ میں جاتی ہے اور بیان اسے واضح کرتا ہے۔</p>
+            <figure><img src="{{ asset('icons-images/bank-register-help/28-register-ledger-accounts.jpg') }}" alt="رجسٹر کے اکاؤنٹس" loading="lazy"><figcaption>رجسٹر کے اپنے اکاؤنٹس اور ان کے بیلنس</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/11-posted.jpg') }}" alt="پوسٹ شدہ انٹری" loading="lazy"><figcaption>پوسٹ شدہ انٹری: رسید نمبر اور جرنل انٹری کا لنک</figcaption></figure>
-            <div class="warn">اگر لکھا آئے "<span class="en">No ledger account found</span>" تو کیٹیگری میں <span class="en">Default ledger account</span> لگائیں، یا کمپنی کی سیٹنگ میں وصولی/ادائیگی اکاؤنٹ لگائیں۔ بینک اکاؤنٹ کا <span class="en">Chart of Account</span> سے جڑا ہونا بھی ضروری ہے۔</div>
+            <figure><img src="{{ asset('icons-images/bank-register-help/30-account-balances.jpg') }}" alt="اکاؤنٹ بیلنسز" loading="lazy"><figcaption>اکاؤنٹ بیلنسز میں رجسٹر کے اکاؤنٹس الگ گروپ میں</figcaption></figure>
             <p>پوسٹ شدہ انٹری مالی ریکارڈ کا حصہ ہے؛ اسے بدلا نہیں جا سکتا، صرف ریورس کیا جا سکتا ہے۔</p>
         </section>
 
@@ -290,7 +300,7 @@
             <h2>۱۲۔ سیٹنگز: کیٹیگری، الیاس، رولز، چیک</h2>
             <p><span class="en">Settings › Bank Register</span> میں یہ فہرستیں ہیں۔ ہر ایک میں نیا بنانا، بدلنا اور (اجازت ہو تو) حذف کرنا ہے۔</p>
             <h3>انٹری کیٹیگریاں <span class="en">Bank Entry Categories</span></h3>
-            <p>جیسے <i>Customer Receipt</i>، <i>Principal Payment</i>، <i>Bank Charges</i>۔ ہر کیٹیگری کے لیے طے کریں کہ وہ رقم آنے کے لیے ہے یا جانے کے لیے، اور چاہیں تو <span class="en">Default ledger account</span> لگائیں۔ جو کیٹیگری انٹریوں میں استعمال ہو چکی ہو اسے حذف نہیں، <b>غیر فعال</b> کریں۔</p>
+            <p>جیسے <i>Customer Receipt</i>، <i>Principal Payment</i>، <i>Bank Charges</i>۔ ہر کیٹیگری کے لیے طے کریں کہ وہ رقم آنے کے لیے ہے یا جانے کے لیے، اور چاہیں تو اس کا اپنا اکاؤنٹ (<span class="en">Own ledger account</span>) لگائیں؛ نہ لگائیں تو رجسٹر کا طے شدہ اکاؤنٹ استعمال ہوگا۔ جو کیٹیگری انٹریوں میں استعمال ہو چکی ہو اسے حذف نہیں، <b>غیر فعال</b> کریں۔</p>
             <figure><img src="{{ asset('icons-images/bank-register-help/14-categories.jpg') }}" alt="کیٹیگریاں" loading="lazy"><figcaption>کیٹیگریوں کی فہرست</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/22-category-form.jpg') }}" alt="کیٹیگری کا فارم" loading="lazy"><figcaption>نئی کیٹیگری</figcaption></figure>
             <h3>پارٹی الیاس <span class="en">Party Aliases</span></h3>
@@ -320,6 +330,7 @@
                 <tr><td><span class="en">All accounts at a glance</span></td><td>ہر اکاؤنٹ: انٹریاں، آمد، خرچ، غیر درجہ بند، منظوری کے انتظار میں، اور بغیر رسید</td></tr>
                 <tr><td><span class="en">Daily book</span></td><td>ایک اکاؤنٹ دن بہ دن: آمد، خرچ اور ہر دن کے آخر کا بیلنس (ابتدائی بیلنس خود لکھ سکتے ہیں)</td></tr>
                 <tr><td><span class="en">Scanned receipts not yet linked</span></td><td>ان باکس کی وہ رسیدیں جو کسی انٹری سے نہیں جڑیں، پرانی پہلے</td></tr>
+                <tr><td><span class="en">Not yet in the live books</span></td><td>رجسٹر میں پوسٹ شدہ وہ رقمیں جو ابھی جی آر این/سیٹلمنٹ وغیرہ کے لائیو حساب میں نہیں آئیں؛ دونوں حساب کا فرق ایک جگہ</td></tr>
                 <tr><td><span class="en">Audit log</span></td><td>کس نے کب کیا کیا</td></tr>
             </table>
             <figure><img src="{{ asset('icons-images/bank-register-help/18-reports-index.jpg') }}" alt="رپورٹس" loading="lazy"><figcaption>رپورٹس کی فہرست</figcaption></figure>
@@ -327,6 +338,7 @@
             <figure><img src="{{ asset('icons-images/bank-register-help/20-report-ledger.jpg') }}" alt="کمپنی لیجر" loading="lazy"><figcaption>کمپنی کا لیجر</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/26-account-summary.jpg') }}" alt="تمام اکاؤنٹس" loading="lazy"><figcaption>تمام اکاؤنٹس ایک نظر میں</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/27-daily-book.jpg') }}" alt="روزانہ کھاتہ" loading="lazy"><figcaption>روزانہ کھاتہ: ہر دن کا بیلنس</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/29-live-gap.jpg') }}" alt="لائیو حساب میں نہیں" loading="lazy"><figcaption>رجسٹر اور لائیو حساب کا فرق</figcaption></figure>
             <p>ہر رپورٹ اسی کو نظر آتی ہے جسے اس کی اجازت ہو۔ میکر، چیکر اور آڈیٹر سب رپورٹیں دیکھتے ہیں؛ سینئر منظور کنندہ صرف فیصلے کے لیے ضروری رپورٹیں۔</p>
         </section>
 
@@ -339,6 +351,7 @@
                 <tr><td>Submit کا بٹن نہیں ہے</td><td>انٹری کی کیٹیگری لگی ہونی چاہیے اور حالت <span class="en">Classified / Rejected / Reversed</span> ہو۔</td></tr>
                 <tr><td>"You submitted this entry, so a different person must approve it"</td><td>میکر اپنی انٹری منظور نہیں کر سکتا؛ چیکر سے کہیں۔</td></tr>
                 <tr><td>"needs a senior approver"</td><td>رقم دوسرے درجے کی حد سے اوپر ہے؛ ایسا شخص منظور کرے جس کے پاس <span class="en">approve-high-value</span> کی اجازت ہو۔</td></tr>
+                <tr><td>رجسٹر کی رقم باقی ماڈیولز کی رپورٹ میں کیوں نظر نہیں آتی</td><td>یہی اس کا ڈیزائن ہے: رجسٹر کا حساب الگ ہے۔ دونوں کا فرق <span class="en">Not yet in the live books</span> رپورٹ میں دیکھیں۔</td></tr>
                 <tr><td>انٹری بدل نہیں سکتی</td><td>پوسٹ شدہ انٹری لاک ہے؛ پہلے ریورس کریں۔</td></tr>
                 <tr><td>ریکنسیلی ایشن مکمل نہیں ہو رہی</td><td>دیکھیں کہ کوئی سٹیٹمنٹ لائن بغیر جوڑ کے تو نہیں، اور <span class="en">Difference</span> صفر ہے۔</td></tr>
                 <tr><td>رسید کاغذ پر ہے، انٹری ابھی نہیں بنی</td><td>رسید کو اسکین ان باکس میں ڈال دیں؛ انٹری بننے پر جوڑ دیں۔</td></tr>

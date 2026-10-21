@@ -35,7 +35,7 @@ class PermissionCatalog
         'Inventory Operations' => ['stock-adjustment', 'stock-transfer', 'product-recall', 'supplier-payment', 'warehouse-type', 'claim-register'],
         'Asset Management' => ['vehicle', 'warehouse'],
         'Daily Operations' => ['goods-issue', 'sales-settlement'],
-        'Bank Register' => ['bank-statement-import', 'bank-statement-entry', 'bank-reconciliation', 'bank-entry-category', 'bank-party-alias', 'bank-entry-rule', 'bank-cheque', 'bank-receipt-scan'],
+        'Bank Register' => ['bank-statement-import', 'bank-statement-entry', 'bank-reconciliation', 'bank-entry-category', 'bank-party-alias', 'bank-entry-rule', 'bank-cheque', 'bank-receipt-scan', 'bank-ledger-account'],
     ];
 
     /**
@@ -76,7 +76,7 @@ class PermissionCatalog
             'report-bank-reconciliation-statement', 'report-bank-unclassified', 'report-bank-unreconciled',
             'report-bank-missing-attachments', 'report-bank-pending-approvals', 'report-bank-cash-flow',
             'report-bank-charges-tax', 'report-bank-top-parties', 'report-bank-audit-log',
-            'report-bank-account-summary', 'report-bank-daily-book', 'report-bank-unlinked-scans',
+            'report-bank-account-summary', 'report-bank-daily-book', 'report-bank-unlinked-scans', 'report-bank-live-gap',
         ],
         'Sales & Revenue' => [
             'report-sales-settlement', 'report-sales-roi', 'report-sales-summary-roi', 'report-sales-scheme-discount',
@@ -119,6 +119,8 @@ class PermissionCatalog
         'report-bank-daily-book' => 'Daily Book',
         'report-bank-unlinked-scans' => 'Unlinked Receipt Scans',
         'bank-receipt-scan' => 'Receipt Scan Inbox',
+        'bank-ledger-account' => 'Register Ledger Accounts',
+        'report-bank-live-gap' => 'Not Yet in Live Books',
         'account-type' => 'Account Types',
         'chart-of-account' => 'Chart of Accounts',
         'currency' => 'Currencies',

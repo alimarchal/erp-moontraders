@@ -1,12 +1,15 @@
 <?php
 
 use App\Models\BankEntryAuditLog;
+use App\Models\BankEntryCategory;
 use App\Models\BankStatementEntry;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
+use App\Models\JournalEntryDetail;
 use App\Services\BankRegister\BankEntryApprovalService;
 use App\Services\BankRegister\BankEntryPostingService;
 use App\Services\BankRegister\BankRegisterException;
+use App\Services\BankRegister\BankRegisterLedger;
 
 beforeEach(function () {
     $this->fixture = bankRegisterFixture();
@@ -49,7 +52,7 @@ test('an entry below the first limit is posted by the maker straight away with a
     expect($lines)->toHaveCount(2)
         ->and((float) $lines->sum('debit'))->toBe((float) $lines->sum('credit'))
         ->and($lines->firstWhere('chart_of_account_id', $this->fixture['bankLedger']->id)->debit)->toBe('250000.00')
-        ->and($lines->firstWhere('chart_of_account_id', $this->fixture['company']->default_receivable_account_id)->credit)->toBe('250000.00')
+        ->and($lines->firstWhere('chart_of_account_id', app(BankRegisterLedger::class)->companyAccount($this->fixture['company'])->id)->credit)->toBe('250000.00')
         ->and($posted->journalEntryDetail->chart_of_account_id)->toBe($this->fixture['bankLedger']->id);
 });
 
@@ -61,7 +64,7 @@ test('a payment debits the company payable and credits the bank, with a BP recei
     $lines = $posted->journalEntry->details;
     expect($posted->receipt_no)->toStartWith('BP-')
         ->and($lines->firstWhere('chart_of_account_id', $this->fixture['bankLedger']->id)->credit)->toBe('40000.00')
-        ->and($lines->firstWhere('chart_of_account_id', $this->fixture['company']->default_payable_account_id)->debit)->toBe('40000.00');
+        ->and($lines->firstWhere('chart_of_account_id', app(BankRegisterLedger::class)->companyAccount($this->fixture['company'])->id)->debit)->toBe('40000.00');
 });
 
 test('receipt numbers run in sequence per kind', function () {
@@ -83,11 +86,42 @@ test('the category default account is used on the other side when it is set', fu
     expect($posted->journalEntry->details->firstWhere('chart_of_account_id', $special->id)->debit)->toBe('700.00');
 });
 
-test('posting fails with a clear message when no ledger account can be found', function () {
-    $this->fixture['company']->update(['default_receivable_account_id' => null]);
+test('a category without an account of its own and an entry without a company go to the suspense account with the details in the narration', function () {
+    $category = BankEntryCategory::factory()->create(['name' => 'Rent', 'slug' => 'rent', 'type' => 'payment']);
+    $entry = BankStatementEntry::factory()->create([
+        'bank_account_id' => $this->fixture['bank']->id, 'bank_entry_category_id' => $category->id, 'posting_date' => now()->toDateString(),
+        'credit' => 0, 'debit' => 9000, 'reference' => 'CHQ 777', 'party_name_in_statement' => 'LANDLORD', 'narration' => 'October rent', 'status' => 'classified',
+    ]);
 
-    expect(fn () => $this->approvals->submit(classifiedEntry($this->fixture, 100), $this->maker))
-        ->toThrow(BankRegisterException::class, 'No ledger account found');
+    $posted = $this->approvals->submit($entry, $this->maker);
+
+    $suspense = app(BankRegisterLedger::class)->account('unidentified_payments');
+    $line = $posted->journalEntry->details->firstWhere('chart_of_account_id', $suspense->id);
+    expect($line->debit)->toBe('9000.00')
+        ->and($line->description)->toBe($posted->receipt_no.' | LANDLORD | CHQ 777 | October rent')
+        ->and($posted->journalEntry->description)->toBe($line->description)
+        ->and($posted->journalEntry->reference)->toBe($posted->receipt_no);
+});
+
+test('well known categories use their own register account', function () {
+    $charges = BankStatementEntry::factory()->create([
+        'bank_account_id' => $this->fixture['bank']->id, 'bank_entry_category_id' => BankEntryCategory::where('slug', 'bank-charges')->value('id'),
+        'posting_date' => now()->toDateString(), 'credit' => 0, 'debit' => 1250, 'status' => 'classified',
+    ]);
+
+    $posted = $this->approvals->submit($charges, $this->maker);
+
+    expect($posted->journalEntry->details->pluck('chart_of_account_id'))->toContain(app(BankRegisterLedger::class)->account('bank_charges')->id);
+});
+
+test('the live ledgers are never touched by a register journal', function () {
+    $this->approvals->submit(classifiedEntry($this->fixture, 250000), $this->maker);
+    $this->approvals->submit(classifiedEntry($this->fixture, 80000, 'debit'), $this->maker);
+
+    $live = [$this->fixture['liveLedger']->id, $this->fixture['liveReceivable']->id, $this->fixture['livePayable']->id];
+
+    expect(JournalEntryDetail::whereIn('chart_of_account_id', $live)->count())->toBe(0)
+        ->and(JournalEntryDetail::count())->toBe(4);
 });
 
 test('an entry at the first limit waits for a checker and the maker cannot approve it', function () {

@@ -9,6 +9,7 @@ use App\Models\BankReconciliation;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
 use App\Models\Company;
+use App\Models\JournalEntryDetail;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,7 @@ class BankReportService
         'account-summary' => ['title' => 'All accounts at a glance', 'permission' => 'report-bank-account-summary', 'description' => 'For every bank account: entries, money in and out, what is unclassified, waiting for approval or still without a receipt.', 'filters' => ['date_from', 'date_to']],
         'daily-book' => ['title' => 'Daily book (day by day)', 'permission' => 'report-bank-daily-book', 'description' => 'One account day by day: received, paid out and the closing balance after each day.', 'filters' => ['bank_account_id', 'date_from', 'date_to', 'opening_balance']],
         'unlinked-scans' => ['title' => 'Scanned receipts not yet linked', 'permission' => 'report-bank-unlinked-scans', 'description' => 'Receipts waiting in the scan inbox, oldest first, so none is forgotten.', 'filters' => ['bank_account_id']],
+        'live-gap' => ['title' => 'Not yet in the live books', 'permission' => 'report-bank-live-gap', 'description' => 'Statement lines for which the live ledger of the account (settlements, supplier payments ...) has no entry of the same amount within 3 days.', 'filters' => ['bank_account_id', 'date_from', 'date_to']],
         'audit-log' => ['title' => 'Audit log', 'permission' => 'report-bank-audit-log', 'description' => 'Who classified, submitted, approved, posted or reversed what, and when.', 'filters' => ['date_from', 'date_to']],
     ];
 
@@ -65,6 +67,7 @@ class BankReportService
             'account-summary' => $this->accountSummary($filters),
             'daily-book' => $this->dailyBook($filters),
             'unlinked-scans' => $this->unlinkedScans($filters),
+            'live-gap' => $this->liveGap($filters),
             'audit-log' => $this->auditLog($filters),
             default => throw new BankRegisterException('Unknown report.'),
         };
@@ -425,6 +428,83 @@ class BankReportService
         ])->all();
 
         return $this->shape('Scanned receipts not yet linked', 'Oldest first', ['Scanned on', 'Days waiting', 'File', 'Account', 'Note', 'Uploaded by', 'Amount'], [1, 6], $rows, null, []);
+    }
+
+    /**
+     * Statement lines whose amount cannot be found in the live ledger of the same account: money that moved in the
+     * bank but that GRN / settlement / supplier payment have not booked (yet). The register itself never touches the
+     * live ledger, so this is the bridge between the two sets of books.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    private function liveGap(array $filters): array
+    {
+        $rows = [];
+        $matched = 0;
+
+        $accounts = BankAccount::query()->whereNotNull('chart_of_account_id')
+            ->when($filters['bank_account_id'] ?? null, fn (Builder $q, $v) => $q->where('id', $v))
+            ->get();
+
+        foreach ($accounts as $account) {
+            $entries = $this->base($filters)->where('bank_account_id', $account->id)->orderBy('posting_date')->get();
+
+            if ($entries->isEmpty()) {
+                continue;
+            }
+
+            $from = $entries->min('posting_date')->copy()->subDays(3);
+            $to = $entries->max('posting_date')->copy()->addDays(3);
+
+            $live = JournalEntryDetail::query()
+                ->with('journalEntry:id,entry_date,reference')
+                ->where('chart_of_account_id', $account->chart_of_account_id)
+                ->whereHas('journalEntry', fn (Builder $q) => $q->where('status', 'posted')->whereDate('entry_date', '>=', $from)->whereDate('entry_date', '<=', $to))
+                ->get()
+                ->map(fn ($line) => ['id' => $line->id, 'date' => $line->journalEntry->entry_date, 'in' => (float) $line->debit, 'out' => (float) $line->credit])
+                ->all();
+
+            $used = [];
+
+            foreach ($entries as $entry) {
+                $found = false;
+
+                foreach ($live as $i => $line) {
+                    $same = $entry->direction === 'credit' ? abs($line['in'] - $entry->amount) < 0.01 : abs($line['out'] - $entry->amount) < 0.01;
+
+                    if (! isset($used[$i]) && $same && abs($line['date']->diffInDays($entry->posting_date)) <= 3) {
+                        $used[$i] = true;
+                        $found = true;
+                        $matched++;
+                        break;
+                    }
+                }
+
+                if (! $found) {
+                    $rows[] = [
+                        $account->account_name,
+                        $entry->posting_date->format('d-m-Y'),
+                        $entry->company?->company_name ?: $entry->party_name_in_statement,
+                        $entry->reference,
+                        $entry->category?->name ?? '-',
+                        $entry->receipt_no ?: '-',
+                        (float) $entry->debit,
+                        (float) $entry->credit,
+                    ];
+                }
+            }
+        }
+
+        return $this->shape(
+            'Not yet in the live books',
+            $this->subtitle($filters),
+            ['Account', 'Date', 'Party / company', 'Reference', 'Category', 'Receipt no.', 'Paid out', 'Received'],
+            [6, 7],
+            $rows,
+            ['Total', '', '', '', '', '', round(array_sum(array_column($rows, 6)), 2), round(array_sum(array_column($rows, 7)), 2)],
+            ["{$matched} statement line(s) were found in the live ledger. The lines above were not."],
+        );
     }
 
     /**

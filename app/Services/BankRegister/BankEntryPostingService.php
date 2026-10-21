@@ -20,6 +20,7 @@ class BankEntryPostingService
         private readonly AccountingService $accounting,
         private readonly BankReceiptNumberGenerator $receipts,
         private readonly BankApprovalRules $approvalRules,
+        private readonly BankRegisterLedger $ledger,
     ) {}
 
     public function post(BankStatementEntry $entry, User $user): BankStatementEntry
@@ -49,26 +50,23 @@ class BankEntryPostingService
 
             $entry->loadMissing(['bankAccount', 'category', 'company']);
 
-            $bankAccountId = $entry->bankAccount->chart_of_account_id;
-            if (! $bankAccountId) {
-                throw new BankRegisterException("Bank account '{$entry->bankAccount->account_name}' is not linked to a chart-of-account ledger.");
-            }
-
-            $otherAccountId = $this->otherSideAccountId($entry);
+            // Only the register's own accounts are used, so GRN, settlement and every other live balance is untouched.
+            $bankLedger = $this->ledger->ledgerForBank($entry->bankAccount);
+            $otherSide = $this->ledger->otherSide($entry);
             $receiptNo = $entry->receipt_no ?? $this->receipts->next($entry->direction, $entry->posting_date);
             $amount = $entry->amount;
-            $note = $entry->description ?: str((string) $entry->narration)->limit(120)->value();
+            $note = $this->ledger->narration($entry, $receiptNo);
 
             $isReceipt = $entry->direction === 'credit';
             $lines = [
-                ['account_id' => $bankAccountId, 'debit' => $isReceipt ? $amount : 0, 'credit' => $isReceipt ? 0 : $amount, 'description' => $note, 'cost_center_id' => null],
-                ['account_id' => $otherAccountId, 'debit' => $isReceipt ? 0 : $amount, 'credit' => $isReceipt ? $amount : 0, 'description' => $note, 'cost_center_id' => null],
+                ['account_id' => $bankLedger->id, 'debit' => $isReceipt ? $amount : 0, 'credit' => $isReceipt ? 0 : $amount, 'description' => $note, 'cost_center_id' => null],
+                ['account_id' => $otherSide->id, 'debit' => $isReceipt ? 0 : $amount, 'credit' => $isReceipt ? $amount : 0, 'description' => $note, 'cost_center_id' => null],
             ];
 
             $result = $this->accounting->createJournalEntry([
                 'entry_date' => $entry->posting_date->toDateString(),
                 'reference' => $receiptNo,
-                'description' => trim(($entry->category->name ?? 'Bank entry').' - '.($entry->company->company_name ?? $entry->party_name_in_statement ?? '')),
+                'description' => $note,
                 'lines' => $lines,
                 'auto_post' => true,
             ]);
@@ -131,22 +129,5 @@ class BankEntryPostingService
 
             return $entry;
         });
-    }
-
-    private function otherSideAccountId(BankStatementEntry $entry): int
-    {
-        $accountId = $entry->category?->default_chart_of_account_id
-            ?? ($entry->direction === 'credit'
-                ? $entry->company?->default_receivable_account_id
-                : $entry->company?->default_payable_account_id);
-
-        if (! $accountId) {
-            throw new BankRegisterException(
-                'No ledger account found for the other side of this entry. Set a default account on the category'
-                .' or the receivable/payable account on the company.'
-            );
-        }
-
-        return (int) $accountId;
     }
 }

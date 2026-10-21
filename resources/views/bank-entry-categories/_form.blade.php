@@ -16,14 +16,14 @@
 </div>
 
 <div class="mt-4">
-    <x-label for="default_chart_of_account_id" value="Default ledger account (other side of the bank)" />
+    <x-label for="default_chart_of_account_id" value="Own ledger account (optional)" />
     <select id="default_chart_of_account_id" name="default_chart_of_account_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-        <option value="">Use the company's receivable / payable account</option>
+        <option value="">Use the register's own account (recommended)</option>
         @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" @selected((int) old('default_chart_of_account_id', $category?->default_chart_of_account_id) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>
         @endforeach
     </select>
-    <p class="mt-1 text-xs text-gray-500">When this category is posted, this account is debited or credited against the bank. Leave empty for categories that always belong to a company.</p>
+    <p class="mt-1 text-xs text-gray-500">Leave empty: the register posts to its own accounts (6000 onwards), one per company where the entry has a company, and never to live accounts such as Debtors or Creditors. Pick an account only if this category must go to a specific one.</p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

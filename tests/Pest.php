@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\User;
+use App\Services\BankRegister\BankRegisterLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -123,7 +124,10 @@ function seedGrnPostingAccounts(): void
  * Everything a Bank Statement Register test needs to post a journal: a base currency, an open
  * accounting period, a bank account linked to a ledger, and a company with receivable/payable ledgers.
  *
- * @return array{bank: BankAccount, company: Company, category: BankEntryCategory, bankLedger: ChartOfAccount}
+ * The "live" accounts (bank ledger, receivable, payable) stand for the ones GRN, settlement and the rest use; the
+ * register must never post to them. `bankLedger` is the register's own ledger for the bank account.
+ *
+ * @return array{bank: BankAccount, company: Company, category: BankEntryCategory, bankLedger: ChartOfAccount, liveLedger: ChartOfAccount, liveReceivable: ChartOfAccount, livePayable: ChartOfAccount}
  */
 function bankRegisterFixture(): array
 {
@@ -158,19 +162,24 @@ function bankRegisterFixture(): array
         'is_active' => true,
     ]);
 
-    $bankLedger = $ledger('1121', 'HBL Bank');
+    $liveLedger = $ledger('1121', 'HBL Bank');
     $receivable = $ledger('1141', 'Company Receivable');
     $payable = $ledger('2111', 'Company Payable');
 
+    $bank = BankAccount::factory()->create(['chart_of_account_id' => $liveLedger->id]);
+
     return [
-        'bank' => BankAccount::factory()->create(['chart_of_account_id' => $bankLedger->id]),
+        'bank' => $bank,
         'company' => Company::factory()->create([
             'company_name' => 'Unilever',
             'default_receivable_account_id' => $receivable->id,
             'default_payable_account_id' => $payable->id,
         ]),
         'category' => BankEntryCategory::query()->where('slug', 'customer-receipt')->firstOrFail(),
-        'bankLedger' => $bankLedger,
+        'bankLedger' => app(BankRegisterLedger::class)->ledgerForBank($bank),
+        'liveLedger' => $liveLedger,
+        'liveReceivable' => $receivable,
+        'livePayable' => $payable,
     ];
 }
 

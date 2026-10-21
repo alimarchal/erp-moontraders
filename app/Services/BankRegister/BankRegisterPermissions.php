@@ -22,6 +22,7 @@ class BankRegisterPermissions
         'bank-entry-rule' => ['list', 'create', 'edit', 'delete'],
         'bank-cheque' => ['list', 'create', 'edit', 'delete'],
         'bank-receipt-scan' => ['list', 'create', 'link', 'delete'],
+        'bank-ledger-account' => ['list'],
     ];
 
     /**
@@ -43,6 +44,7 @@ class BankRegisterPermissions
         'report-bank-account-summary',
         'report-bank-daily-book',
         'report-bank-unlinked-scans',
+        'report-bank-live-gap',
     ];
 
     /**
@@ -62,19 +64,20 @@ class BankRegisterPermissions
             'bank-entry-rule-list', 'bank-entry-rule-create', 'bank-entry-rule-edit',
             'bank-cheque-list', 'bank-cheque-create', 'bank-cheque-edit',
             'bank-receipt-scan-list', 'bank-receipt-scan-create', 'bank-receipt-scan-link',
+            'bank-ledger-account-list',
         ],
         'bank-checker' => [
             'bank-statement-entry-list', 'bank-statement-entry-approve', 'bank-statement-entry-reject',
             'bank-statement-entry-post', 'bank-statement-entry-reverse', 'bank-statement-entry-export',
             'bank-reconciliation-list', 'bank-reconciliation-create', 'bank-reconciliation-edit', 'bank-reconciliation-complete',
-            'bank-cheque-list', 'bank-receipt-scan-list',
+            'bank-cheque-list', 'bank-receipt-scan-list', 'bank-ledger-account-list',
         ],
         'bank-senior-approver' => [
             'bank-statement-entry-list', 'bank-statement-entry-approve', 'bank-statement-entry-approve-high-value',
-            'bank-statement-entry-reject', 'bank-statement-entry-export', 'bank-receipt-scan-list',
+            'bank-statement-entry-reject', 'bank-statement-entry-export', 'bank-receipt-scan-list', 'bank-ledger-account-list',
         ],
         'auditor' => [
-            'bank-statement-entry-list', 'bank-statement-entry-export', 'bank-reconciliation-list', 'bank-cheque-list', 'bank-receipt-scan-list',
+            'bank-statement-entry-list', 'bank-statement-entry-export', 'bank-reconciliation-list', 'bank-cheque-list', 'bank-receipt-scan-list', 'bank-ledger-account-list',
         ],
     ];
 

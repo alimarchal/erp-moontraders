@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\DB;
  */
 class BankReconciliationService
 {
+    public function __construct(private readonly BankRegisterLedger $ledger) {}
+
     public function start(
         BankAccount $account,
         CarbonInterface $from,
@@ -31,10 +33,6 @@ class BankReconciliationService
         ?string $notes,
         User $user,
     ): BankReconciliation {
-        if (! $account->chart_of_account_id) {
-            throw new BankRegisterException('Link this bank account to a chart-of-account ledger before reconciling.');
-        }
-
         if ($to->lt($from)) {
             throw new BankRegisterException('The period end cannot be before the period start.');
         }
@@ -111,8 +109,8 @@ class BankReconciliationService
             throw new BankRegisterException('The journal line must have the same amount and direction as the statement line.');
         }
 
-        if ($detail->chart_of_account_id !== $reconciliation->bankAccount->chart_of_account_id) {
-            throw new BankRegisterException('The journal line is not on this bank account\'s ledger.');
+        if ($detail->chart_of_account_id !== $this->ledger->ledgerForBank($reconciliation->bankAccount)->id) {
+            throw new BankRegisterException('The journal line is not on this account\'s register ledger.');
         }
 
         DB::transaction(function () use ($reconciliation, $entry, $detail, $user) {
@@ -227,8 +225,7 @@ class BankReconciliationService
      */
     public function refreshTotals(BankReconciliation $reconciliation): array
     {
-        $account = $reconciliation->bankAccount()->first();
-        $ledgerId = $account->chart_of_account_id;
+        $ledgerId = $this->ledger->ledgerForBank($reconciliation->bankAccount()->first())->id;
 
         $bookBalance = (float) JournalEntryDetail::query()
             ->where('chart_of_account_id', $ledgerId)
@@ -285,7 +282,7 @@ class BankReconciliationService
 
         return JournalEntryDetail::query()
             ->with('journalEntry')
-            ->where('chart_of_account_id', $reconciliation->bankAccount->chart_of_account_id)
+            ->where('chart_of_account_id', $this->ledger->ledgerForBank($reconciliation->bankAccount)->id)
             ->where($column, $entry->amount)
             ->whereNotIn('id', $matchedDetailIds)
             ->whereHas('journalEntry', fn (Builder $q) => $q

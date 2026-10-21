@@ -128,3 +128,13 @@ it('renders the redesigned create and edit forms', function () {
     $this->get(route('customers.create'))->assertSuccessful()->assertSee('Shop details')->assertSee('Create customer');
     $this->get(route('customers.edit', $customer))->assertSuccessful()->assertSee('Edit Customer: Form Shop')->assertSee('Save changes');
 });
+
+it('renders the redesigned customer view page', function () {
+    $customer = Customer::factory()->create(['customer_name' => 'View Shop', 'city' => 'Kotli']);
+
+    $this->get(route('customers.show', $customer))
+        ->assertSuccessful()
+        ->assertSee('View Shop')
+        ->assertSee('Credit available')
+        ->assertSee('Kotli');
+});

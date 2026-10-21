@@ -8,7 +8,6 @@
     $sort = (string) request('sort', 'customer_name');
     $tab = $filters['is_active'] ?? '';
     $chips = \Illuminate\Support\Arr::except($filters, 'is_active');
-    $perPage = (int) request('per_page', 25);
 
     $withFilters = fn (array $f) => request()->fullUrlWithQuery(['filter' => $f ?: null, 'page' => null]);
     $tabUrl = function (string $key) use ($filters, $withFilters) {

@@ -5,238 +5,276 @@ $channelTypes = $channelTypes ?? [];
 $customerCategories = $customerCategories ?? [];
 $accountOptions = $accountOptions ?? collect();
 $salesRepOptions = $salesRepOptions ?? collect();
+$cancelUrl = $cancelUrl ?? route('customers.index');
+$submitLabel = $submitLabel ?? 'Save customer';
+
+$val = fn (string $field, $default = null) => old($field, optional($customer)->{$field} ?? $default);
+$moneyValue = fn (string $field, $default) => old($field, optional($customer)->{$field} ?? $default);
 @endphp
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-        <x-label for="customer_code" value="Customer Code" :required="true" />
-        <x-input id="customer_code" type="text" name="customer_code"
-            class="mt-1 block w-full uppercase" maxlength="191" required
-            :value="old('customer_code', optional($customer)->customer_code)" placeholder="CUST-001" />
+<style>
+    .cf-stack { display: flex; flex-direction: column; gap: 20px; }
+    .cf-3 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .cf-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .cf-4 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 768px) { .cf-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { .cf-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .cf-wide { grid-column: 1 / -1; }
+    .uf-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--ak-border-strong); border-radius: 8px; background: #fff; color: var(--ak-text); font-size: 14px; }
+    .uf-field textarea:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
+    .uf-field .cf-hint { margin: 5px 0 0; font-size: 12px; color: var(--ak-muted); }
+    .cf-switch { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--ak-border); border-radius: 10px; background: var(--ak-soft); cursor: pointer; }
+    .cf-switch input { width: 18px; height: 18px; accent-color: var(--ak-navy); }
+    .cf-switch b { display: block; font-size: 14px; color: var(--ak-text); }
+    .cf-switch span { font-size: 12.5px; color: var(--ak-muted); }
+    details.cf-adv > summary { cursor: pointer; list-style: none; }
+    details.cf-adv > summary::-webkit-details-marker { display: none; }
+    details.cf-adv[open] .cf-chevron { transform: rotate(180deg); }
+    .cf-chevron { transition: transform .15s; width: 18px; height: 18px; color: var(--ak-muted); }
+</style>
+
+@if ($errors->any())
+    <div class="ak-alert ak-alert-error" role="alert">
+        <b>Please fix {{ $errors->count() }} {{ \Illuminate\Support\Str::plural('problem', $errors->count()) }}:</b>
+        {{ implode(' · ', array_slice($errors->all(), 0, 4)) }}{{ $errors->count() > 4 ? ' …' : '' }}
     </div>
+@endif
 
-    <div>
-        <x-label for="customer_name" value="Customer Name" :required="true" />
-        <x-input id="customer_name" type="text" name="customer_name" class="mt-1 block w-full" maxlength="191" required
-            :value="old('customer_name', optional($customer)->customer_name)" placeholder="Al Rehman Store" />
-    </div>
+<div class="cf-stack">
+    {{-- 1. Identity --}}
+    <section class="uf-card">
+        <div class="uf-card-head">
+            <div>
+                <h2 class="uf-card-title"><span class="uf-step">1</span> Shop details</h2>
+                <p class="uf-card-sub">Who the customer is and who looks after them.</p>
+            </div>
+        </div>
+        <div class="uf-body">
+            <div class="uf-fields">
+                <div class="uf-field">
+                    <label for="customer_code">Customer code <span class="uf-req">*</span></label>
+                    <input id="customer_code" type="text" name="customer_code" maxlength="191" required style="text-transform:uppercase"
+                        value="{{ $val('customer_code') }}" placeholder="CUST-001">
+                    @error('customer_code') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="customer_name">Customer / shop name <span class="uf-req">*</span></label>
+                    <input id="customer_name" type="text" name="customer_name" maxlength="191" required
+                        value="{{ $val('customer_name') }}" placeholder="Al Rehman Store">
+                    @error('customer_name') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="business_name">Business / trade name</label>
+                    <input id="business_name" type="text" name="business_name" maxlength="191"
+                        value="{{ $val('business_name') }}" placeholder="Registered name">
+                    @error('business_name') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="sales_rep_id">Assigned sales rep</label>
+                    <select id="sales_rep_id" name="sales_rep_id">
+                        <option value="">Unassigned</option>
+                        @foreach ($salesRepOptions as $salesRep)
+                            <option value="{{ $salesRep->id }}" @selected((int) $val('sales_rep_id', 0) === $salesRep->id)>{{ $salesRep->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('sales_rep_id') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div>
-        <x-label for="business_name" value="Business / Trade Name" />
-        <x-input id="business_name" type="text" name="business_name" class="mt-1 block w-full" maxlength="191"
-            :value="old('business_name', optional($customer)->business_name)" placeholder="Registered name" />
-    </div>
+    {{-- 2. Contact & location --}}
+    <section class="uf-card">
+        <div class="uf-card-head">
+            <div>
+                <h2 class="uf-card-title"><span class="uf-step">2</span> Contact &amp; location</h2>
+                <p class="uf-card-sub">How to reach the shop and where it is.</p>
+            </div>
+        </div>
+        <div class="uf-body">
+            <div class="uf-fields">
+                <div class="uf-field">
+                    <label for="phone">Phone</label>
+                    <input id="phone" type="text" name="phone" maxlength="50" value="{{ $val('phone') }}" placeholder="03XX-XXXXXXX">
+                    @error('phone') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" name="email" maxlength="191" value="{{ $val('email') }}" placeholder="store@example.com">
+                    @error('email') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field cf-wide">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" rows="2" placeholder="Street, market, landmark">{{ $val('address') }}</textarea>
+                    @error('address') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+            </div>
+            <div class="cf-4" style="margin-top:16px">
+                <div class="uf-field">
+                    <label for="sub_locality">Area / sub locality</label>
+                    <input id="sub_locality" type="text" name="sub_locality" maxlength="191" value="{{ $val('sub_locality') }}" placeholder="Satellite Town">
+                </div>
+                <div class="uf-field">
+                    <label for="city">City</label>
+                    <input id="city" type="text" name="city" maxlength="191" value="{{ $val('city') }}" placeholder="Muzaffarabad">
+                </div>
+                <div class="uf-field">
+                    <label for="state">State / region</label>
+                    <input id="state" type="text" name="state" maxlength="191" value="{{ $val('state', 'Azad Kashmir') }}">
+                </div>
+                <div class="uf-field">
+                    <label for="country">Country</label>
+                    <input id="country" type="text" name="country" maxlength="191" value="{{ $val('country', 'Pakistan') }}">
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div>
-        <x-label for="sales_rep_id" value="Assigned Sales Rep" />
-        <select id="sales_rep_id" name="sales_rep_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Unassigned</option>
-            @foreach ($salesRepOptions as $salesRep)
-            <option value="{{ $salesRep->id }}" {{ (int) old('sales_rep_id', optional($customer)->sales_rep_id) ===
-                $salesRep->id ? 'selected' : '' }}>
-                {{ $salesRep->name }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-</div>
+    {{-- 3. Classification & credit --}}
+    <section class="uf-card">
+        <div class="uf-card-head">
+            <div>
+                <h2 class="uf-card-title"><span class="uf-step">3</span> Channel &amp; credit</h2>
+                <p class="uf-card-sub">How the shop is classified and how much credit it gets.</p>
+            </div>
+        </div>
+        <div class="uf-body">
+            <div class="cf-4">
+                <div class="uf-field">
+                    <label for="channel_type">Channel type <span class="uf-req">*</span></label>
+                    <select id="channel_type" name="channel_type" required>
+                        @foreach ($channelTypes as $type)
+                            <option value="{{ $type }}" @selected($val('channel_type', $channelTypes[0] ?? null) === $type)>{{ $type }}</option>
+                        @endforeach
+                    </select>
+                    @error('channel_type') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="customer_category">Category <span class="uf-req">*</span></label>
+                    <select id="customer_category" name="customer_category" required>
+                        @foreach ($customerCategories as $category)
+                            <option value="{{ $category }}" @selected($val('customer_category', 'C') === $category)>Category {{ $category }}</option>
+                        @endforeach
+                    </select>
+                    @error('customer_category') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="credit_limit">Credit limit</label>
+                    <input id="credit_limit" type="number" name="credit_limit" min="0" step="0.01" value="{{ $moneyValue('credit_limit', 50000) }}">
+                    @error('credit_limit') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="payment_terms">Payment terms (days)</label>
+                    <input id="payment_terms" type="number" name="payment_terms" min="0" max="365" value="{{ $moneyValue('payment_terms', 30) }}">
+                    @error('payment_terms') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </div>
+    </section>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    <div>
-        <x-label for="phone" value="Phone" />
-        <x-input id="phone" type="text" name="phone" class="mt-1 block w-full" maxlength="50"
-            :value="old('phone', optional($customer)->phone)" placeholder="03XX-XXXXXXX" />
-    </div>
+    {{-- 4. Tax & compliance --}}
+    <section class="uf-card">
+        <div class="uf-card-head">
+            <div>
+                <h2 class="uf-card-title"><span class="uf-step">4</span> Tax &amp; identity</h2>
+                <p class="uf-card-sub">Optional. Used for FBR / advance tax reports.</p>
+            </div>
+        </div>
+        <div class="uf-body">
+            <div class="cf-3">
+                <div class="uf-field">
+                    <label for="ntn">NTN</label>
+                    <input id="ntn" type="text" name="ntn" maxlength="191" value="{{ $val('ntn') }}" placeholder="Tax registration number">
+                </div>
+                <div class="uf-field">
+                    <label for="owner_cnic">Owner CNIC</label>
+                    <input id="owner_cnic" type="text" name="owner_cnic" maxlength="191" value="{{ $val('owner_cnic') }}" placeholder="12345-6789012-1">
+                </div>
+                <div class="uf-field">
+                    <label for="it_status">IT status (FBR registered)</label>
+                    <select id="it_status" name="it_status">
+                        <option value="0" @selected((string) (int) $val('it_status', 0) === '0')>No</option>
+                        <option value="1" @selected((string) (int) $val('it_status', 0) === '1')>Yes</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div>
-        <x-label for="email" value="Email" />
-        <x-input id="email" type="email" name="email" class="mt-1 block w-full" maxlength="191"
-            :value="old('email', optional($customer)->email)" placeholder="store@example.com" />
-    </div>
-</div>
+    {{-- 5. Accounting (collapsed) --}}
+    <details class="uf-card cf-adv" @if ($errors->hasAny(['receivable_account_id', 'payable_account_id', 'credit_used', 'last_sale_date'])) open @endif>
+        <summary class="uf-card-head">
+            <div>
+                <h2 class="uf-card-title"><span class="uf-step">5</span> Accounting links <span class="ak-muted" style="font-weight:400">(optional)</span></h2>
+                <p class="uf-card-sub">Ledger accounts and usage figures. Most shops can leave these alone.</p>
+            </div>
+            <svg class="cf-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+        </summary>
+        <div class="uf-body">
+            <div class="uf-fields">
+                <div class="uf-field">
+                    <label for="receivable_account_id">Receivable account (AR)</label>
+                    <select id="receivable_account_id" name="receivable_account_id">
+                        <option value="">Not linked</option>
+                        @foreach ($accountOptions as $account)
+                            <option value="{{ $account->id }}" @selected((int) $val('receivable_account_id', 0) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('receivable_account_id') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="payable_account_id">Payable account (AP)</label>
+                    <select id="payable_account_id" name="payable_account_id">
+                        <option value="">Not linked</option>
+                        @foreach ($accountOptions as $account)
+                            <option value="{{ $account->id }}" @selected((int) $val('payable_account_id', 0) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('payable_account_id') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="credit_used">Credit used</label>
+                    <input id="credit_used" type="number" name="credit_used" min="0" step="0.01" value="{{ $moneyValue('credit_used', 0) }}">
+                    @error('credit_used') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="uf-field">
+                    <label for="last_sale_date">Last sale date</label>
+                    <input id="last_sale_date" type="date" name="last_sale_date" value="{{ old('last_sale_date', optional(optional($customer)->last_sale_date)->format('Y-m-d')) }}">
+                    @error('last_sale_date') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </div>
+    </details>
 
-<div class="mt-4">
-    <x-label for="address" value="Billing Address" />
-    <textarea id="address" name="address" rows="3"
-        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-        placeholder="Street, area, city">{{ old('address', optional($customer)->address) }}</textarea>
-</div>
+    {{-- 6. Notes & status --}}
+    <section class="uf-card">
+        <div class="uf-card-head">
+            <div>
+                <h2 class="uf-card-title"><span class="uf-step">6</span> Notes &amp; status</h2>
+            </div>
+        </div>
+        <div class="uf-body">
+            <div class="uf-fields">
+                <div class="uf-field cf-wide">
+                    <label for="notes">Internal notes</label>
+                    <textarea id="notes" name="notes" rows="3" placeholder="Delivery window, credit preference, contact person …">{{ $val('notes') }}</textarea>
+                </div>
+                <div class="cf-wide">
+                    <input type="hidden" name="is_active" value="0">
+                    <label class="cf-switch" for="is_active">
+                        <input id="is_active" type="checkbox" name="is_active" value="1" @checked(old('is_active', optional($customer)->is_active ?? true))>
+                        <div><b>Customer is active</b><span>Inactive customers stay on record but are hidden from new sales.</span></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <div>
-        <x-label for="sub_locality" value="Sub Locality / Area" />
-        <x-input id="sub_locality" type="text" name="sub_locality" class="mt-1 block w-full" maxlength="191"
-            :value="old('sub_locality', optional($customer)->sub_locality)" placeholder="Satellite Town" />
-    </div>
-
-    <div>
-        <x-label for="city" value="City" />
-        <x-input id="city" type="text" name="city" class="mt-1 block w-full" maxlength="191"
-            :value="old('city', optional($customer)->city)" placeholder="Muzaffarabad" />
-    </div>
-
-    <div>
-        <x-label for="state" value="State / Region" />
-        <x-input id="state" type="text" name="state" class="mt-1 block w-full" maxlength="191"
-            :value="old('state', optional($customer)->state ?? 'Azad Kashmir')" placeholder="Azad Kashmir" />
-    </div>
-
-    <div>
-        <x-label for="country" value="Country" />
-        <x-input id="country" type="text" name="country" class="mt-1 block w-full" maxlength="191"
-            :value="old('country', optional($customer)->country ?? 'Pakistan')" placeholder="Pakistan" />
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <div>
-        <x-label for="channel_type" value="Channel Type" :required="true" />
-        <select id="channel_type" name="channel_type"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
-            required>
-            @foreach ($channelTypes as $type)
-            <option value="{{ $type }}" {{ old('channel_type', optional($customer)->channel_type) === $type ? 'selected'
-                : '' }}>
-                {{ $type }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div>
-        <x-label for="customer_category" value="Customer Category" :required="true" />
-        <select id="customer_category" name="customer_category"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
-            required>
-            @foreach ($customerCategories as $category)
-            <option value="{{ $category }}" {{ old('customer_category', optional($customer)->customer_category) ===
-                $category ? 'selected' : '' }}>
-                Category {{ $category }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div>
-        <x-label for="payment_terms" value="Payment Terms (days)" />
-        <x-input id="payment_terms" type="number" name="payment_terms" class="mt-1 block w-full" min="0" max="365"
-            :value="old('payment_terms', optional($customer)->payment_terms ?? 30)" placeholder="30" />
-    </div>
-
-    <div>
-        <x-label for="last_sale_date" value="Last Sale Date" />
-        <x-input id="last_sale_date" type="date" name="last_sale_date" class="mt-1 block w-full"
-            :value="old('last_sale_date', optional(optional($customer)->last_sale_date)->format('Y-m-d'))" />
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-    <div>
-        <x-label for="credit_limit" value="Credit Limit" />
-        <x-input id="credit_limit" type="number" name="credit_limit" class="mt-1 block w-full" min="0" step="0.01"
-            :value="old('credit_limit', optional($customer)->credit_limit ?? 50000)" placeholder="50000" />
-    </div>
-
-    <div>
-        <x-label for="credit_used" value="Credit Used" />
-        <x-input id="credit_used" type="number" name="credit_used" class="mt-1 block w-full" min="0" step="0.01"
-            :value="old('credit_used', optional($customer)->credit_used ?? 0)" placeholder="0" />
-    </div>
-
-    <div>
-        <x-label for="lifetime_value" value="Lifetime Value" />
-        <x-input id="lifetime_value" type="number" name="lifetime_value" class="mt-1 block w-full" min="0" step="0.01"
-            :value="old('lifetime_value', optional($customer)->lifetime_value ?? 0)" placeholder="0" />
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    <div>
-        <x-label for="ntn" value="NTN (Tax Registration Number)" />
-        <x-input id="ntn" type="text" name="ntn" class="mt-1 block w-full" maxlength="191"
-            :value="old('ntn', optional($customer)->ntn)" placeholder="NTN" />
-    </div>
-
-    <div>
-        <x-label for="owner_cnic" value="Owner CNIC" />
-        <x-input id="owner_cnic" type="text" name="owner_cnic" class="mt-1 block w-full" maxlength="191"
-            :value="old('owner_cnic', optional($customer)->owner_cnic)" placeholder="12345-6789012-1" />
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    <div>
-        <x-label for="it_status" value="IT Status (FBR Registration)" />
-        <select id="it_status" name="it_status"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="0" {{ old('it_status', optional($customer)->it_status ?? 0) === 0 || old('it_status', optional($customer)->it_status ?? 0) === '0' ? 'selected' : '' }}>
-                No
-            </option>
-            <option value="1" {{ old('it_status', optional($customer)->it_status ?? 0) === 1 || old('it_status', optional($customer)->it_status ?? 0) === '1' ? 'selected' : '' }}>
-                Yes
-            </option>
-        </select>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-    <div>
-        <x-label for="receivable_balance" value="Receivable Balance" />
-        <x-input id="receivable_balance" type="number" name="receivable_balance" class="mt-1 block w-full" step="0.01"
-            :value="old('receivable_balance', optional($customer)->receivable_balance ?? 0)" placeholder="0" />
-    </div>
-
-    <div>
-        <x-label for="payable_balance" value="Payable Balance" />
-        <x-input id="payable_balance" type="number" name="payable_balance" class="mt-1 block w-full" step="0.01"
-            :value="old('payable_balance', optional($customer)->payable_balance ?? 0)" placeholder="0" />
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    <div>
-        <x-label for="receivable_account_id" value="Receivable Account (AR)" />
-        <select id="receivable_account_id" name="receivable_account_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Not linked</option>
-            @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('receivable_account_id', optional($customer)->receivable_account_id ?? 0) === $account->id ? 'selected' : '' }}>
-                {{ $account->account_code }} — {{ $account->account_name }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div>
-        <x-label for="payable_account_id" value="Payable Account (AP)" />
-        <select id="payable_account_id" name="payable_account_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Not linked</option>
-            @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('payable_account_id', optional($customer)->payable_account_id ?? 0) === $account->id ? 'selected' : '' }}>
-                {{ $account->account_code }} — {{ $account->account_name }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-</div>
-
-<div class="mt-4">
-    <x-label for="notes" value="Internal Notes" />
-    <textarea id="notes" name="notes" rows="4"
-        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-        placeholder="Credit preference, delivery window, etc.">{{ old('notes', optional($customer)->notes) }}</textarea>
-</div>
-
-<div class="mt-4">
-    <div class="flex items-center">
-        <input type="hidden" name="is_active" value="0">
-        <input id="is_active" type="checkbox" name="is_active" value="1"
-            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            {{ old('is_active', optional($customer)->is_active ?? true) ? 'checked' : '' }}>
-        <label for="is_active" class="ml-2 text-sm text-gray-700">
-            Customer is active
-        </label>
+    <div class="uf-actions">
+        <p>Fields marked <span class="uf-req">*</span> are required.</p>
+        <div>
+            <a href="{{ $cancelUrl }}" class="ak-btn ak-btn-outline">Cancel</a>
+            <button type="submit" class="ak-btn ak-btn-primary">{{ $submitLabel }}</button>
+        </div>
     </div>
 </div>

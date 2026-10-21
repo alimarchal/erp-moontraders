@@ -63,6 +63,7 @@ class CustomerController extends Controller implements HasMiddleware
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
             'salesRepOptions' => $this->salesRepOptions(),
             'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'perPage' => $perPage,
             'stats' => $this->listStats($request),
         ]);
     }
@@ -173,7 +174,7 @@ class CustomerController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            $validated = $request->validated();
+            $validated = $this->withoutBlankRequiredColumns($request->validated());
             $validated['is_active'] = array_key_exists('is_active', $validated)
                 ? (bool) $validated['is_active']
                 : true;
@@ -260,7 +261,7 @@ class CustomerController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            $validated = $request->validated();
+            $validated = $this->withoutBlankRequiredColumns($request->validated());
             $validated['is_active'] = array_key_exists('is_active', $validated)
                 ? (bool) $validated['is_active']
                 : $customer->is_active;
@@ -352,7 +353,7 @@ class CustomerController extends Controller implements HasMiddleware
     private function buildFilteredQuery(): QueryBuilder
     {
         return QueryBuilder::for(
-            Customer::query()->with(['salesRep', 'receivableAccount', 'payableAccount'])
+            Customer::query()->with('salesRep')
         )
             ->allowedFilters($this->allowedFilters())
             ->allowedSorts([
@@ -364,6 +365,23 @@ class CustomerController extends Controller implements HasMiddleware
                 AllowedSort::field('channel_type'),
             ])
             ->defaultSort('customer_name');
+    }
+
+    /**
+     * Blank inputs must keep the column default instead of writing NULL into NOT NULL columns.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function withoutBlankRequiredColumns(array $validated): array
+    {
+        foreach (['credit_limit', 'credit_used', 'payment_terms', 'country'] as $column) {
+            if (array_key_exists($column, $validated) && $validated[$column] === null) {
+                unset($validated[$column]);
+            }
+        }
+
+        return $validated;
     }
 
     /**

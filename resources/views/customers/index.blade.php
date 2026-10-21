@@ -36,6 +36,8 @@
     $advancedCount = collect(['city', 'sub_locality', 'sales_rep_id', 'customer_category'])->filter(fn ($k) => isset($filters[$k]))->count();
     $sortNames = ['customer_name' => 'Name', 'customer_code' => 'Code', 'city' => 'City', 'credit_limit' => 'Credit limit'];
     $sortField = ltrim($sort, '-');
+    $authUser = auth()->user();
+    $canDeactivate = $authUser->can('customer-delete') && ($authUser->is_super_admin === 'Yes' || $authUser->hasRole('super-admin'));
 @endphp
 
 <x-app-layout>
@@ -238,15 +240,15 @@
                                                     @endcan
                                                 </span>
                                                 <span class="ak-slot">
-                                                    @can('customer-delete')
+                                                    @if ($canDeactivate && $customer->is_active)
                                                         <form method="POST" action="{{ route('customers.destroy', $customer) }}" @submit.prevent="askDelete($el, @js($customer->customer_name))">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="ak-icon ak-icon-danger" title="Delete customer" aria-label="Delete {{ $customer->customer_name }}">
+                                                            <button type="submit" class="ak-icon ak-icon-danger" title="Deactivate customer" aria-label="Deactivate {{ $customer->customer_name }}">
                                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
                                                             </button>
                                                         </form>
-                                                    @endcan
+                                                    @endif
                                                 </span>
                                             </div>
                                         </td>
@@ -286,12 +288,12 @@
                     </span>
                     <div>
                         <h3 id="cl-confirm-title" x-text="confirm.title"></h3>
-                        <p style="margin:8px 0 0; font-size:14px; color:#334155">The customer will be removed from the list. Existing sales history is kept.</p>
+                        <p style="margin:8px 0 0; font-size:14px; color:#334155">The customer will be marked Inactive and can be re-activated from Edit. Nothing is deleted.</p>
                     </div>
                 </div>
                 <div class="uf-modal-foot">
                     <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
-                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : 'Delete customer'"></button>
+                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : 'Deactivate customer'"></button>
                 </div>
             </div>
         </div>
@@ -302,7 +304,7 @@
             function customerList() {
                 return {
                     confirm: { open: false, title: '', busy: false, form: null },
-                    askDelete(form, name) { this.confirm = { open: true, title: 'Delete ' + name + '?', busy: false, form }; },
+                    askDelete(form, name) { this.confirm = { open: true, title: 'Deactivate ' + name + '?', busy: false, form }; },
                     runConfirm() {
                         if (this.confirm.busy || !this.confirm.form) return;
                         this.confirm.busy = true;

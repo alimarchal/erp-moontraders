@@ -1,53 +1,33 @@
+{{-- Settings -> Categories -> Edit (fields live in settings.categories.partials.form-fields). --}}
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Edit Category: {{ $category->name }}" backRoute="categories.index" />
-    </x-slot>
-
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <x-validation-errors class="mb-4 mt-4" />
-                    <form action="{{ route('categories.update', $category) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <x-label for="name" value="Category Name" :required="true" />
-                                <x-input id="name" type="text" name="name" class="mt-1 block w-full"
-                                    :value="old('name', $category->name)" required autofocus />
-                                <x-input-error for="name" class="mt-2" />
-                            </div>
-
-                            <div>
-                                <x-label for="slug" value="Slug (Optional)" />
-                                <x-input id="slug" type="text" name="slug" class="mt-1 block w-full"
-                                    :value="old('slug', $category->slug)" />
-                                <x-input-error for="slug" class="mt-2" />
-                            </div>
-                        </div>
-
-                        <div class="mt-4">
-                            <label for="is_active" class="inline-flex items-center">
-                                <input id="is_active" type="checkbox"
-                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                    name="is_active" value="1" {{ old('is_active', $category->is_active) ? 'checked' :
-                                '' }}>
-                                <span class="ml-2 text-sm text-gray-600">Active</span>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-end mt-4">
-                            <x-button class="ml-4">
-                                {{ __('Update Category') }}
-                            </x-button>
-                        </div>
-                    </form>
-                </div>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span>
+                    <a href="{{ route('categories.index') }}">Categories</a><span aria-hidden="true">›</span><span>Edit</span>
+                </nav>
+                <h1 class="ak-title">Edit Category: {{ $category->name }}</h1>
+                <p class="ak-sub">{{ $category->is_active ? 'Active' : 'Inactive' }}</p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('categories.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <a href="{{ route('categories.show', $category) }}" class="ak-btn ak-btn-outline">View</a>
             </div>
         </div>
-    </div>
+    </x-slot>
 
+    @include('settings.partials.ui-style')
+
+    <div class="ak-page">
+        <x-status-message />
+        <form method="POST" action="{{ route('categories.update', $category) }}">
+            @csrf
+            @method('PUT')
+            @include('settings.categories.partials.form-fields', [
+                'category' => $category,
+                'submitLabel' => 'Save changes',
+            ])
+        </form>
+    </div>
 </x-app-layout>

@@ -1,244 +1,318 @@
+{{--
+    Settings -> Products list (/settings/products). Same layout as Settings -> Users:
+    KPI cards, Active / Inactive tabs, one search box, removable filter chips and a
+    dense sortable table. Query parameters (filter[...], sort, per_page) are unchanged.
+--}}
+@php
+    $filters = array_filter((array) request('filter', []), fn ($v) => $v !== null && $v !== '');
+    $sort = (string) request('sort', 'product_name');
+    $tab = $filters['is_active'] ?? '';
+    $chips = \Illuminate\Support\Arr::except($filters, 'is_active');
+
+    $withFilters = fn (array $f) => request()->fullUrlWithQuery(['filter' => $f ?: null, 'page' => null]);
+    $tabUrl = function (string $key) use ($filters, $withFilters) {
+        $f = \Illuminate\Support\Arr::except($filters, 'is_active');
+        if ($key !== '') {
+            $f['is_active'] = $key;
+        }
+
+        return $withFilters($f);
+    };
+    $sortUrl = fn (string $field) => request()->fullUrlWithQuery(['sort' => $sort === $field ? '-'.$field : $field, 'page' => null]);
+    $ariaSort = fn (string $field) => $sort === $field ? 'ascending' : ($sort === '-'.$field ? 'descending' : 'none');
+    $sortMark = fn (string $field) => $sort === $field ? "\u{25B2}" : ($sort === '-'.$field ? "\u{25BC}" : '');
+
+    $supplierNames = $supplierOptions->pluck('supplier_name', 'id');
+    $categoryNames = $categoryOptions->pluck('name', 'id');
+    $chipLabels = [
+        'search' => 'Search', 'supplier_id' => 'Supplier', 'category_id' => 'Category', 'valuation_method' => 'Valuation',
+        'is_powder' => 'Powder', 'brand' => 'Brand', 'barcode' => 'Barcode', 'product_name' => 'Name', 'product_code' => 'Code',
+    ];
+    $chipValue = fn (string $key, $value) => match ($key) {
+        'supplier_id' => $supplierNames[$value] ?? $value,
+        'category_id' => $categoryNames[$value] ?? $value,
+        'is_powder' => $value === '1' ? 'Yes' : 'No',
+        default => $value,
+    };
+    $advancedCount = collect(['brand', 'valuation_method', 'is_powder'])->filter(fn ($k) => isset($filters[$k]))->count();
+    $sortNames = ['product_name' => 'Name', 'product_code' => 'Code', 'brand' => 'Brand', 'unit_sell_price' => 'Selling price', 'cost_price' => 'Cost price'];
+    $sortField = ltrim($sort, '-');
+    $authUser = auth()->user();
+    $canDeactivate = $authUser->can('product-delete');
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Products" :createRoute="route('products.create')" createLabel=""
-            createPermission="product-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span><span>Products</span>
+                </nav>
+                <h1 class="ak-title">Products</h1>
+                <p class="ak-sub">SKUs you buy, stock and sell.</p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('settings.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <a href="{{ route('products.export.excel', request()->query()) }}" class="ak-btn ak-btn-outline">Export Excel</a>
+                @can('product-create')
+                    <a href="{{ route('products.import.form') }}" class="ak-btn ak-btn-outline">Import Excel</a>
+                    <a href="{{ route('products.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add product</a>
+                @endcan
+            </div>
+        </div>
     </x-slot>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 no-print">
-        <div class="flex justify-end">
-            <a href="{{ route('products.export.excel', request()->query()) }}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export to Excel
+    @include('settings.partials.ui-style')
+
+    <div class="ak-page" x-data="productList()">
+        <x-status-message />
+
+        <section class="ak-kpis" aria-label="Product summary" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' ? ' is-active' : '' }}">
+                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.35M3.75 21V9.35m0 0a3 3 0 0 0 3.75-.62A3 3 0 0 0 12 9.35a3 3 0 0 0 4.5-.62 3 3 0 0 0 3.75.62M3.75 9.35 5.25 3h13.5l1.5 6.35" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Products</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['total']) }}</span>
+                    <span class="ak-kpi-hint">{{ $chips ? 'matching the filters' : 'all SKUs' }}</span>
+                </span>
             </a>
+            <a href="{{ $tabUrl('1') }}" class="ak-kpi{{ $tab === '1' ? ' is-active' : '' }}">
+                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Active</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['active']) }}</span>
+                    <span class="ak-kpi-hint">{{ number_format($stats['inactive']) }} inactive</span>
+                </span>
+            </a>
+        </section>
+
+        <section class="ak-card" aria-label="Products">
+            <div class="ak-tabs" role="tablist">
+                @foreach (['' => ['All', $stats['total']], '1' => ['Active', $stats['active']], '0' => ['Inactive', $stats['inactive']]] as $key => [$label, $count])
+                    <a href="{{ $tabUrl((string) $key) }}" role="tab" aria-selected="{{ $tab === (string) $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === (string) $key ? 'is-active' : '' }}">
+                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
+                    </a>
+                @endforeach
+            </div>
+
+            <form method="GET" action="{{ route('products.index') }}" class="ak-filters"
+                x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
+                @if ($tab !== '') <input type="hidden" name="filter[is_active]" value="{{ $tab }}"> @endif
+                @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
+
+                <div class="ak-filter-row ak-filter-row-users">
+                    <div class="ak-field">
+                        <label for="f_search">Search</label>
+                        <div class="ak-search">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                            <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
+                                placeholder="Name, code, brand or barcode" x-ref="search"
+                                @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $refs.search.focus(); }">
+                            <kbd aria-hidden="true">/</kbd>
+                        </div>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_supplier">Supplier</label>
+                        <select id="f_supplier" name="filter[supplier_id]">
+                            <option value="">All suppliers</option>
+                            @foreach ($supplierOptions as $supplier)
+                                <option value="{{ $supplier->id }}" @selected((string) ($filters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_category">Category</label>
+                        <select id="f_category" name="filter[category_id]">
+                            <option value="">All categories</option>
+                            @foreach ($categoryOptions as $category)
+                                <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_per_page">Rows per page</label>
+                        <select id="f_per_page" name="per_page" onchange="this.form.requestSubmit()">
+                            @foreach ($perPageOptions as $n)
+                                <option value="{{ $n }}" @selected($perPage === $n)>{{ $n }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-filter-buttons">
+                        <button type="button" class="ak-btn ak-btn-ghost" @click="advanced = !advanced" :aria-expanded="advanced" aria-controls="ak-advanced">
+                            More filters @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
+                        </button>
+                        <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
+                            <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="ak-advanced" class="ak-filter-advanced ak-filter-advanced-users" x-show="advanced" x-cloak x-transition>
+                    <div class="ak-field">
+                        <label for="f_brand">Brand</label>
+                        <input id="f_brand" type="text" name="filter[brand]" value="{{ $filters['brand'] ?? '' }}">
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_valuation">Valuation method</label>
+                        <select id="f_valuation" name="filter[valuation_method]">
+                            <option value="">Any</option>
+                            @foreach ($valuationMethods as $method)
+                                <option value="{{ $method }}" @selected(($filters['valuation_method'] ?? '') === $method)>{{ $method }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_powder">Powder product</label>
+                        <select id="f_powder" name="filter[is_powder]">
+                            <option value="">Any</option>
+                            <option value="1" @selected(($filters['is_powder'] ?? '') === '1')>Yes</option>
+                            <option value="0" @selected(($filters['is_powder'] ?? '') === '0')>No</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+            @if ($chips)
+                <div class="ak-chips" aria-label="Active filters">
+                    <span class="ak-chips-label">Filtered by</span>
+                    @foreach ($chips as $key => $value)
+                        <a href="{{ $withFilters(\Illuminate\Support\Arr::except($filters, $key)) }}" class="ak-chip" aria-label="Remove filter {{ $chipLabels[$key] ?? $key }}">
+                            <b>{{ $chipLabels[$key] ?? \Illuminate\Support\Str::headline($key) }}:</b> {{ $chipValue($key, $value) }} <span aria-hidden="true">×</span>
+                        </a>
+                    @endforeach
+                    <a href="{{ $withFilters($tab !== '' ? ['is_active' => $tab] : []) }}" class="ak-chips-clear">Clear all</a>
+                </div>
+            @endif
+
+            @if ($products->count() > 0)
+                <div class="ak-table-wrap">
+                    <div class="ak-dt-toolbar">
+                        <p>
+                            <b>{{ number_format($products->total()) }}</b> {{ \Illuminate\Support\Str::plural('product', $products->total()) }}
+                            &middot; sorted by <b>{{ $sortNames[$sortField] ?? 'Name' }}</b> ({{ str_starts_with($sort, '-') ? 'Z–A / high first' : 'A–Z / low first' }})
+                        </p>
+                    </div>
+                    <div class="ak-dt-scroll" tabindex="0" aria-label="Products table">
+                        <table class="ak-dt">
+                            <caption class="sr-only">Products, {{ $products->total() }} results</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="ak-c">#</th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('product_name') }}"><a href="{{ $sortUrl('product_name') }}">Product <span aria-hidden="true">{{ $sortMark('product_name') }}</span></a></th>
+                                    <th scope="col">Supplier &amp; UOM</th>
+                                    <th scope="col" class="ak-c" aria-sort="{{ $ariaSort('cost_price') }}"><a href="{{ $sortUrl('cost_price') }}">Cost <span aria-hidden="true">{{ $sortMark('cost_price') }}</span></a></th>
+                                    <th scope="col" class="ak-c" aria-sort="{{ $ariaSort('unit_sell_price') }}"><a href="{{ $sortUrl('unit_sell_price') }}">Selling <span aria-hidden="true">{{ $sortMark('unit_sell_price') }}</span></a></th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" class="ak-c"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($products as $product)
+                                    <tr>
+                                        <td class="ak-c" data-label=""><span class="ak-muted">{{ $products->firstItem() + $loop->index }}</span></td>
+                                        <td data-label="Product">
+                                            <a href="{{ route('products.show', $product) }}" class="ak-primary-link">{{ $product->product_name }}</a>
+                                            <div class="ak-muted ak-mono">{{ $product->product_code }}@if ($product->category) · {{ $product->category->name }}@endif</div>
+                                        </td>
+                                        <td data-label="Supplier &amp; UOM">
+                                            <div>{{ $product->supplier?->supplier_name ?? '—' }}</div>
+                                            <div class="ak-muted">{{ $product->uom?->uom_name ?? '—' }}@if ($product->salesUom) → {{ $product->salesUom->uom_name }}@endif</div>
+                                        </td>
+                                        <td class="ak-c ak-mono" data-label="Cost">{{ number_format((float) $product->cost_price, 2) }}</td>
+                                        <td class="ak-c ak-mono ak-strong" data-label="Selling">{{ number_format((float) $product->unit_sell_price, 2) }}</td>
+                                        <td data-label="Status">
+                                            @if ($product->is_active)
+                                                <span class="ak-status ak-status-green"><i aria-hidden="true"></i>Active</span>
+                                            @else
+                                                <span class="ak-status ak-status-red"><i aria-hidden="true"></i>Inactive</span>
+                                            @endif
+                                            @if ($product->is_powder) <span class="ak-pill">Powder</span> @endif
+                                        </td>
+                                        <td data-label="">
+                                            <div class="ak-actions">
+                                                <a href="{{ route('products.show', $product) }}" class="ak-icon ak-icon-view" title="View product" aria-label="View {{ $product->product_name }}">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                                </a>
+                                                <span class="ak-slot">
+                                                    @can('product-edit')
+                                                        <a href="{{ route('products.edit', $product) }}" class="ak-icon" title="Edit product" aria-label="Edit {{ $product->product_name }}">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg>
+                                                        </a>
+                                                    @endcan
+                                                </span>
+                                                <span class="ak-slot">
+                                                    @if ($canDeactivate && $product->is_active)
+                                                        <form method="POST" action="{{ route('products.destroy', $product) }}" @submit.prevent="askDelete($el, @js($product->product_name))">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="ak-icon ak-icon-danger" title="Deactivate product" aria-label="Deactivate {{ $product->product_name }}">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 3v9" /></svg>
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="ak-pager">
+                    <p>Showing <b>{{ number_format($products->firstItem()) }}–{{ number_format($products->lastItem()) }}</b> of <b>{{ number_format($products->total()) }}</b> products</p>
+                    <div class="ak-pager-right">{{ $products->onEachSide(1)->links() }}</div>
+                </div>
+            @else
+                <div class="ak-empty">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                    @if ($filters)
+                        <h2>No products match these filters</h2>
+                        <p>Remove a filter or search with part of a name, code or barcode.</p>
+                        <a href="{{ route('products.index') }}" class="ak-btn ak-btn-primary">Clear all filters</a>
+                    @else
+                        <h2>No products yet</h2>
+                        <p>Add a product, or import many SKUs at once from Excel.</p>
+                        @can('product-create') <a href="{{ route('products.import.form') }}" class="ak-btn ak-btn-primary">Import Excel</a> @endcan
+                    @endif
+                </div>
+            @endif
+        </section>
+
+        <div class="uf-modal" x-show="confirm.open" x-cloak style="display:none" @keydown.escape.window="confirm.open = false" role="dialog" aria-modal="true" aria-labelledby="cl-confirm-title">
+            <div class="uf-modal-bg" x-show="confirm.open" x-transition.opacity @click="confirm.open = false"></div>
+            <div class="uf-modal-box" x-show="confirm.open" x-transition>
+                <div class="uf-modal-body">
+                    <span class="uf-modal-icon ak-pill-red" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.01" /></svg>
+                    </span>
+                    <div>
+                        <h3 id="cl-confirm-title" x-text="confirm.title"></h3>
+                        <p style="margin:8px 0 0; font-size:14px; color:#334155">The product will be marked Inactive and can be re-activated from Edit. Nothing is deleted.</p>
+                    </div>
+                </div>
+                <div class="uf-modal-foot">
+                    <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
+                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : 'Deactivate product'"></button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <x-filter-section :action="route('products.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <x-label for="filter_product_name" value="Product Name" />
-                <select id="filter_product_name" name="filter[product_name]" class="select2 mt-1 block w-full">
-                    <option value="">All Products</option>
-                    @foreach ($productOptions as $product)
-                                    <option value="{{ $product->product_name }}" {{ request('filter.product_name') === $product->
-                        product_name ? 'selected' : '' }}>
-                                        {{ $product->product_name }}
-                                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_product_code" value="Product Code" />
-                <select id="filter_product_code" name="filter[product_code]" class="select2 mt-1 block w-full">
-                    <option value="">All Codes</option>
-                    @foreach ($productOptions as $product)
-                                    <option value="{{ $product->product_code }}" {{ request('filter.product_code') === $product->
-                        product_code ? 'selected' : '' }}>
-                                        {{ $product->product_code }}
-                                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_brand" value="Brand" />
-                <x-input id="filter_brand" name="filter[brand]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.brand')" placeholder="Brand" />
-            </div>
-
-            <div>
-                <x-label for="filter_barcode" value="Barcode" />
-                <x-input id="filter_barcode" name="filter[barcode]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.barcode')" placeholder="Barcode" />
-            </div>
-
-            <div>
-                <x-label for="filter_supplier_id" value="Supplier" />
-                <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
-                    @foreach ($supplierOptions as $supplier)
-                                    <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') === (string) $supplier->id ?
-                        'selected' : '' }}>
-                                        {{ $supplier->supplier_name }}
-                                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_category_id" value="Category" />
-                <select id="filter_category_id" name="filter[category_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Categories</option>
-                    @foreach ($categoryOptions as $category)
-                                    <option value="{{ $category->id }}" {{ request('filter.category_id') === (string) $category->id ?
-                        'selected' : '' }}>
-                                        {{ $category->name }}
-                                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_uom_id" value="UOM" />
-                <select id="filter_uom_id" name="filter[uom_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Units</option>
-                    @foreach ($uomOptions as $uom)
-                        <option value="{{ $uom->id }}" {{ request('filter.uom_id') === (string) $uom->id ? 'selected' : '' }}>
-                            {{ $uom->uom_name }} {{ $uom->symbol ? '(' . $uom->symbol . ')' : '' }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_valuation_method" value="Valuation Method" />
-                <select id="filter_valuation_method" name="filter[valuation_method]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Methods</option>
-                    @foreach ($valuationMethods as $method)
-                        <option value="{{ $method }}" {{ request('filter.valuation_method') === $method ? 'selected' : '' }}>
-                            {{ $method }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_is_active" value="Status" />
-                <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Both</option>
-                    @foreach ($statusOptions as $value => $label)
-                        <option value="{{ $value }}" {{ request('filter.is_active') === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_is_powder" value="Is Powder?" />
-                <select id="filter_is_powder" name="filter[is_powder]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Both</option>
-                    <option value="1" {{ request('filter.is_powder') === '1' ? 'selected' : '' }}>Yes</option>
-                    <option value="0" {{ request('filter.is_powder') === '0' ? 'selected' : '' }}>No</option>
-                </select>
-            </div>
-
-            <div>
-                <x-label for="sort" value="Sort By" />
-                <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="product_name" {{ request('sort', 'product_name') === 'product_name' ? 'selected' : '' }}>Name (A-Z)</option>
-                    <option value="-product_name" {{ request('sort') === '-product_name' ? 'selected' : '' }}>Name (Z-A)</option>
-                    <option value="product_code" {{ request('sort') === 'product_code' ? 'selected' : '' }}>Code (A-Z)</option>
-                    <option value="-product_code" {{ request('sort') === '-product_code' ? 'selected' : '' }}>Code (Z-A)</option>
-                    <option value="-unit_sell_price" {{ request('sort') === '-unit_sell_price' ? 'selected' : '' }}>Price (High-Low)</option>
-                    <option value="unit_sell_price" {{ request('sort') === 'unit_sell_price' ? 'selected' : '' }}>Price (Low-High)</option>
-                    <option value="-cost_price" {{ request('sort') === '-cost_price' ? 'selected' : '' }}>Cost (High-Low)</option>
-                    <option value="cost_price" {{ request('sort') === 'cost_price' ? 'selected' : '' }}>Cost (Low-High)</option>
-                </select>
-            </div>
-
-            <div>
-                <x-label for="per_page" value="Per Page" />
-                <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    @foreach ($perPageOptions as $option)
-                        <option value="{{ $option }}" {{ (int) request('per_page', 40) === $option ? 'selected' : '' }}>
-                            {{ $option }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </x-filter-section>
-
-    <x-data-table :items="$products" :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Code', 'align' => 'text-left'],
-        ['label' => 'Product', 'align' => 'text-left'],
-        ['label' => 'Supplier & UOM', 'align' => 'text-left'],
-        ['label' => 'Pricing', 'align' => 'text-left'],
-        ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'Actions', 'align' => 'text-center'],
-    ]" emptyMessage="No products found." :emptyRoute="route('products.create')"
-        emptyLinkText="Add a product">
-        @foreach ($products as $index => $product)
-            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
-                <td class="py-2 px-2 text-center">
-                    {{ $products->firstItem() + $index }}
-                </td>
-                <td class="py-2 px-2 font-semibold">
-                    <div>{{ $product->product_code }}</div>
-                    {{-- <div class="text-xs text-gray-500">Barcode: {{ $product->barcode ?? '—' }}</div> --}}
-                </td>
-                <td class="py-2 px-2">
-                    <div class="font-semibold">{{ $product->product_name }}</div>
-                    <div class="text-xs text-gray-500">Category: {{ $product->category->name ?? '—' }}</div>
-                    <div class="text-xs text-gray-500">Valuation: {{ $product->valuation_method }}</div>
-                </td>
-                <td class="py-2 px-2 text-sm">
-                    <div>{{ $product->supplier?->supplier_name ?? '—' }}</div>
-                    <div class="text-xs text-gray-500">UOM: {{ $product->uom?->uom_name ?? '—' }}</div>
-                </td>
-                <td class="py-2 px-2 text-sm">
-                    <div class="font-semibold text-emerald-700">Sell: {{ number_format((float) $product->unit_sell_price, 2)
-                                    }}
-                    </div>
-                    <div class="text-xs text-gray-500">Cost: {{ number_format((float) $product->cost_price, 2) }}</div>
-                    <div class="text-xs text-gray-500">Reorder: {{ number_format((float) $product->reorder_level, 2) }}
-                    </div>
-                </td>
-                <td class="py-2 px-2 text-center">
-                    <span
-                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                        {{ $product->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                    @if($product->is_powder)
-                        <span
-                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 mt-1">
-                            Powder
-                        </span>
-                    @endif
-                </td>
-                <td class="py-2 px-2 text-center">
-                    <div class="flex justify-center space-x-2">
-                        <a href="{{ route('products.show', $product) }}"
-                            class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors duration-150"
-                            title="View">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </a>
-                        @can('product-edit')
-                            <a href="{{ route('products.edit', $product) }}"
-                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </a>
-                        @endcan
-                    </div>
-                </td>
-            </tr>
-        @endforeach
-    </x-data-table>
+    @push('scripts')
+        <script>
+            function productList() {
+                return {
+                    confirm: { open: false, title: '', busy: false, form: null },
+                    askDelete(form, name) { this.confirm = { open: true, title: 'Deactivate ' + name + '?', busy: false, form }; },
+                    runConfirm() {
+                        if (this.confirm.busy || !this.confirm.form) return;
+                        this.confirm.busy = true;
+                        this.confirm.form.submit();
+                    },
+                };
+            }
+        </script>
+    @endpush
 </x-app-layout>

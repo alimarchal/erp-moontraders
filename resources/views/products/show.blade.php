@@ -1,158 +1,115 @@
+{{-- Settings -> Products -> View (/settings/products/{product}). Read only; changes happen on Edit. --}}
+@php
+    $sell = (float) $product->unit_sell_price;
+    $cost = (float) $product->cost_price;
+    $margin = $sell > 0 ? round(($sell - $cost) / $sell * 100, 1) : null;
+    $uomLabel = fn ($uom) => $uom ? $uom->uom_name.($uom->symbol ? ' ('.$uom->symbol.')' : '') : null;
+    $groups = [
+        'Product details' => [
+            'Product code' => $product->product_code,
+            'Product name' => $product->product_name,
+            'Category' => $product->category?->name,
+            'Supplier' => $product->supplier?->supplier_name,
+            'Brand' => $product->brand,
+            'Barcode' => $product->barcode,
+        ],
+        'Units & packaging' => [
+            'Base UOM' => $uomLabel($product->uom),
+            'Sales UOM' => $uomLabel($product->salesUom) ?? 'Same as base',
+            'Conversion factor' => $product->uom_conversion_factor !== null ? rtrim(rtrim((string) $product->uom_conversion_factor, '0'), '.') : '1',
+            'Valuation method' => $product->valuation_method,
+            'Pack size' => $product->pack_size,
+            'Weight' => $product->weight !== null ? $product->weight.' kg' : null,
+        ],
+        'Pricing & stock' => [
+            'Selling price' => number_format($sell, 2),
+            'Cost price' => number_format($cost, 2),
+            'Expiry price' => number_format((float) $product->expiry_price, 2),
+            'Reorder level' => number_format((float) $product->reorder_level, 2),
+            'Powder product' => $product->is_powder ? 'Yes' : 'No',
+        ],
+    ];
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            View Product: {{ $product->product_name }}
-        </h2>
-        <div class="flex justify-center items-center float-right">
-            <a href="{{ route('products.index') }}"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span>
+                    <a href="{{ route('products.index') }}">Products</a><span aria-hidden="true">›</span><span>{{ $product->product_code }}</span>
+                </nav>
+                <h1 class="ak-title">{{ $product->product_name }}</h1>
+                <p class="ak-sub">
+                    {{ $product->product_code }}@if ($product->category) · {{ $product->category->name }}@endif
+                    &middot;
+                    @if ($product->is_active)
+                        <span class="ak-status ak-status-green"><i aria-hidden="true"></i>Active</span>
+                    @else
+                        <span class="ak-status ak-status-red"><i aria-hidden="true"></i>Inactive</span>
+                    @endif
+                    @if ($product->is_powder) <span class="ak-pill">Powder</span> @endif
+                </p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('products.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                @can('product-edit')
+                    <a href="{{ route('products.edit', $product) }}" class="ak-btn ak-btn-primary">Edit product</a>
+                @endcan
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-status-message class="mb-4 mt-4" />
-                <div class="p-6 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <x-label value="Product Code" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->product_code"
-                                disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Product Name" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->product_name"
-                                disabled readonly />
-                        </div>
-                    </div>
+    @include('settings.partials.ui-style')
 
-                    <div>
-                        <x-label value="Description" />
-                        <textarea rows="3"
-                            class="mt-1 block w-full border-gray-300 bg-gray-100 text-gray-700 rounded-md shadow-sm"
-                            disabled readonly>{{ $product->description ?? '—' }}</textarea>
-                    </div>
+    <div class="ak-page">
+        <x-status-message />
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <x-label value="Supplier" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->supplier?->supplier_name ?? '—'" disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Valuation Method" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->valuation_method" disabled readonly />
-                        </div>
-                           <div>
-                            <x-label value="Category" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->category->name ?? '—'" disabled readonly />
-                        </div>
+        <section class="ak-kpis" aria-label="Price summary" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+            <div class="ak-kpi"><span class="ak-kpi-body">
+                <span class="ak-kpi-label">Selling price</span>
+                <span class="ak-kpi-value">{{ number_format($sell, 2) }}</span>
+                <span class="ak-kpi-hint">per {{ $product->salesUom?->uom_name ?? $product->uom?->uom_name ?? 'unit' }}</span>
+            </span></div>
+            <div class="ak-kpi"><span class="ak-kpi-body">
+                <span class="ak-kpi-label">Cost price</span>
+                <span class="ak-kpi-value">{{ number_format($cost, 2) }}</span>
+                <span class="ak-kpi-hint">{{ $product->valuation_method }} valuation</span>
+            </span></div>
+            <div class="ak-kpi"><span class="ak-kpi-body">
+                <span class="ak-kpi-label">Margin</span>
+                <span class="ak-kpi-value">{{ $margin !== null ? $margin.'%' : '—' }}</span>
+                <span class="ak-kpi-hint">{{ number_format($sell - $cost, 2) }} per unit</span>
+            </span></div>
+            <div class="ak-kpi"><span class="ak-kpi-body">
+                <span class="ak-kpi-label">Reorder level</span>
+                <span class="ak-kpi-value">{{ number_format((float) $product->reorder_level, 0) }}</span>
+                <span class="ak-kpi-hint">expiry price {{ number_format((float) $product->expiry_price, 2) }}</span>
+            </span></div>
+        </section>
 
-                                                <div>
-                            <x-label value="Attributes" />
-                            <div class="mt-2">
-                                <span
-                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                                    {{ $product->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                                @if($product->is_powder)
-                                    <span
-                                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                                        Powder
-                                    </span>
-                                @endif
+        <div class="uf-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr))">
+            @foreach ($groups as $title => $rows)
+                <section class="uf-card">
+                    <div class="uf-card-head"><h2 class="uf-card-title">{{ $title }}</h2></div>
+                    <dl style="margin:0; padding:8px 20px 16px">
+                        @foreach ($rows as $label => $value)
+                            <div style="display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid var(--ak-line); font-size:14px">
+                                <dt class="ak-muted" style="flex:none">{{ $label }}</dt>
+                                <dd style="margin:0; text-align:right; word-break:break-word; color:var(--ak-text)">{{ filled($value) ? $value : '—' }}</dd>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <x-label value="Base UOM (Inventory)" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->uom ? $product->uom->uom_name . ($product->uom->symbol ? ' (' . $product->uom->symbol . ')' : '') : '—'"
-                                disabled readonly />
-                            <p class="text-xs text-gray-500 mt-1">Unit for inventory tracking</p>
-                        </div>
-                        <div>
-                            <x-label value="Sales UOM" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->salesUom ? $product->salesUom->uom_name . ($product->salesUom->symbol ? ' (' . $product->salesUom->symbol . ')' : '') : 'Same as Base'"
-                                disabled readonly />
-                            <p class="text-xs text-gray-500 mt-1">Unit for sales/invoicing</p>
-                        </div>
-                        <div>
-                            <x-label value="Conversion Factor" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->uom_conversion_factor ?? '1'" disabled readonly />
-                            <p class="text-xs text-gray-500 mt-1">Base units per sales unit</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <x-label value="Brand" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->brand ?? '—'"
-                                disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Barcode" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->barcode ?? '—'"
-                                disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Pack Size" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->pack_size ?? '—'" disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Weight (kg)" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->weight ?? '—'"
-                                disabled readonly />
-                        </div>
-                    </div>
-
-                
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <x-label value="Selling Price" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="number_format((float) $product->unit_sell_price, 2)" disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Cost Price" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="number_format((float) $product->cost_price, 2)" disabled readonly />
-                        </div>
-
-                         <div>
-                            <x-label value="Expiry Price" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="number_format((float) $product->expiry_price, 2)" disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Reorder Level" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="number_format((float) $product->reorder_level, 2)" disabled readonly />
-                        </div>
-                        
-                    </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                     
-
-                    </div>
-
-                </div>
-            </div>
+                        @endforeach
+                    </dl>
+                </section>
+            @endforeach
         </div>
+
+        @if (filled($product->description))
+            <section class="uf-card">
+                <div class="uf-card-head"><h2 class="uf-card-title">Description</h2></div>
+                <p style="margin:0; padding:16px 20px; font-size:14px; white-space:pre-line">{{ $product->description }}</p>
+            </section>
+        @endif
     </div>
 </x-app-layout>

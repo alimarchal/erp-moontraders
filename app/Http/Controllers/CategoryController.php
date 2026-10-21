@@ -28,16 +28,24 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        $categories = QueryBuilder::for(Category::class)
-            ->allowedFilters([
-                'name',
-                AllowedFilter::exact('is_active'),
-            ])
+        $perPage = (int) $request->input('per_page', 25);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
+            $perPage = 25;
+        }
+
+        $categories = QueryBuilder::for(Category::query()->withCount('products'))
+            ->allowedFilters($this->allowedFilters())
+            ->allowedSorts(['name'])
             ->defaultSort('name')
-            ->paginate($request->get('per_page', 10))
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('settings.categories.index', compact('categories'));
+        return view('settings.categories.index', [
+            'categories' => $categories,
+            'stats' => $this->listStats($request),
+            'perPage' => $perPage,
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+        ]);
     }
 
     /**
@@ -64,7 +72,9 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function show(Category $category)
     {
-        return redirect()->route('categories.edit', $category);
+        $category->loadCount('products');
+
+        return view('settings.categories.show', compact('category'));
     }
 
     /**
@@ -87,17 +97,56 @@ class CategoryController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
+     * "Delete" only deactivates the category; records are never removed.
      */
     public function destroy(Category $category)
     {
-        if ($category->products()->exists()) {
-            return back()->with('error', 'Cannot delete category because it has associated products.');
-        }
-
-        $category->delete();
+        $category->update(['is_active' => false]);
 
         return redirect()->route('categories.index')
-            ->with('success', 'Category deleted successfully.');
+            ->with('success', "Category '{$category->name}' deactivated. Its products are kept.");
+    }
+
+    private const PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
+    /**
+     * @return array<int, AllowedFilter>
+     */
+    private function allowedFilters(): array
+    {
+        return [
+            AllowedFilter::callback('search', fn ($query, $value) => $query->where(function ($q) use ($value) {
+                $term = '%'.trim((string) $value).'%';
+                $q->where('name', 'like', $term)
+                    ->orWhere('slug', 'like', $term);
+            })),
+            AllowedFilter::partial('name'),
+            AllowedFilter::exact('is_active'),
+        ];
+    }
+
+    /**
+     * Headline numbers for the list; counts follow the search but not the status tab.
+     *
+     * @return array{total: int, active: int, inactive: int}
+     */
+    private function listStats(Request $request): array
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        unset($filters['is_active']);
+
+        $byStatus = QueryBuilder::for(Category::class, new Request(['filter' => $filters]))
+            ->allowedFilters($this->allowedFilters())
+            ->getEloquentBuilder()
+            ->reorder()
+            ->selectRaw('is_active, COUNT(*) as aggregate')
+            ->groupBy('is_active')
+            ->pluck('aggregate', 'is_active');
+
+        return [
+            'total' => (int) $byStatus->sum(),
+            'active' => (int) ($byStatus[1] ?? 0),
+            'inactive' => (int) ($byStatus[0] ?? 0),
+        ];
     }
 }

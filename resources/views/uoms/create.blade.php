@@ -1,39 +1,30 @@
+{{-- Settings -> Units of measure -> Add (fields live in uoms.partials.form-fields). --}}
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Create Unit of Measure
-        </h2>
-        <div class="flex justify-center items-center float-right">
-            <a href="{{ route('uoms.index') }}"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span>
+                    <a href="{{ route('uoms.index') }}">Units of measure</a><span aria-hidden="true">›</span><span>Add</span>
+                </nav>
+                <h1 class="ak-title">Add Unit</h1>
+                <p class="ak-sub">Units used to count stock and to sell products.</p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('uoms.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <x-validation-errors class="mb-4 mt-4" />
-                    <form method="POST" action="{{ route('uoms.store') }}">
-                        @csrf
+    @include('settings.partials.ui-style')
 
-                        @include('uoms.partials.form-fields')
-
-                        <div class="flex items-center justify-end mt-6">
-                            <x-button class="ml-4">
-                                Create Unit
-                            </x-button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <div class="ak-page">
+        <x-status-message />
+        <form method="POST" action="{{ route('uoms.store') }}">
+            @csrf
+            @include('uoms.partials.form-fields', [
+                'submitLabel' => 'Create unit',
+            ])
+        </form>
     </div>
 </x-app-layout>

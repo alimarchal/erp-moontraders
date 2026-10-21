@@ -1,86 +1,235 @@
+{{--
+    Settings -> Categories list. Same layout as Settings -> Users: summary cards, tabs, one search box,
+    filter chips and a sortable table. Query parameters (filter[...], sort, per_page) are unchanged.
+--}}
+@php
+    $filters = array_filter((array) request('filter', []), fn ($v) => $v !== null && $v !== '');
+    $sort = (string) request('sort', 'name');
+    $tab = $filters['is_active'] ?? '';
+    $chips = \Illuminate\Support\Arr::except($filters, 'is_active');
+
+    $withFilters = fn (array $f) => request()->fullUrlWithQuery(['filter' => $f ?: null, 'page' => null]);
+    $tabUrl = function (string $key) use ($filters, $withFilters) {
+        $f = \Illuminate\Support\Arr::except($filters, 'is_active');
+        if ($key !== '') {
+            $f['is_active'] = $key;
+        }
+
+        return $withFilters($f);
+    };
+    $sortUrl = fn (string $field) => request()->fullUrlWithQuery(['sort' => $sort === $field ? '-'.$field : $field, 'page' => null]);
+    $ariaSort = fn (string $field) => $sort === $field ? 'ascending' : ($sort === '-'.$field ? 'descending' : 'none');
+    $sortMark = fn (string $field) => $sort === $field ? "\u{25B2}" : ($sort === '-'.$field ? "\u{25BC}" : '');
+    $chipLabels = ['search' => 'Search'];
+    $sortNames = ['name' => 'Name'];
+    $sortField = ltrim($sort, '-');
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Categories" :createRoute="route('categories.create')" createLabel="Add Category"
-            createPermission="category-create" :showSearch="true" backRoute="settings.index" />
-    </x-slot>
-
-    <x-filter-section :action="route('categories.index')">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="ak-head">
             <div>
-                <x-label for="filter_name" value="Name" />
-                <x-input id="filter_name" type="text" name="filter[name]" class="block mt-1 w-full"
-                    value="{{ request('filter.name') }}" />
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span><span>Categories</span>
+                </nav>
+                <h1 class="ak-title">Categories</h1>
+                <p class="ak-sub">Product groups used for reporting and filtering.</p>
             </div>
-
-            <div>
-                <x-label for="filter_is_active" value="Status" />
-                <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Both</option>
-                    <option value="1" {{ request('filter.is_active') === '1' ? 'selected' : '' }}>Active</option>
-                    <option value="0" {{ request('filter.is_active') === '0' ? 'selected' : '' }}>Inactive</option>
-                </select>
+            <div class="ak-head-actions">
+                <a href="{{ route('settings.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                @can('category-create')
+                    <a href="{{ route('categories.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add category</a>
+                @endcan
             </div>
         </div>
-    </x-filter-section>
+    </x-slot>
 
-    <x-data-table :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Name', 'align' => 'text-left'],
-        ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'Actions', 'align' => 'text-center'],
-    ]" :items="$categories" emptyMessage="No categories found." :emptyRoute="route('categories.create')"
-        emptyLinkText="Add Category">
-        @foreach ($categories as $index => $category)
-            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50 transition-colors duration-150">
-                <td class="py-1 px-2 text-center">
-                    {{ $categories->firstItem() + $index }}
-                </td>
-                <td class="py-1 px-2 font-semibold">
-                    {{ $category->name }}
-                    @if ($category->slug)
-                        <div class="text-xs text-gray-500 font-normal">{{ $category->slug }}</div>
-                    @endif
-                </td>
-                <td class="py-1 px-2 text-center">
-                    <span
-                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $category->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                        {{ $category->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </td>
-                <td class="py-1 px-2 text-center">
-                    <div class="flex justify-center space-x-2">
-                        @can('category-edit')
-                            <a href="{{ route('categories.edit', $category) }}"
-                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </a>
-                        @endcan
-                        @role('super-admin')
-                        <form action="{{ route('categories.destroy', $category) }}" method="POST"
-                            onsubmit="return confirm('Are you sure you want to delete this category?');" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                title="Delete">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </form>
-                        @endrole
+    @include('settings.partials.ui-style')
+
+    <div class="ak-page" x-data="listPage()">
+        <x-status-message />
+
+        <section class="ak-kpis" aria-label="Summary" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' ? ' is-active' : '' }}">
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Categories</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['total']) }}</span>
+                    <span class="ak-kpi-hint">{{ $chips ? 'matching the filters' : 'all records' }}</span>
+                </span>
+            </a>
+            <a href="{{ $tabUrl('1') }}" class="ak-kpi{{ $tab === '1' ? ' is-active' : '' }}">
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Active</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['active']) }}</span>
+                    <span class="ak-kpi-hint">{{ number_format($stats['inactive']) }} inactive</span>
+                </span>
+            </a>
+        </section>
+
+        <section class="ak-card" aria-label="Categories">
+            <div class="ak-tabs" role="tablist">
+                @foreach (['' => ['All', $stats['total']], '1' => ['Active', $stats['active']], '0' => ['Inactive', $stats['inactive']]] as $key => [$label, $count])
+                    <a href="{{ $tabUrl((string) $key) }}" role="tab" aria-selected="{{ $tab === (string) $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === (string) $key ? 'is-active' : '' }}">
+                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
+                    </a>
+                @endforeach
+            </div>
+
+            <form method="GET" action="{{ route('categories.index') }}" class="ak-filters" x-data="{ busy: false }" @submit="busy = true">
+                @if ($tab !== '') <input type="hidden" name="filter[is_active]" value="{{ $tab }}"> @endif
+                @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
+                <div class="ak-filter-row" style="grid-template-columns: minmax(0, 3fr) minmax(110px, .6fr) auto">
+                    <div class="ak-field">
+                        <label for="f_search">Search</label>
+                        <div class="ak-search">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                            <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off" placeholder="Name or slug">
+                        </div>
                     </div>
-                </td>
-            </tr>
-        @endforeach
-    </x-data-table>
+                    <div class="ak-field">
+                        <label for="f_per_page">Rows per page</label>
+                        <select id="f_per_page" name="per_page" onchange="this.form.requestSubmit()">
+                            @foreach ($perPageOptions as $n)
+                                <option value="{{ $n }}" @selected($perPage === $n)>{{ $n }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-filter-buttons">
+                        <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
+                            <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
 
+            @if ($chips)
+                <div class="ak-chips" aria-label="Active filters">
+                    <span class="ak-chips-label">Filtered by</span>
+                    @foreach ($chips as $key => $value)
+                        <a href="{{ $withFilters(\Illuminate\Support\Arr::except($filters, $key)) }}" class="ak-chip" aria-label="Remove filter {{ $chipLabels[$key] ?? $key }}">
+                            <b>{{ $chipLabels[$key] ?? \Illuminate\Support\Str::headline($key) }}:</b> {{ $value }} <span aria-hidden="true">×</span>
+                        </a>
+                    @endforeach
+                    <a href="{{ $withFilters($tab !== '' ? ['is_active' => $tab] : []) }}" class="ak-chips-clear">Clear all</a>
+                </div>
+            @endif
+
+            @if ($categories->count() > 0)
+                <div class="ak-table-wrap">
+                    <div class="ak-dt-toolbar">
+                        <p><b>{{ number_format($categories->total()) }}</b> {{ \Illuminate\Support\Str::plural('record', $categories->total()) }} &middot; sorted by <b>{{ $sortNames[$sortField] ?? 'Name' }}</b></p>
+                    </div>
+                    <div class="ak-dt-scroll" tabindex="0" aria-label="Categories table">
+                        <table class="ak-dt">
+                            <caption class="sr-only">Categories, {{ $categories->total() }} results</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="ak-c">#</th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('name') }}"><a href="{{ $sortUrl('name') }}">Category <span aria-hidden="true">{{ $sortMark('name') }}</span></a></th>
+                                    <th scope="col">Slug</th>
+                                    <th scope="col" class="ak-c">Products</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" class="ak-c"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($categories as $category)
+                                    <tr>
+                                        <td class="ak-c" data-label=""><span class="ak-muted">{{ $categories->firstItem() + $loop->index }}</span></td>
+                                        <td data-label="Category"><a href="{{ route('categories.show', $category) }}" class="ak-primary-link">{{ $category->name }}</a></td>
+                                        <td class="ak-muted" data-label="Slug">{{ $category->slug ?: '—' }}</td>
+                                        <td class="ak-c ak-mono" data-label="Products">{{ number_format($category->products_count) }}</td>
+                                        <td data-label="Status">
+                                            @if ($category->is_active)
+                                                <span class="ak-status ak-status-green"><i aria-hidden="true"></i>Active</span>
+                                            @else
+                                                <span class="ak-status ak-status-red"><i aria-hidden="true"></i>Inactive</span>
+                                            @endif
+                                        </td>
+                                        <td data-label="">
+                                            <div class="ak-actions">
+                                                <a href="{{ route('categories.show', $category) }}" class="ak-icon ak-icon-view" title="View" aria-label="View {{ $category->name }}">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                                </a>
+                                                <span class="ak-slot">
+                                                    @can('category-edit')
+                                                        <a href="{{ route('categories.edit', $category) }}" class="ak-icon" title="Edit" aria-label="Edit {{ $category->name }}">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg>
+                                                        </a>
+                                                    @endcan
+                                                </span>
+                                                <span class="ak-slot">
+                                                    @if (auth()->user()->can('category-delete') && $category->is_active)
+                                                        <form method="POST" action="{{ route('categories.destroy', $category) }}" @submit.prevent="askDelete($el, @js($category->name))">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="ak-icon ak-icon-danger" title="Deactivate" aria-label="Deactivate {{ $category->name }}">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 3v9" /></svg>
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="ak-pager">
+                    <p>Showing <b>{{ number_format($categories->firstItem()) }}–{{ number_format($categories->lastItem()) }}</b> of <b>{{ number_format($categories->total()) }}</b></p>
+                    <div class="ak-pager-right">{{ $categories->onEachSide(1)->links() }}</div>
+                </div>
+            @else
+                <div class="ak-empty">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                    @if ($filters)
+                        <h2>Nothing matches these filters</h2>
+                        <p>Remove a filter or search with part of the name.</p>
+                        <a href="{{ route('categories.index') }}" class="ak-btn ak-btn-primary">Clear all filters</a>
+                    @else
+                        <h2>Nothing here yet</h2>
+                        @can('category-create') <a href="{{ route('categories.create') }}" class="ak-btn ak-btn-primary">＋ Add category</a> @endcan
+                    @endif
+                </div>
+            @endif
+        </section>
+
+        <div class="uf-modal" x-show="confirm.open" x-cloak style="display:none" @keydown.escape.window="confirm.open = false" role="dialog" aria-modal="true" aria-labelledby="lp-confirm-title">
+            <div class="uf-modal-bg" x-show="confirm.open" x-transition.opacity @click="confirm.open = false"></div>
+            <div class="uf-modal-box" x-show="confirm.open" x-transition>
+                <div class="uf-modal-body">
+                    <span class="uf-modal-icon ak-pill-red" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.01" /></svg>
+                    </span>
+                    <div>
+                        <h3 id="lp-confirm-title" x-text="confirm.title"></h3>
+                        <p style="margin:8px 0 0; font-size:14px; color:#334155">It will be marked Inactive and can be turned back on from Edit. Nothing is deleted.</p>
+                    </div>
+                </div>
+                <div class="uf-modal-foot">
+                    <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
+                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : 'Deactivate'"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            function listPage() {
+                return {
+                    confirm: { open: false, title: '', busy: false, form: null },
+                    askDelete(form, name) { this.confirm = { open: true, title: 'Deactivate ' + name + '?', busy: false, form }; },
+                    runConfirm() {
+                        if (this.confirm.busy || !this.confirm.form) return;
+                        this.confirm.busy = true;
+                        this.confirm.form.submit();
+                    },
+                };
+            }
+        </script>
+    @endpush
 </x-app-layout>

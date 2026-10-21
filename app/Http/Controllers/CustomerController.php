@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Exports\CustomerExport;
+use App\Exports\CustomerImportTemplateExport;
+use App\Http\Requests\ImportCustomerRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\ChartOfAccount;
+use App\Imports\CustomerImport;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -29,7 +32,7 @@ class CustomerController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('can:customer-list', only: ['index', 'show', 'exportExcel']),
-            new Middleware('can:customer-create', only: ['create', 'store']),
+            new Middleware('can:customer-create', only: ['create', 'store', 'importForm', 'import', 'importTemplate']),
             new Middleware('can:customer-edit', only: ['edit', 'update']),
             new Middleware('can:customer-delete', only: ['destroy']),
         ];
@@ -37,7 +40,7 @@ class CustomerController extends Controller implements HasMiddleware
 
     private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
 
-    private const DEFAULT_PER_PAGE = 40;
+    private const DEFAULT_PER_PAGE = 25;
 
     /**
      * Display a listing of the resource.
@@ -60,7 +63,83 @@ class CustomerController extends Controller implements HasMiddleware
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
             'salesRepOptions' => $this->salesRepOptions(),
             'perPageOptions' => self::PER_PAGE_OPTIONS,
+            'stats' => $this->listStats($request),
         ]);
+    }
+
+    /**
+     * Headline numbers for the list; counts follow the filters except the status tab.
+     *
+     * @return array{total: int, active: int, inactive: int}
+     */
+    private function listStats(Request $request): array
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        unset($filters['is_active']);
+
+        $byStatus = QueryBuilder::for(Customer::class, new Request(['filter' => $filters]))
+            ->allowedFilters($this->allowedFilters())
+            ->getEloquentBuilder()
+            ->reorder()
+            ->selectRaw('is_active, COUNT(*) as aggregate')
+            ->groupBy('is_active')
+            ->pluck('aggregate', 'is_active');
+
+        return [
+            'total' => (int) $byStatus->sum(),
+            'active' => (int) ($byStatus[1] ?? 0),
+            'inactive' => (int) ($byStatus[0] ?? 0),
+        ];
+    }
+
+    /**
+     * Excel import screen.
+     */
+    public function importForm()
+    {
+        return view('customers.import', [
+            'channelTypes' => Customer::CHANNEL_TYPES,
+            'customerCategories' => Customer::CUSTOMER_CATEGORIES,
+        ]);
+    }
+
+    /**
+     * Download the blank import template.
+     */
+    public function importTemplate()
+    {
+        return Excel::download(new CustomerImportTemplateExport, 'customers_import_template.xlsx');
+    }
+
+    /**
+     * Import customers (shops) from Excel, skipping or updating duplicates.
+     */
+    public function import(ImportCustomerRequest $request)
+    {
+        $dryRun = $request->boolean('dry_run');
+        $import = new CustomerImport($request->validated('duplicate_mode'), $dryRun);
+
+        DB::beginTransaction();
+
+        try {
+            Excel::import($import, $request->file('import_file'));
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Error importing customers', ['error' => $e->getMessage(), 'user_id' => auth()->id()]);
+
+            return back()->withErrors(['import_file' => 'The file could not be read. Please use the template and try again.']);
+        }
+
+        return redirect()
+            ->route('customers.import.form')
+            ->with('import_result', [
+                'dry_run' => $dryRun,
+                'counts' => $import->counts(),
+                'report' => $import->report(),
+                'file' => $request->file('import_file')->getClientOriginalName(),
+            ]);
     }
 
     /**
@@ -273,23 +352,7 @@ class CustomerController extends Controller implements HasMiddleware
         return QueryBuilder::for(
             Customer::query()->with(['salesRep', 'receivableAccount', 'payableAccount'])
         )
-            ->allowedFilters([
-                AllowedFilter::partial('customer_name'),
-                AllowedFilter::partial('customer_code'),
-                AllowedFilter::partial('business_name'),
-                AllowedFilter::partial('phone'),
-                AllowedFilter::partial('email'),
-                AllowedFilter::partial('city'),
-                AllowedFilter::partial('sub_locality'),
-                AllowedFilter::partial('address'),
-                AllowedFilter::partial('ntn'),
-                AllowedFilter::partial('state'),
-                AllowedFilter::partial('country'),
-                AllowedFilter::exact('channel_type'),
-                AllowedFilter::exact('customer_category'),
-                AllowedFilter::exact('sales_rep_id'),
-                AllowedFilter::exact('is_active'),
-            ])
+            ->allowedFilters($this->allowedFilters())
             ->allowedSorts([
                 AllowedSort::field('customer_name'),
                 AllowedSort::field('customer_code'),
@@ -299,6 +362,39 @@ class CustomerController extends Controller implements HasMiddleware
                 AllowedSort::field('channel_type'),
             ])
             ->defaultSort('customer_name');
+    }
+
+    /**
+     * @return array<int, AllowedFilter>
+     */
+    private function allowedFilters(): array
+    {
+        return [
+            AllowedFilter::callback('search', fn ($query, $value) => $query->where(function ($q) use ($value) {
+                $term = '%'.trim((string) $value).'%';
+                $q->where('customer_name', 'like', $term)
+                    ->orWhere('customer_code', 'like', $term)
+                    ->orWhere('business_name', 'like', $term)
+                    ->orWhere('phone', 'like', $term)
+                    ->orWhere('city', 'like', $term)
+                    ->orWhere('sub_locality', 'like', $term);
+            })),
+            AllowedFilter::partial('customer_name'),
+            AllowedFilter::partial('customer_code'),
+            AllowedFilter::partial('business_name'),
+            AllowedFilter::partial('phone'),
+            AllowedFilter::partial('email'),
+            AllowedFilter::partial('city'),
+            AllowedFilter::partial('sub_locality'),
+            AllowedFilter::partial('address'),
+            AllowedFilter::partial('ntn'),
+            AllowedFilter::partial('state'),
+            AllowedFilter::partial('country'),
+            AllowedFilter::exact('channel_type'),
+            AllowedFilter::exact('customer_category'),
+            AllowedFilter::exact('sales_rep_id'),
+            AllowedFilter::exact('is_active'),
+        ];
     }
 
     /**

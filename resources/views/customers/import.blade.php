@@ -105,7 +105,7 @@
                         <li>Only <b>Customer Name</b> is required. Leave <b>Customer Code</b> empty to get <code>CUST-0001</code>, <code>CUST-0002</code> …</li>
                         <li>Run with “Check only” first, then import for real.</li>
                     </ol>
-                    <p><b>A row is a duplicate</b> when its code, email or phone (last 10 digits) already exists, or when the same name in the same area and city exists — in the system or earlier in the same file.</p>
+                    <p><b>A row is a duplicate</b> when its <b>Customer Code</b> already exists in the system or earlier in the same file. Nothing else is compared, so two shops with the same name but different codes are both added.</p>
                     <p><b>Channel Type:</b> {{ implode(', ', $channelTypes) }}.<br><b>Category:</b> {{ implode(', ', $customerCategories) }}.<br><b>Sales Rep:</b> user name or email. <b>Status:</b> Active / Inactive.</p>
                     <p class="ak-muted">If any value is wrong, only that row is reported; other rows still import.</p>
                 </div>

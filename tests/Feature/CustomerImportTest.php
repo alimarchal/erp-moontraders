@@ -120,3 +120,11 @@ it('lists customers with the new search box', function () {
         ->assertSee('Zeta Traders')
         ->assertDontSee('Alpha Mart');
 });
+
+it('renders the redesigned create and edit forms', function () {
+    $this->user->givePermissionTo(Permission::findOrCreate('customer-edit'));
+    $customer = Customer::factory()->create(['customer_name' => 'Form Shop']);
+
+    $this->get(route('customers.create'))->assertSuccessful()->assertSee('Shop details')->assertSee('Create customer');
+    $this->get(route('customers.edit', $customer))->assertSuccessful()->assertSee('Edit Customer: Form Shop')->assertSee('Save changes');
+});

@@ -30,7 +30,7 @@ test('the register lists entries with pipeline tiles, status chips and the filte
     $this->actingAs($this->maker)
         ->get(route('bank-statement-entries.index'))
         ->assertOk()
-        ->assertSee('Bank Statement Register')
+        ->assertSee('Bank Register')
         ->assertSee('To classify')
         ->assertSee('NAVEED ANJUM');
 });
@@ -44,11 +44,11 @@ test('the register filters by status and by free text', function () {
     $this->get(route('bank-statement-entries.index', ['filter' => ['q' => 'naveed']]))->assertOk()->assertSee('NAVEED ANJUM')->assertDontSee('OTHER PARTY');
 });
 
-test('the side drawer and the full page show the same detail panel', function () {
+test('the transaction pop-up and the full page show the same detail panel', function () {
     $this->actingAs($this->maker);
 
     $this->get(route('bank-statement-entries.drawer', $this->entry))->assertOk()->assertSee('Receipt &amp; attachments', false)->assertSee('2,500,000.00');
-    $this->get(route('bank-statement-entries.show', $this->entry))->assertOk()->assertSee('Bank Entry #'.$this->entry->id);
+    $this->get(route('bank-statement-entries.show', $this->entry))->assertOk()->assertSee('Transaction #'.$this->entry->id);
 });
 
 test('classifying one entry moves it to classified and records history', function () {
@@ -241,4 +241,15 @@ test('the Urdu help page is right-to-left and covers each screen', function () {
         ->assertSee('lang="ur"', false)
         ->assertSee('بینک سٹیٹمنٹ رجسٹر')
         ->assertSee('BANK_APPROVAL_LEVEL1_THRESHOLD');
+});
+
+test('the attachment table holds the long MIME type of a spreadsheet', function () {
+    $mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    $attachment = $this->entry->attachments()->create([
+        'file_name' => 'reconciliation.xlsx', 'file_path' => 'bank-attachments/1/reconciliation.xlsx', 'file_type' => $mime,
+        'file_size' => 120, 'label' => 'receipt', 'uploaded_by' => $this->maker->id,
+    ]);
+
+    expect($attachment->fresh()->file_type)->toBe($mime);
 });

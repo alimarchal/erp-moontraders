@@ -16,7 +16,7 @@
             </div>
             <div>
                 <x-label for="filter_type" value="Used for" />
-                <select id="filter_type" name="filter[type]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="All" id="filter_type" name="filter[type]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach (\App\Models\BankEntryCategory::TYPES as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.type') === $value)>{{ $label }}</option>
@@ -25,7 +25,7 @@
             </div>
             <div>
                 <x-label for="filter_is_active" value="Status" />
-                <select id="filter_is_active" name="filter[is_active]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="Both" id="filter_is_active" name="filter[is_active]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     <option value="1" @selected(request('filter.is_active') === '1')>Active</option>
                     <option value="0" @selected(request('filter.is_active') === '0')>Inactive</option>

@@ -20,7 +20,7 @@
             </div>
             <div>
                 <x-label for="filter_bank_entry_category_id" value="Category" />
-                <select id="filter_bank_entry_category_id" name="filter[bank_entry_category_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="All" id="filter_bank_entry_category_id" name="filter[bank_entry_category_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category->id }}" @selected((string) request('filter.bank_entry_category_id') === (string) $category->id)>{{ $category->name }}</option>

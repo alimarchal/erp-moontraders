@@ -1,326 +1,322 @@
+{{--
+    Bank Register (/bank-statement-entries). Same layout as Settings > Users: KPI cards that double as filters,
+    status tabs, one search box with "More filters", removable chips, a dense table, bulk actions and a pager.
+    A transaction opens in a pop-up (data-entry); everything prints in black and white.
+--}}
 @php
-    $query = fn (array $extra = []) => array_filter(['filter' => array_merge($filters, $extra)], fn ($v) => $v !== []);
-    $activeStatus = $filters['status'] ?? null;
+    $filters = array_filter((array) $filters, fn ($v) => $v !== null && $v !== '' && $v !== []);
+    $tab = $filters['status'] ?? '';
+    $withFilters = fn (array $f) => route('bank-statement-entries.index', ['filter' => $f ?: null]);
+    $tabUrl = fn (string $key) => $withFilters($key === '' ? \Illuminate\Support\Arr::except($filters, 'status') : array_merge($filters, ['status' => $key]));
+    $onlyUrl = fn (array $f) => $withFilters(array_merge(\Illuminate\Support\Arr::except($filters, ['status', 'has_attachment']), $f));
     $statusOrder = ['unclassified', 'classified', 'pending_approval', 'rejected', 'posted', 'reconciled', 'reversed'];
     $totalCount = array_sum(array_column($summary, 'count'));
-    $totalAmount = array_sum(array_column($summary, 'amount'));
+
+    $accountNames = $bankAccounts->pluck('account_name', 'id');
+    $companyNames = $companies->pluck('supplier_name', 'id');
+    $categoryNames = $categories->pluck('name', 'id');
+    $userNames = $users->pluck('name', 'id');
+    $chipLabels = [
+        'q' => 'Search', 'bank_account_id' => 'Account', 'direction' => 'Money', 'company_id' => 'Company', 'category_id' => 'Category',
+        'date_from' => 'From', 'date_to' => 'To', 'amount_min' => 'Amount from', 'amount_max' => 'Amount to', 'has_attachment' => 'Receipt',
+        'needs_review' => 'Review', 'submitted_by' => 'Maker', 'receipt_no' => 'Receipt no.', 'reference' => 'Reference', 'import_id' => 'Import',
+    ];
+    $chipValue = fn (string $key, $value) => match ($key) {
+        'bank_account_id' => $accountNames[$value] ?? $value,
+        'company_id' => $value === 'none' ? 'No company' : ($companyNames[$value] ?? $value),
+        'category_id' => $value === 'none' ? 'No category' : ($categoryNames[$value] ?? $value),
+        'submitted_by' => $userNames[$value] ?? $value,
+        'direction' => $value === 'credit' ? 'Received' : 'Paid out',
+        'has_attachment' => $value === 'yes' ? 'Has attachment' : 'No attachment',
+        'needs_review' => $value === 'yes' ? 'Needs review' : 'Not flagged',
+        default => $value,
+    };
+    $chips = \Illuminate\Support\Arr::except($filters, 'status');
+    $advancedKeys = ['company_id', 'category_id', 'date_from', 'date_to', 'amount_min', 'amount_max', 'has_attachment', 'needs_review', 'submitted_by', 'receipt_no', 'reference'];
+    $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
+    $canBulk = auth()->user()->can('bank-statement-entry-classify') || auth()->user()->can('bank-statement-entry-submit');
+    $pageIds = $canBulk ? $entries->getCollection()->pluck('id')->map(fn ($id) => (string) $id)->values() : [];
+    $net = $totals->total_in - $totals->total_out;
+    $scope = $filters ? collect($filters)->map(fn ($v, $k) => ($chipLabels[$k] ?? \Illuminate\Support\Str::headline($k)).': '.$chipValue($k, $v))->implode(' · ') : 'All entries';
+    if ($tab !== '') {
+        $scope = (\App\Models\BankStatementEntry::STATUSES[$tab] ?? $tab).($filters && count($filters) > 1 ? ' · '.$scope : '');
+    }
 @endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Bank Statement Register</h2>
-            <div class="flex flex-wrap items-center gap-2">
-                @can('bank-statement-entry-create')
-                    <a href="{{ route('bank-statement-entries.create') }}" class="inline-flex items-center px-3 py-2 bg-green-800 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">＋ Add entry</a>
-                @endcan
-                @can('bank-statement-import-create')
-                    <a href="{{ route('bank-statement-imports.create') }}" class="inline-flex items-center px-3 py-2 bg-blue-950 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">Import statement</a>
-                @endcan
-                @can('bank-statement-entry-export')
-                    <a href="{{ route('bank-statement-entries.export', $query()) }}" class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">Export</a>
-                @endcan
-                <button id="toggle" type="button" class="inline-flex items-center px-3 py-2 bg-blue-950 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-900">Filters</button>
-            </div>
-        </div>
+        <x-bank.head title="Bank Register" sub="Every rupee in and out of the bank, cash and wallet accounts, with its receipt.">
+            @can('bank-statement-entry-create')
+                <a href="{{ route('bank-statement-entries.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add entry</a>
+            @endcan
+            @can('bank-statement-import-create')
+                <a href="{{ route('bank-statement-imports.create') }}" class="ak-btn ak-btn-outline">Import statement</a>
+            @endcan
+            @can('bank-statement-entry-export')
+                <a href="{{ route('bank-statement-entries.export', array_filter(['filter' => $filters])) }}" class="ak-btn ak-btn-outline">Export</a>
+            @endcan
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Bank Statement Register" /></div>
 
-    <x-filter-section :action="route('bank-statement-entries.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="lg:col-span-2">
-                <x-label for="f_q" value="Search (party, narration, reference, receipt, note, file name)" />
-                <x-input id="f_q" name="filter[q]" type="text" dir="auto" class="mt-1 block w-full" :value="$filters['q'] ?? ''" placeholder="e.g. Unilever, CHQ 00000264, BR-2024-25-000001" />
-            </div>
-            <div>
-                <x-label for="f_date_from" value="Date from" />
-                <x-input id="f_date_from" name="filter[date_from]" type="date" class="mt-1 block w-full" :value="$filters['date_from'] ?? ''" />
-            </div>
-            <div>
-                <x-label for="f_date_to" value="Date to" />
-                <x-input id="f_date_to" name="filter[date_to]" type="date" class="mt-1 block w-full" :value="$filters['date_to'] ?? ''" />
-            </div>
-            <div>
-                <x-label for="f_bank_account_id" value="Bank account" />
-                <select id="f_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    @foreach ($bankAccounts as $account)
-                        <option value="{{ $account->id }}" @selected((string) ($filters['bank_account_id'] ?? '') === (string) $account->id)>{{ $account->account_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <x-label for="f_company_id" value="Company / principal" />
-                <select id="f_company_id" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    <option value="none" @selected(($filters['company_id'] ?? '') === 'none')>— no company —</option>
-                    @foreach ($companies as $company)
-                        <option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->supplier_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <x-label for="f_category_id" value="Category" />
-                <select id="f_category_id" name="filter[category_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    <option value="none" @selected(($filters['category_id'] ?? '') === 'none')>— no category —</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <x-label for="f_direction" value="Money" />
-                <select id="f_direction" name="filter[direction]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">In and out</option>
-                    <option value="credit" @selected(($filters['direction'] ?? '') === 'credit')>Received (credit)</option>
-                    <option value="debit" @selected(($filters['direction'] ?? '') === 'debit')>Paid (debit)</option>
-                </select>
-            </div>
-            <div>
-                <x-label for="f_amount_min" value="Amount from" />
-                <x-input id="f_amount_min" name="filter[amount_min]" type="number" step="0.01" class="mt-1 block w-full" :value="$filters['amount_min'] ?? ''" />
-            </div>
-            <div>
-                <x-label for="f_amount_max" value="Amount to" />
-                <x-input id="f_amount_max" name="filter[amount_max]" type="number" step="0.01" class="mt-1 block w-full" :value="$filters['amount_max'] ?? ''" />
-            </div>
-            <div>
-                <x-label for="f_reference" value="Reference / cheque no." />
-                <x-input id="f_reference" name="filter[reference]" type="text" class="mt-1 block w-full" :value="$filters['reference'] ?? ''" />
-            </div>
-            <div>
-                <x-label for="f_receipt_no" value="Receipt no." />
-                <x-input id="f_receipt_no" name="filter[receipt_no]" type="text" class="mt-1 block w-full" :value="$filters['receipt_no'] ?? ''" />
-            </div>
-            <div>
-                <x-label for="f_has_attachment" value="Attachment" />
-                <select id="f_has_attachment" name="filter[has_attachment]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Any</option>
-                    <option value="yes" @selected(($filters['has_attachment'] ?? '') === 'yes')>Has attachment</option>
-                    <option value="no" @selected(($filters['has_attachment'] ?? '') === 'no')>No attachment</option>
-                </select>
-            </div>
-            <div>
-                <x-label for="f_needs_review" value="Review flag" />
-                <select id="f_needs_review" name="filter[needs_review]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Any</option>
-                    <option value="yes" @selected(($filters['needs_review'] ?? '') === 'yes')>Needs review</option>
-                    <option value="no" @selected(($filters['needs_review'] ?? '') === 'no')>Not flagged</option>
-                </select>
-            </div>
-            <div>
-                <x-label for="f_submitted_by" value="Maker" />
-                <select id="f_submitted_by" name="filter[submitted_by]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Anyone</option>
-                    @foreach ($users as $user)
-                        <option value="{{ $user->id }}" @selected((string) ($filters['submitted_by'] ?? '') === (string) $user->id)>{{ $user->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            @if (! empty($filters['status']))<input type="hidden" name="filter[status]" value="{{ $filters['status'] }}">@endif
-            @if (! empty($filters['import_id']))<input type="hidden" name="filter[import_id]" value="{{ $filters['import_id'] }}">@endif
-        </div>
-    </x-filter-section>
+    <div class="ak-page" x-data="bankRegister()">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Bank Register" :subtitle="$scope" />
+        <x-status-message />
+        @if ($errors->any())<div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>@endif
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 pb-16" x-data="{
-        ids: [],
-        all: false,
-        drawer: false, loading: false, html: '',
-        async open(url) {
-            this.drawer = true; this.loading = true; this.html = '';
-            const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            this.html = await response.text(); this.loading = false;
-            this.$nextTick(() => window.initSelect2 && window.initSelect2(this.$root));
-        },
-        toggleAll(checked) { this.ids = checked ? [...document.querySelectorAll('input[name=\'ids[]\']')].map(e => e.value) : []; }
-    }" @keydown.escape.window="drawer = false">
-
-        <x-status-message class="mb-3" />
-
-        {{-- Work pipeline: where the money is in the daily flow --}}
-        <div class="bank-noprint mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            @foreach ([
-                ['1', 'To classify', 'Waiting for a company / category', $tiles['unclassified'], 'unclassified', 'slate'],
-                ['2', 'Waiting for approval', 'With a checker or senior approver', $tiles['pending'], 'pending_approval', 'amber'],
-                ['3', 'Posted', 'In the books, not yet reconciled', $tiles['unreconciled'], 'posted', 'emerald'],
-                ['4', 'Reconciled', 'Matched with the bank statement', $tiles['reconciled'], 'reconciled', 'teal'],
-            ] as [$step, $label, $hint, $tile, $status, $tone])
-                @php($active = ($filters['status'] ?? '') === $status)
-                <a href="{{ route('bank-statement-entries.index', $query(['status' => $active ? null : $status])) }}"
-                    class="group relative overflow-hidden rounded-xl bg-white p-4 shadow-sm ring-1 transition hover:-translate-y-0.5 hover:shadow-md {{ $active ? 'ring-2 ring-blue-900' : 'ring-gray-200' }}">
-                    <span class="absolute inset-x-0 top-0 h-1 {{ ['slate' => 'bg-slate-400', 'amber' => 'bg-amber-500', 'emerald' => 'bg-emerald-500', 'teal' => 'bg-teal-500'][$tone] }}"></span>
-                    <div class="flex items-start justify-between gap-2">
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{{ $label }}</p>
-                        <span class="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500">{{ $step }}</span>
-                    </div>
-                    <p class="mt-1 text-3xl font-bold leading-none tabular-nums text-gray-900">{{ number_format($tile['count']) }}</p>
-                    <p class="mt-1.5 text-xs font-medium tabular-nums text-gray-700">PKR {{ number_format($tile['amount'], 2) }}</p>
-                    <p class="mt-0.5 text-[11px] text-gray-400">{{ $hint }}</p>
+        {{-- KPI cards (also filters) --}}
+        <section class="ak-kpis" aria-label="Work to do">
+            @php
+                $kpis = [
+                    ['To classify', $tiles['unclassified'], 'Needs a company and a category', 'unclassified', 'ak-tone-slate', 'M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z'],
+                    ['Waiting for approval', $tiles['pending'], 'With a checker or senior approver', 'pending_approval', 'ak-tone-amber', 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
+                    ['Posted', $tiles['unreconciled'], 'In the books, not yet reconciled', 'posted', 'ak-tone-green', 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
+                ];
+            @endphp
+            @foreach ($kpis as [$label, $tile, $hint, $status, $tone, $icon])
+                <a href="{{ $tab === $status ? $tabUrl('') : $tabUrl($status) }}" class="ak-kpi{{ $tab === $status ? ' is-active' : '' }}">
+                    <span class="ak-kpi-icon {{ $tone }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}" /></svg></span>
+                    <span class="ak-kpi-body">
+                        <span class="ak-kpi-label">{{ $label }}</span>
+                        <span class="ak-kpi-value">{{ number_format($tile['count']) }}</span>
+                        <span class="ak-kpi-hint">PKR {{ number_format($tile['amount'], 2) }} · {{ $hint }}</span>
+                    </span>
                 </a>
             @endforeach
-        </div>
+            <a href="{{ ($filters['has_attachment'] ?? '') === 'no' ? $withFilters(\Illuminate\Support\Arr::except($filters, 'has_attachment')) : $withFilters(array_merge($filters, ['has_attachment' => 'no'])) }}"
+                class="ak-kpi{{ $withoutReceipt ? ' ak-kpi-action' : '' }}{{ ($filters['has_attachment'] ?? '') === 'no' ? ' is-active' : '' }}">
+                <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">No receipt</span>
+                    <span class="ak-kpi-value">{{ number_format($withoutReceipt) }}</span>
+                    <span class="ak-kpi-hint">{{ $withoutReceipt ? 'Entries still missing a receipt →' : 'Every entry has a receipt' }}</span>
+                </span>
+            </a>
+        </section>
 
-        {{-- Account switcher (only when there is more than one account) --}}
-        @if ($bankAccounts->count() > 1)
-            <div class="bank-noprint flex flex-wrap items-center gap-2 mb-2 text-sm">
-                <span class="text-gray-500">Account:</span>
-                <a href="{{ route('bank-statement-entries.index', $query(['bank_account_id' => null])) }}" class="rounded-md px-2.5 py-0.5 border {{ empty($filters['bank_account_id']) ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">All accounts</a>
-                @foreach ($bankAccounts as $account)
-                    <a href="{{ route('bank-statement-entries.index', $query(['bank_account_id' => $account->id])) }}" class="rounded-md px-2.5 py-0.5 border {{ (string) ($filters['bank_account_id'] ?? '') === (string) $account->id ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">{{ $account->account_name }}</a>
+        <section class="ak-card" aria-label="Entries">
+            <div class="ak-tabs" role="tablist">
+                <a href="{{ $tabUrl('') }}" role="tab" aria-selected="{{ $tab === '' ? 'true' : 'false' }}" class="ak-tab {{ $tab === '' ? 'is-active' : '' }}">All <span class="ak-count">{{ number_format($totalCount) }}</span></a>
+                @foreach ($statusOrder as $status)
+                    @if (isset($summary[$status]))
+                        <a href="{{ $tabUrl($status) }}" role="tab" aria-selected="{{ $tab === $status ? 'true' : 'false' }}" class="ak-tab {{ $tab === $status ? 'is-active' : '' }}">
+                            {{ \App\Models\BankStatementEntry::STATUSES[$status] }} <span class="ak-count">{{ number_format($summary[$status]['count']) }}</span>
+                        </a>
+                    @endif
                 @endforeach
             </div>
-        @endif
 
-        {{-- Status chips --}}
-        <div class="bank-noprint flex flex-wrap items-center gap-2 mb-3">
-            <a href="{{ route('bank-statement-entries.index', $query(['status' => null])) }}" class="rounded-full px-3 py-1 text-sm border {{ $activeStatus ? 'bg-white text-gray-700 border-gray-300' : 'bg-blue-950 text-white border-blue-950' }}">All <b class="tabular-nums">{{ number_format($totalCount) }}</b></a>
-            @foreach ($statusOrder as $status)
-                @if (isset($summary[$status]))
-                    <a href="{{ route('bank-statement-entries.index', $query(['status' => $status])) }}" class="rounded-full px-3 py-1 text-sm border {{ $activeStatus === $status ? 'bg-blue-950 text-white border-blue-950' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
-                        {{ \App\Models\BankStatementEntry::STATUSES[$status] }} <b class="tabular-nums">{{ number_format($summary[$status]['count']) }}</b>
-                        <span class="text-xs opacity-70 tabular-nums">· {{ number_format($summary[$status]['amount'] / 1000000, 2) }}M</span>
-                    </a>
-                @endif
-            @endforeach
-            <a href="{{ route('bank-statement-entries.index', $query(['has_attachment' => ($filters['has_attachment'] ?? '') === 'no' ? null : 'no'])) }}" class="rounded-full px-3 py-1 text-sm border {{ ($filters['has_attachment'] ?? '') === 'no' ? 'bg-amber-600 text-white border-amber-600' : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100' }}" title="Entries that have no receipt or file yet">📎 No receipt <b class="tabular-nums">{{ number_format($withoutReceipt) }}</b></a>
-            @can('bank-statement-entry-classify')
-                <form method="POST" action="{{ route('bank-statement-entries.auto-classify') }}" class="ms-auto">
-                    @csrf
-                    <button class="text-sm text-blue-800 hover:underline" title="Run aliases, rules and the cheque register over every unclassified entry">⚡ Auto-classify unclassified</button>
-                </form>
-            @endcan
-        </div>
-
-        <form method="POST" id="bulk-form">
-            @csrf
-            {{-- Bulk toolbar --}}
-            <div x-show="ids.length" x-cloak class="bank-noprint sticky top-0 z-20 mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 shadow">
-                <div class="flex flex-wrap items-end gap-3">
-                    <p class="text-sm font-semibold text-blue-900"><span x-text="ids.length"></span> selected</p>
-                    @can('bank-statement-entry-classify')
-                        <div>
-                            <label class="block text-xs text-blue-900">Company</label>
-                            <select data-width="230px" name="company_id" class="select2 bank-select border-gray-300 rounded-md text-sm py-1.5">
-                                <option value="">—</option>
-                                @foreach ($companies as $company)<option value="{{ $company->id }}">{{ $company->supplier_name }}</option>@endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-blue-900">Category</label>
-                            <select data-width="230px" name="bank_entry_category_id" class="select2 bank-select border-gray-300 rounded-md text-sm py-1.5">
-                                <option value="">—</option>
-                                @foreach ($categories as $category)<option value="{{ $category->id }}">{{ $category->name }}</option>@endforeach
-                            </select>
-                        </div>
-                        <label class="inline-flex items-center gap-1.5 text-sm text-blue-900"><input type="checkbox" name="remember_alias" value="1" class="rounded border-gray-300"> Remember for next time</label>
-                        <button type="submit" formaction="{{ route('bank-statement-entries.bulk-classify') }}" class="rounded-md bg-blue-950 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-900">Apply</button>
-                    @endcan
-                    @can('bank-statement-entry-submit')
-                        <button type="submit" formaction="{{ route('bank-statement-entries.bulk-submit') }}" class="rounded-md bg-green-800 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-900">Submit selected</button>
-                    @endcan
-                    <button type="button" @click="ids = []; all = false" class="text-sm text-gray-600 hover:underline">Clear</button>
-                </div>
-            </div>
-
-            <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200">
-                {{-- Card toolbar: what is shown, the totals of it, and a quick search --}}
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50/70 px-4 py-3">
-                    <div class="flex flex-wrap items-center gap-x-6 gap-y-1">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Entries</p>
-                            <p class="text-lg font-bold leading-tight tabular-nums text-gray-900">{{ number_format($totals->total_count) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Received</p>
-                            <p class="text-lg font-bold leading-tight tabular-nums text-emerald-700">{{ number_format($totals->total_in, 2) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Paid out</p>
-                            <p class="text-lg font-bold leading-tight tabular-nums text-red-700">{{ number_format($totals->total_out, 2) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Net</p>
-                            <p class="text-lg font-bold leading-tight tabular-nums {{ $totals->total_in - $totals->total_out < 0 ? 'text-red-700' : 'text-gray-900' }}">{{ number_format($totals->total_in - $totals->total_out, 2) }}</p>
+            {{-- Filters --}}
+            <form method="GET" action="{{ route('bank-statement-entries.index') }}" class="ak-filters" x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
+                @if ($tab !== '')<input type="hidden" name="filter[status]" value="{{ $tab }}">@endif
+                @if (! empty($filters['import_id']))<input type="hidden" name="filter[import_id]" value="{{ $filters['import_id'] }}">@endif
+                <div class="ak-filter-row">
+                    <div class="ak-field">
+                        <label for="f_q">Search</label>
+                        <div class="ak-search">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                            <input id="f_q" type="search" name="filter[q]" value="{{ $filters['q'] ?? '' }}" dir="auto" autocomplete="off" placeholder="Party, reference, receipt no., narration, file name">
                         </div>
                     </div>
-                    <form method="GET" action="{{ route('bank-statement-entries.index') }}" class="bank-noprint flex items-center gap-2" role="search">
-                        @foreach (collect($filters)->except('q') as $key => $value)
-                            @if (is_array($value))
-                                @foreach ($value as $item)
-                                    @if (is_scalar($item) && $item !== '')<input type="hidden" name="filter[{{ $key }}][]" value="{{ $item }}">@endif
-                                @endforeach
-                            @elseif (is_scalar($value) && $value !== '')
-                                <input type="hidden" name="filter[{{ $key }}]" value="{{ $value }}">
-                            @endif
-                        @endforeach
-                        <div class="relative">
-                            <svg class="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 110-15 7.5 7.5 0 010 15z"/></svg>
-                            <input type="search" name="filter[q]" value="{{ $filters['q'] ?? '' }}" dir="auto" placeholder="Search party, reference, receipt…" class="w-72 rounded-lg border-gray-300 py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-900 focus:ring-blue-900">
-                        </div>
-                        <button class="rounded-lg bg-blue-950 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-white hover:bg-blue-900">Search</button>
-                    </form>
+                    <div class="ak-field">
+                        <label for="f_bank_account_id">Account</label>
+                        <select data-placeholder="All accounts" id="f_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select">
+                            <option value="">All accounts</option>
+                            @foreach ($bankAccounts as $account)
+                                <option value="{{ $account->id }}" @selected((string) ($filters['bank_account_id'] ?? '') === (string) $account->id)>{{ $account->account_name }}@if ($account->account_number) ({{ $account->account_number }})@endif</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_direction">Money</label>
+                        <select data-placeholder="In and out" id="f_direction" name="filter[direction]" class="select2 bank-select">
+                            <option value="">In and out</option>
+                            <option value="credit" @selected(($filters['direction'] ?? '') === 'credit')>Received</option>
+                            <option value="debit" @selected(($filters['direction'] ?? '') === 'debit')>Paid out</option>
+                        </select>
+                    </div>
+                    <div class="ak-filter-buttons">
+                        <button type="button" class="ak-btn ak-btn-ghost" @click="advanced = !advanced" :aria-expanded="advanced" aria-controls="bk-advanced">
+                            More filters @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
+                        </button>
+                        <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy"><span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span></button>
+                    </div>
                 </div>
-                @if ($entries->count())
-                    <div class="bank-scroll overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="sticky top-0 z-10">
-                                <tr class="sticky top-0 z-10 bg-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-100">
-                                    <th class="bank-noprint py-2 px-2 w-8"><input type="checkbox" x-model="all" @change="toggleAll($event.target.checked)" class="rounded border-gray-300"></th>
-                                    <th class="py-2.5 px-3 text-left">Date</th>
-                                    <th class="py-2.5 px-3 text-left">Party / company</th>
-                                    <th class="py-2.5 px-3 text-left">Reference</th>
-                                    <th class="py-2.5 px-3 text-left">Category</th>
-                                    <th class="py-2.5 px-3 text-right">Paid out</th>
-                                    <th class="py-2.5 px-3 text-right">Received</th>
-                                    <th class="py-2.5 px-3 text-center">Status</th>
-                                    <th class="py-2.5 px-3 text-center" title="Attachments (a dot means no receipt yet)">Files</th>
+                <div id="bk-advanced" class="ak-filter-advanced" x-show="advanced" x-cloak x-transition style="margin-top:14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr))">
+                    <div class="ak-field"><label for="f_company_id">Company / principal</label>
+                        <select data-placeholder="All" id="f_company_id" name="filter[company_id]" class="select2 bank-select">
+                            <option value="">All</option>
+                            <option value="none" @selected(($filters['company_id'] ?? '') === 'none')>— no company —</option>
+                            @foreach ($companies as $company)<option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->supplier_name }}</option>@endforeach
+                        </select></div>
+                    <div class="ak-field"><label for="f_category_id">Category</label>
+                        <select data-placeholder="All" id="f_category_id" name="filter[category_id]" class="select2 bank-select">
+                            <option value="">All</option>
+                            <option value="none" @selected(($filters['category_id'] ?? '') === 'none')>— no category —</option>
+                            @foreach ($categories as $category)<option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>@endforeach
+                        </select></div>
+                    <div class="ak-field"><label for="f_date_from">Date from</label><input id="f_date_from" type="date" name="filter[date_from]" value="{{ $filters['date_from'] ?? '' }}"></div>
+                    <div class="ak-field"><label for="f_date_to">Date to</label><input id="f_date_to" type="date" name="filter[date_to]" value="{{ $filters['date_to'] ?? '' }}"></div>
+                    <div class="ak-field"><label for="f_amount_min">Amount from</label><input id="f_amount_min" type="number" step="0.01" min="0" name="filter[amount_min]" value="{{ $filters['amount_min'] ?? '' }}"></div>
+                    <div class="ak-field"><label for="f_amount_max">Amount to</label><input id="f_amount_max" type="number" step="0.01" min="0" name="filter[amount_max]" value="{{ $filters['amount_max'] ?? '' }}"></div>
+                    <div class="ak-field"><label for="f_reference">Reference</label><input id="f_reference" type="text" name="filter[reference]" value="{{ $filters['reference'] ?? '' }}"></div>
+                    <div class="ak-field"><label for="f_receipt_no">Receipt no.</label><input id="f_receipt_no" type="text" name="filter[receipt_no]" value="{{ $filters['receipt_no'] ?? '' }}" placeholder="BR-2026-27-…"></div>
+                    <div class="ak-field"><label for="f_has_attachment">Receipt file</label>
+                        <select data-placeholder="Any" id="f_has_attachment" name="filter[has_attachment]" class="select2 bank-select">
+                            <option value="">Any</option>
+                            <option value="yes" @selected(($filters['has_attachment'] ?? '') === 'yes')>Has attachment</option>
+                            <option value="no" @selected(($filters['has_attachment'] ?? '') === 'no')>No attachment</option>
+                        </select></div>
+                    <div class="ak-field"><label for="f_needs_review">Review flag</label>
+                        <select data-placeholder="Any" id="f_needs_review" name="filter[needs_review]" class="select2 bank-select">
+                            <option value="">Any</option>
+                            <option value="yes" @selected(($filters['needs_review'] ?? '') === 'yes')>Needs review</option>
+                            <option value="no" @selected(($filters['needs_review'] ?? '') === 'no')>Not flagged</option>
+                        </select></div>
+                    <div class="ak-field"><label for="f_submitted_by">Maker</label>
+                        <select data-placeholder="Anyone" id="f_submitted_by" name="filter[submitted_by]" class="select2 bank-select">
+                            <option value="">Anyone</option>
+                            @foreach ($users as $user)<option value="{{ $user->id }}" @selected((string) ($filters['submitted_by'] ?? '') === (string) $user->id)>{{ $user->name }}</option>@endforeach
+                        </select></div>
+                </div>
+            </form>
+
+            @if ($chips)
+                <div class="ak-chips" aria-label="Active filters">
+                    <span class="ak-chips-label">Filtered by</span>
+                    @foreach ($chips as $key => $value)
+                        <a href="{{ $withFilters(\Illuminate\Support\Arr::except($filters, $key)) }}" class="ak-chip" aria-label="Remove filter {{ $chipLabels[$key] ?? $key }}"><b>{{ $chipLabels[$key] ?? \Illuminate\Support\Str::headline($key) }}:</b> {{ $chipValue($key, $value) }} <span aria-hidden="true">×</span></a>
+                    @endforeach
+                    <a href="{{ $withFilters($tab !== '' ? ['status' => $tab] : []) }}" class="ak-chips-clear">Clear all</a>
+                </div>
+            @endif
+
+            @if ($entries->count() > 0)
+                {{-- Bulk actions: the tick boxes point at this form with form="bulk-form" (no nested forms). --}}
+                @if ($canBulk)
+                    <form id="bulk-form" method="POST" action="{{ route('bank-statement-entries.bulk-classify') }}" class="ak-bulk bank-noprint" x-show="selected.length" x-cloak>
+                        @csrf
+                        <b x-text="selected.length + ' selected'"></b>
+                        @can('bank-statement-entry-classify')
+                            <select data-placeholder="Company…" name="company_id" class="select2 bank-select" data-width="220px" aria-label="Company for the selected entries">
+                                <option value="">Company…</option>
+                                @foreach ($companies as $company)<option value="{{ $company->id }}">{{ $company->supplier_name }}</option>@endforeach
+                            </select>
+                            <select data-placeholder="Category…" name="bank_entry_category_id" class="select2 bank-select" data-width="200px" aria-label="Category for the selected entries">
+                                <option value="">Category…</option>
+                                @foreach ($categories as $category)<option value="{{ $category->id }}">{{ $category->name }}</option>@endforeach
+                            </select>
+                            <label><input type="checkbox" name="remember_alias" value="1"> Remember this party next time</label>
+                            <button type="submit" class="ak-btn ak-btn-primary ak-btn-sm">Apply</button>
+                        @endcan
+                        @can('bank-statement-entry-submit')
+                            <button type="submit" formaction="{{ route('bank-statement-entries.bulk-submit') }}" class="ak-btn ak-btn-success ak-btn-sm">Submit selected</button>
+                        @endcan
+                        <button type="button" class="ak-btn ak-btn-ghost ak-btn-sm" @click="selected = []">Clear selection</button>
+                    </form>
+                @endif
+
+                <div class="ak-table-wrap">
+                    <div class="ak-dt-toolbar">
+                        <p>
+                            <b>{{ number_format($totals->total_count) }}</b> {{ \Illuminate\Support\Str::plural('entry', $totals->total_count) }}
+                            &middot; received <b class="bk-in">{{ number_format($totals->total_in, 2) }}</b>
+                            &middot; paid out <b class="bk-out">{{ number_format($totals->total_out, 2) }}</b>
+                            &middot; net <b>{{ number_format($net, 2) }}</b>
+                        </p>
+                        @can('bank-statement-entry-classify')
+                            <form method="POST" action="{{ route('bank-statement-entries.auto-classify') }}" class="bank-noprint">@csrf
+                                <button class="ak-btn ak-btn-ghost ak-btn-sm" title="Run the aliases, rules and the cheque register over every unclassified entry">Auto-classify</button>
+                            </form>
+                        @endcan
+                    </div>
+                    <div class="ak-dt-scroll" tabindex="0" aria-label="Bank register table">
+                        <table class="ak-dt">
+                            <caption class="sr-only">Bank register, {{ $totals->total_count }} entries</caption>
+                            <thead>
+                                <tr>
+                                    @if ($canBulk)<th scope="col" class="ak-c bank-noprint"><input type="checkbox" aria-label="Select all entries on this page" :checked="allSelected()" @change="toggleAll($event.target.checked)"></th>@endif
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Party / company</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col" class="ak-num">Received</th>
+                                    <th scope="col" class="ak-num">Paid out</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" class="ak-c" title="Attachments">Files</th>
+                                    <th scope="col" class="ak-c ak-sticky-end bank-noprint"><span class="sr-only">Open</span></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($entries as $index => $entry)
-                                    <tr class="border-t border-gray-100 cursor-pointer transition hover:bg-blue-50/70 {{ $entry->needs_review ? 'bg-amber-50/80' : 'bg-white' }}"
-                                        @click="if (! $event.target.closest('input, a, button')) open('{{ route('bank-statement-entries.drawer', $entry) }}')">
-                                        <td class="bank-noprint py-2.5 px-3"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" x-model="ids" class="rounded border-gray-300"></td>
-                                        <td class="py-2.5 px-3 whitespace-nowrap tabular-nums text-gray-600">{{ $entry->posting_date->format('d-m-Y') }}</td>
-                                        <td class="py-2.5 px-3 max-w-xs">
-                                            <div class="font-semibold truncate" dir="auto">{{ $entry->company?->supplier_name ?? $entry->party_name_in_statement ?? '—' }}</div>
-                                            @if ($entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->supplier_name) !== mb_strtolower($entry->party_name_in_statement))<div class="text-xs text-gray-500 truncate" dir="auto">{{ $entry->party_name_in_statement }}</div>@endif
+                                @foreach ($entries as $entry)
+                                    <tr class="bk-link-row" data-entry="{{ route('bank-statement-entries.drawer', $entry) }}">
+                                        @if ($canBulk)<td class="ak-c bank-noprint" data-label=""><input type="checkbox" name="ids[]" value="{{ $entry->id }}" form="bulk-form" x-model="selected" aria-label="Select entry {{ $entry->id }}"></td>@endif
+                                        <td class="ak-mono" data-label="Date">{{ $entry->posting_date->format('d-m-Y') }}</td>
+                                        <td data-label="Party">
+                                            <a href="{{ route('bank-statement-entries.show', $entry) }}" data-entry="{{ route('bank-statement-entries.drawer', $entry) }}" class="ak-primary-link" dir="auto">{{ $entry->company?->supplier_name ?? $entry->party_name_in_statement ?? '—' }}</a>
+                                            <div class="ak-muted" dir="auto">
+                                                @if ($entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->supplier_name) !== mb_strtolower($entry->party_name_in_statement)){{ $entry->party_name_in_statement }} · @endif
+                                                {{ $entry->reference }}@if ($entry->receipt_no) · <b>{{ $entry->receipt_no }}</b>@endif
+                                            </div>
                                         </td>
-                                        <td class="py-2.5 px-3 text-xs text-gray-600 whitespace-nowrap">{{ $entry->reference }}@if ($entry->receipt_no)<div class="text-emerald-700 font-semibold">{{ $entry->receipt_no }}</div>@endif</td>
-                                        <td class="py-2.5 px-3">{{ $entry->category?->name ?? '—' }}</td>
-                                        <td class="py-2.5 px-3 text-right font-medium tabular-nums text-red-700">@if ((float) $entry->debit > 0)<x-bank.money :value="$entry->debit" />@endif</td>
-                                        <td class="py-2.5 px-3 text-right font-medium tabular-nums text-emerald-700">@if ((float) $entry->credit > 0)<x-bank.money :value="$entry->credit" />@endif</td>
-                                        <td class="py-2.5 px-3 text-center"><x-bank.status-badge :status="$entry->status" />@if ($entry->needs_review)<div class="text-[10px] text-orange-700 font-semibold">REVIEW</div>@endif</td>
-                                        <td class="py-2.5 px-3 text-center text-xs text-gray-500">
-                                            @if ($entry->attachments_count)
-                                                <span class="inline-flex items-center gap-0.5" title="{{ $entry->attachments_count }} file(s) attached"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.4 11.1l-7.2 7.2a4.5 4.5 0 01-6.4-6.4l7.2-7.2a3 3 0 014.2 4.2l-7.2 7.2a1.5 1.5 0 01-2.1-2.1l6.7-6.7"/></svg>{{ $entry->attachments_count }}</span>
-                                            @elseif (in_array($entry->status, ['classified', 'pending_approval', 'posted'], true))
-                                                <span class="inline-block h-2 w-2 rounded-full bg-amber-400" title="No receipt attached yet"></span>
-                                            @endif
+                                        <td data-label="Category">{{ $entry->category?->name ?? '—' }}</td>
+                                        <td class="ak-num bk-in" data-label="Received">@if ((float) $entry->credit > 0){{ number_format($entry->credit, 2) }}@endif</td>
+                                        <td class="ak-num bk-out" data-label="Paid out">@if ((float) $entry->debit > 0){{ number_format($entry->debit, 2) }}@endif</td>
+                                        <td data-label="Status">
+                                            <x-bank.status-badge :status="$entry->status" />
+                                            @if ($entry->needs_review)<div class="ak-muted"><b>Review</b></div>@endif
+                                        </td>
+                                        <td class="ak-c" data-label="Files">
+                                            @if ($entry->attachments_count)<span title="{{ $entry->attachments_count }} file(s) attached">{{ $entry->attachments_count }}</span>
+                                            @elseif (in_array($entry->status, ['classified', 'pending_approval', 'posted'], true))<span class="ak-muted" title="No receipt attached yet">none</span>@endif
+                                        </td>
+                                        <td class="ak-sticky-end bank-noprint" data-label="">
+                                            <div class="ak-actions">
+                                                <a href="{{ route('bank-statement-entries.show', $entry) }}" data-entry="{{ route('bank-statement-entries.drawer', $entry) }}" class="ak-icon ak-icon-view" title="View transaction" aria-label="View transaction {{ $entry->id }}">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12s-3.75 6.75-9.75 6.75S2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14.75a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5Z" /></svg>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
-                    @if ($entries->hasPages())<div class="px-2 py-2">{{ $entries->links() }}</div>@endif
-                @else
-                    <p class="text-center text-gray-700 py-10">No entries match. @can('bank-statement-entry-create')<a href="{{ route('bank-statement-entries.create') }}" class="text-blue-700 hover:underline">Add an entry</a> or @endcan @can('bank-statement-import-create')<a href="{{ route('bank-statement-imports.create') }}" class="text-blue-700 hover:underline">Import a statement</a>@endcan</p>
-                @endif
-            </div>
-        </form>
+                </div>
 
-        {{-- Side drawer --}}
-        <div x-show="drawer" x-cloak class="bank-noprint fixed inset-0 z-40 flex justify-end" aria-modal="true">
-            <div class="absolute inset-0 bg-black/40" @click="drawer = false"></div>
-            <aside class="relative w-full max-w-xl bg-white shadow-2xl overflow-y-auto" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
-                <button type="button" @click="drawer = false" class="absolute end-3 top-3 z-10 rounded-full bg-gray-100 px-2.5 py-1 text-sm hover:bg-gray-200" aria-label="Close">✕</button>
-                <div x-show="loading" class="p-10 text-center text-gray-500">Loading…</div>
-                <div x-html="html"></div>
-            </aside>
-        </div>
+                <div class="ak-pager">
+                    <p>Showing <b>{{ number_format($entries->firstItem()) }}–{{ number_format($entries->lastItem()) }}</b> of <b>{{ number_format($entries->total()) }}</b> entries</p>
+                    <div class="ak-pager-right"><div>{{ $entries->onEachSide(1)->links() }}</div></div>
+                </div>
+            @else
+                <div class="ak-empty">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                    @if ($filters)
+                        <h2>No entries match these filters</h2>
+                        <p>Remove a filter or search with part of a name or reference.</p>
+                        <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-primary">Clear all filters</a>
+                    @else
+                        <h2>No entries yet</h2>
+                        <p>Add today's first entry, import a statement, or scan a receipt.</p>
+                        @can('bank-statement-entry-create')<a href="{{ route('bank-statement-entries.create') }}" class="ak-btn ak-btn-primary">＋ Add entry</a>@endcan
+                    @endif
+                </div>
+            @endif
+        </section>
     </div>
+
+    @push('scripts')
+        <script>
+            function bankRegister() {
+                return {
+                    selected: [],
+                    pageIds: {{ \Illuminate\Support\Js::from($pageIds) }},
+                    allSelected() { return this.pageIds.length > 0 && this.pageIds.every((id) => this.selected.includes(id)); },
+                    toggleAll(on) { this.selected = on ? [...this.pageIds] : []; },
+                };
+            }
+        </script>
+    @endpush
 </x-app-layout>

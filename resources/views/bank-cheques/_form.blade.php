@@ -45,7 +45,7 @@
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
     <div>
         <x-label for="company_id" value="Company / principal" />
-        <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+        <select data-placeholder="—" id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
             <option value="">—</option>
             @foreach ($companies as $company)
                 <option value="{{ $company->id }}" @selected((int) old('company_id', $cheque?->company_id) === $company->id)>{{ $company->supplier_name }}</option>

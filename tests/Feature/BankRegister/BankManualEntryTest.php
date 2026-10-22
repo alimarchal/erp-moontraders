@@ -34,7 +34,7 @@ beforeEach(function () {
 test('the add-entry form renders with money toggle, amount and the three save buttons', function () {
     $this->get(route('bank-statement-entries.create'))
         ->assertOk()
-        ->assertSee('Add Bank Entry')
+        ->assertSee('Add entry')
         ->assertSee('Received')
         ->assertSee('Paid out')
         ->assertSee('Save &amp; add another', false)

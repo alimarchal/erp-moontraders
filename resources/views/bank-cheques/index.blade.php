@@ -16,7 +16,7 @@
             </div>
             <div>
                 <x-label for="filter_bank_account_id" value="Bank account" />
-                <select id="filter_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="All" id="filter_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($bankAccounts as $account)
                         <option value="{{ $account->id }}" @selected((string) request('filter.bank_account_id') === (string) $account->id)>{{ $account->account_name }}</option>
@@ -25,7 +25,7 @@
             </div>
             <div>
                 <x-label for="filter_direction" value="Direction" />
-                <select id="filter_direction" name="filter[direction]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="All" id="filter_direction" name="filter[direction]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach (\App\Models\BankCheque::DIRECTIONS as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.direction') === $value)>{{ $label }}</option>
@@ -34,7 +34,7 @@
             </div>
             <div>
                 <x-label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="All" id="filter_status" name="filter[status]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach (\App\Models\BankCheque::STATUSES as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.status') === $value)>{{ $label }}</option>

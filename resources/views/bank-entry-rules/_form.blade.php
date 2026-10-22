@@ -39,7 +39,7 @@
     </div>
     <div class="md:col-span-2">
         <x-label for="bank_entry_category_id" value="Then set category" :required="true" />
-        <select id="bank_entry_category_id" name="bank_entry_category_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
+        <select data-placeholder="Choose…" id="bank_entry_category_id" name="bank_entry_category_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full" required>
             <option value="">Choose…</option>
             @foreach ($categories as $category)
                 <option value="{{ $category->id }}" @selected((int) old('bank_entry_category_id', $rule?->bank_entry_category_id) === $category->id)>{{ $category->name }}</option>
@@ -54,7 +54,7 @@
 
 <div class="mt-4">
     <x-label for="company_id" value="And set company (optional)" />
-    <select id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+    <select data-placeholder="Leave company as it is" id="company_id" name="company_id" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
         <option value="">Leave company as it is</option>
         @foreach ($companies as $company)
             <option value="{{ $company->id }}" @selected((int) old('company_id', $rule?->company_id) === $company->id)>{{ $company->supplier_name }}</option>

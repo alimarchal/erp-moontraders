@@ -30,7 +30,7 @@
                 @if ($uses('bank_account_id'))
                     <div>
                         <x-label for="r_bank" value="Bank account" />
-                        <select data-width="230px" id="r_bank" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-placeholder="All" data-width="230px" id="r_bank" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="">All</option>
                             @foreach ($bankAccounts as $account)<option value="{{ $account->id }}" @selected((string) ($filters['bank_account_id'] ?? '') === (string) $account->id)>{{ $account->account_name }}</option>@endforeach
                         </select>
@@ -39,7 +39,7 @@
                 @if ($uses('company_id'))
                     <div>
                         <x-label for="r_company" value="Company" />
-                        <select data-width="230px" id="r_company" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-placeholder="Choose…" data-width="230px" id="r_company" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="">Choose…</option>
                             @foreach ($companies as $company)<option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->supplier_name }}</option>@endforeach
                         </select>
@@ -48,7 +48,7 @@
                 @if ($uses('reconciliation_id'))
                     <div>
                         <x-label for="r_rec" value="Reconciliation" />
-                        <select data-width="230px" id="r_rec" name="filter[reconciliation_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
+                        <select data-placeholder="Choose…" data-width="230px" id="r_rec" name="filter[reconciliation_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1">
                             <option value="">Choose…</option>
                             @foreach ($reconciliations as $reconciliation)<option value="{{ $reconciliation->id }}" @selected((string) ($filters['reconciliation_id'] ?? '') === (string) $reconciliation->id)>{{ $reconciliation->bankAccount->account_name }} · {{ $reconciliation->period_from->format('d-m-Y') }} → {{ $reconciliation->period_to->format('d-m-Y') }}</option>@endforeach
                         </select>

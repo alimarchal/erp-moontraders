@@ -20,7 +20,7 @@
             </div>
             <div>
                 <x-label for="filter_company_id" value="Company" />
-                <select id="filter_company_id" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+                <select data-placeholder="All" id="filter_company_id" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($companies as $company)
                         <option value="{{ $company->id }}" @selected((string) request('filter.company_id') === (string) $company->id)>{{ $company->supplier_name }}</option>

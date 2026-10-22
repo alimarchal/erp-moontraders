@@ -170,22 +170,23 @@
 
         <section id="register">
             <h2>۴۔ رجسٹر اور تلاش</h2>
-            <p>ہر صفحے کے اوپر ایک پٹی ہے: <span class="en">Register · Approvals · Receipt scans · Reconciliation · Reports · Ledger accounts · Categories &amp; rules</span>۔ موجودہ صفحہ گہرے نیلے رنگ میں ہوتا ہے، اور <span class="en">Approvals</span> / <span class="en">Receipt scans</span> کے ساتھ باقی کام کی گنتی۔ وہی حصے نظر آتے ہیں جن کی آپ کو اجازت ہے۔</p>
-            <p><b>رجسٹر کی اسکرین:</b> اوپر چار خانے کام کا راستہ دکھاتے ہیں: ۱ درجہ بندی باقی ← ۲ منظوری کے انتظار میں ← ۳ پوسٹ شدہ ← ۴ ریکنسائل شدہ۔ ہر خانے میں تعداد اور رقم ہے؛ اس پر کلک کریں تو اسی حالت کی انٹریاں کھلتی ہیں، دوبارہ کلک کریں تو فلٹر ہٹ جاتا ہے۔ ٹیبل کے اوپر موجودہ فلٹر کے کل: انٹریاں، وصولی، ادائیگی اور نیٹ، اور فوری <span class="en">Search</span> کا خانہ۔ ٹیبل کی عنوان کی قطار نیچے سکرول کرنے پر بھی اوپر رہتی ہے۔ <b>Files</b> کے خانے میں 📎 کے ساتھ فائلوں کی گنتی ہے، اور <b>پیلا نقطہ</b> کا مطلب ہے کہ اس انٹری کی رسید ابھی نہیں لگی۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/34-subnav.jpg') }}" alt="اوپر کی پٹی" loading="lazy"><figcaption>ہر صفحے پر اوپر کی پٹی</figcaption></figure>
-            <p>رجسٹر کی سکرین پر سب سے اوپر چار ڈبے ہیں: <b>درجہ بندی باقی</b>، <b>منظوری کے انتظار میں</b>، <b>پوسٹ مگر ریکنسائل نہیں</b>، اور <b>ریکنسائل</b>۔ ہر ڈبے پر کلک کریں تو صرف وہی انٹریاں دکھتی ہیں۔ ان کے نیچے حالت کی گولیاں (<span class="en">chips</span>) ہیں جن پر تعداد اور رقم لکھی ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/01-register.jpg') }}" alt="رجسٹر" loading="lazy"><figcaption>رجسٹر: ڈبے، حالت کی گولیاں اور انٹریوں کی فہرست</figcaption></figure>
-            <h3>تلاش کے فلٹر</h3>
-            <p><span class="en">Filters</span> بٹن دبائیں۔ آپ ان سے تلاش کر سکتے ہیں:</p>
+            <p>رجسٹر کا ڈیزائن <span class="en">Settings › Users</span> جیسا ہے: اوپر عنوان اور بٹن، پھر چار خانے، حالت کے ٹیب، تلاش، اور نیچے ٹیبل۔ ہر صفحے کے اوپر ایک پٹی ہے: <span class="en">Register · Approvals · Receipt scans · Reconciliation · Reports · Ledger accounts · Categories &amp; rules</span>۔ موجودہ صفحہ گہرے نیلے رنگ میں ہوتا ہے، اور <span class="en">Approvals</span> / <span class="en">Receipt scans</span> کے ساتھ باقی کام کی گنتی۔ وہی حصے نظر آتے ہیں جن کی آپ کو اجازت ہے۔</p>
+            <figure><img src="{{ asset('icons-images/bank-register-help/34-section-bar.jpg') }}" alt="اوپر کی پٹی" loading="lazy"><figcaption>ہر صفحے پر اوپر کی پٹی</figcaption></figure>
+            <h3>چار خانے</h3>
+            <p>سب سے اوپر چار خانے ہیں: <b>درجہ بندی باقی</b>، <b>منظوری کے انتظار میں</b>، <b>پوسٹ شدہ</b>، اور <b>رسید نہیں</b>۔ ہر خانے میں تعداد اور رقم ہے۔ خانے پر کلک کریں تو صرف وہی انٹریاں کھلتی ہیں؛ دوبارہ کلک کریں تو فلٹر ہٹ جاتا ہے۔ <b>رسید نہیں</b> والے خانے پر نارنجی لکھائی کا مطلب ہے کہ کچھ انٹریوں کی رسید باقی ہے۔</p>
+            <figure><img src="{{ asset('icons-images/bank-register-help/01-register.jpg') }}" alt="رجسٹر" loading="lazy"><figcaption>رجسٹر: چار خانے، حالت کے ٹیب، تلاش اور انٹریاں</figcaption></figure>
+            <h3>ٹیب، تلاش اور فلٹر</h3>
             <ul>
-                <li>کوئی بھی لفظ: پارٹی، نریشن، ریفرنس، رسید نمبر، نوٹ، یا اٹیچمنٹ کا نام (اردو بھی چلتی ہے)</li>
-                <li>تاریخ سے تاریخ تک، بینک اکاؤنٹ، <b>کمپنی</b>، کیٹیگری</li>
-                <li>رقم سے رقم تک، جمع یا نکلوائی، چیک نمبر، رسید نمبر</li>
-                <li>اٹیچمنٹ ہے یا نہیں، جائزے کا نشان، کس میکر نے بھیجی</li>
+                <li><b>ٹیب:</b> سب / درجہ بندی باقی / منظوری کے انتظار میں / مسترد / پوسٹ شدہ / ریکنسائل، ہر ایک کے ساتھ تعداد۔</li>
+                <li><b>تلاش کا خانہ:</b> کوئی بھی لفظ لکھیں: پارٹی، نریشن، ریفرنس، رسید نمبر، نوٹ یا اٹیچمنٹ کا نام (اردو بھی چلتی ہے)۔ ساتھ بینک اکاؤنٹ اور رقم کی سمت (جمع / نکلوائی) چن سکتے ہیں۔</li>
+                <li><b>More filters:</b> کمپنی، کیٹیگری، تاریخ سے تاریخ تک، رقم سے رقم تک، ریفرنس، رسید نمبر، رسید ہے یا نہیں، جائزے کا نشان، اور کس میکر نے بھیجی۔</li>
+                <li><b>فلٹر کی گولیاں:</b> جو فلٹر لگا ہو وہ گولی کی شکل میں نظر آتا ہے؛ × سے ہٹا دیں، یا <span class="en">Clear all</span>۔</li>
+                <li>ٹیبل کے اوپر موجودہ فلٹر کے کل: انٹریاں، وصولی، ادائیگی اور نیٹ۔ <span class="en">Export</span> سے یہی انٹریاں ایکسل میں آ جاتی ہیں۔</li>
             </ul>
-            <figure><img src="{{ asset('icons-images/bank-register-help/02-filters.jpg') }}" alt="فلٹر" loading="lazy"><figcaption>فلٹر کا خانہ</figcaption></figure>
-            <p>کسی بھی قطار پر کلک کریں تو دائیں طرف <b>تفصیل کی پٹی</b> کھلتی ہے جس میں انٹری کی ہر بات، منظوریاں، اٹیچمنٹ اور تاریخچہ ہے۔ <span class="en">Esc</span> سے بند ہوتی ہے۔ <span class="en">Export</span> سے موجودہ فلٹر والی انٹریاں ایکسل میں آ جاتی ہیں۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/03-drawer.jpg') }}" alt="تفصیل کی پٹی" loading="lazy"><figcaption>تفصیل کی پٹی</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/02-filters.jpg') }}" alt="فلٹر" loading="lazy"><figcaption>تلاش اور More filters</figcaption></figure>
+            <h3>کسی بھی ٹرانزیکشن کو دیکھنا: پاپ اپ</h3>
+            <p>کسی بھی قطار پر کلک کریں (یا آنکھ کے نشان پر) تو ٹرانزیکشن <b>پاپ اپ</b> میں کھلتی ہے، بالکل ویسے جیسے یوزر ڈیلیٹ کرتے وقت پاپ اپ آتا ہے۔ اس میں رقم، پارٹی، کمپنی، کیٹیگری، منظوری کی کہانی، رسیدیں اور تاریخچہ ہے، اور نیچے بٹن: <span class="en">Edit / classify</span>، <span class="en">Post now / Submit for approval</span>، <span class="en">Approve</span>، <span class="en">Flag for review</span>۔ ریورس اور مسترد کے لیے وجہ لکھنی پڑتی ہے۔ <span class="en">Esc</span> یا <span class="en">Close</span> سے بند ہوتا ہے۔ یہی پاپ اپ منظوری، ریکنسائلیشن اور اسکین ان باکس سے بھی کھلتا ہے۔ ضرورت ہو تو پاپ اپ کے <span class="en">Print</span> سے صرف وہی ٹرانزیکشن چھپتی ہے۔</p>
+            <figure><img src="{{ asset('icons-images/bank-register-help/03-transaction-modal.jpg') }}" alt="ٹرانزیکشن کا پاپ اپ" loading="lazy"><figcaption>ٹرانزیکشن پاپ اپ میں</figcaption></figure>
         </section>
 
         <section id="classify">
@@ -193,12 +194,12 @@
             <div class="tip"><b>کمپنی</b> سے مراد پرنسپل / سپلائر (مثلاً یونی لیور، ڈالڈا، اینگرو) ہے۔ فہرست سسٹم کی <span class="en">Suppliers</span> سے آتی ہے، اس لیے وہی نام ہر جگہ چلتا ہے۔ ہر <b>ڈراپ ڈاؤن</b> میں تلاش کا خانہ ہے: ڈبے پر کلک کریں، چند حروف ٹائپ کریں، اور نتیجے پر کلک کریں۔ خانہ خالی کرنے کے لیے ✕ دبائیں۔</div>
             <figure><img src="{{ asset('icons-images/bank-register-help/31-select2-dropdown.jpg') }}" alt="ڈراپ ڈاؤن میں تلاش" loading="lazy"><figcaption>ڈراپ ڈاؤن میں ٹائپ کر کے تلاش</figcaption></figure>
             <h3>ایک ایک کر کے</h3>
-            <p>تفصیل کی پٹی میں <span class="en">Edit / classify</span> دبائیں، کمپنی اور کیٹیگری چنیں، چاہیں تو نوٹ لکھیں اور <span class="en">Save</span> دبائیں۔ کیٹیگری لگتے ہی انٹری <span class="badge b-blue">Classified</span> ہو جاتی ہے۔</p>
+            <p>ٹرانزیکشن کے پاپ اپ میں <span class="en">Edit / classify</span> دبائیں، کمپنی اور کیٹیگری چنیں، چاہیں تو نوٹ لکھیں اور <span class="en">Save</span> دبائیں۔ کیٹیگری لگتے ہی انٹری <span class="badge b-blue">Classified</span> ہو جاتی ہے۔</p>
             <figure><img src="{{ asset('icons-images/bank-register-help/07-edit-entry.jpg') }}" alt="انٹری کی درجہ بندی" loading="lazy"><figcaption>انٹری کی درجہ بندی</figcaption></figure>
             <h3>بہت سی انٹریاں ایک ساتھ</h3>
             <ol>
                 <li>بائیں طرف کے خانوں میں ٹک لگائیں (سب کے لیے سب سے اوپر والا خانہ)۔</li>
-                <li>اوپر نیلی پٹی آئے گی۔ کمپنی اور/یا کیٹیگری چنیں۔</li>
+                <li>اوپر نیلی پٹی (بلک بار) آئے گی۔ کمپنی اور/یا کیٹیگری چنیں۔</li>
                 <li><span class="en">Remember for next time</span> پر ٹک لگائیں تو نظام اس پارٹی کا <b>الیاس اور رول</b> خود بنا لیتا ہے، اگلی بار یہی نام خود بخود لگ جائے گا۔</li>
                 <li><span class="en">Apply</span> دبائیں۔</li>
             </ol>
@@ -208,7 +209,7 @@
 
         <section id="attach">
             <h2>۶۔ رسید اور اٹیچمنٹ</h2>
-            <p>تفصیل کی پٹی کے نیچے <span class="en">Receipt &amp; attachments</span> میں فائل (پی ڈی ایف، تصویر، ایکسل) چنیں، قسم (<span class="en">Receipt / Cheque / Deposit slip / Statement</span>) اور وضاحت لکھ کر <span class="en">Attach</span> دبائیں۔ ایک ساتھ دس تک فائلیں لگ سکتی ہیں۔</p>
+            <p>ٹرانزیکشن کے پاپ اپ میں <span class="en">Receipt &amp; attachments</span> میں فائل (پی ڈی ایف، تصویر، ایکسل) چنیں، قسم (<span class="en">Receipt / Cheque / Deposit slip / Statement</span>) اور وضاحت لکھ کر <span class="en">Attach</span> دبائیں۔ ایک ساتھ دس تک فائلیں لگ سکتی ہیں۔</p>
             <figure><img src="{{ asset('icons-images/bank-register-help/08-attachments.jpg') }}" alt="اٹیچمنٹ" loading="lazy"><figcaption>فائلیں اور وضاحت</figcaption></figure>
             <ul>
                 <li>فائلیں نجی ہیں؛ صرف لاگ ان صارف جسے رجسٹر کی اجازت ہو وہی کھول سکتا ہے۔</li>
@@ -248,6 +249,7 @@
                 <li>بہت سی ایک ساتھ منظور کرنے کے لیے ٹک لگائیں اور <span class="en">Approve selected</span> دبائیں (ایک بار میں زیادہ سے زیادہ ۱۰۰)۔</li>
             </ol>
             <figure><img src="{{ asset('icons-images/bank-register-help/10-approvals.jpg') }}" alt="منظوری کا ان باکس" loading="lazy"><figcaption>چیکر کا ان باکس</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/35-approver-modal.jpg') }}" alt="چیکر کا پاپ اپ" loading="lazy"><figcaption>انٹری کے نام پر کلک کریں تو پاپ اپ میں ساری تفصیل اور رسیدیں کھلتی ہیں؛ فیصلہ وہیں سے ہو سکتا ہے</figcaption></figure>
             <div class="tip">اپنی بھیجی ہوئی انٹری کے سامنے بٹن نہیں آتے؛ وہاں لکھا ہوتا ہے کہ کوئی اور منظور کرے گا۔</div>
         </section>
 
@@ -286,7 +288,7 @@
                 <li>وجہ لکھ کر <span class="en">Reverse</span> دبائیں (صرف چیکر / جس کے پاس <span class="en">reverse</span> کی اجازت ہو)۔</li>
                 <li>نظام الٹی جرنل انٹری پوسٹ کر دیتا ہے اور انٹری <span class="badge b-purple">Reversed</span> ہو جاتی ہے۔ اب اسے درست کر کے دوبارہ بھیجا جا سکتا ہے؛ رسید نمبر وہی رہتا ہے۔</li>
             </ol>
-            <p>ریکنسائل شدہ انٹری ریورس نہیں ہو سکتی؛ پہلے ریکنسیلی ایشن واپس کرنی ہوگی۔ ہر قدم تفصیل کی پٹی کی <span class="en">History</span> میں لکھا جاتا ہے۔</p>
+            <p>ریکنسائل شدہ انٹری ریورس نہیں ہو سکتی؛ پہلے ریکنسیلی ایشن واپس کرنی ہوگی۔ ہر قدم ٹرانزیکشن پاپ اپ کی <span class="en">History</span> میں لکھا جاتا ہے۔</p>
         </section>
 
         <section id="recon">
@@ -349,16 +351,18 @@
         </section>
 
         <section id="print">
-            <h2>۱۴۔ پرنٹ کرنا</h2>
-            <p>ہر صفحہ براؤزر کے <span class="en">Print</span> (<span class="en">Ctrl + P</span>) سے صاف کاغذ پر چھپتا ہے: مینو، بٹن، فلٹر اور ٹِک باکس خود چھپنے سے ہٹ جاتے ہیں، اوپر کمپنی کا نام، رپورٹ کا عنوان، پرنٹ کی تاریخ اور پرنٹ کرنے والے کا نام آ جاتا ہے، ٹیبل پورے صفحے پر اور ہر صفحے پر عنوان کی قطار دوبارہ آتی ہے، اور صفحہ <span class="en">A4 Landscape</span> میں سیٹ ہوتا ہے۔</p>
+            <h2>۱۴۔ پرنٹ کرنا (لیزر پرنٹر، سیاہ و سفید)</h2>
+            <p>ہر صفحے کا <span class="en">Print</span> بٹن، یا <span class="en">Ctrl + P</span>۔ پرنٹ <b>سیاہ و سفید لیزر پرنٹر</b> کے حساب سے بنا ہے: کوئی رنگ نہیں، صرف سیاہ لکھائی اور لکیریں؛ حالت (جیسے <span class="en">Posted</span>) رنگ کی جگہ خانے میں لکھی آتی ہے۔ <b>صرف رسیدیں اور اٹیچ کی ہوئی تصویریں اپنے اصل رنگ میں</b> چھپتی ہیں۔</p>
             <ul>
+                <li>مینو، بٹن، فلٹر اور ٹِک باکس خود ہٹ جاتے ہیں۔ اوپر کمپنی کا نام، رپورٹ کا عنوان، فلٹر، پرنٹ کی تاریخ اور پرنٹ کرنے والے کا نام آتا ہے۔</li>
+                <li>صفحہ <span class="en">A4 Landscape</span> ہے؛ ٹیبل پورے صفحے پر، ہر صفحے پر عنوان کی قطار دوبارہ آتی ہے، اور ایک قطار دو صفحوں میں نہیں ٹوٹتی۔</li>
                 <li><b>رجسٹر:</b> فلٹر لگا کر پرنٹ کریں تو وہی انٹریاں چھپتی ہیں جو اسکرین پر ہیں۔</li>
-                <li><b>ایک انٹری:</b> انٹری کھول کر پرنٹ کریں؛ رسید نمبر، جرنل، منظوری اور ہسٹری سب شامل ہوتے ہیں۔</li>
-                <li><b>رپورٹس:</b> ہر رپورٹ میں <span class="en">Excel</span> اور <span class="en">PDF</span> کے بٹن ہیں؛ سادہ پرنٹ کے لیے براؤزر کا پرنٹ بھی چلتا ہے۔</li>
+                <li><b>ایک ٹرانزیکشن:</b> پاپ اپ یا ٹرانزیکشن کے صفحے سے پرنٹ کریں؛ رسید نمبر، جرنل، منظوری، رسیدوں کی فہرست اور تاریخچہ سب شامل ہوتے ہیں۔</li>
+                <li><b>رپورٹس:</b> ہر رپورٹ میں <span class="en">Excel</span> اور <span class="en">PDF</span> کے بٹن بھی ہیں۔</li>
                 <li><b>یہ رہنمائی:</b> اوپر کے <span class="en">🖨 پرنٹ کریں</span> سے پوری گائیڈ چھپتی ہے۔</li>
             </ul>
-            <figure><img src="{{ asset('icons-images/bank-register-help/32-print-register.jpg') }}" alt="پرنٹ کا منظر" loading="lazy"><figcaption>رجسٹر کا پرنٹ: صاف عنوان، پورا ٹیبل، بغیر بٹن</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/33-print-entry.jpg') }}" alt="انٹری کا پرنٹ" loading="lazy"><figcaption>ایک انٹری کا پرنٹ</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/32-print-register.jpg') }}" alt="پرنٹ کا منظر" loading="lazy"><figcaption>رجسٹر کا پرنٹ: سیاہ و سفید، صاف عنوان، پورا ٹیبل</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/33-print-entry.jpg') }}" alt="ٹرانزیکشن کا پرنٹ" loading="lazy"><figcaption>ایک ٹرانزیکشن کا پرنٹ</figcaption></figure>
         </section>
 
         <section id="faq">

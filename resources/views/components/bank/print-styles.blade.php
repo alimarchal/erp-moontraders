@@ -51,6 +51,7 @@
         .bk-amount { font-size: 22px; }
         .ak-status, .ak-pill { border: 1px solid #000; padding: 0 5px !important; font-weight: 700; }
         .ak-kpis { display: none !important; }
+        .ak-muted { font-size: 10px !important; color: #222 !important; }
         .ak-card, .uf-card { border: 0 !important; }
         .ak-dt tbody tr:nth-child(even) td { background: #f3f3f3 !important; }
         .select2-selection__arrow, .select2-selection__clear { display: none !important; }

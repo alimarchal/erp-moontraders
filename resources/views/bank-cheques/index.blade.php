@@ -2,14 +2,14 @@
     <x-slot name="header">
         <x-bank.head title="Bank Cheque Register" :crumbs="['Cheque register' => null]">
             @can('bank-cheque-create')
-                <a href="{{ route('bank-cheques.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add Cheque</a>
+                <a href="{{ route('bank-cheques.create') }}" class="ak-btn ak-btn-primary" title="Add Cheque" aria-label="Add Cheque"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg></a>
             @endcan
             <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
         </x-bank.head>
     </x-slot>
 
     <x-bank.print-styles />
-    <div class="ak-page">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16" style="display:flex;flex-direction:column;gap:20px;padding-top:16px">
         <x-bank.subnav inside />
         <x-bank.print-title title="Bank Cheque Register" />
         <x-status-message />

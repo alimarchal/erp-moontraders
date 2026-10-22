@@ -7,7 +7,7 @@
 
     <x-bank.print-styles />
 
-    <div class="ak-page" style="max-width:48rem">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16" style="display:flex;flex-direction:column;gap:20px;padding-top:16px">
         <x-status-message />
         <x-validation-errors />
         <form method="POST" action="{{ route('bank-cheques.store') }}" class="bk-stack">

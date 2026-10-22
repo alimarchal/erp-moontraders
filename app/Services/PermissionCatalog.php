@@ -35,6 +35,7 @@ class PermissionCatalog
         'Inventory Operations' => ['stock-adjustment', 'stock-transfer', 'product-recall', 'supplier-payment', 'warehouse-type', 'claim-register'],
         'Asset Management' => ['vehicle', 'warehouse'],
         'Daily Operations' => ['goods-issue', 'sales-settlement'],
+        'Bank Register' => ['bank-statement-import', 'bank-statement-entry', 'bank-reconciliation', 'bank-entry-category', 'bank-party-alias', 'bank-entry-rule', 'bank-cheque', 'bank-receipt-scan'],
     ];
 
     /**
@@ -70,6 +71,10 @@ class PermissionCatalog
             'report-audit-invoice-summary', 'report-audit-custom-settlement', 'report-sales-sku-rates',
             'report-audit-advance-tax', 'report-audit-advance-tax-sales-register', 'report-audit-advance-tax-customer-summary',
         ],
+        'Bank Register' => [
+            'report-bank-entries', 'report-bank-summary', 'report-bank-reconciliation-statement',
+            'report-bank-unlinked-scans', 'report-bank-live-gap', 'report-bank-audit-log',
+        ],
         'Sales & Revenue' => [
             'report-sales-settlement', 'report-sales-roi', 'report-sales-summary-roi', 'report-sales-scheme-discount',
         ],
@@ -88,6 +93,20 @@ class PermissionCatalog
         'permission' => 'Permissions',
         'company' => 'Companies',
         'bank-account' => 'Bank Accounts',
+        'bank-statement-import' => 'Statement Imports',
+        'bank-statement-entry' => 'Bank Statement Entries',
+        'bank-reconciliation' => 'Bank Reconciliations',
+        'bank-entry-category' => 'Bank Entry Categories',
+        'bank-party-alias' => 'Party Aliases',
+        'bank-entry-rule' => 'Auto-classify Rules',
+        'bank-cheque' => 'Bank Cheque Register',
+        'bank-receipt-scan' => 'Receipt Scan Inbox',
+        'report-bank-entries' => 'Register Entries',
+        'report-bank-summary' => 'Register Summary',
+        'report-bank-reconciliation-statement' => 'Reconciliation Statement',
+        'report-bank-unlinked-scans' => 'Unlinked Receipt Scans',
+        'report-bank-audit-log' => 'Bank Audit Log',
+        'report-bank-live-gap' => 'Not Yet in Live Books',
         'account-type' => 'Account Types',
         'chart-of-account' => 'Chart of Accounts',
         'currency' => 'Currencies',

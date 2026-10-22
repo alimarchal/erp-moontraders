@@ -741,6 +741,30 @@
                     </section>
                 @endcanany
 
+
+
+
+                @canany(\App\Services\BankRegister\BankRegisterPermissions::REPORTS)
+                    <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Bank Register</p>
+                        <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
+                            @foreach (\App\Services\BankRegister\BankReportService::REPORTS as $bankReportSlug => $bankReport)
+                                @can($bankReport['permission'])
+                                    @unless ($loop->first)<div class="ml-[58px] h-px bg-gray-100"></div>@endunless
+                                    <x-settings-row data-settings-item data-search="{{ strtolower($bankReport['title'].' '.$bankReport['description']) }} bank register bank statement" x-bind:hidden="! matches($el)" href="{{ route('reports.bank.show', $bankReportSlug) }}" label="{{ $bankReport['title'] }}"
+                                        description="{{ \Illuminate\Support\Str::limit($bankReport['description'], 90) }}" icon-bg="bg-teal-600">
+                                        <x-slot name="icon">
+                                            <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21" />
+                                            </svg>
+                                        </x-slot>
+                                    </x-settings-row>
+                                @endcan
+                            @endforeach
+                        </div>
+                    </section>
+                @endcanany
+
                 </div>
 
                 <div x-show="query.trim() !== '' && visibleCount() === 0" x-cloak

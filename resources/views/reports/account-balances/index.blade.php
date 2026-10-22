@@ -306,7 +306,7 @@
                                 <td class="text-left whitespace-nowrap">{{ $balance->account_name }}</td>
                                 <td class="text-center whitespace-nowrap">{{ $balance->account_type }}</td>
                                 <td class="text-center whitespace-nowrap">
-                                    {{ $balance->report_group === 'BalanceSheet' ? 'Balance Sheet' : 'Income Statement' }}
+                                    {{ match ($balance->report_group) { 'BalanceSheet' => 'Balance Sheet', 'BankRegister' => 'Bank Register', default => 'Income Statement' } }}
                                 </td>
                                 <td class="text-right tabular-nums">
                                     {{ (float) $balance->total_debits > 0 ? number_format($balance->total_debits, 2) : '0.00' }}

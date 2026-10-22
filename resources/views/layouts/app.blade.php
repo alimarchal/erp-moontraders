@@ -116,11 +116,26 @@
     <script src="{{ url('select2/jquery-3.5.1.js') }}"></script>
     <script src="{{ url('select2/select2.min.js') }}" defer></script>
     <script>
+        // Initialise Select2 on selects added after page load (side drawers, loaded fragments).
+        window.initSelect2 = function (root) {
+            $(root).find('select.select2').not('.select2-hidden-accessible').select2({
+                placeholder: 'Select an option',
+                allowClear: true,
+                width: '100%',
+            });
+        };
+
         $(document).ready(function () {
             $('select.select2').select2({
                 placeholder: 'Select an option',
                 allowClear: true,
                 width: '100%',
+            });
+
+            // Select2 raises its own jQuery events; mirror them as a native change so Alpine x-model and
+            // inline onchange handlers on selects marked "bank-select" see the new value.
+            $(document).on('select2:select select2:clear', 'select.bank-select', function () {
+                this.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
             // Handle label clicks for Select2 elements

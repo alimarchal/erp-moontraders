@@ -22,29 +22,31 @@ class BankRegisterPermissions
         'bank-entry-rule' => ['list', 'create', 'edit', 'delete'],
         'bank-cheque' => ['list', 'create', 'edit', 'delete'],
         'bank-receipt-scan' => ['list', 'create', 'link', 'delete'],
-        'bank-ledger-account' => ['list'],
     ];
 
     /**
      * @var array<int, string>
      */
     public const REPORTS = [
-        'report-bank-company-month-summary',
-        'report-bank-category-month-summary',
-        'report-bank-company-ledger',
+        'report-bank-entries',
+        'report-bank-summary',
         'report-bank-reconciliation-statement',
-        'report-bank-unclassified',
-        'report-bank-unreconciled',
-        'report-bank-missing-attachments',
-        'report-bank-pending-approvals',
-        'report-bank-cash-flow',
-        'report-bank-charges-tax',
-        'report-bank-top-parties',
-        'report-bank-audit-log',
-        'report-bank-account-summary',
-        'report-bank-daily-book',
         'report-bank-unlinked-scans',
         'report-bank-live-gap',
+        'report-bank-audit-log',
+    ];
+
+    /**
+     * Permissions of earlier versions of this module that no longer exist; the upgrade migration removes them.
+     *
+     * @var array<int, string>
+     */
+    public const RETIRED = [
+        'bank-ledger-account-list',
+        'report-bank-company-month-summary', 'report-bank-category-month-summary', 'report-bank-company-ledger',
+        'report-bank-unclassified', 'report-bank-unreconciled', 'report-bank-missing-attachments',
+        'report-bank-pending-approvals', 'report-bank-cash-flow', 'report-bank-charges-tax',
+        'report-bank-top-parties', 'report-bank-account-summary', 'report-bank-daily-book',
     ];
 
     /**
@@ -64,20 +66,19 @@ class BankRegisterPermissions
             'bank-entry-rule-list', 'bank-entry-rule-create', 'bank-entry-rule-edit',
             'bank-cheque-list', 'bank-cheque-create', 'bank-cheque-edit',
             'bank-receipt-scan-list', 'bank-receipt-scan-create', 'bank-receipt-scan-link',
-            'bank-ledger-account-list',
         ],
         'bank-checker' => [
             'bank-statement-entry-list', 'bank-statement-entry-approve', 'bank-statement-entry-reject',
             'bank-statement-entry-post', 'bank-statement-entry-reverse', 'bank-statement-entry-export',
             'bank-reconciliation-list', 'bank-reconciliation-create', 'bank-reconciliation-edit', 'bank-reconciliation-complete',
-            'bank-cheque-list', 'bank-receipt-scan-list', 'bank-ledger-account-list',
+            'bank-cheque-list', 'bank-receipt-scan-list',
         ],
         'bank-senior-approver' => [
             'bank-statement-entry-list', 'bank-statement-entry-approve', 'bank-statement-entry-approve-high-value',
-            'bank-statement-entry-reject', 'bank-statement-entry-export', 'bank-receipt-scan-list', 'bank-ledger-account-list',
+            'bank-statement-entry-reject', 'bank-statement-entry-export', 'bank-receipt-scan-list',
         ],
         'auditor' => [
-            'bank-statement-entry-list', 'bank-statement-entry-export', 'bank-reconciliation-list', 'bank-cheque-list', 'bank-receipt-scan-list', 'bank-ledger-account-list',
+            'bank-statement-entry-list', 'bank-statement-entry-export', 'bank-reconciliation-list', 'bank-cheque-list', 'bank-receipt-scan-list',
         ],
     ];
 
@@ -108,8 +109,7 @@ class BankRegisterPermissions
         'bank-checker' => self::REPORTS,
         'auditor' => self::REPORTS,
         'bank-senior-approver' => [
-            'report-bank-pending-approvals', 'report-bank-audit-log', 'report-bank-company-ledger',
-            'report-bank-top-parties', 'report-bank-cash-flow', 'report-bank-account-summary',
+            'report-bank-entries', 'report-bank-summary', 'report-bank-audit-log',
         ],
     ];
 

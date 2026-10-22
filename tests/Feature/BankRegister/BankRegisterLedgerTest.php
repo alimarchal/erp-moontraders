@@ -18,7 +18,7 @@ beforeEach(function () {
     $this->fixture = bankRegisterFixture();
     config()->set('bank.maker_checker.enabled', false);
     $this->ledger = app(BankRegisterLedger::class);
-    $this->maker = bankUser(['bank-statement-entry-list', 'bank-statement-entry-submit', 'bank-statement-entry-post', 'bank-ledger-account-list'], 'Maker');
+    $this->maker = bankUser(['bank-statement-entry-list', 'bank-statement-entry-submit', 'bank-statement-entry-post'], 'Maker');
 });
 
 function postRegisterEntry(array $fixture, $maker, array $overrides = []): BankStatementEntry
@@ -118,18 +118,6 @@ test('the register accounts are kept out of the Balance Sheet and the Income Sta
 
     $this->get(route('reports.balance-sheet.index'))->assertOk()->assertDontSee('BR - Unilever')->assertDontSee('BR - HBL');
     $this->get(route('reports.income-statement.index'))->assertOk()->assertDontSee('BR - Bank Charges');
-});
-
-test('the register ledger page lists the accounts with their balances and the live-vs-register mapping', function () {
-    postRegisterEntry($this->fixture, $this->maker, ['credit' => 12000]);
-    $this->actingAs($this->maker);
-
-    $this->get(route('bank-ledger-accounts.index'))->assertOk()
-        ->assertSee('The Bank Register keeps its own books')
-        ->assertSee('Bank Register (memo accounts)')->assertSee('BR - Unilever')->assertSee('12,000.00')
-        ->assertSee($this->fixture['liveLedger']->account_code.' — '.$this->fixture['liveLedger']->account_name, false);
-
-    $this->actingAs(bankUser(['bank-statement-entry-list']))->get(route('bank-ledger-accounts.index'))->assertForbidden();
 });
 
 test('the live-gap report lists statement lines the live ledger has no entry for', function () {

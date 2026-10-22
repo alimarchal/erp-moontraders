@@ -27,16 +27,19 @@ test('category CRUD', function () {
     $this->put(route('bank-entry-categories.update', $category), ['name' => 'Office Rent', 'type' => 'payment', 'is_active' => 0])->assertRedirect();
     expect($category->fresh()->name)->toBe('Office Rent')->and($category->fresh()->is_active)->toBeFalse();
 
-    $this->delete(route('bank-entry-categories.destroy', $category))->assertRedirect();
-    expect(BankEntryCategory::where('name', 'Office Rent')->exists())->toBeFalse();
+    $category->update(['is_active' => true]);
+    $this->delete(route('bank-entry-categories.destroy', $category))->assertRedirect()->assertSessionHas('success');
+    expect($category->fresh()->is_active)->toBeFalse();
+    $this->get(route('bank-entry-categories.export', 'pdf'))->assertOk();
+    $this->get(route('bank-entry-categories.export', 'excel'))->assertOk();
 });
 
-test('category names are unique and a category in use cannot be deleted', function () {
+test('category names are unique and a category in use is deactivated, never deleted', function () {
     $this->post(route('bank-entry-categories.store'), ['name' => 'Customer Receipt', 'type' => 'both'])->assertSessionHasErrors('name');
 
     BankStatementEntry::factory()->create(['bank_entry_category_id' => $this->fixture['category']->id]);
-    $this->delete(route('bank-entry-categories.destroy', $this->fixture['category']))->assertSessionHas('error');
-    expect($this->fixture['category']->fresh())->not->toBeNull();
+    $this->delete(route('bank-entry-categories.destroy', $this->fixture['category']))->assertSessionHas('success');
+    expect($this->fixture['category']->fresh())->not->toBeNull()->and($this->fixture['category']->fresh()->is_active)->toBeFalse();
 });
 
 test('alias CRUD normalises the name and keeps it unique', function () {

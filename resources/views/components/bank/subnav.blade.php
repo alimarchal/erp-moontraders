@@ -9,8 +9,7 @@
         ['label' => 'Approvals', 'route' => 'bank-approvals.index', 'active' => ['bank-approvals.*'], 'can' => 'bank-statement-entry-approve', 'badge' => $pendingApprovals, 'badgeClass' => 'bg-amber-500'],
         ['label' => 'Receipt scans', 'route' => 'bank-receipt-scans.index', 'active' => ['bank-receipt-scans.*'], 'can' => 'bank-receipt-scan-list', 'badge' => $pendingScans, 'badgeClass' => 'bg-sky-600'],
         ['label' => 'Reconciliation', 'route' => 'bank-reconciliations.index', 'active' => ['bank-reconciliations.*'], 'can' => 'bank-reconciliation-list'],
-        ['label' => 'Reports', 'route' => 'reports.bank.index', 'active' => ['reports.bank.*'], 'canAny' => \App\Services\BankRegister\BankRegisterPermissions::REPORTS],
-        ['label' => 'Ledger accounts', 'route' => 'bank-ledger-accounts.index', 'active' => ['bank-ledger-accounts.*'], 'can' => 'bank-ledger-account-list'],
+        ['label' => 'Reports', 'route' => 'reports.index', 'active' => ['reports.bank.*'], 'canAny' => \App\Services\BankRegister\BankRegisterPermissions::REPORTS],
     ];
 @endphp
 

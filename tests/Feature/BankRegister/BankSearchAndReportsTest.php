@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Attachment;
-use App\Models\BankAccount;
 use App\Models\BankEntryCategory;
 use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
@@ -80,13 +79,13 @@ test('the status summary counts and adds up per status', function () {
         ->and($summary['unclassified']['amount'])->toBe(2070000.0);
 });
 
-test('company month summary pivots by month and compares with the statement control total', function () {
+test('company by month pivots by month and compares with the statement control total', function () {
     BankStatementImport::create([
         'bank_account_id' => $this->fixture['bank']->id, 'file_name' => 'x.xlsx', 'status' => 'imported',
         'control_total_credit' => 570000, 'control_total_debit' => 1500000,
     ]);
 
-    $report = app(BankReportService::class)->build('company-month-summary', ['bank_account_id' => $this->fixture['bank']->id, 'type' => 'credit']);
+    $report = app(BankReportService::class)->build('summary', ['group_by' => 'company_month', 'bank_account_id' => $this->fixture['bank']->id, 'direction' => 'credit']);
 
     expect($report['headings'])->toBe(['Party / company', 'Entries', 'Total (PKR)', 'Jul-24', 'Aug-24'])
         ->and($report['rows'])->toHaveCount(2)
@@ -96,27 +95,37 @@ test('company month summary pivots by month and compares with the statement cont
         ->and($report['notes'][0])->toContain('Difference: 0.00');
 });
 
-test('category month summary and cash flow add up', function () {
+test('the summary groups by category, account and month and adds up', function () {
     $service = app(BankReportService::class);
 
-    $byCategory = $service->build('category-month-summary', ['type' => 'debit']);
-    expect($byCategory['rows'][0][0])->toBe('Bank Charges')->and($byCategory['totals'][2])->toBe(1500000.0);
+    $byCategory = $service->build('summary', ['group_by' => 'category']);
+    expect($byCategory['totals'][2])->toBe(570000.0)->and($byCategory['totals'][3])->toBe(1500000.0)->and($byCategory['totals'][4])->toBe(-930000.0);
 
-    $flow = $service->build('cash-flow', []);
-    expect($flow['totals'][2])->toBe(570000.0)->and($flow['totals'][3])->toBe(1500000.0)->and($flow['totals'][4])->toBe(-930000.0);
+    $byAccount = $service->build('summary', ['group_by' => 'account']);
+    expect($byAccount['rows'])->toHaveCount(1)->and($byAccount['totals'][1])->toBe(3);
+
+    $byMonth = $service->build('summary', ['group_by' => 'month', 'direction' => 'credit']);
+    expect($byMonth['rows'][0][0])->toBe('Jul 2024')->and($byMonth['totals'][2])->toBe(570000.0)->and($byMonth['totals'][3])->toBe(0.0);
 });
 
-test('company ledger runs a balance', function () {
-    $report = app(BankReportService::class)->build('company-ledger', ['company_id' => $this->unilever->id]);
+test('the entries report filters by company, receipt and status and runs a balance for one company', function () {
+    $service = app(BankReportService::class);
 
-    expect($report['rows'])->toHaveCount(1)->and($report['rows'][0][5])->toBe(500000.0);
+    $ledger = $service->build('entries', ['company_id' => $this->unilever->id]);
+    expect($ledger['rows'])->toHaveCount(1)->and($ledger['headings'])->toContain('Balance')->and($ledger['rows'][0][8])->toBe(500000.0);
+
+    $all = $service->build('entries', []);
+    expect($all['rows'])->toHaveCount(3)->and($all['headings'])->not->toContain('Balance');
+
+    $noReceipt = $service->build('entries', ['receipt' => 'without', 'status' => 'unclassified', 'sort' => 'amount']);
+    expect($noReceipt['rows'])->not->toBeEmpty()->and($noReceipt['rows'][0][6] + $noReceipt['rows'][0][7])->toBeGreaterThanOrEqual($noReceipt['rows'][count($noReceipt['rows']) - 1][6] + $noReceipt['rows'][count($noReceipt['rows']) - 1][7]);
 });
 
 test('every report builds and renders for a user who may see it', function () {
     $user = bankUser(array_values(array_map(fn ($r) => $r['permission'], BankReportService::REPORTS)));
     $this->actingAs($user);
 
-    $this->get(route('reports.bank.index'))->assertOk()->assertSee('Company-wise month-wise summary');
+    $this->get(route('reports.index'))->assertOk()->assertSee('Register entries')->assertSee('Register summary');
 
     foreach (array_keys(BankReportService::REPORTS) as $slug) {
         $this->get(route('reports.bank.show', $slug))->assertOk();
@@ -125,46 +134,18 @@ test('every report builds and renders for a user who may see it', function () {
     }
 });
 
-test('the report list is refused to a user who may open none of them', function () {
+test('a user who may open none of the reports is refused', function () {
     $this->actingAs(bankUser([]));
 
-    $this->get(route('reports.bank.index'))->assertForbidden();
+    $this->get(route('reports.bank.show', 'entries'))->assertForbidden();
 });
 
 test('a report is forbidden without its permission', function () {
-    $this->actingAs(bankUser(['report-bank-cash-flow']));
+    $this->actingAs(bankUser(['report-bank-summary']));
 
-    $this->get(route('reports.bank.show', 'cash-flow'))->assertOk();
+    $this->get(route('reports.bank.show', 'summary'))->assertOk();
     $this->get(route('reports.bank.show', 'audit-log'))->assertForbidden();
     $this->get(route('reports.bank.show', 'nonsense'))->assertNotFound();
-});
-
-test('the account summary shows each account with its open work and missing receipts', function () {
-    $other = BankAccount::factory()->create(['account_name' => 'Wallet Account', 'account_number' => 'W-1']);
-    BankStatementEntry::factory()->create(['bank_account_id' => $other->id, 'posting_date' => '2024-08-01', 'credit' => 900, 'debit' => 0, 'status' => 'pending_approval']);
-    Attachment::factory()->create(['journal_entry_id' => null, 'attachable_type' => BankStatementEntry::class, 'attachable_id' => $this->e1->id]);
-
-    $report = app(BankReportService::class)->build('account-summary', []);
-    $main = collect($report['rows'])->first(fn ($row) => str_contains($row[0], $this->fixture['bank']->account_number));
-    $wallet = collect($report['rows'])->first(fn ($row) => str_contains($row[0], 'W-1'));
-
-    expect($main[1])->toBe(3)->and($main[2])->toBe(570000.0)->and($main[3])->toBe(1500000.0)->and($main[5])->toBe(3)->and($main[7])->toBe(2)
-        ->and($wallet[1])->toBe(1)->and($wallet[6])->toBe(1)->and($wallet[7])->toBe(1)
-        ->and($report['totals'][1])->toBe(4)->and($report['totals'][7])->toBe(3);
-});
-
-test('the daily book carries a closing balance from an opening balance and from earlier entries', function () {
-    $report = app(BankReportService::class)->build('daily-book', ['bank_account_id' => $this->fixture['bank']->id, 'opening_balance' => 1000000]);
-
-    expect($report['rows'][0])->toBe(['Opening balance', '', '', '', '', 1000000.0])
-        ->and($report['rows'][1])->toBe(['02-07-2024', 1, 500000.0, 0.0, 500000.0, 1500000.0])
-        ->and($report['rows'][2][5])->toBe(0.0)      // the 15 Aug payment of 1.5M takes the balance back to zero
-        ->and($report['totals'][5])->toBe(70000.0);  // then the 70,000 cash deposit of 20 Aug
-
-    $later = app(BankReportService::class)->build('daily-book', ['bank_account_id' => $this->fixture['bank']->id, 'date_from' => '2024-08-01', 'opening_balance' => 0]);
-    expect($later['rows'][0][5])->toBe(500000.0);
-
-    expect(app(BankReportService::class)->build('daily-book', [])['subtitle'])->toBe('Choose a bank account.');
 });
 
 test('the unlinked scans report lists waiting receipts oldest first', function () {

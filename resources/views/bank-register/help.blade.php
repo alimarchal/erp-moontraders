@@ -113,7 +113,7 @@
                 <li><b>انٹری بنائیں:</b> ہر رقم کے لیے <span class="en">Add entry</span> دبائیں (یا ان باکس کی رسید پر <span class="en">Create entry from this scan</span>)۔ رقم، تاریخ، پارٹی لکھیں۔ <span class="en">Save &amp; add another</span> سے اگلی انٹری فوراً کھل جاتی ہے۔</li>
                 <li><b>جب سٹیٹمنٹ آئے:</b> امپورٹ کریں۔ جو انٹریاں آپ پہلے ہاتھ سے ڈال چکے ہیں انہیں ریکنسیلی ایشن میں سٹیٹمنٹ کی لائنوں سے ملایا جاتا ہے۔</li>
                 <li><b>رسید رہ گئی ہو؟</b> رجسٹر پر پیلا بٹن <span class="en">📎 No receipt</span> ایسی تمام انٹریاں دکھاتا ہے۔</li>
-                <li><b>ہفتے کے آخر میں:</b> رپورٹ <span class="en">All accounts at a glance</span> سے ہر اکاؤنٹ کی حالت دیکھیں اور <span class="en">Scanned receipts not yet linked</span> سے وہ رسیدیں جو ابھی کسی انٹری سے نہیں جڑیں۔</li>
+                <li><b>ہفتے کے آخر میں:</b> رپورٹ <span class="en">Register summary</span> (Group by = بینک اکاؤنٹ) سے ہر اکاؤنٹ کی حالت دیکھیں اور <span class="en">Scanned receipts not yet linked</span> سے وہ رسیدیں جو ابھی کسی انٹری سے نہیں جڑیں۔</li>
             </ol>
             <div class="tip">اکاؤنٹ بینک کا ہو، کیش کا یا موبائل والٹ کا؛ <span class="en">Settings › Bank Accounts</span> میں اسے بنا لیں تو وہ رجسٹر میں اپنے بٹن کے ساتھ آ جاتا ہے۔ ہر اکاؤنٹ کا ریکارڈ، رپورٹ اور ریکنسیلی ایشن الگ ہوتا ہے۔</div>
         </section>
@@ -170,7 +170,7 @@
 
         <section id="register">
             <h2>۴۔ رجسٹر اور تلاش</h2>
-            <p>رجسٹر کا ڈیزائن <span class="en">Settings › Users</span> جیسا ہے: اوپر عنوان اور بٹن، پھر چار خانے، حالت کے ٹیب، تلاش، اور نیچے ٹیبل۔ ہر صفحے کے اوپر ایک پٹی ہے: <span class="en">Register · Approvals · Receipt scans · Reconciliation · Reports · Ledger accounts · Categories &amp; rules</span>۔ موجودہ صفحہ گہرے نیلے رنگ میں ہوتا ہے، اور <span class="en">Approvals</span> / <span class="en">Receipt scans</span> کے ساتھ باقی کام کی گنتی۔ وہی حصے نظر آتے ہیں جن کی آپ کو اجازت ہے۔</p>
+            <p>رجسٹر کا ڈیزائن <span class="en">Settings › Users</span> جیسا ہے: اوپر عنوان اور بٹن، پھر چار خانے، حالت کے ٹیب، تلاش، اور نیچے ٹیبل۔ ہر صفحے کے اوپر ایک پٹی ہے: <span class="en">Register · Approvals · Receipt scans · Reconciliation · Reports</span>۔ کیٹیگریز <span class="en">Settings › Bank Entry Categories</span> میں ہیں۔ موجودہ صفحہ گہرے نیلے رنگ میں ہوتا ہے، اور <span class="en">Approvals</span> / <span class="en">Receipt scans</span> کے ساتھ باقی کام کی گنتی۔ وہی حصے نظر آتے ہیں جن کی آپ کو اجازت ہے۔</p>
             <figure><img src="{{ asset('icons-images/bank-register-help/34-section-bar.jpg') }}" alt="اوپر کی پٹی" loading="lazy"><figcaption>ہر صفحے پر اوپر کی پٹی</figcaption></figure>
             <h3>چار خانے</h3>
             <p>سب سے اوپر چار خانے ہیں: <b>درجہ بندی باقی</b>، <b>منظوری کے انتظار میں</b>، <b>پوسٹ شدہ</b>، اور <b>رسید نہیں</b>۔ ہر خانے میں تعداد اور رقم ہے۔ خانے پر کلک کریں تو صرف وہی انٹریاں کھلتی ہیں؛ دوبارہ کلک کریں تو فلٹر ہٹ جاتا ہے۔ <b>رسید نہیں</b> والے خانے پر نارنجی لکھائی کا مطلب ہے کہ کچھ انٹریوں کی رسید باقی ہے۔</p>
@@ -215,7 +215,7 @@
                 <li>فائلیں نجی ہیں؛ صرف لاگ ان صارف جسے رجسٹر کی اجازت ہو وہی کھول سکتا ہے۔</li>
                 <li>پوسٹ ہونے پر انٹری کو <b>رسید نمبر</b> ملتا ہے: <span class="en">BR-2024-25-000001</span> (رقم آئی) یا <span class="en">BP-2024-25-000001</span> (رقم گئی)۔ مالی سال جولائی سے جون ہے۔</li>
                 <li>ریکنسائل ہو جانے کے بعد اٹیچمنٹ ہٹائی نہیں جا سکتی۔</li>
-                <li>"<span class="en">Entries without receipt / attachment</span>" رپورٹ بتاتی ہے کہ کن انٹریوں کی فائل رہ گئی ہے۔</li>
+                <li><span class="en">Register entries</span> رپورٹ میں <span class="en">Receipt = Without receipt</span> لگانے سے پتا چلتا ہے کہ کن انٹریوں کی فائل رہ گئی ہے۔</li>
             </ul>
         </section>
 
@@ -275,7 +275,6 @@
                 <tr><td>کیٹیگری نہ ہو یا کمپنی نامعلوم</td><td>بینک / نامعلوم ادائیگی</td><td>نامعلوم آمد / بینک</td></tr>
             </table>
             <p><b>بیان (narration):</b> جرنل کی تفصیل میں خود بخود لکھا جاتا ہے: رسید نمبر | کمپنی/پارٹی | بینک ریفرنس | سٹیٹمنٹ کی عبارت۔ اس سے ہر لائن کو رپورٹ میں پہچانا اور الگ نکالا جا سکتا ہے۔ جس اکاؤنٹ کی کیٹیگری یا کمپنی موجود نہ ہو وہاں انٹری رکی نہیں رہتی، سسپنس اکاؤنٹ میں جاتی ہے اور بیان اسے واضح کرتا ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/28-register-ledger-accounts.jpg') }}" alt="رجسٹر کے اکاؤنٹس" loading="lazy"><figcaption>رجسٹر کے اپنے اکاؤنٹس اور ان کے بیلنس</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/11-posted.jpg') }}" alt="پوسٹ شدہ انٹری" loading="lazy"><figcaption>پوسٹ شدہ انٹری: رسید نمبر اور جرنل انٹری کا لنک</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/30-account-balances.jpg') }}" alt="اکاؤنٹ بیلنسز" loading="lazy"><figcaption>اکاؤنٹ بیلنسز میں رجسٹر کے اکاؤنٹس الگ گروپ میں</figcaption></figure>
             <p>پوسٹ شدہ انٹری مالی ریکارڈ کا حصہ ہے؛ اسے بدلا نہیں جا سکتا، صرف ریورس کیا جا سکتا ہے۔</p>
@@ -324,30 +323,22 @@
 
         <section id="reports">
             <h2>۱۳۔ رپورٹس</h2>
-            <p><span class="en">Reports › Bank Statement Reports</span> سے کھلتی ہیں۔ ہر رپورٹ میں تاریخ، بینک اکاؤنٹ، کمپنی کا فلٹر ہے اور ایکسل / پی ڈی ایف بٹن موجود ہیں۔</p>
+            <p>بینک رجسٹر کی رپورٹس <span class="en">Reports</span> کے صفحے پر الگ گروپ <span class="en">Bank Register</span> میں ہیں۔ ہر رپورٹ <span class="en">Account Balances</span> جیسے ایک ہی انداز میں کھلتی ہے: اوپر فلٹر کا بٹن، نیچے ٹیبل، اور <span class="en">Excel</span> / <span class="en">PDF</span> / پرنٹ کے بٹن۔ بہت سی الگ رپورٹوں کے بجائے چند لچکدار رپورٹیں ہیں جن میں فلٹر بدل کر ہر مطلوبہ نتیجہ مل جاتا ہے۔</p>
             <table>
                 <tr><th>رپورٹ</th><th>کام</th></tr>
-                <tr><td><span class="en">Company-wise month-wise</span></td><td>ہر کمپنی/پارٹی کی ماہ بہ ماہ جمع یا نکلوائی؛ سٹیٹمنٹ کے کل اعداد سے فرق کے ساتھ (پرانی ایکسل کی شیٹ کی جگہ)</td></tr>
-                <tr><td><span class="en">Category-wise month-wise</span></td><td>کیٹیگری کے حساب سے ماہ بہ ماہ</td></tr>
-                <tr><td><span class="en">Company ledger</span></td><td>ایک کمپنی کا مکمل کھاتہ بیلنس کے ساتھ</td></tr>
+                <tr><td><span class="en">Register entries</span></td><td>تمام انٹریوں کی فہرست۔ فلٹر: بینک اکاؤنٹ، تاریخ، آمد / خرچ، کمپنی، کیٹیگری، حالت (<span class="en">Status</span>)، رسید ہے یا نہیں، ترتیب۔ مثلاً: <b>کمپنی چنیں</b> تو اس کا کھاتہ بیلنس کے ساتھ؛ <b>حالت = Unclassified</b> تو غیر درجہ بند؛ <b>Receipt = Without receipt</b> تو بغیر رسید؛ <b>حالت = Pending approval</b> تو منظوری کے انتظار والی؛ کیٹیگری = <span class="en">Bank Charges</span> تو بینک چارجز</td></tr>
+                <tr><td><span class="en">Register summary</span></td><td>کل رقوم کا خلاصہ۔ <span class="en">Group by</span> میں کمپنی، کیٹیگری، بینک اکاؤنٹ، مہینہ، دن، یا "کمپنی بہ ماہ" / "کیٹیگری بہ ماہ" (پرانی ایکسل شیٹ جیسا، سٹیٹمنٹ کے کل اعداد سے فرق کے ساتھ)۔ فلٹر وہی۔ ٹاپ پارٹیز، کیش فلو، روزانہ خلاصہ سب یہیں سے</td></tr>
                 <tr><td><span class="en">Reconciliation statement</span></td><td>سٹیٹمنٹ بیلنس، بقایا چیزیں، کتابی بیلنس اور فرق</td></tr>
-                <tr><td><span class="en">Unclassified / Unreconciled</span></td><td>جو انٹریاں باقی ہیں، بڑی رقم پہلے</td></tr>
-                <tr><td><span class="en">Entries without attachment</span></td><td>جن کی رسید یا فائل نہیں لگی</td></tr>
-                <tr><td><span class="en">Pending approvals</span></td><td>کتنے دن سے منظوری کے انتظار میں ہیں</td></tr>
-                <tr><td><span class="en">Cash-flow, Charges &amp; tax, Top parties</span></td><td>خلاصے</td></tr>
-                <tr><td><span class="en">All accounts at a glance</span></td><td>ہر اکاؤنٹ: انٹریاں، آمد، خرچ، غیر درجہ بند، منظوری کے انتظار میں، اور بغیر رسید</td></tr>
-                <tr><td><span class="en">Daily book</span></td><td>ایک اکاؤنٹ دن بہ دن: آمد، خرچ اور ہر دن کے آخر کا بیلنس (ابتدائی بیلنس خود لکھ سکتے ہیں)</td></tr>
                 <tr><td><span class="en">Scanned receipts not yet linked</span></td><td>ان باکس کی وہ رسیدیں جو کسی انٹری سے نہیں جڑیں، پرانی پہلے</td></tr>
-                <tr><td><span class="en">Not yet in the live books</span></td><td>رجسٹر میں پوسٹ شدہ وہ رقمیں جو ابھی جی آر این/سیٹلمنٹ وغیرہ کے لائیو حساب میں نہیں آئیں؛ دونوں حساب کا فرق ایک جگہ</td></tr>
+                <tr><td><span class="en">Not yet in the live books</span></td><td>رجسٹر میں پوسٹ شدہ وہ رقمیں جو ابھی جی آر این/سیٹلمنٹ وغیرہ کے لائیو حساب میں نہیں آئیں</td></tr>
                 <tr><td><span class="en">Audit log</span></td><td>کس نے کب کیا کیا</td></tr>
             </table>
-            <figure><img src="{{ asset('icons-images/bank-register-help/18-reports-index.jpg') }}" alt="رپورٹس" loading="lazy"><figcaption>رپورٹس کی فہرست</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/19-report-company-month.jpg') }}" alt="کمپنی بہ ماہ رپورٹ" loading="lazy"><figcaption>کمپنی/پارٹی کے حساب سے ماہ بہ ماہ رپورٹ</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/20-report-ledger.jpg') }}" alt="کمپنی لیجر" loading="lazy"><figcaption>کمپنی کا لیجر</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/26-account-summary.jpg') }}" alt="تمام اکاؤنٹس" loading="lazy"><figcaption>تمام اکاؤنٹس ایک نظر میں</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/27-daily-book.jpg') }}" alt="روزانہ کھاتہ" loading="lazy"><figcaption>روزانہ کھاتہ: ہر دن کا بیلنس</figcaption></figure>
+            <p>رجسٹر کے اپنے اکاؤنٹس کے بیلنس الگ صفحے کے بجائے <span class="en">Reports › Account Balances</span> میں <span class="en">Bank Register</span> گروپ کے تحت نظر آتے ہیں۔</p>
+            <figure><img src="{{ asset('icons-images/bank-register-help/18-reports-index.jpg') }}" alt="رپورٹس" loading="lazy"><figcaption>رپورٹس کا صفحہ: بینک رجسٹر کا الگ گروپ</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/19-report-company-month.jpg') }}" alt="رجسٹر خلاصہ" loading="lazy"><figcaption>رجسٹر کا خلاصہ (کمپنی بہ ماہ)</figcaption></figure>
+            <figure><img src="{{ asset('icons-images/bank-register-help/20-report-ledger.jpg') }}" alt="رجسٹر انٹریز" loading="lazy"><figcaption>رجسٹر انٹریز: کمپنی کا کھاتہ</figcaption></figure>
             <figure><img src="{{ asset('icons-images/bank-register-help/29-live-gap.jpg') }}" alt="لائیو حساب میں نہیں" loading="lazy"><figcaption>رجسٹر اور لائیو حساب کا فرق</figcaption></figure>
-            <p>ہر رپورٹ اسی کو نظر آتی ہے جسے اس کی اجازت ہو۔ میکر، چیکر اور آڈیٹر سب رپورٹیں دیکھتے ہیں؛ سینئر منظور کنندہ صرف فیصلے کے لیے ضروری رپورٹیں۔</p>
+            <p>ہر رپورٹ اسی کو نظر آتی ہے جسے اس کی اجازت ہو۔ میکر، چیکر اور آڈیٹر سب رپورٹیں دیکھتے ہیں؛ سینئر منظور کنندہ صرف <span class="en">Register entries</span>، <span class="en">Register summary</span> اور <span class="en">Audit log</span>۔</p>
         </section>
 
         <section id="print">

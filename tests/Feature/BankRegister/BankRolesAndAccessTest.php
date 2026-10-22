@@ -71,14 +71,14 @@ test('the maker, checker and auditor can open every bank report; a user with no 
 test('the senior approver sees only the reports needed to decide on large amounts', function () {
     $this->actingAs($this->senior);
 
-    foreach (['pending-approvals', 'audit-log', 'company-ledger', 'top-parties', 'cash-flow', 'account-summary'] as $slug) {
+    foreach (['entries', 'summary', 'audit-log'] as $slug) {
         $this->get(route('reports.bank.show', $slug))->assertOk();
     }
-    foreach (['unclassified', 'daily-book', 'reconciliation-statement', 'charges-tax'] as $slug) {
+    foreach (['reconciliation-statement', 'live-gap', 'unlinked-scans'] as $slug) {
         $this->get(route('reports.bank.show', $slug))->assertForbidden();
     }
 
-    $this->get(route('reports.bank.index'))->assertOk()->assertSee('Pending approvals')->assertDontSee('Daily book');
+    $this->get(route('reports.index'))->assertOk()->assertSee('Register entries')->assertDontSee('Not yet in the live books');
 });
 
 test('the checker can open the approvals inbox and see and open the receipt of the entry being approved', function () {
@@ -172,7 +172,7 @@ test('the maker can add entries, scan receipts and link them', function () {
 test('a user without any bank permission is refused everywhere and the menu hides the module', function () {
     $this->actingAs($this->nobody);
 
-    foreach (['bank-statement-entries.index', 'bank-statement-entries.create', 'bank-approvals.index', 'bank-reconciliations.index', 'bank-receipt-scans.index', 'bank-register.help', 'reports.bank.index'] as $name) {
+    foreach (['bank-statement-entries.index', 'bank-statement-entries.create', 'bank-approvals.index', 'bank-reconciliations.index', 'bank-receipt-scans.index', 'bank-register.help'] as $name) {
         $response = $this->get(route($name));
         expect($response->status())->toBeIn([403]);
     }

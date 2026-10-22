@@ -18,7 +18,6 @@ use App\Http\Controllers\BankChequeController;
 use App\Http\Controllers\BankEntryAttachmentController;
 use App\Http\Controllers\BankEntryCategoryController;
 use App\Http\Controllers\BankEntryRuleController;
-use App\Http\Controllers\BankLedgerAccountController;
 use App\Http\Controllers\BankPartyAliasController;
 use App\Http\Controllers\BankReceiptScanController;
 use App\Http\Controllers\BankReconciliationController;
@@ -671,8 +670,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('bank-receipt-scans/{bankReceiptScan}/file', [BankReceiptScanController::class, 'file'])->name('bank-receipt-scans.file');
     Route::post('bank-receipt-scans/{bankReceiptScan}/link', [BankReceiptScanController::class, 'link'])->name('bank-receipt-scans.link');
     Route::resource('bank-receipt-scans', BankReceiptScanController::class)->only(['index', 'store', 'destroy'])->parameters(['bank-receipt-scans' => 'bankReceiptScan']);
-
-    Route::get('bank-ledger-accounts', [BankLedgerAccountController::class, 'index'])->name('bank-ledger-accounts.index');
 
     Route::get('bank-approvals', [BankApprovalController::class, 'index'])->name('bank-approvals.index');
     Route::post('bank-approvals/bulk-approve', [BankApprovalController::class, 'bulkApprove'])->name('bank-approvals.bulk-approve');

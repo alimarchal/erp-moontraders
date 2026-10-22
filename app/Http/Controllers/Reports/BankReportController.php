@@ -6,9 +6,12 @@ use App\Exports\BankReportExport;
 use App\Helpers\ReportPdf;
 use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
+use App\Models\BankEntryCategory;
 use App\Models\BankReconciliation;
+use App\Models\BankStatementEntry;
 use App\Models\Supplier;
 use App\Services\BankRegister\BankReportService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -17,12 +20,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BankReportController extends Controller
 {
-    public function index(): View
+    public function index(): RedirectResponse
     {
-        $reports = collect(BankReportService::REPORTS)->filter(fn (array $report) => auth()->user()->can($report['permission']));
-        abort_if($reports->isEmpty(), 403);
-
-        return view('reports.bank.index', ['reports' => $reports]);
+        return redirect()->route('reports.index');
     }
 
     public function show(Request $request, string $report, BankReportService $service): View
@@ -36,6 +36,8 @@ class BankReportController extends Controller
             'filters' => $this->filters($request),
             'bankAccounts' => BankAccount::orderBy('account_name')->get(['id', 'account_name']),
             'companies' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'categories' => BankEntryCategory::orderBy('name')->get(['id', 'name']),
+            'statuses' => BankStatementEntry::STATUSES,
             'reconciliations' => BankReconciliation::with('bankAccount')->where('status', '!=', 'cancelled')->latest('period_to')->get(),
         ]);
     }

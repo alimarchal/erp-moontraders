@@ -687,6 +687,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])->name('bank-reconciliations.cancel');
 
     Route::prefix('settings')->group(function () {
+        Route::get('bank-entry-categories/export/{format}', [BankEntryCategoryController::class, 'export'])->name('bank-entry-categories.export');
         Route::resource('bank-entry-categories', BankEntryCategoryController::class)->except(['show'])->parameters(['bank-entry-categories' => 'bankEntryCategory']);
         Route::resource('bank-party-aliases', BankPartyAliasController::class)->except(['show'])->parameters(['bank-party-aliases' => 'bankPartyAlias']);
         Route::resource('bank-entry-rules', BankEntryRuleController::class)->except(['show'])->parameters(['bank-entry-rules' => 'bankEntryRule']);

@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BankReportExport;
 use App\Http\Requests\BankEntryCategoryRequest;
 use App\Models\BankEntryCategory;
 use App\Models\ChartOfAccount;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -17,7 +20,7 @@ class BankEntryCategoryController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:bank-entry-category-list', only: ['index']),
+            new Middleware('can:bank-entry-category-list', only: ['index', 'export']),
             new Middleware('can:bank-entry-category-create', only: ['create', 'store']),
             new Middleware('can:bank-entry-category-edit', only: ['edit', 'update']),
             new Middleware('can:bank-entry-category-delete', only: ['destroy']),
@@ -26,18 +29,51 @@ class BankEntryCategoryController extends Controller implements HasMiddleware
 
     public function index(): View
     {
-        $categories = QueryBuilder::for(BankEntryCategory::query()->with('defaultAccount')->withCount('entries'))
+        return view('bank-entry-categories.index', ['categories' => $this->query()->paginate(40)->withQueryString()]);
+    }
+
+    /**
+     * Download the filtered category list as Excel or PDF.
+     */
+    public function export(string $format)
+    {
+        abort_unless(in_array($format, ['excel', 'pdf'], true), 404);
+
+        $rows = $this->query()->get()->map(fn (BankEntryCategory $category) => [
+            $category->name,
+            BankEntryCategory::TYPES[$category->type] ?? $category->type,
+            $category->defaultAccount ? $category->defaultAccount->account_code.' - '.$category->defaultAccount->account_name : 'Company receivable / payable',
+            $category->entries_count,
+            $category->is_active ? 'Active' : 'Inactive',
+        ])->all();
+
+        $data = [
+            'title' => 'Bank Entry Categories',
+            'subtitle' => 'Moon Traders - printed by '.auth()->user()->name,
+            'headings' => ['Category', 'Used for', 'Default ledger account', 'Entries', 'Status'],
+            'numeric' => [3],
+            'rows' => $rows,
+            'totals' => null,
+            'notes' => [],
+        ];
+
+        if ($format === 'pdf') {
+            return Pdf::loadView('reports.bank.pdf', ['data' => $data, 'generatedAt' => now()])->setPaper('a4', 'portrait')->download('bank-entry-categories.pdf');
+        }
+
+        return Excel::download(new BankReportExport($data), 'bank-entry-categories.xlsx');
+    }
+
+    private function query(): QueryBuilder
+    {
+        return QueryBuilder::for(BankEntryCategory::query()->with('defaultAccount')->withCount('entries'))
             ->allowedFilters([
                 AllowedFilter::partial('name'),
                 AllowedFilter::exact('type'),
                 AllowedFilter::exact('is_active'),
             ])
             ->orderBy('sort_order')
-            ->orderBy('name')
-            ->paginate(40)
-            ->withQueryString();
-
-        return view('bank-entry-categories.index', ['categories' => $categories]);
+            ->orderBy('name');
     }
 
     public function create(): View
@@ -75,15 +111,14 @@ class BankEntryCategoryController extends Controller implements HasMiddleware
         return redirect()->route('bank-entry-categories.index')->with('success', "Category '{$bankEntryCategory->name}' updated.");
     }
 
+    /**
+     * Categories are never deleted: past and future entries may refer to them, so the row is made inactive.
+     */
     public function destroy(BankEntryCategory $bankEntryCategory): RedirectResponse
     {
-        if ($bankEntryCategory->entries()->exists()) {
-            return back()->with('error', "'{$bankEntryCategory->name}' is used by bank entries. Make it inactive instead of deleting it.");
-        }
+        $bankEntryCategory->update(['is_active' => false]);
 
-        $bankEntryCategory->delete();
-
-        return redirect()->route('bank-entry-categories.index')->with('success', 'Category deleted.');
+        return redirect()->route('bank-entry-categories.index')->with('success', "Category '{$bankEntryCategory->name}' deactivated.");
     }
 
     private function accountOptions()

@@ -11,7 +11,6 @@
         ['label' => 'Reconciliation', 'route' => 'bank-reconciliations.index', 'active' => ['bank-reconciliations.*'], 'can' => 'bank-reconciliation-list'],
         ['label' => 'Reports', 'route' => 'reports.bank.index', 'active' => ['reports.bank.*'], 'canAny' => \App\Services\BankRegister\BankRegisterPermissions::REPORTS],
         ['label' => 'Ledger accounts', 'route' => 'bank-ledger-accounts.index', 'active' => ['bank-ledger-accounts.*'], 'can' => 'bank-ledger-account-list'],
-        ['label' => 'Categories & rules', 'route' => 'bank-entry-categories.index', 'active' => ['bank-entry-categories.*', 'bank-party-aliases.*', 'bank-entry-rules.*', 'bank-cheques.*'], 'can' => 'bank-entry-category-list'],
     ];
 @endphp
 

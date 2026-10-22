@@ -26,6 +26,19 @@
     @endpush
 
     <x-filter-section :action="route('bank-entry-categories.index')">
+        <p class="font-semibold text-sm text-gray-800 mb-1">؟ مدد — یہ صفحہ کس لیے ہے (اردو)</p>
+        <div dir="rtl" lang="ur" class="mb-4 pb-4 border-b border-gray-200 text-sm leading-8 text-gray-700" style="font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq',serif">
+                <p><b>مقصد:</b> بینک رجسٹر کی ہر اندراج (entry) کو ایک <b>کیٹیگری</b> دی جاتی ہے، مثلاً «Customer Receipt»، «Supplier Payment»، «Salary / Staff»، «Bank Charges»۔ کیٹیگری سے طے ہوتا ہے کہ رقم کس کھاتے (ledger account) میں جائے گی اور رپورٹوں میں کس عنوان کے تحت نظر آئے گی۔</p>
+                <ul class="list-disc pr-6">
+                    <li><b>Used for:</b> کیٹیگری صرف رقم آنے (Receipt)، رقم جانے (Payment) یا دونوں کے لیے ہے۔ اندراج بناتے وقت فہرست اسی کے مطابق دکھائی جاتی ہے۔</li>
+                    <li><b>Default ledger account:</b> اگر کمپنی/پارٹی کا کھاتہ نہ ہو تو رقم اسی کھاتے میں جاتی ہے۔ خالی ہو تو کمپنی کا receivable / payable استعمال ہوتا ہے۔</li>
+                    <li><b>Entries:</b> اس کیٹیگری میں اب تک کتنے اندراج ہیں۔</li>
+                    <li><b>Add Category:</b> نئی کیٹیگری بنائیں۔ <b>Edit</b> (نارنجی) سے نام، قسم یا کھاتہ بدلیں۔</li>
+                    <li><b>Deactivate (سرخ):</b> کیٹیگری ڈیلیٹ نہیں ہوتی، صرف <b>Inactive</b> ہو جاتی ہے، کیونکہ آج یا آئندہ کسی اندراج سے اس کا تعلق ہو سکتا ہے۔ Inactive کیٹیگری نئے اندراج میں نظر نہیں آتی مگر پرانا ریکارڈ اور رپورٹیں ویسی ہی رہتی ہیں۔ دوبارہ چلانے کے لیے Edit میں «Active» لگا دیں۔</li>
+                    <li><b>Filter / Print / PDF / Excel:</b> اوپر کے بٹنوں سے فہرست چھانٹیں، پرنٹ کریں یا PDF اور Excel میں ڈاؤن لوڈ کریں (پرنٹ میں Actions کا کالم نہیں آتا)۔</li>
+                    <li><b>اجازتیں (Permissions):</b> bank-entry-category-list / create / edit / delete۔ «delete» کی اجازت والا صارف کیٹیگری کو Inactive کر سکتا ہے۔</li>
+                </ul>
+            </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <x-label for="filter_name" value="Name" />
@@ -51,23 +64,6 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
-        <details class="bg-white shadow-xl sm:rounded-lg">
-            <summary class="cursor-pointer px-4 py-3 font-semibold text-sm text-gray-800">؟ مدد — یہ صفحہ کس لیے ہے (اردو)</summary>
-            <div dir="rtl" lang="ur" class="px-5 pb-4 text-sm leading-8 text-gray-700" style="font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq',serif">
-                <p><b>مقصد:</b> بینک رجسٹر کی ہر اندراج (entry) کو ایک <b>کیٹیگری</b> دی جاتی ہے، مثلاً «Customer Receipt»، «Supplier Payment»، «Salary / Staff»، «Bank Charges»۔ کیٹیگری سے طے ہوتا ہے کہ رقم کس کھاتے (ledger account) میں جائے گی اور رپورٹوں میں کس عنوان کے تحت نظر آئے گی۔</p>
-                <ul class="list-disc pr-6">
-                    <li><b>Used for:</b> کیٹیگری صرف رقم آنے (Receipt)، رقم جانے (Payment) یا دونوں کے لیے ہے۔ اندراج بناتے وقت فہرست اسی کے مطابق دکھائی جاتی ہے۔</li>
-                    <li><b>Default ledger account:</b> اگر کمپنی/پارٹی کا کھاتہ نہ ہو تو رقم اسی کھاتے میں جاتی ہے۔ خالی ہو تو کمپنی کا receivable / payable استعمال ہوتا ہے۔</li>
-                    <li><b>Entries:</b> اس کیٹیگری میں اب تک کتنے اندراج ہیں۔</li>
-                    <li><b>Add Category:</b> نئی کیٹیگری بنائیں۔ <b>Edit</b> (نارنجی) سے نام، قسم یا کھاتہ بدلیں۔</li>
-                    <li><b>Deactivate (سرخ):</b> کیٹیگری ڈیلیٹ نہیں ہوتی، صرف <b>Inactive</b> ہو جاتی ہے، کیونکہ آج یا آئندہ کسی اندراج سے اس کا تعلق ہو سکتا ہے۔ Inactive کیٹیگری نئے اندراج میں نظر نہیں آتی مگر پرانا ریکارڈ اور رپورٹیں ویسی ہی رہتی ہیں۔ دوبارہ چلانے کے لیے Edit میں «Active» لگا دیں۔</li>
-                    <li><b>Filter / Print / PDF / Excel:</b> اوپر کے بٹنوں سے فہرست چھانٹیں، پرنٹ کریں یا PDF اور Excel میں ڈاؤن لوڈ کریں (پرنٹ میں Actions کا کالم نہیں آتا)۔</li>
-                    <li><b>اجازتیں (Permissions):</b> bank-entry-category-list / create / edit / delete۔ «delete» کی اجازت والا صارف کیٹیگری کو Inactive کر سکتا ہے۔</li>
-                </ul>
-            </div>
-        </details>
-    </div>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pt-4 print-only text-center font-extrabold">
         Moon Traders<br>Bank Entry Categories<br>

@@ -1,36 +1,40 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Party Aliases" :createRoute="route('bank-party-aliases.create')" createLabel="Add Alias"
-            createPermission="bank-party-alias-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+        <x-bank.head title="Party Aliases" :crumbs="['Party aliases' => null]">
+            @can('bank-party-alias-create')
+                <a href="{{ route('bank-party-aliases.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add Alias</a>
+            @endcan
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Party Aliases" /></div>
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Party Aliases" />
+        <x-status-message />
 
-    <x-filter-section :action="route('bank-party-aliases.index')">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <x-label for="filter_alias_name" value="Statement name" />
-                <x-input id="filter_alias_name" name="filter[alias_name]" type="text" dir="auto" class="mt-1 block w-full" :value="request('filter.alias_name')" />
+    <x-bank.filters :action="route('bank-party-aliases.index')">
+                    <div class="ak-field">
+                <label for="filter_alias_name">Statement name</label>
+                <input id="filter_alias_name" name="filter[alias_name]" type="text" dir="auto" value="{{ request('filter.alias_name') }}">
             </div>
-            <div>
-                <x-label for="filter_canonical_name" value="Correct name" />
-                <x-input id="filter_canonical_name" name="filter[canonical_name]" type="text" dir="auto" class="mt-1 block w-full" :value="request('filter.canonical_name')" />
+            <div class="ak-field">
+                <label for="filter_canonical_name">Correct name</label>
+                <input id="filter_canonical_name" name="filter[canonical_name]" type="text" dir="auto" value="{{ request('filter.canonical_name') }}">
             </div>
-            <div>
-                <x-label for="filter_company_id" value="Company" />
-                <select data-placeholder="All" id="filter_company_id" name="filter[company_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+            <div class="ak-field">
+                <label for="filter_company_id">Company</label>
+                <select data-placeholder="All" id="filter_company_id" name="filter[company_id]" class="select2 bank-select">
                     <option value="">All</option>
                     @foreach ($companies as $company)
                         <option value="{{ $company->id }}" @selected((string) request('filter.company_id') === (string) $company->id)>{{ $company->supplier_name }}</option>
                     @endforeach
                 </select>
             </div>
-        </div>
-    </x-filter-section>
+</x-bank.filters>
 
-    <x-data-table :items="$aliases" :headers="[
+    <x-bank.table :items="$aliases" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Name on statement', 'align' => 'text-left'],
         ['label' => 'Correct name', 'align' => 'text-left'],
@@ -39,28 +43,29 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No aliases yet. Add one for every spelling of the same party." :emptyRoute="route('bank-party-aliases.create')" emptyLinkText="Add an alias">
         @foreach ($aliases as $index => $alias)
-            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
-                <td class="py-2 px-2 text-center">{{ $aliases->firstItem() + $index }}</td>
-                <td class="py-2 px-2" dir="auto">{{ $alias->alias_name }}</td>
-                <td class="py-2 px-2 font-normal" dir="auto">{{ $alias->canonical_name }}</td>
-                <td class="py-2 px-2 font-normal">{{ $alias->company?->supplier_name ?? '—' }}</td>
-                <td class="py-2 px-2 text-center">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $alias->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ $alias->is_active ? 'Active' : 'Inactive' }}</span>
+            <tr>
+                <td class="ak-c">{{ $aliases->firstItem() + $index }}</td>
+                <td dir="auto">{{ $alias->alias_name }}</td>
+                <td dir="auto">{{ $alias->canonical_name }}</td>
+                <td>{{ $alias->company?->supplier_name ?? '—' }}</td>
+                <td class="ak-c">
+                    <span class="ak-status {{ $alias->is_active ? 'ak-status-green' : 'ak-status-red' }}"><i aria-hidden="true"></i>{{ $alias->is_active ? 'Active' : 'Inactive' }}</span>
                 </td>
-                <td class="py-2 px-2 text-center">
-                    <div class="flex justify-center gap-3 font-normal">
+                <td class="ak-c">
+                    <div class="bk-row" style="justify-content:center">
                         @can('bank-party-alias-edit')
-                            <a href="{{ route('bank-party-aliases.edit', $alias) }}" class="text-green-700 hover:underline">Edit</a>
+                            <a href="{{ route('bank-party-aliases.edit', $alias) }}" class="ak-btn ak-btn-outline ak-btn-sm">Edit</a>
                         @endcan
                         @can('bank-party-alias-delete')
                             <form method="POST" action="{{ route('bank-party-aliases.destroy', $alias) }}" onsubmit="return confirm('Delete this alias?')">
                                 @csrf @method('DELETE')
-                                <button class="text-red-600 hover:underline">Delete</button>
+                                <button class="ak-btn ak-btn-danger-outline ak-btn-sm">Delete</button>
                             </form>
                         @endcan
                     </div>
                 </td>
             </tr>
         @endforeach
-    </x-data-table>
+    </x-bank.table>
+    </div>
 </x-app-layout>

@@ -102,7 +102,7 @@ test('an entry with no receipt is called out to the approver', function () {
     ]);
     app(BankEntryApprovalService::class)->submit($bare, $this->maker);
 
-    $this->actingAs($this->checker)->get(route('bank-approvals.index'))->assertSee('No receipt or file attached');
+    $this->actingAs($this->checker)->get(route('bank-approvals.index'))->assertSee('No receipt');
 });
 
 test('the maker can submit but not approve, reject or reverse', function () {

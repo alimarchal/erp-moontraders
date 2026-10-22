@@ -1,22 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Bank Register Reports" :showSearch="false" :showRefresh="false" backRoute="reports.index" />
+        <x-bank.head title="Reports" sub="Company and category summaries, ledgers, reconciliation, receipts, approvals and the audit log." :crumbs="['Reports' => null]">
+            <a href="{{ route('reports.index') }}" class="ak-btn ak-btn-outline">All system reports</a>
+        </x-bank.head>
     </x-slot>
-    <div class="py-6">
+
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <x-bank.print-title title="Bank Statement Reports" />
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @forelse ($reports as $slug => $report)
-                    <a href="{{ route('reports.bank.show', $slug) }}" class="block bg-white rounded-lg shadow hover:shadow-lg hover:-translate-y-0.5 transition p-4">
-                        <p class="font-semibold text-blue-950">{{ $report['title'] }}</p>
-                        <p class="text-sm text-gray-600 mt-1">{{ $report['description'] }}</p>
-                    </a>
-                @empty
-                    <p class="text-gray-600">You do not have access to any bank report.</p>
-                @endforelse
-            </div>
-        </div>
+
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Bank Statement Reports" />
+
+        <section class="ak-card">
+            @if (count($reports))
+                <div style="display:grid; gap:12px; padding:16px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
+                    @foreach ($reports as $slug => $report)
+                        <a href="{{ route('reports.bank.show', $slug) }}" class="ak-kpi" style="display:block; text-decoration:none">
+                            <span class="ak-kpi-label" style="font-size:15px; color:var(--ak-text)">{{ $report['title'] }}</span>
+                            <span class="ak-kpi-hint" style="display:block; margin-top:4px">{{ $report['description'] }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <div class="ak-empty"><h2>No reports available</h2><p>You do not have access to any bank report.</p></div>
+            @endif
+        </section>
     </div>
 </x-app-layout>

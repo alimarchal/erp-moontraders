@@ -1,40 +1,44 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Bank Entry Categories" :createRoute="route('bank-entry-categories.create')" createLabel="Add Category"
-            createPermission="bank-entry-category-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+        <x-bank.head title="Bank Entry Categories" :crumbs="['Categories' => null]">
+            @can('bank-entry-category-create')
+                <a href="{{ route('bank-entry-categories.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add Category</a>
+            @endcan
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Bank Entry Categories" /></div>
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Bank Entry Categories" />
+        <x-status-message />
 
-    <x-filter-section :action="route('bank-entry-categories.index')">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <x-label for="filter_name" value="Name" />
-                <x-input id="filter_name" name="filter[name]" type="text" class="mt-1 block w-full" :value="request('filter.name')" />
+    <x-bank.filters :action="route('bank-entry-categories.index')">
+                    <div class="ak-field">
+                <label for="filter_name">Name</label>
+                <input id="filter_name" name="filter[name]" type="text" value="{{ request('filter.name') }}">
             </div>
-            <div>
-                <x-label for="filter_type" value="Used for" />
-                <select data-placeholder="All" id="filter_type" name="filter[type]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+            <div class="ak-field">
+                <label for="filter_type">Used for</label>
+                <select data-placeholder="All" id="filter_type" name="filter[type]" class="select2 bank-select">
                     <option value="">All</option>
                     @foreach (\App\Models\BankEntryCategory::TYPES as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.type') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <x-label for="filter_is_active" value="Status" />
-                <select data-placeholder="Both" id="filter_is_active" name="filter[is_active]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+            <div class="ak-field">
+                <label for="filter_is_active">Status</label>
+                <select data-placeholder="Both" id="filter_is_active" name="filter[is_active]" class="select2 bank-select">
                     <option value="">Both</option>
                     <option value="1" @selected(request('filter.is_active') === '1')>Active</option>
                     <option value="0" @selected(request('filter.is_active') === '0')>Inactive</option>
                 </select>
             </div>
-        </div>
-    </x-filter-section>
+</x-bank.filters>
 
-    <x-data-table :items="$categories" :headers="[
+    <x-bank.table :items="$categories" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Category', 'align' => 'text-left'],
         ['label' => 'Used for', 'align' => 'text-left'],
@@ -44,29 +48,30 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No categories found." :emptyRoute="route('bank-entry-categories.create')" emptyLinkText="Add a category">
         @foreach ($categories as $index => $category)
-            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
-                <td class="py-2 px-2 text-center">{{ $categories->firstItem() + $index }}</td>
-                <td class="py-2 px-2">{{ $category->name }}</td>
-                <td class="py-2 px-2 font-normal">{{ \App\Models\BankEntryCategory::TYPES[$category->type] ?? $category->type }}</td>
+            <tr>
+                <td class="ak-c">{{ $categories->firstItem() + $index }}</td>
+                <td>{{ $category->name }}</td>
+                <td>{{ \App\Models\BankEntryCategory::TYPES[$category->type] ?? $category->type }}</td>
                 <td class="py-2 px-2 font-normal text-sm">{{ $category->defaultAccount ? $category->defaultAccount->account_code.' — '.$category->defaultAccount->account_name : 'Company receivable / payable' }}</td>
                 <td class="py-2 px-2 text-right tabular-nums">{{ number_format($category->entries_count) }}</td>
-                <td class="py-2 px-2 text-center">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $category->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ $category->is_active ? 'Active' : 'Inactive' }}</span>
+                <td class="ak-c">
+                    <span class="ak-status {{ $category->is_active ? 'ak-status-green' : 'ak-status-red' }}"><i aria-hidden="true"></i>{{ $category->is_active ? 'Active' : 'Inactive' }}</span>
                 </td>
-                <td class="py-2 px-2 text-center">
-                    <div class="flex justify-center gap-3 font-normal">
+                <td class="ak-c">
+                    <div class="bk-row" style="justify-content:center">
                         @can('bank-entry-category-edit')
-                            <a href="{{ route('bank-entry-categories.edit', $category) }}" class="text-green-700 hover:underline">Edit</a>
+                            <a href="{{ route('bank-entry-categories.edit', $category) }}" class="ak-btn ak-btn-outline ak-btn-sm">Edit</a>
                         @endcan
                         @can('bank-entry-category-delete')
                             <form method="POST" action="{{ route('bank-entry-categories.destroy', $category) }}" onsubmit="return confirm('Delete this category?')">
                                 @csrf @method('DELETE')
-                                <button class="text-red-600 hover:underline">Delete</button>
+                                <button class="ak-btn ak-btn-danger-outline ak-btn-sm">Delete</button>
                             </form>
                         @endcan
                     </div>
                 </td>
             </tr>
         @endforeach
-    </x-data-table>
+    </x-bank.table>
+    </div>
 </x-app-layout>

@@ -137,7 +137,7 @@ test('the import screens work end to end for a user with the import permission',
     $user = bankUser(['bank-statement-import-list', 'bank-statement-import-create', 'bank-statement-entry-list']);
     $this->actingAs($user);
 
-    $this->get(route('bank-statement-imports.create'))->assertOk()->assertSee('Import Bank Statement');
+    $this->get(route('bank-statement-imports.create'))->assertOk()->assertSee('Import bank statement');
 
     $response = $this->post(route('bank-statement-imports.store'), [
         'bank_account_id' => $this->fixture['bank']->id,

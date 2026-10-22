@@ -1,150 +1,146 @@
 @php
     $open = $reconciliation->status === 'in_progress';
     $balanced = abs($totals['difference']) < 0.01;
+    $statusTone = ['completed' => 'ak-status-green', 'in_progress' => 'ak-status-amber', 'cancelled' => 'ak-status-slate'][$reconciliation->status] ?? 'ak-status-slate';
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Reconciliation — {{ $reconciliation->bankAccount->account_name }}</h2>
-            <div class="flex gap-2">
-                @can('report-bank-reconciliation-statement')
-                    <a href="{{ route('reports.bank.show', ['report' => 'reconciliation-statement', 'filter' => ['reconciliation_id' => $reconciliation->id]]) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 hover:bg-gray-50">Print statement</a>
-                @endcan
-                <a href="{{ route('bank-reconciliations.index') }}" class="rounded-md bg-blue-950 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-900">Back</a>
-            </div>
-        </div>
+        <x-bank.head :title="'Reconciliation: '.$reconciliation->bankAccount->account_name"
+            :sub="$reconciliation->period_from->format('d-m-Y').' → '.$reconciliation->period_to->format('d-m-Y')"
+            :crumbs="['Reconciliation' => route('bank-reconciliations.index'), $reconciliation->bankAccount->account_name => null]">
+            @can('report-bank-reconciliation-statement')
+                <a href="{{ route('reports.bank.show', ['report' => 'reconciliation-statement', 'filter' => ['reconciliation_id' => $reconciliation->id]]) }}" class="ak-btn ak-btn-outline">Statement report</a>
+            @endcan
+            <a href="{{ route('bank-reconciliations.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
-    <div class="py-6">
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <x-bank.print-title title="Bank Reconciliation" />
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-            <x-status-message />
 
-            <div class="flex items-center gap-3">
-                <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full {{ ['completed' => 'bg-emerald-100 text-emerald-700', 'in_progress' => 'bg-amber-100 text-amber-800', 'cancelled' => 'bg-gray-200 text-gray-600'][$reconciliation->status] }}">{{ ucfirst(str_replace('_', ' ', $reconciliation->status)) }}</span>
-                <span class="text-sm text-gray-600">{{ $reconciliation->period_from->format('d-m-Y') }} → {{ $reconciliation->period_to->format('d-m-Y') }}</span>
-                @if ($reconciliation->isLocked())<span class="text-sm text-emerald-700">🔒 locked by {{ $reconciliation->completer?->name }} on {{ $reconciliation->completed_at?->format('d-m-Y H:i') }}</span>@endif
-            </div>
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Bank Reconciliation" :subtitle="$reconciliation->bankAccount->account_name.' · '.$reconciliation->period_from->format('d-m-Y').' to '.$reconciliation->period_to->format('d-m-Y')" />
+        <x-status-message />
 
-            {{-- Difference meter --}}
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                @foreach ([
-                    ['Statement balance', $reconciliation->statement_balance, 'text-gray-900'],
-                    ['+ Deposits in transit', $totals['deposits_in_transit'], 'text-emerald-700'],
-                    ['− Outstanding payments', $totals['outstanding_payments'], 'text-red-700'],
-                    ['Book balance (ledger)', $totals['book_balance'], 'text-gray-900'],
-                ] as [$label, $value, $color])
-                    <div class="bg-white rounded-lg shadow p-4">
-                        <p class="text-xs uppercase tracking-wide text-gray-500">{{ $label }}</p>
-                        <p class="text-lg font-bold {{ $color }}"><x-bank.money :value="$value" /></p>
-                    </div>
-                @endforeach
-                <div class="rounded-lg shadow p-4 {{ $balanced ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white' }}">
-                    <p class="text-xs uppercase tracking-wide opacity-80">Difference</p>
-                    <p class="text-lg font-bold"><x-bank.money :value="$totals['difference']" /></p>
-                    <p class="text-xs opacity-90">{{ $balanced ? 'Balanced' : 'Not balanced yet' }}</p>
-                </div>
-            </div>
+        <div class="bk-row">
+            <span class="ak-status {{ $statusTone }}"><i aria-hidden="true"></i>{{ ucfirst(str_replace('_', ' ', $reconciliation->status)) }}</span>
+            @if ($reconciliation->isLocked())<span class="ak-muted">Locked by {{ $reconciliation->completer?->name }} on {{ $reconciliation->completed_at?->format('d-m-Y H:i') }}</span>@endif
+        </div>
 
-            @if ($open)
-                <div class="flex flex-wrap items-center gap-2">
-                    @can('bank-reconciliation-edit')
-                        <form method="POST" action="{{ route('bank-reconciliations.auto-match', $reconciliation) }}">@csrf
-                            <button class="rounded-md border border-blue-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-widest text-blue-900 hover:bg-blue-50">⚡ Auto-match posted lines</button>
-                        </form>
-                    @endcan
-                    @can('bank-reconciliation-complete')
-                        <form method="POST" action="{{ route('bank-reconciliations.complete', $reconciliation) }}" onsubmit="return confirm('Complete and lock this period?')">@csrf
-                            <button class="rounded-md bg-green-800 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-900 disabled:opacity-40" @disabled(! $balanced || $totals['unmatched_entries']->isNotEmpty())>Complete &amp; lock period</button>
-                        </form>
-                    @endcan
-                    @can('bank-reconciliation-cancel')
-                        <form method="POST" action="{{ route('bank-reconciliations.cancel', $reconciliation) }}" onsubmit="return confirm('Cancel this reconciliation?')" class="ms-auto">@csrf
-                            <button class="text-sm text-red-600 hover:underline">Cancel reconciliation</button>
-                        </form>
-                    @endcan
-                </div>
-            @elseif ($reconciliation->status === 'completed')
-                @can('bank-reconciliation-cancel')
-                    <form method="POST" action="{{ route('bank-reconciliations.cancel', $reconciliation) }}" onsubmit="return confirm('Undo this reconciliation? The period will be unlocked.')">@csrf
-                        <button class="text-sm text-red-600 hover:underline">Undo reconciliation (unlock period)</button>
+        {{-- Difference meter --}}
+        <section class="ak-kpis" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr))" aria-label="Reconciliation figures">
+            @foreach ([
+                ['Statement balance', $reconciliation->statement_balance, ''],
+                ['+ Deposits in transit', $totals['deposits_in_transit'], 'bk-in'],
+                ['− Outstanding payments', $totals['outstanding_payments'], 'bk-out'],
+                ['Book balance (ledger)', $totals['book_balance'], ''],
+            ] as [$label, $value, $color])
+                <div class="ak-kpi"><span class="ak-kpi-body"><span class="ak-kpi-label">{{ $label }}</span><span class="ak-kpi-value ak-kpi-value-sm {{ $color }}"><x-bank.money :value="$value" /></span></span></div>
+            @endforeach
+            <div class="ak-kpi {{ $balanced ? '' : 'ak-kpi-action' }}"><span class="ak-kpi-body"><span class="ak-kpi-label">Difference</span><span class="ak-kpi-value ak-kpi-value-sm"><x-bank.money :value="$totals['difference']" /></span><span class="ak-kpi-hint"><b>{{ $balanced ? 'Balanced' : 'Not balanced yet' }}</b></span></span></div>
+        </section>
+
+        @if ($open)
+            <div class="bk-row bank-noprint">
+                @can('bank-reconciliation-edit')
+                    <form method="POST" action="{{ route('bank-reconciliations.auto-match', $reconciliation) }}">@csrf
+                        <button class="ak-btn ak-btn-outline">Auto-match posted lines</button>
                     </form>
                 @endcan
-            @endif
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {{-- Left: statement lines still to match --}}
-                <div class="bg-white shadow-xl sm:rounded-lg overflow-hidden">
-                    <p class="font-semibold bg-gray-50 border-b px-4 py-2">Statement lines not matched ({{ $totals['unmatched_entries']->count() }})</p>
-                    @forelse ($totals['unmatched_entries'] as $entry)
-                        <div class="border-b px-4 py-2 text-sm">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="min-w-0">
-                                    <a href="{{ route('bank-statement-entries.show', $entry) }}" class="font-semibold text-blue-800 hover:underline truncate block" dir="auto">{{ $entry->party_name_in_statement ?? $entry->reference }}</a>
-                                    <p class="text-xs text-gray-500">{{ $entry->posting_date->format('d-m-Y') }} · {{ $entry->reference }} · <x-bank.status-badge :status="$entry->status" /></p>
-                                </div>
-                                <span class="font-semibold tabular-nums {{ $entry->direction === 'credit' ? 'text-emerald-700' : 'text-red-700' }}">{{ $entry->direction === 'credit' ? '+' : '−' }}{{ number_format($entry->amount, 2) }}</span>
-                            </div>
-                            @if ($open)
-                                @can('bank-reconciliation-edit')
-                                    @forelse ($suggestions[$entry->id] ?? [] as $detail)
-                                        <form method="POST" action="{{ route('bank-reconciliations.match', $reconciliation) }}" class="mt-1 flex items-center justify-between gap-2 rounded bg-blue-50 px-2 py-1">@csrf
-                                            <input type="hidden" name="bank_statement_entry_id" value="{{ $entry->id }}">
-                                            <input type="hidden" name="journal_entry_detail_id" value="{{ $detail->id }}">
-                                            <span class="text-xs text-blue-900">Suggested: JE #{{ $detail->journal_entry_id }} · {{ $detail->journalEntry->entry_date->format('d-m-Y') }} · {{ $detail->journalEntry->reference }}</span>
-                                            <button class="text-xs font-semibold text-blue-800 hover:underline">Match</button>
-                                        </form>
-                                    @empty
-                                        <p class="text-xs text-gray-400 mt-1">No matching book line. Post the entry from the register, or pick one on the right.</p>
-                                    @endforelse
-                                @endcan
-                            @endif
-                        </div>
-                    @empty
-                        <p class="px-4 py-6 text-center text-emerald-700">Every statement line in the period is matched. ✓</p>
-                    @endforelse
-                </div>
-
-                {{-- Right: book lines still to match --}}
-                <div class="bg-white shadow-xl sm:rounded-lg overflow-hidden">
-                    <p class="font-semibold bg-gray-50 border-b px-4 py-2">Book lines not on the statement ({{ $totals['unmatched_book_lines']->count() }})</p>
-                    @forelse ($totals['unmatched_book_lines'] as $detail)
-                        <div class="border-b px-4 py-2 text-sm flex items-start justify-between gap-2">
-                            <div class="min-w-0">
-                                <a href="{{ route('journal-entries.show', $detail->journalEntry) }}" class="font-semibold text-blue-800 hover:underline">JE #{{ $detail->journal_entry_id }} · {{ $detail->journalEntry->reference }}</a>
-                                <p class="text-xs text-gray-500">{{ $detail->journalEntry->entry_date->format('d-m-Y') }} · {{ $detail->description }}</p>
-                            </div>
-                            @if ((float) $detail->debit > 0)
-                                <span class="font-semibold tabular-nums text-emerald-700" title="Deposit in transit">+{{ number_format($detail->debit, 2) }}</span>
-                            @else
-                                <span class="font-semibold tabular-nums text-red-700" title="Outstanding payment">−{{ number_format($detail->credit, 2) }}</span>
-                            @endif
-                        </div>
-                    @empty
-                        <p class="px-4 py-6 text-center text-emerald-700">Nothing outstanding in the books. ✓</p>
-                    @endforelse
-                </div>
+                @can('bank-reconciliation-complete')
+                    <form method="POST" action="{{ route('bank-reconciliations.complete', $reconciliation) }}" onsubmit="return confirm('Complete and lock this period?')">@csrf
+                        <button class="ak-btn ak-btn-success" @disabled(! $balanced || $totals['unmatched_entries']->isNotEmpty())>Complete &amp; lock period</button>
+                    </form>
+                @endcan
+                @can('bank-reconciliation-cancel')
+                    <form method="POST" action="{{ route('bank-reconciliations.cancel', $reconciliation) }}" onsubmit="return confirm('Cancel this reconciliation?')" style="margin-left:auto">@csrf
+                        <button class="ak-btn ak-btn-danger-outline">Cancel reconciliation</button>
+                    </form>
+                @endcan
             </div>
+        @elseif ($reconciliation->status === 'completed')
+            @can('bank-reconciliation-cancel')
+                <form method="POST" action="{{ route('bank-reconciliations.cancel', $reconciliation) }}" onsubmit="return confirm('Undo this reconciliation? The period will be unlocked.')" class="bank-noprint">@csrf
+                    <button class="ak-btn ak-btn-danger-outline">Undo reconciliation (unlock period)</button>
+                </form>
+            @endcan
+        @endif
 
-            {{-- Matched --}}
-            <div class="bg-white shadow-xl sm:rounded-lg overflow-hidden">
-                <p class="font-semibold bg-gray-50 border-b px-4 py-2">Matched ({{ $reconciliation->items->count() }})</p>
-                <div class="max-h-96 overflow-y-auto">
-                    <table class="min-w-full text-sm">
+        <div style="display:grid; gap:20px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); align-items:start">
+            {{-- Left: statement lines still to match --}}
+            <section class="ak-card">
+                <div class="ak-dt-toolbar"><p><b>Statement lines not matched ({{ $totals['unmatched_entries']->count() }})</b></p></div>
+                @forelse ($totals['unmatched_entries'] as $entry)
+                    <div class="bk-file" style="padding:10px 16px; align-items:flex-start; flex-direction:column; gap:6px">
+                        <div style="display:flex; justify-content:space-between; gap:12px; width:100%">
+                            <div style="min-width:0">
+                                <a href="{{ route('bank-statement-entries.show', $entry) }}" data-entry="{{ route('bank-statement-entries.drawer', $entry) }}" class="ak-primary-link" dir="auto">{{ $entry->party_name_in_statement ?? $entry->reference }}</a>
+                                <div class="ak-muted">{{ $entry->posting_date->format('d-m-Y') }} · {{ $entry->reference }} · <x-bank.status-badge :status="$entry->status" /></div>
+                            </div>
+                            <b class="bk-num {{ $entry->direction === 'credit' ? 'bk-in' : 'bk-out' }}">{{ $entry->direction === 'credit' ? '+' : '−' }}{{ number_format($entry->amount, 2) }}</b>
+                        </div>
+                        @if ($open)
+                            @can('bank-reconciliation-edit')
+                                @forelse ($suggestions[$entry->id] ?? [] as $detail)
+                                    <form method="POST" action="{{ route('bank-reconciliations.match', $reconciliation) }}" class="bk-box bank-noprint" style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px">@csrf
+                                        <input type="hidden" name="bank_statement_entry_id" value="{{ $entry->id }}">
+                                        <input type="hidden" name="journal_entry_detail_id" value="{{ $detail->id }}">
+                                        <span class="ak-muted">Suggested: JE #{{ $detail->journal_entry_id }} · {{ $detail->journalEntry->entry_date->format('d-m-Y') }} · {{ $detail->journalEntry->reference }}</span>
+                                        <button class="ak-btn ak-btn-outline ak-btn-sm">Match</button>
+                                    </form>
+                                @empty
+                                    <p class="ak-muted bank-noprint" style="margin:0">No matching book line. Post the entry from the register, or pick one on the right.</p>
+                                @endforelse
+                            @endcan
+                        @endif
+                    </div>
+                @empty
+                    <div class="ak-empty"><h2>Every statement line in the period is matched</h2></div>
+                @endforelse
+            </section>
+
+            {{-- Right: book lines still to match --}}
+            <section class="ak-card">
+                <div class="ak-dt-toolbar"><p><b>Book lines not on the statement ({{ $totals['unmatched_book_lines']->count() }})</b></p></div>
+                @forelse ($totals['unmatched_book_lines'] as $detail)
+                    <div class="bk-file" style="padding:10px 16px">
+                        <div style="min-width:0">
+                            <a href="{{ route('journal-entries.show', $detail->journalEntry) }}" class="ak-primary-link">JE #{{ $detail->journal_entry_id }} · {{ $detail->journalEntry->reference }}</a>
+                            <div class="ak-muted">{{ $detail->journalEntry->entry_date->format('d-m-Y') }} · {{ $detail->description }}</div>
+                        </div>
+                        @if ((float) $detail->debit > 0)
+                            <b class="bk-num bk-in" title="Deposit in transit">+{{ number_format($detail->debit, 2) }}</b>
+                        @else
+                            <b class="bk-num bk-out" title="Outstanding payment">−{{ number_format($detail->credit, 2) }}</b>
+                        @endif
+                    </div>
+                @empty
+                    <div class="ak-empty"><h2>Nothing outstanding in the books</h2></div>
+                @endforelse
+            </section>
+        </div>
+
+        {{-- Matched --}}
+        <section class="ak-card">
+            <div class="ak-dt-toolbar"><p><b>Matched ({{ $reconciliation->items->count() }})</b></p></div>
+            @if ($reconciliation->items->count())
+                <div class="ak-dt-scroll" tabindex="0">
+                    <table class="ak-dt">
+                        <caption class="sr-only">Matched lines</caption>
+                        <thead><tr><th scope="col">Date</th><th scope="col">Party</th><th scope="col">Receipt / journal</th><th scope="col">Matched by</th><th scope="col" class="ak-num">Amount</th><th scope="col" class="ak-c bank-noprint"></th></tr></thead>
                         <tbody>
                             @foreach ($reconciliation->items as $item)
-                                <tr class="border-b">
-                                    <td class="px-4 py-1.5 whitespace-nowrap">{{ $item->entry->posting_date->format('d-m-Y') }}</td>
-                                    <td class="px-2 py-1.5" dir="auto">{{ $item->entry->party_name_in_statement ?? $item->entry->reference }}</td>
-                                    <td class="px-2 py-1.5 text-xs text-gray-500">{{ $item->entry->receipt_no }} @if ($item->journalEntryDetail)· JE #{{ $item->journalEntryDetail->journal_entry_id }}@endif</td>
-                                    <td class="px-2 py-1.5 text-xs"><span class="rounded bg-gray-100 px-1.5 py-0.5">{{ $item->match_type }}</span></td>
-                                    <td class="px-2 py-1.5 text-right tabular-nums {{ $item->entry->direction === 'credit' ? 'text-emerald-700' : 'text-red-700' }}">{{ $item->entry->direction === 'credit' ? '+' : '−' }}{{ number_format($item->entry->amount, 2) }}</td>
-                                    <td class="px-4 py-1.5 text-right">
+                                <tr>
+                                    <td class="ak-mono">{{ $item->entry->posting_date->format('d-m-Y') }}</td>
+                                    <td dir="auto">{{ $item->entry->party_name_in_statement ?? $item->entry->reference }}</td>
+                                    <td class="ak-muted">{{ $item->entry->receipt_no }} @if ($item->journalEntryDetail)· JE #{{ $item->journalEntryDetail->journal_entry_id }}@endif</td>
+                                    <td><span class="ak-status ak-status-slate">{{ $item->match_type }}</span></td>
+                                    <td class="ak-num {{ $item->entry->direction === 'credit' ? 'bk-in' : 'bk-out' }}">{{ $item->entry->direction === 'credit' ? '+' : '−' }}{{ number_format($item->entry->amount, 2) }}</td>
+                                    <td class="ak-c bank-noprint">
                                         @if ($open)
                                             @can('bank-reconciliation-edit')
-                                                <form method="POST" action="{{ route('bank-reconciliations.unmatch', [$reconciliation, $item]) }}">@csrf @method('DELETE')<button class="text-xs text-red-600 hover:underline">Unmatch</button></form>
+                                                <form method="POST" action="{{ route('bank-reconciliations.unmatch', [$reconciliation, $item]) }}">@csrf @method('DELETE')<button class="ak-btn ak-btn-danger-outline ak-btn-sm">Unmatch</button></form>
                                             @endcan
                                         @endif
                                     </td>
@@ -153,7 +149,9 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            @else
+                <div class="ak-empty"><h2>Nothing matched yet</h2></div>
+            @endif
+        </section>
     </div>
 </x-app-layout>

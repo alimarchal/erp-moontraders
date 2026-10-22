@@ -1,50 +1,54 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Bank Cheque Register" :createRoute="route('bank-cheques.create')" createLabel="Add Cheque"
-            createPermission="bank-cheque-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+        <x-bank.head title="Bank Cheque Register" :crumbs="['Cheque register' => null]">
+            @can('bank-cheque-create')
+                <a href="{{ route('bank-cheques.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Add Cheque</a>
+            @endcan
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Bank Cheque Register" /></div>
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Bank Cheque Register" />
+        <x-status-message />
 
-    <x-filter-section :action="route('bank-cheques.index')">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <x-label for="filter_cheque_no" value="Cheque no." />
-                <x-input id="filter_cheque_no" name="filter[cheque_no]" type="text" class="mt-1 block w-full" :value="request('filter.cheque_no')" />
+    <x-bank.filters :action="route('bank-cheques.index')">
+                    <div class="ak-field">
+                <label for="filter_cheque_no">Cheque no.</label>
+                <input id="filter_cheque_no" name="filter[cheque_no]" type="text" value="{{ request('filter.cheque_no') }}">
             </div>
-            <div>
-                <x-label for="filter_bank_account_id" value="Bank account" />
-                <select data-placeholder="All" id="filter_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+            <div class="ak-field">
+                <label for="filter_bank_account_id">Bank account</label>
+                <select data-placeholder="All" id="filter_bank_account_id" name="filter[bank_account_id]" class="select2 bank-select">
                     <option value="">All</option>
                     @foreach ($bankAccounts as $account)
                         <option value="{{ $account->id }}" @selected((string) request('filter.bank_account_id') === (string) $account->id)>{{ $account->account_name }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <x-label for="filter_direction" value="Direction" />
-                <select data-placeholder="All" id="filter_direction" name="filter[direction]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+            <div class="ak-field">
+                <label for="filter_direction">Direction</label>
+                <select data-placeholder="All" id="filter_direction" name="filter[direction]" class="select2 bank-select">
                     <option value="">All</option>
                     @foreach (\App\Models\BankCheque::DIRECTIONS as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.direction') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <x-label for="filter_status" value="Status" />
-                <select data-placeholder="All" id="filter_status" name="filter[status]" class="select2 bank-select border-gray-300 rounded-md shadow-sm block mt-1 w-full">
+            <div class="ak-field">
+                <label for="filter_status">Status</label>
+                <select data-placeholder="All" id="filter_status" name="filter[status]" class="select2 bank-select">
                     <option value="">All</option>
                     @foreach (\App\Models\BankCheque::STATUSES as $value => $label)
                         <option value="{{ $value }}" @selected(request('filter.status') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
-        </div>
-    </x-filter-section>
+</x-bank.filters>
 
-    <x-data-table :items="$cheques" :headers="[
+    <x-bank.table :items="$cheques" :headers="[
         ['label' => 'Cheque no.', 'align' => 'text-left'],
         ['label' => 'Date', 'align' => 'text-left'],
         ['label' => 'Direction', 'align' => 'text-left'],
@@ -55,33 +59,34 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No cheques recorded." :emptyRoute="route('bank-cheques.create')" emptyLinkText="Add a cheque">
         @foreach ($cheques as $index => $cheque)
-            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
-                <td class="py-2 px-2">{{ $cheque->cheque_no }}</td>
-                <td class="py-2 px-2 font-normal">{{ $cheque->cheque_date->format('d-m-Y') }}</td>
-                <td class="py-2 px-2 font-normal">{{ \App\Models\BankCheque::DIRECTIONS[$cheque->direction] }}</td>
-                <td class="py-2 px-2 font-normal" dir="auto">{{ $cheque->company?->supplier_name ?? $cheque->payee_name ?? '—' }}</td>
-                <td class="py-2 px-2 font-normal">{{ $cheque->bankAccount->account_name }}</td>
-                <td class="py-2 px-2 text-right"><x-bank.money :value="$cheque->amount" /></td>
-                <td class="py-2 px-2 text-center">
+            <tr>
+                <td>{{ $cheque->cheque_no }}</td>
+                <td>{{ $cheque->cheque_date->format('d-m-Y') }}</td>
+                <td>{{ \App\Models\BankCheque::DIRECTIONS[$cheque->direction] }}</td>
+                <td dir="auto">{{ $cheque->company?->supplier_name ?? $cheque->payee_name ?? '—' }}</td>
+                <td>{{ $cheque->bankAccount->account_name }}</td>
+                <td class="ak-num"><x-bank.money :value="$cheque->amount" /></td>
+                <td class="ak-c">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ ['pending' => 'bg-amber-100 text-amber-800', 'cleared' => 'bg-emerald-100 text-emerald-700', 'bounced' => 'bg-red-100 text-red-700'][$cheque->status] ?? 'bg-gray-100 text-gray-700' }}">{{ \App\Models\BankCheque::STATUSES[$cheque->status] }}</span>
                     @if ($cheque->statementEntry)
                         <a href="{{ route('bank-statement-entries.show', $cheque->statementEntry) }}" class="block text-xs text-blue-700 hover:underline font-normal">statement line</a>
                     @endif
                 </td>
-                <td class="py-2 px-2 text-center">
-                    <div class="flex justify-center gap-3 font-normal">
+                <td class="ak-c">
+                    <div class="bk-row" style="justify-content:center">
                         @can('bank-cheque-edit')
-                            <a href="{{ route('bank-cheques.edit', $cheque) }}" class="text-green-700 hover:underline">Edit</a>
+                            <a href="{{ route('bank-cheques.edit', $cheque) }}" class="ak-btn ak-btn-outline ak-btn-sm">Edit</a>
                         @endcan
                         @can('bank-cheque-delete')
                             <form method="POST" action="{{ route('bank-cheques.destroy', $cheque) }}" onsubmit="return confirm('Delete this cheque?')">
                                 @csrf @method('DELETE')
-                                <button class="text-red-600 hover:underline">Delete</button>
+                                <button class="ak-btn ak-btn-danger-outline ak-btn-sm">Delete</button>
                             </form>
                         @endcan
                     </div>
                 </td>
             </tr>
         @endforeach
-    </x-data-table>
+    </x-bank.table>
+    </div>
 </x-app-layout>

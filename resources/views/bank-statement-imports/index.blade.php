@@ -1,36 +1,42 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Statement Imports" :createRoute="route('bank-statement-imports.create')" createLabel="Import statement"
-            createPermission="bank-statement-import-create" :showSearch="false" :showRefresh="true" backRoute="bank-statement-entries.index" />
+        <x-bank.head title="Statement imports" sub="Excel or CSV statements read into the register, with control-total checks." :crumbs="['Statement imports' => null]">
+            @can('bank-statement-import-create')
+                <a href="{{ route('bank-statement-imports.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> Import statement</a>
+            @endcan
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4"><x-bank.print-title title="Statement Imports" /></div>
 
-    <x-data-table :items="$imports" :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'File', 'align' => 'text-left'],
-        ['label' => 'Bank account', 'align' => 'text-left'],
-        ['label' => 'Period', 'align' => 'text-left'],
-        ['label' => 'Rows', 'align' => 'text-right'],
-        ['label' => 'Imported', 'align' => 'text-right'],
-        ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'By', 'align' => 'text-left'],
-    ]" emptyMessage="No statements imported yet." :emptyRoute="route('bank-statement-imports.create')" emptyLinkText="Import the first statement">
-        @foreach ($imports as $index => $import)
-            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
-                <td class="py-2 px-2 text-center">{{ $import->id }}</td>
-                <td class="py-2 px-2"><a href="{{ route('bank-statement-imports.show', $import) }}" class="text-blue-700 hover:underline">{{ $import->file_name }}</a></td>
-                <td class="py-2 px-2 font-normal">{{ $import->bankAccount->account_name }}</td>
-                <td class="py-2 px-2 font-normal">{{ $import->period_from?->format('d-m-Y') }} → {{ $import->period_to?->format('d-m-Y') }}</td>
-                <td class="py-2 px-2 text-right tabular-nums">{{ number_format($import->total_rows) }}</td>
-                <td class="py-2 px-2 text-right tabular-nums">{{ number_format($import->imported_rows) }}</td>
-                <td class="py-2 px-2 text-center">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ ['imported' => 'bg-emerald-100 text-emerald-700', 'previewed' => 'bg-amber-100 text-amber-800', 'failed' => 'bg-red-100 text-red-700'][$import->status] ?? 'bg-gray-100' }}">{{ ucfirst($import->status) }}</span>
-                </td>
-                <td class="py-2 px-2 font-normal">{{ $import->importer?->name }}</td>
-            </tr>
-        @endforeach
-    </x-data-table>
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Statement Imports" />
+        <x-status-message />
+
+        <x-bank.table :items="$imports" :headers="[
+            ['label' => '#', 'align' => 'text-center'],
+            ['label' => 'File', 'align' => 'text-left'],
+            ['label' => 'Bank account', 'align' => 'text-left'],
+            ['label' => 'Period', 'align' => 'text-left'],
+            ['label' => 'Rows', 'align' => 'text-right'],
+            ['label' => 'Imported', 'align' => 'text-right'],
+            ['label' => 'Status', 'align' => 'text-center'],
+            ['label' => 'By', 'align' => 'text-left'],
+        ]" emptyMessage="No statements imported yet." :emptyRoute="route('bank-statement-imports.create')" emptyLinkText="Import the first statement">
+            @foreach ($imports as $import)
+                <tr>
+                    <td class="ak-c">{{ $import->id }}</td>
+                    <td><a href="{{ route('bank-statement-imports.show', $import) }}" class="ak-primary-link">{{ $import->file_name }}</a></td>
+                    <td>{{ $import->bankAccount->account_name }}</td>
+                    <td>{{ $import->period_from?->format('d-m-Y') }} → {{ $import->period_to?->format('d-m-Y') }}</td>
+                    <td class="ak-num">{{ number_format($import->total_rows) }}</td>
+                    <td class="ak-num">{{ number_format($import->imported_rows) }}</td>
+                    <td class="ak-c"><span class="ak-status {{ ['imported' => 'ak-status-green', 'previewed' => 'ak-status-amber', 'failed' => 'ak-status-red'][$import->status] ?? 'ak-status-slate' }}"><i aria-hidden="true"></i>{{ ucfirst($import->status) }}</span></td>
+                    <td>{{ $import->importer?->name }}</td>
+                </tr>
+            @endforeach
+        </x-bank.table>
+    </div>
 </x-app-layout>

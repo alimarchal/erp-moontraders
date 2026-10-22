@@ -1,110 +1,92 @@
 @php($preview = $import->preview ?? [])
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Import Summary — {{ $import->file_name }}" :showSearch="false" :showRefresh="false" backRoute="bank-statement-imports.index" />
+        <x-bank.head :title="'Import summary: '.$import->file_name" :sub="$import->status === 'imported' ? 'Step 3 of 3: imported.' : 'Step 2 of 3: check the summary, then confirm.'"
+            :crumbs="['Statement imports' => route('bank-statement-imports.index'), $import->file_name => null]">
+            <a href="{{ route('bank-statement-imports.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
     </x-slot>
 
-    <div class="py-6">
     <x-bank.print-styles />
-    <x-bank.subnav />
-    <x-bank.print-title title="Statement Import" />
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
-            <x-status-message />
 
-            <ol class="flex items-center gap-2 text-sm">
-                <li class="flex items-center gap-2 text-gray-400"><span class="w-6 h-6 rounded-full bg-gray-200 text-xs grid place-items-center">✓</span>Upload</li>
-                <li class="text-gray-300">——</li>
-                <li class="flex items-center gap-2"><span class="w-6 h-6 rounded-full {{ $import->status === 'imported' ? 'bg-gray-200 text-gray-500' : 'bg-blue-950 text-white' }} text-xs grid place-items-center">2</span><b>Check summary</b></li>
-                <li class="text-gray-300">——</li>
-                <li class="flex items-center gap-2 {{ $import->status === 'imported' ? '' : 'text-gray-400' }}"><span class="w-6 h-6 rounded-full {{ $import->status === 'imported' ? 'bg-blue-950 text-white' : 'bg-gray-200' }} text-xs grid place-items-center">3</span>Confirm</li>
-            </ol>
+    <div class="ak-page">
+        <x-bank.subnav inside />
+        <x-bank.print-title title="Statement Import" :subtitle="$import->file_name" />
+        <x-status-message />
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                @foreach ([
-                    ['Rows read', $preview['valid_rows'] ?? 0, 'text-gray-900'],
-                    ['New rows', $preview['new_rows'] ?? 0, 'text-emerald-700'],
-                    ['Already in system', $preview['duplicate_rows'] ?? 0, 'text-amber-700'],
-                    ['Rows with problems', $preview['error_rows'] ?? 0, ($preview['error_rows'] ?? 0) > 0 ? 'text-red-700' : 'text-gray-900'],
-                ] as [$label, $value, $color])
-                    <div class="bg-white rounded-lg shadow p-4">
-                        <p class="text-xs uppercase tracking-wide text-gray-500">{{ $label }}</p>
-                        <p class="text-2xl font-bold {{ $color }} tabular-nums">{{ number_format($value) }}</p>
-                    </div>
-                @endforeach
-            </div>
+        <section class="ak-kpis" aria-label="Import figures">
+            @foreach ([
+                ['Rows read', $preview['valid_rows'] ?? 0, ''],
+                ['New rows', $preview['new_rows'] ?? 0, 'bk-in'],
+                ['Already in system', $preview['duplicate_rows'] ?? 0, ''],
+                ['Rows with problems', $preview['error_rows'] ?? 0, ($preview['error_rows'] ?? 0) > 0 ? 'bk-out' : ''],
+            ] as [$label, $value, $color])
+                <div class="ak-kpi"><span class="ak-kpi-body"><span class="ak-kpi-label">{{ $label }}</span><span class="ak-kpi-value {{ $color }}">{{ number_format($value) }}</span></span></div>
+            @endforeach
+        </section>
 
-            <div class="bg-white rounded-lg shadow p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div><p class="text-xs uppercase text-gray-500">Bank account</p><p class="font-semibold">{{ $import->bankAccount->account_name }}</p></div>
-                <div><p class="text-xs uppercase text-gray-500">Dates in file</p><p class="font-semibold">{{ $preview['date_from'] ?? '—' }} → {{ $preview['date_to'] ?? '—' }}</p></div>
-                <div><p class="text-xs uppercase text-gray-500">Need review (unidentified)</p><p class="font-semibold">{{ number_format($preview['needs_review_rows'] ?? 0) }}</p></div>
-                <div><p class="text-xs uppercase text-gray-500">Total debits in file</p><p class="font-semibold"><x-bank.money :value="$preview['total_debit'] ?? 0" /></p></div>
-                <div><p class="text-xs uppercase text-gray-500">Total credits in file</p><p class="font-semibold"><x-bank.money :value="$preview['total_credit'] ?? 0" /></p></div>
-            </div>
+        <section class="ak-card" style="padding:18px 20px">
+            <dl class="bk-dl" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+                <div><dt>Bank account</dt><dd>{{ $import->bankAccount->account_name }}</dd></div>
+                <div><dt>Dates in file</dt><dd>{{ $preview['date_from'] ?? '—' }} → {{ $preview['date_to'] ?? '—' }}</dd></div>
+                <div><dt>Need review (unidentified)</dt><dd>{{ number_format($preview['needs_review_rows'] ?? 0) }}</dd></div>
+                <div><dt>Total debits in file</dt><dd><x-bank.money :value="$preview['total_debit'] ?? 0" /></dd></div>
+                <div><dt>Total credits in file</dt><dd><x-bank.money :value="$preview['total_credit'] ?? 0" /></dd></div>
+            </dl>
+        </section>
 
-            <div class="bg-white rounded-lg shadow p-4">
-                <p class="font-semibold mb-2">Checks against the printed statement</p>
-                @forelse ($preview['checks'] ?? [] as $check)
-                    <div class="flex items-center justify-between py-1.5 border-b last:border-0 text-sm">
-                        <span>{{ $check['label'] }}</span>
-                        <span class="tabular-nums">
-                            expected <b>{{ number_format($check['expected'], 2) }}</b> · file <b>{{ number_format($check['actual'], 2) }}</b>
-                            <span class="ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold {{ $check['ok'] ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">{{ $check['ok'] ? 'Tallies' : 'Does not tally' }}</span>
-                        </span>
-                    </div>
-                @empty
-                    <p class="text-sm text-gray-500">No control figures were entered, so nothing was compared. You can still import.</p>
-                @endforelse
-            </div>
-
-            @if (! empty($preview['errors']))
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p class="font-semibold text-red-800 mb-2">Rows that will be skipped</p>
-                    <ul class="text-sm text-red-800 list-disc ps-5">
-                        @foreach ($preview['errors'] as $error)
-                            <li>Row {{ $error['row'] }}: {{ $error['message'] }}</li>
-                        @endforeach
-                    </ul>
+        <section class="ak-card" style="padding:18px 20px">
+            <h2 class="uf-card-title" style="margin-bottom:8px">Checks against the printed statement</h2>
+            @forelse ($preview['checks'] ?? [] as $check)
+                <div class="bk-file">
+                    <span>{{ $check['label'] }}</span>
+                    <span class="bk-num">expected <b>{{ number_format($check['expected'], 2) }}</b> · file <b>{{ number_format($check['actual'], 2) }}</b>
+                        <span class="ak-status {{ $check['ok'] ? 'ak-status-green' : 'ak-status-red' }}" style="margin-left:8px"><i aria-hidden="true"></i>{{ $check['ok'] ? 'Tallies' : 'Does not tally' }}</span></span>
                 </div>
-            @endif
+            @empty
+                <p class="ak-muted">No control figures were entered, so nothing was compared. You can still import.</p>
+            @endforelse
+        </section>
 
-            <div class="bg-white rounded-lg shadow overflow-x-auto">
-                <p class="font-semibold p-4 pb-2">First rows</p>
-                <table class="min-w-full text-sm">
-                    <thead class="bg-gray-50 text-xs uppercase text-gray-500"><tr><th class="px-3 py-2 text-left">Row</th><th class="px-3 py-2 text-left">Date</th><th class="px-3 py-2 text-left">Party</th><th class="px-3 py-2 text-left">Reference</th><th class="px-3 py-2 text-right">Debit</th><th class="px-3 py-2 text-right">Credit</th></tr></thead>
+        @if (! empty($preview['errors']))
+            <div class="ak-alert ak-alert-error" role="alert">
+                <b>Rows that will be skipped</b>
+                <ul style="margin:6px 0 0; padding-left:18px">@foreach ($preview['errors'] as $error)<li>Row {{ $error['row'] }}: {{ $error['message'] }}</li>@endforeach</ul>
+            </div>
+        @endif
+
+        <section class="ak-card">
+            <div class="ak-dt-toolbar"><p><b>First rows</b></p></div>
+            <div class="ak-dt-scroll" tabindex="0">
+                <table class="ak-dt">
+                    <caption class="sr-only">First rows of the file</caption>
+                    <thead><tr><th scope="col">Row</th><th scope="col">Date</th><th scope="col">Party</th><th scope="col">Reference</th><th scope="col" class="ak-num">Debit</th><th scope="col" class="ak-num">Credit</th></tr></thead>
                     <tbody>
                         @foreach ($preview['sample'] ?? [] as $row)
-                            <tr class="border-t {{ $row['needs_review'] ? 'bg-yellow-50' : '' }}">
-                                <td class="px-3 py-1.5">{{ $row['row'] }}</td>
-                                <td class="px-3 py-1.5">{{ $row['posting_date'] }}</td>
-                                <td class="px-3 py-1.5" dir="auto">{{ $row['party'] }}</td>
-                                <td class="px-3 py-1.5">{{ $row['reference'] }}</td>
-                                <td class="px-3 py-1.5 text-right"><x-bank.money :value="$row['debit']" /></td>
-                                <td class="px-3 py-1.5 text-right"><x-bank.money :value="$row['credit']" /></td>
+                            <tr>
+                                <td>{{ $row['row'] }}</td><td class="ak-mono">{{ $row['posting_date'] }}</td><td dir="auto">{{ $row['party'] }}@if ($row['needs_review']) <b class="ak-muted">· review</b>@endif</td><td>{{ $row['reference'] }}</td>
+                                <td class="ak-num"><x-bank.money :value="$row['debit']" /></td><td class="ak-num"><x-bank.money :value="$row['credit']" /></td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+        </section>
 
-            @if ($import->status === 'previewed')
-                <div class="flex items-center justify-between">
-                    <form method="POST" action="{{ route('bank-statement-imports.destroy', $import) }}" onsubmit="return confirm('Discard this import?')">
-                        @csrf @method('DELETE')
-                        <button class="text-sm text-red-600 hover:underline">Discard</button>
-                    </form>
-                    <form method="POST" action="{{ route('bank-statement-imports.confirm', $import) }}" x-data="{ busy: false }" @submit="busy = true">
-                        @csrf
-                        <x-button class="bg-green-800" x-bind:disabled="busy" :disabled="! ($preview['checks_ok'] ?? false)">
-                            Confirm import of {{ number_format($preview['new_rows'] ?? 0) }} new rows
-                        </x-button>
-                    </form>
-                </div>
-                @unless ($preview['checks_ok'] ?? false)
-                    <p class="text-sm text-red-700 text-right">The figures do not tally, so the import is blocked. Correct the figures or the file and upload again.</p>
-                @endunless
-            @else
-                <a href="{{ route('bank-statement-entries.index', ['filter' => ['import_id' => $import->id]]) }}" class="inline-flex text-blue-700 hover:underline">View the {{ number_format($import->imported_rows) }} imported entries →</a>
-            @endif
-        </div>
+        @if ($import->status === 'previewed')
+            <div class="bk-row bank-noprint" style="justify-content:space-between">
+                <form method="POST" action="{{ route('bank-statement-imports.destroy', $import) }}" onsubmit="return confirm('Discard this import?')">@csrf @method('DELETE')<button class="ak-btn ak-btn-danger-outline">Discard</button></form>
+                <form method="POST" action="{{ route('bank-statement-imports.confirm', $import) }}" x-data="{ busy: false }" @submit="busy = true">
+                    @csrf
+                    <button class="ak-btn ak-btn-success" x-bind:disabled="busy" @disabled(! ($preview['checks_ok'] ?? false))>Confirm import of {{ number_format($preview['new_rows'] ?? 0) }} new rows</button>
+                </form>
+            </div>
+            @unless ($preview['checks_ok'] ?? false)
+                <p class="ak-muted bank-noprint" style="text-align:right; color:#991b1b">The figures do not tally, so the import is blocked. Correct the figures or the file and upload again.</p>
+            @endunless
+        @else
+            <a href="{{ route('bank-statement-entries.index', ['filter' => ['import_id' => $import->id]]) }}" class="ak-btn ak-btn-outline bank-noprint" style="align-self:flex-start">View the {{ number_format($import->imported_rows) }} imported entries →</a>
+        @endif
     </div>
 </x-app-layout>

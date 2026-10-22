@@ -155,7 +155,7 @@ test('the reconciliation screens render for a user with the right permissions', 
     $user = bankUser(['bank-reconciliation-list', 'bank-reconciliation-create', 'bank-reconciliation-edit', 'bank-reconciliation-complete', 'bank-reconciliation-cancel', 'bank-statement-entry-list']);
     $this->actingAs($user);
 
-    $this->get(route('bank-reconciliations.create'))->assertOk()->assertSee('Start Bank Reconciliation');
+    $this->get(route('bank-reconciliations.create'))->assertOk()->assertSee('Start reconciliation');
 
     $this->post(route('bank-reconciliations.store'), [
         'bank_account_id' => $this->fixture['bank']->id, 'period_from' => now()->startOfMonth()->toDateString(),

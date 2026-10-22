@@ -14,6 +14,15 @@
 
     @push('header')
         <style>
+            .ur-help { font-family: 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', Tahoma, serif; font-size: 16px; line-height: 2.1; color: #1f2937; text-align: right; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
+            .ur-help h3 { margin: 0 0 4px; font-size: 19px; font-weight: 700; color: #1e2a5a; }
+            .ur-help p { margin: 0 0 8px; }
+            .ur-help dl { display: grid; grid-template-columns: max-content 1fr; column-gap: 20px; row-gap: 4px; margin: 0; }
+            .ur-help dt { font-weight: 700; color: #1e2a5a; white-space: nowrap; }
+            .ur-help dd { margin: 0; }
+            .ur-help .en { direction: ltr; unicode-bidi: isolate; display: inline-block; font-family: Inter, Arial, sans-serif; font-size: 0.82em; line-height: 1.6; background: #eef2ff; border-radius: 5px; padding: 0 6px; }
+            @media (max-width: 640px) { .ur-help dl { grid-template-columns: 1fr; } .ur-help dd { margin-bottom: 8px; } }
+            @media print { .ur-help { display: none; } }
             @media print {
                 @page { margin: 8mm; }
                 .no-print, #filters { display: none !important; }
@@ -26,19 +35,26 @@
     @endpush
 
     <x-filter-section :action="route('bank-entry-categories.index')">
-        <p class="font-semibold text-sm text-gray-800 mb-1">؟ مدد — یہ صفحہ کس لیے ہے (اردو)</p>
-        <div dir="rtl" lang="ur" class="mb-4 pb-4 border-b border-gray-200 text-sm leading-8 text-gray-700" style="font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq',serif">
-                <p><b>مقصد:</b> بینک رجسٹر کی ہر اندراج (entry) کو ایک <b>کیٹیگری</b> دی جاتی ہے، مثلاً «Customer Receipt»، «Supplier Payment»، «Salary / Staff»، «Bank Charges»۔ کیٹیگری سے طے ہوتا ہے کہ رقم کس کھاتے (ledger account) میں جائے گی اور رپورٹوں میں کس عنوان کے تحت نظر آئے گی۔</p>
-                <ul class="list-disc pr-6">
-                    <li><b>Used for:</b> کیٹیگری صرف رقم آنے (Receipt)، رقم جانے (Payment) یا دونوں کے لیے ہے۔ اندراج بناتے وقت فہرست اسی کے مطابق دکھائی جاتی ہے۔</li>
-                    <li><b>Default ledger account:</b> اگر کمپنی/پارٹی کا کھاتہ نہ ہو تو رقم اسی کھاتے میں جاتی ہے۔ خالی ہو تو کمپنی کا receivable / payable استعمال ہوتا ہے۔</li>
-                    <li><b>Entries:</b> اس کیٹیگری میں اب تک کتنے اندراج ہیں۔</li>
-                    <li><b>Add Category:</b> نئی کیٹیگری بنائیں۔ <b>Edit</b> (نارنجی) سے نام، قسم یا کھاتہ بدلیں۔</li>
-                    <li><b>Deactivate (سرخ):</b> کیٹیگری ڈیلیٹ نہیں ہوتی، صرف <b>Inactive</b> ہو جاتی ہے، کیونکہ آج یا آئندہ کسی اندراج سے اس کا تعلق ہو سکتا ہے۔ Inactive کیٹیگری نئے اندراج میں نظر نہیں آتی مگر پرانا ریکارڈ اور رپورٹیں ویسی ہی رہتی ہیں۔ دوبارہ چلانے کے لیے Edit میں «Active» لگا دیں۔</li>
-                    <li><b>Filter / Print / PDF / Excel:</b> اوپر کے بٹنوں سے فہرست چھانٹیں، پرنٹ کریں یا PDF اور Excel میں ڈاؤن لوڈ کریں (پرنٹ میں Actions کا کالم نہیں آتا)۔</li>
-                    <li><b>اجازتیں (Permissions):</b> bank-entry-category-list / create / edit / delete۔ «delete» کی اجازت والا صارف کیٹیگری کو Inactive کر سکتا ہے۔</li>
-                </ul>
-            </div>
+        <section class="ur-help" dir="rtl" lang="ur">
+            <h3>مدد: یہ صفحہ کس لیے ہے؟</h3>
+            <p>بینک رجسٹر کی ہر انٹری کو ایک <b>کیٹیگری</b> دی جاتی ہے، مثلاً <bdi class="en">Customer Receipt</bdi>، <bdi class="en">Supplier Payment</bdi>، <bdi class="en">Salary / Staff</bdi> یا <bdi class="en">Bank Charges</bdi>۔ کیٹیگری سے طے ہوتا ہے کہ رقم کس کھاتے (<bdi class="en">ledger account</bdi>) میں جائے گی اور رپورٹوں میں کس عنوان کے تحت نظر آئے گی۔</p>
+            <dl>
+                <dt><bdi class="en">Used for</bdi></dt>
+                <dd>کیٹیگری صرف رقم آنے (<bdi class="en">Receipt</bdi>)، صرف رقم جانے (<bdi class="en">Payment</bdi>) یا دونوں کے لیے ہے۔ انٹری بناتے وقت فہرست اسی کے مطابق دکھائی جاتی ہے۔</dd>
+                <dt><bdi class="en">Default ledger account</bdi></dt>
+                <dd>اگر کمپنی یا پارٹی کا اپنا کھاتہ نہ ہو تو رقم اسی کھاتے میں جاتی ہے۔ خالی ہو تو کمپنی کا <bdi class="en">receivable / payable</bdi> کھاتہ استعمال ہوتا ہے۔</dd>
+                <dt><bdi class="en">Entries</bdi></dt>
+                <dd>اس کیٹیگری میں اب تک کتنی انٹریاں ہیں۔</dd>
+                <dt>نئی کیٹیگری</dt>
+                <dd>اوپر <b>+</b> کے بٹن سے بنائیں۔ نام، قسم یا کھاتہ بدلنے کے لیے <b>نارنجی</b> ایڈٹ آئیکن دبائیں۔</dd>
+                <dt>غیر فعال کرنا</dt>
+                <dd><b>سرخ</b> ✕ آئیکن کیٹیگری کو ڈیلیٹ نہیں کرتا، صرف <bdi class="en">Inactive</bdi> کر دیتا ہے، کیونکہ آج یا آئندہ کسی انٹری سے اس کا تعلق ہو سکتا ہے۔ غیر فعال کیٹیگری نئی انٹری میں نظر نہیں آتی، مگر پرانا ریکارڈ اور رپورٹیں ویسی ہی رہتی ہیں۔ دوبارہ چلانے کے لیے ایڈٹ میں <bdi class="en">Active</bdi> لگا دیں۔</dd>
+                <dt>فلٹر، پرنٹ، <bdi class="en">PDF</bdi>، <bdi class="en">Excel</bdi></dt>
+                <dd>اوپر کے آئیکنز سے فہرست چھانٹیں، پرنٹ کریں یا ڈاؤن لوڈ کریں۔ پرنٹ میں <bdi class="en">Actions</bdi> کا کالم شامل نہیں ہوتا۔</dd>
+                <dt>اجازتیں</dt>
+                <dd><bdi class="en">bank-entry-category-list</bdi>، <bdi class="en">create</bdi>، <bdi class="en">edit</bdi> اور <bdi class="en">delete</bdi>۔ <bdi class="en">delete</bdi> کی اجازت والا صارف کیٹیگری کو غیر فعال کر سکتا ہے۔</dd>
+            </dl>
+        </section>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <x-label for="filter_name" value="Name" />

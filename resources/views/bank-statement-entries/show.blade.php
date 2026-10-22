@@ -8,7 +8,7 @@
 
     <x-bank.print-styles />
 
-    <div class="ak-page">
+    <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <x-bank.subnav inside />
         <x-bank.print-title title="Bank Entry" :subtitle="'Transaction #'.$entry->id" />
         <x-status-message />

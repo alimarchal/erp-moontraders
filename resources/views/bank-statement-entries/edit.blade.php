@@ -7,7 +7,7 @@
 
     <x-bank.print-styles />
 
-    <div class="ak-page" style="max-width:56rem">
+    <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <x-status-message />
         <x-validation-errors />
 

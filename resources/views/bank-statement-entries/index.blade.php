@@ -61,7 +61,7 @@
 
     <x-bank.print-styles />
 
-    <div class="ak-page" x-data="bankRegister()">
+    <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16" x-data="bankRegister()">
         <x-bank.subnav inside />
         <x-bank.print-title title="Bank Register" :subtitle="$scope" />
         <x-status-message />

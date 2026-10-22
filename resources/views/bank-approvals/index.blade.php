@@ -7,7 +7,7 @@
 
     <x-bank.print-styles />
 
-    <div class="ak-page" x-data="{ ids: [] }">
+    <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16" x-data="{ ids: [] }">
         <x-bank.subnav inside />
         <x-bank.print-title title="Pending Approvals" :subtitle="$entries->total().' entries waiting'" />
         <x-status-message />

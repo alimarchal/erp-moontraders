@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class DailyStockRegisterController extends Controller implements HasMiddleware
 {
@@ -20,7 +21,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $date = $request->input('date', now()->format('Y-m-d'));
         $supplierId = $request->input('supplier_id');
@@ -128,8 +129,22 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
+        // 8. In Hand Value (at recorded ledger unit cost)
+        // Mirrors the In Hand quantity formula: Opening + Purchase + BF - Sales - Shortage.
+        $inHandValues = InventoryLedgerEntry::query()
+            ->whereIn('product_id', $productIds)
+            ->whereDate('date', '<=', $date)
+            ->select('product_id', DB::raw("SUM(CASE
+                WHEN date < ? AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
+                WHEN date = ? AND transaction_type = 'purchase' AND warehouse_id IS NOT NULL THEN debit_qty * unit_cost
+                WHEN date = ? AND transaction_type IN ('sale', 'shortage') THEN -credit_qty * unit_cost
+                ELSE 0 END) as value"))
+            ->addBinding([$date, $date, $date], 'select')
+            ->groupBy('product_id')
+            ->pluck('value', 'product_id');
+
         // Assemble Data
-        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $vanBf, $vanIssue, $sales, $returns, $shortage) {
+        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $vanBf, $vanIssue, $sales, $returns, $shortage, $inHandValues) {
             $pId = $product->id;
 
             // 1. Opening
@@ -174,6 +189,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
                 'sale' => $sale,
                 'shortage' => $short,
                 'in_hand' => $inHand,
+                'in_hand_value' => (float) ($inHandValues[$pId] ?? 0),
             ];
         });
 

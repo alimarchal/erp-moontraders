@@ -155,6 +155,7 @@
                             <th class="w-20 text-center font-bold" title="Shortage">Shortage</th>
                             <th class="w-20 text-center font-bold" title="In Hand Stock (System Total: WH + Van)">In
                                 Hand</th>
+                            <th class="w-28 text-center font-bold" title="In Hand Stock Value (at ledger unit cost)">Stock Value</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -175,10 +176,11 @@
                                 <td class="text-center bg-gray-100 font-bold">
                                     {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}
                                 </td>
+                                <td class="text-right px-2 font-semibold">{{ number_format($row->in_hand_value, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center py-4">No data found based on filters.</td>
+                                <td colspan="12" class="text-center py-4">No data found based on filters.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -212,6 +214,7 @@
                             <td class="text-center">
                                 {{ rtrim(rtrim(number_format($reportData->sum('in_hand'), 2), '0'), '.') }}
                             </td>
+                            <td class="text-right px-2">{{ number_format($reportData->sum('in_hand_value'), 2) }}</td>
                         </tr>
                     </tfoot>
                 </table>

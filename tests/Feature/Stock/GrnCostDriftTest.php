@@ -321,3 +321,30 @@ it('values a revaluation in the daily stock register so it agrees with the stock
         ->assertSuccessful()
         ->assertViewHas('reportData', fn ($rows) => (float) $rows->sole()->in_hand_value === 500.0 && (float) $rows->sole()->in_hand === 10.0);
 });
+
+it('includes the stock adjustments of the report date in the daily stock register', function () {
+    Permission::create(['name' => 'report-inventory-daily-stock-register']);
+    $this->user->givePermissionTo('report-inventory-daily-stock-register');
+    $this->actingAs($this->user);
+
+    $day = now()->toDateString();
+    $row = fn (string $type, float $debit, float $credit, float $cost, float $value) => [
+        'date' => $day, 'transaction_type' => $type, 'product_id' => $this->product->id,
+        'stock_batch_id' => $this->batch->id, 'warehouse_id' => $this->warehouse->id,
+        'debit_qty' => $debit, 'credit_qty' => $credit, 'unit_cost' => $cost, 'total_value' => $value,
+        'running_balance' => 0, 'created_at' => now(), 'updated_at' => now(),
+    ];
+
+    // Received 10 at 100, then on the same day: 2 units counted short and the cost revalued to 110.
+    DB::table('inventory_ledger_entries')->insert([
+        $row('purchase', 10, 0, 100, 1000),
+        $row('adjustment', 0, 2, 100, -200),
+        $row('adjustment', 0, 0, 110, 80),
+    ]);
+
+    $this->get(route('reports.daily-stock-register.index', ['date' => $day, 'supplier_id' => $this->supplier->id]))
+        ->assertSuccessful()
+        ->assertViewHas('reportData', fn ($rows) => (float) $rows->sole()->in_hand === 8.0
+            && (float) $rows->sole()->adjustment === -2.0
+            && (float) $rows->sole()->in_hand_value === 880.0);
+});

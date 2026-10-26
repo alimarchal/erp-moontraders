@@ -153,6 +153,7 @@
                             <th class="w-20 text-center font-bold" title="Returns">Return</th>
                             <th class="w-20 text-center font-bold" title="Sales">Sales</th>
                             <th class="w-20 text-center font-bold" title="Shortage">Shortage</th>
+                            <th class="w-20 text-center font-bold" title="Stock adjustments posted on this date">Adjustment</th>
                             <th class="w-20 text-center font-bold" title="In Hand Stock (System Total: WH + Van)">In
                                 Hand</th>
                             <th class="w-28 text-center font-bold" title="In Hand Stock Value (at ledger unit cost)">Stock Value</th>
@@ -173,6 +174,7 @@
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->return, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->sale, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->shortage, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->adjustment, 2), '0'), '.') }}</td>
                                 <td class="text-center bg-gray-100 font-bold">
                                     {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}
                                 </td>
@@ -180,7 +182,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="text-center py-4">No data found based on filters.</td>
+                                <td colspan="13" class="text-center py-4">No data found based on filters.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -210,6 +212,9 @@
                             </td>
                             <td class="text-center">
                                 {{ rtrim(rtrim(number_format($reportData->sum('shortage'), 2), '0'), '.') }}
+                            </td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('adjustment'), 2), '0'), '.') }}
                             </td>
                             <td class="text-center">
                                 {{ rtrim(rtrim(number_format($reportData->sum('in_hand'), 2), '0'), '.') }}

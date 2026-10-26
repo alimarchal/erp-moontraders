@@ -38,8 +38,17 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         $dropdownProducts = $dropdownProductsQuery->get();
 
         // Products for Report (Filtered by Supplier AND Product if selected)
+        // Active products always show. An inactive (or deactivated-later) product still shows while it holds
+        // stock or moves on the date, otherwise its stock is missing from the register and the totals.
         $productsQuery = Product::query()
-            ->where('is_active', true)
+            ->where(function ($query) use ($date) {
+                $query->where('is_active', true)
+                    ->orWhereIn('id', InventoryLedgerEntry::query()
+                        ->select('product_id')
+                        ->whereDate('date', '<=', $date)
+                        ->groupBy('product_id')
+                        ->havingRaw('ABS(SUM(debit_qty - credit_qty)) > 0.0001 OR SUM(CASE WHEN date = ? THEN 1 ELSE 0 END) > 0', [$date]));
+            })
             ->with(['supplier', 'uom']);
 
         if ($supplierId) {
@@ -195,7 +204,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
             return (object) [
                 'id' => $product->id,
-                'sku' => $product->product_name,
+                'sku' => $product->product_name.($product->is_active ? '' : ' (inactive)'),
                 'code' => $product->product_code,
                 'opening' => $open,
                 'purchase' => $purch,

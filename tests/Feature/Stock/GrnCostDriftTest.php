@@ -359,3 +359,24 @@ it('hides the adjustment column of the daily stock register on request', functio
     $this->get(route('reports.daily-stock-register.index', $query))->assertSuccessful()->assertSee('Stock adjustments posted on this date');
     $this->get(route('reports.daily-stock-register.index', $query + ['show_adjustment' => '0']))->assertSuccessful()->assertDontSee('Stock adjustments posted on this date');
 });
+
+it('keeps an inactive product that still holds stock in the daily stock register', function () {
+    Permission::create(['name' => 'report-inventory-daily-stock-register']);
+    $this->user->givePermissionTo('report-inventory-daily-stock-register');
+    $this->actingAs($this->user);
+
+    $inactive = Product::factory()->create(['supplier_id' => $this->supplier->id, 'uom_id' => $this->uom->id, 'is_active' => false]);
+    $empty = Product::factory()->create(['supplier_id' => $this->supplier->id, 'uom_id' => $this->uom->id, 'is_active' => false]);
+
+    DB::table('inventory_ledger_entries')->insert([
+        'date' => now()->subDays(2)->toDateString(), 'transaction_type' => 'purchase', 'product_id' => $inactive->id,
+        'stock_batch_id' => $this->batch->id, 'warehouse_id' => $this->warehouse->id,
+        'debit_qty' => 67, 'credit_qty' => 0, 'unit_cost' => 45, 'total_value' => 3015,
+        'running_balance' => 67, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $this->get(route('reports.daily-stock-register.index', ['date' => now()->toDateString(), 'supplier_id' => $this->supplier->id]))
+        ->assertSuccessful()
+        ->assertViewHas('reportData', fn ($rows) => $rows->contains(fn ($row) => $row->id === $inactive->id && (float) $row->in_hand === 67.0 && (float) $row->in_hand_value === 3015.0)
+            && ! $rows->contains(fn ($row) => $row->id === $empty->id));
+});

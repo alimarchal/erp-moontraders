@@ -34,7 +34,7 @@
     $userNames = $userOptions->pluck('name', 'id');
     $chipLabels = [
         'search' => 'Search', 'supplier_id' => 'Supplier', 'warehouse_id' => 'Warehouse', 'company_id' => 'Company',
-        'cost_center_id' => 'Cost center', 'user_id' => 'Linked user', 'has_login' => 'Linked to a user', 'no_warehouse' => 'No warehouse',
+        'cost_center_id' => 'Cost center', 'user_id' => 'Linked user', 'has_login' => 'Linked to a user', 'no_supplier' => 'No supplier', 'no_warehouse' => 'No warehouse',
         'employee_code' => 'Code', 'name' => 'Name', 'company_name' => 'Principal', 'designation' => 'Designation',
         'phone' => 'Phone', 'email' => 'Email', 'address' => 'Address', 'hire_date' => 'Hire date',
     ];
@@ -44,15 +44,14 @@
         'company_id' => $companyNames[$value] ?? $value,
         'cost_center_id' => $costCenterNames[$value] ?? $value,
         'user_id' => $userNames[$value] ?? $value,
-        'no_warehouse' => 'Active, none assigned',
+        'no_supplier', 'no_warehouse' => 'Active, none assigned',
         default => $value,
     };
-    $advancedKeys = ['company_id', 'cost_center_id', 'user_id', 'has_login', 'no_warehouse', 'designation', 'hire_date'];
+    $advancedKeys = ['company_id', 'cost_center_id', 'user_id', 'has_login', 'designation', 'hire_date'];
     $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
     $sortNames = ['employee_code' => 'Code', 'name' => 'Name', 'designation' => 'Designation', 'hire_date' => 'Hire date', 'created_at' => 'Date added'];
     $sortField = ltrim($sort, '-');
     $canEdit = $authUser->can('employee-edit');
-    $canDelete = $authUser->can('employee-delete');
     $canBulk = $canEdit;
     $pageIds = $canBulk ? $employees->getCollection()->pluck('id')->map(fn ($id) => (string) $id)->values() : [];
 @endphp
@@ -79,7 +78,16 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
-    <style>@page { size: A4 landscape; margin: 10mm; }</style>
+    <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        /* Searchable dropdowns (Select2) sized like the other filter fields */
+        .ak-filters .select2-container { width: 100% !important; display: block; }
+        .ak-filters .select2-container .select2-selection--single { height: 38px; margin-top: 0; padding: 0 30px 0 12px; display: flex; align-items: center; border: 1px solid var(--ak-border); border-radius: 8px; box-shadow: none; font-size: 14px; }
+        .ak-filters .select2-container .select2-selection__arrow { top: 6px !important; }
+        .ak-filters .select2-container--focus .select2-selection--single, .ak-filters .select2-container--open .select2-selection--single { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
+        .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
+        .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
+    </style>
 
     <div class="ak-page" x-data="employeeList()">
         <div class="ak-print-head">
@@ -98,7 +106,7 @@
 
         {{-- KPI cards (also filters) --}}
         <section class="ak-kpis" aria-label="Employee summary">
-            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' && ! isset($filters['has_login']) && ! isset($filters['no_warehouse']) ? ' is-active' : '' }}">
+            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' && ! isset($filters['no_supplier']) && ! isset($filters['no_warehouse']) ? ' is-active' : '' }}">
                 <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.13a9.38 9.38 0 0 0 2.63.37 9.34 9.34 0 0 0 4.12-.95 4.13 4.13 0 0 0-7.53-2.49M15 19.13v-.01a6.37 6.37 0 0 0-.97-3.4M15 19.13v.1A12.32 12.32 0 0 1 8.62 21a12.32 12.32 0 0 1-6.37-1.77v-.11a6.38 6.38 0 0 1 11.96-3.4M12 6.38a3.38 3.38 0 1 1-6.75 0 3.38 3.38 0 0 1 6.75 0Zm8.25 2.25a2.63 2.63 0 1 1-5.25 0 2.63 2.63 0 0 1 5.25 0Z" /></svg></span>
                 <span class="ak-kpi-body">
                     <span class="ak-kpi-label">Employees</span>
@@ -114,12 +122,12 @@
                     <span class="ak-kpi-hint">{{ number_format($stats['inactive']) }} inactive</span>
                 </span>
             </a>
-            <a href="{{ $onlyUrl(['has_login' => 'Yes']) }}" class="ak-kpi{{ ($filters['has_login'] ?? '') === 'Yes' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.12a7.5 7.5 0 0 1 15 0A17.93 17.93 0 0 1 12 21.75c-2.68 0-5.22-.58-7.5-1.63Z" /></svg></span>
+            <a href="{{ $onlyUrl(['no_supplier' => 'Yes', 'is_active' => '1']) }}" class="ak-kpi{{ $stats['no_supplier'] ? ' ak-kpi-action' : '' }}{{ ($filters['no_supplier'] ?? '') === 'Yes' ? ' is-active' : '' }}">
+                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.35m-16.5 11.65V9.35m0 0a3 3 0 0 0 3.75-.62 3 3 0 0 0 4.5 0 3 3 0 0 0 4.5 0 3 3 0 0 0 3.75.62m-16.5 0a3 3 0 0 1-.62-4.72L4.2 3.44A1.5 1.5 0 0 1 5.26 3h13.48a1.5 1.5 0 0 1 1.06.44l1.19 1.19a3 3 0 0 1-.62 4.72" /></svg></span>
                 <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Linked to a user</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['with_login']) }}</span>
-                    <span class="ak-kpi-hint">can sign in to the system</span>
+                    <span class="ak-kpi-label">No supplier yet</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['no_supplier']) }}</span>
+                    <span class="ak-kpi-hint">{{ $stats['no_supplier'] ? 'Active, but no supplier assigned →' : 'Everyone has a supplier' }}</span>
                 </span>
             </a>
             <a href="{{ $onlyUrl(['no_warehouse' => 'Yes', 'is_active' => '1']) }}" class="ak-kpi{{ $stats['no_warehouse'] ? ' ak-kpi-action' : '' }}{{ ($filters['no_warehouse'] ?? '') === 'Yes' ? ' is-active' : '' }}">
@@ -160,7 +168,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_supplier">Supplier</label>
-                        <select id="f_supplier" name="filter[supplier_id]">
+                        <select id="f_supplier" class="gl-select" name="filter[supplier_id]">
                             <option value="">All suppliers</option>
                             @foreach ($supplierOptions as $supplier)
                                 <option value="{{ $supplier->id }}" @selected((string) ($filters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
@@ -169,7 +177,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_warehouse">Warehouse</label>
-                        <select id="f_warehouse" name="filter[warehouse_id]">
+                        <select id="f_warehouse" class="gl-select" name="filter[warehouse_id]">
                             <option value="">All warehouses</option>
                             @foreach ($warehouseOptions as $warehouse)
                                 <option value="{{ $warehouse->id }}" @selected((string) ($filters['warehouse_id'] ?? '') === (string) $warehouse->id)>{{ $warehouse->warehouse_name }}</option>
@@ -197,7 +205,7 @@
                 <div id="ak-advanced" class="ak-filter-advanced ak-filter-advanced-users" x-show="advanced" x-cloak x-transition>
                     <div class="ak-field">
                         <label for="f_company">Company</label>
-                        <select id="f_company" name="filter[company_id]">
+                        <select id="f_company" class="gl-select" name="filter[company_id]">
                             <option value="">All companies</option>
                             @foreach ($companyOptions as $company)
                                 <option value="{{ $company->id }}" @selected((string) ($filters['company_id'] ?? '') === (string) $company->id)>{{ $company->company_name }}</option>
@@ -206,7 +214,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_cost_center">Cost center</label>
-                        <select id="f_cost_center" name="filter[cost_center_id]">
+                        <select id="f_cost_center" class="gl-select" name="filter[cost_center_id]">
                             <option value="">All cost centers</option>
                             @foreach ($costCenterOptions as $costCenter)
                                 <option value="{{ $costCenter->id }}" @selected((string) ($filters['cost_center_id'] ?? '') === (string) $costCenter->id)>{{ $costCenter->name }}</option>
@@ -215,7 +223,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_user">Linked user</label>
-                        <select id="f_user" name="filter[user_id]">
+                        <select id="f_user" class="gl-select" name="filter[user_id]">
                             <option value="">All users</option>
                             @foreach ($userOptions as $user)
                                 <option value="{{ $user->id }}" @selected((string) ($filters['user_id'] ?? '') === (string) $user->id)>{{ $user->name }}</option>
@@ -264,7 +272,6 @@
                             <option value="">Choose action…</option>
                             <option value="activate">Activate</option>
                             <option value="deactivate">Deactivate</option>
-                            @if ($canDelete)<option value="delete">Delete</option>@endif
                         </select>
                         <button type="submit" class="ak-btn ak-btn-primary ak-btn-sm" :disabled="!bulkAction">Apply</button>
                         <button type="button" class="ak-btn ak-btn-ghost ak-btn-sm" @click="clearSelection()">Clear selection</button>
@@ -299,10 +306,10 @@
                                     </th>
                                     <th scope="col" class="ak-sticky-2" aria-sort="{{ $ariaSort('name') }}"><a href="{{ $sortUrl('name') }}">Employee <span aria-hidden="true">{{ $sortMark('name') }}</span></a></th>
                                     <th scope="col" aria-sort="{{ $ariaSort('employee_code') }}"><a href="{{ $sortUrl('employee_code') }}">Code <span aria-hidden="true">{{ $sortMark('employee_code') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('designation') }}"><a href="{{ $sortUrl('designation') }}">Designation / Supplier <span aria-hidden="true">{{ $sortMark('designation') }}</span></a></th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('designation') }}"><a href="{{ $sortUrl('designation') }}">Designation <span aria-hidden="true">{{ $sortMark('designation') }}</span></a></th>
+                                    <th scope="col">Supplier</th>
                                     <th scope="col">Warehouse</th>
-                                    <th scope="col">Linked user</th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('hire_date') }}"><a href="{{ $sortUrl('hire_date') }}">Hired <span aria-hidden="true">{{ $sortMark('hire_date') }}</span></a></th>
+                                    <th scope="col" class="ak-num" title="Sales settlements made by this employee">Settlements</th>
                                     <th scope="col">Status</th>
                                     <th scope="col" class="ak-c ak-sticky-end"><span class="sr-only">Actions</span></th>
                                 </tr>
@@ -310,7 +317,6 @@
                             <tbody>
                                 @foreach ($employees as $employee)
                                     @php
-                                        $initials = collect(explode(' ', trim((string) $employee->name)))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
                                     @endphp
                                     <tr>
                                         <td class="ak-c ak-sticky-1" data-label="">
@@ -321,22 +327,21 @@
                                             @endif
                                         </td>
                                         <td data-label="Employee" class="ak-sticky-2">
-                                            <div class="ak-person">
-                                                <span class="ak-avatar ak-hide-compact" aria-hidden="true">{{ $initials ?: '?' }}</span>
-                                                <div style="min-width:0">
-                                                    @can('employee-list')
-                                                        <a href="{{ route('employees.show', $employee) }}" class="ak-primary-link">{{ $employee->name }}</a>
-                                                    @else
-                                                        <span class="ak-strong">{{ $employee->name }}</span>
-                                                    @endcan
-                                                    <div class="ak-muted" style="word-break:break-all">{{ $employee->phone ?: ($employee->email ?: '—') }}</div>
-                                                </div>
-                                            </div>
+                                            @can('employee-list')
+                                                <a href="{{ route('employees.show', $employee) }}" class="ak-primary-link">{{ $employee->name }}</a>
+                                            @else
+                                                <span class="ak-strong">{{ $employee->name }}</span>
+                                            @endcan
+                                            <div class="ak-muted">{{ $employee->phone ?: '—' }}</div>
                                         </td>
                                         <td class="ak-mono" data-label="Code">{{ $employee->employee_code }}</td>
-                                        <td data-label="Designation / Supplier">
-                                            <div>{{ $employee->designation ?: '—' }}</div>
-                                            <div class="ak-muted">{{ $employee->supplier?->supplier_name ?? ($employee->company_name ?: 'No supplier') }}</div>
+                                        <td data-label="Designation">{{ $employee->designation ?: '—' }}</td>
+                                        <td data-label="Supplier">
+                                            @if ($employee->supplier)
+                                                {{ $employee->supplier->supplier_name }}
+                                            @else
+                                                <span class="ak-muted">Not assigned</span>
+                                            @endif
                                         </td>
                                         <td data-label="Warehouse">
                                             @if ($employee->warehouse)
@@ -345,18 +350,9 @@
                                                 <span class="ak-muted">Not assigned</span>
                                             @endif
                                         </td>
-                                        <td data-label="Linked user">
-                                            @if ($employee->user)
-                                                {{ $employee->user->name }}
-                                            @else
-                                                <span class="ak-muted">None</span>
-                                            @endif
-                                        </td>
-                                        <td class="ak-mono" data-label="Hired">
-                                            {{ $employee->hire_date?->format('d M Y') ?? '—' }}
-                                            @if ($employee->hire_date)
-                                                <div class="ak-muted ak-hide-compact">{{ $employee->hire_date->diffForHumans() }}</div>
-                                            @endif
+                                        <td class="ak-num" data-label="Settlements">
+                                            {{ number_format($employee->sales_settlements_count) }}
+                                            <div class="ak-muted ak-hide-compact">{{ $employee->sales_settlements_max_settlement_date ? 'last '.\Illuminate\Support\Carbon::parse($employee->sales_settlements_max_settlement_date)->format('d M Y') : 'none yet' }}</div>
                                         </td>
                                         <td data-label="Status">
                                             @if ($employee->is_active)
@@ -382,12 +378,17 @@
                                                     @endcan
                                                 </span>
                                                 <span class="ak-slot">
-                                                    @can('employee-delete')
-                                                        <form method="POST" action="{{ route('employees.destroy', $employee) }}" @submit.prevent="askDelete($el, @js($employee->name))">
+                                                    @can('employee-edit')
+                                                        <form method="POST" action="{{ route('employees.bulk-update') }}" @submit.prevent="askToggle($el, @js($employee->name), {{ $employee->is_active ? 'true' : 'false' }})">
                                                             @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="ak-icon ak-icon-danger" title="Delete employee" aria-label="Delete {{ $employee->name }}">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
+                                                            <input type="hidden" name="ids[]" value="{{ $employee->id }}">
+                                                            <input type="hidden" name="action" value="{{ $employee->is_active ? 'deactivate' : 'activate' }}">
+                                                            <button type="submit" class="ak-icon {{ $employee->is_active ? 'ak-icon-danger' : '' }}" title="{{ $employee->is_active ? 'Deactivate employee' : 'Activate employee' }}" aria-label="{{ $employee->is_active ? 'Deactivate' : 'Activate' }} {{ $employee->name }}">
+                                                                @if ($employee->is_active)
+                                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 1 1-12.73 0M12 3v9" /></svg>
+                                                                @else
+                                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                                                                @endif
                                                             </button>
                                                         </form>
                                                     @endcan
@@ -461,6 +462,18 @@
 
     @push('scripts')
         <script>
+            // Searchable dropdowns: type to find a supplier, warehouse, company, cost center or user.
+            $(function () {
+                $('.gl-select').each(function () {
+                    const $select = $(this);
+                    $select.select2({
+                        width: '100%',
+                        placeholder: $select.find('option[value=""]').text() || 'Select',
+                        allowClear: $select.find('option[value=""]').length > 0,
+                    });
+                });
+            });
+
             function employeeList() {
                 return {
                     selected: [],
@@ -473,17 +486,19 @@
                     ask(form, title, message, button, danger) {
                         this.confirm = { open: true, title, message, button, danger, busy: false, form };
                     },
-                    askDelete(form, name) {
-                        this.ask(form, 'Delete ' + name + '?', 'The employee will be removed from the lists. This cannot be undone.', 'Delete employee', true);
+                    askToggle(form, name, isActive) {
+                        this.ask(form,
+                            (isActive ? 'Deactivate ' : 'Activate ') + name + '?',
+                            isActive ? 'Inactive employees are hidden from the pickers on new documents. Their history is kept and you can activate them again.' : 'The employee will be available in the pickers again.',
+                            isActive ? 'Deactivate' : 'Activate',
+                            isActive);
                     },
                     askBulk(form) {
                         if (!this.bulkAction || !this.selected.length) return;
-                        const words = { activate: 'Activate', deactivate: 'Deactivate', delete: 'Delete' };
+                        const words = { activate: 'Activate', deactivate: 'Deactivate' };
                         const count = this.selected.length + (this.selected.length === 1 ? ' employee' : ' employees');
-                        const message = this.bulkAction === 'delete'
-                            ? 'Selected employees will be deleted. This cannot be undone.'
-                            : (this.bulkAction === 'deactivate' ? 'Inactive employees are hidden from the pickers until activated again.' : 'Selected employees will be active again.');
-                        this.ask(form, words[this.bulkAction] + ' ' + count + '?', message, words[this.bulkAction] + ' ' + count, this.bulkAction === 'delete');
+                        const message = this.bulkAction === 'deactivate' ? 'Inactive employees are hidden from the pickers until activated again.' : 'Selected employees will be active again.';
+                        this.ask(form, words[this.bulkAction] + ' ' + count + '?', message, words[this.bulkAction] + ' ' + count, this.bulkAction === 'deactivate');
                     },
                     runConfirm() {
                         if (this.confirm.busy || !this.confirm.form) return;

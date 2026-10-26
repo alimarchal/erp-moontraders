@@ -3,6 +3,7 @@
 use App\Models\Employee;
 use App\Models\Supplier;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -60,15 +61,11 @@ it('creates and updates an employee', function () {
     expect($employee->fresh())->name->toBe('Renamed')->is_active->toBeFalse();
 });
 
-it('deletes an employee', function () {
-    $employee = Employee::factory()->create();
-
-    $this->delete(route('employees.destroy', $employee))->assertRedirect(route('employees.index'));
-
-    expect(Employee::find($employee->id))->toBeNull();
+it('has no delete route for employees', function () {
+    expect(Route::has('employees.destroy'))->toBeFalse();
 });
 
-it('bulk activates, deactivates and deletes', function () {
+it('activates and deactivates in bulk', function () {
     $employees = Employee::factory()->count(2)->create(['is_active' => true]);
     $ids = $employees->pluck('id')->all();
 
@@ -77,14 +74,21 @@ it('bulk activates, deactivates and deletes', function () {
 
     $this->post(route('employees.bulk-update'), ['ids' => $ids, 'action' => 'activate'])->assertRedirect();
     expect(Employee::whereIn('id', $ids)->where('is_active', true)->count())->toBe(2);
-
-    $this->post(route('employees.bulk-update'), ['ids' => $ids, 'action' => 'delete'])->assertRedirect();
-    expect(Employee::whereIn('id', $ids)->count())->toBe(0);
 });
 
-it('blocks bulk delete without the delete permission', function () {
-    $this->user->revokePermissionTo('employee-delete');
+it('rejects a delete action on the bulk endpoint', function () {
     $employee = Employee::factory()->create();
 
-    $this->post(route('employees.bulk-update'), ['ids' => [$employee->id], 'action' => 'delete'])->assertForbidden();
+    $this->post(route('employees.bulk-update'), ['ids' => [$employee->id], 'action' => 'delete'])->assertSessionHasErrors('action');
+    expect(Employee::find($employee->id))->not->toBeNull();
+});
+
+it('filters active employees that have no supplier', function () {
+    Employee::factory()->create(['name' => 'Without Supplier', 'supplier_id' => null, 'is_active' => true]);
+    Employee::factory()->create(['name' => 'With Supplier', 'supplier_id' => Supplier::factory()->create()->id, 'is_active' => true]);
+
+    $this->get(route('employees.index', ['filter' => ['no_supplier' => 'Yes']]))
+        ->assertOk()
+        ->assertSee('Without Supplier')
+        ->assertDontSee('With Supplier');
 });

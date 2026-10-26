@@ -32,7 +32,6 @@ class EmployeeController extends Controller implements HasMiddleware
             new Middleware('can:employee-list', only: ['index', 'show', 'exportExcel']),
             new Middleware('can:employee-create', only: ['create', 'store']),
             new Middleware('can:employee-edit', only: ['edit', 'update', 'bulkUpdate']),
-            new Middleware('can:employee-delete', only: ['destroy']),
         ];
     }
 
@@ -47,7 +46,9 @@ class EmployeeController extends Controller implements HasMiddleware
         $requested = (string) $request->get('per_page', '10');
         $perPage = in_array($requested, array_map('strval', self::PER_PAGE), true) ? $requested : '10';
 
-        $query = $this->buildFilteredQuery();
+        $query = $this->buildFilteredQuery()
+            ->withCount('salesSettlements')
+            ->withMax('salesSettlements', 'settlement_date');
         $employees = $query->paginate($perPage === 'all' ? max(1, $query->getEloquentBuilder()->clone()->reorder()->count()) : (int) $perPage)
             ->withQueryString();
 
@@ -63,7 +64,7 @@ class EmployeeController extends Controller implements HasMiddleware
      * Headline numbers for the list. Tab counts follow the other filters
      * (search, supplier, warehouse ...) but not the Active / Inactive tab itself.
      *
-     * @return array{total: int, active: int, inactive: int, with_login: int, no_warehouse: int}
+     * @return array{total: int, active: int, inactive: int, no_supplier: int, no_warehouse: int}
      */
     private function listStats(Request $request): array
     {
@@ -81,38 +82,27 @@ class EmployeeController extends Controller implements HasMiddleware
             'total' => (int) $byStatus->sum(),
             'active' => (int) ($byStatus[1] ?? 0),
             'inactive' => (int) ($byStatus[0] ?? 0),
-            'with_login' => Employee::query()->whereNotNull('user_id')->count(),
+            'no_supplier' => Employee::query()->where('is_active', true)->whereNull('supplier_id')->count(),
             'no_warehouse' => Employee::query()->where('is_active', true)->whereNull('warehouse_id')->count(),
         ];
     }
 
     /**
-     * Activate, deactivate or delete several employees from the list.
+     * Activate or deactivate one or several employees from the list.
      */
     public function bulkUpdate(Request $request)
     {
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:employees,id',
-            'action' => 'required|in:activate,deactivate,delete',
+            'action' => 'required|in:activate,deactivate',
         ]);
 
-        $action = $request->action;
-        abort_if($action === 'delete' && ! $request->user()->can('employee-delete'), 403);
+        $isActive = $request->action === 'activate';
 
-        DB::transaction(function () use ($request, $action) {
-            $employees = Employee::whereIn('id', $request->ids);
+        Employee::whereIn('id', $request->ids)->update(['is_active' => $isActive]);
 
-            if ($action === 'delete') {
-                $employees->get()->each->delete();
-
-                return;
-            }
-
-            $employees->update(['is_active' => $action === 'activate']);
-        });
-
-        $message = $action === 'delete' ? 'Employees deleted successfully.' : 'Employees updated successfully.';
+        $message = $isActive ? 'Employees activated successfully.' : 'Employees deactivated successfully.';
 
         return redirect()->route('employees.index')->with('success', $message);
     }
@@ -288,29 +278,6 @@ class EmployeeController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Employee $employee)
-    {
-        try {
-            $code = $employee->employee_code;
-            $employee->delete();
-
-            return redirect()
-                ->route('employees.index')
-                ->with('success', "Employee '{$code}' deleted successfully.");
-        } catch (\Throwable $e) {
-            Log::error('Error deleting employee', [
-                'employee_id' => $employee->id,
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-            ]);
-
-            return back()->with('error', 'Failed to delete employee. Please try again.');
-        }
-    }
-
-    /**
      * Build the filtered query shared by index and export.
      */
     private function buildFilteredQuery(?Request $request = null): QueryBuilder
@@ -335,6 +302,7 @@ class EmployeeController extends Controller implements HasMiddleware
                     });
                 }),
                 AllowedFilter::callback('has_login', fn ($query, $value) => $value === 'Yes' ? $query->whereNotNull('user_id') : ($value === 'No' ? $query->whereNull('user_id') : null)),
+                AllowedFilter::callback('no_supplier', fn ($query, $value) => $value === 'Yes' ? $query->whereNull('supplier_id') : null),
                 AllowedFilter::callback('no_warehouse', fn ($query, $value) => $value === 'Yes' ? $query->whereNull('warehouse_id') : null),
                 AllowedFilter::partial('employee_code'),
                 AllowedFilter::partial('name'),

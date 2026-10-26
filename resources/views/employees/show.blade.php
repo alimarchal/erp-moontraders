@@ -1,172 +1,139 @@
+{{--
+    Settings -> Employees -> View (/settings/employees/{employee}).
+    Profile, assignment and linked login. Read only; changes happen on Edit.
+--}}
+@php
+    $initials = collect(explode(' ', trim((string) $employee->name)))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            View Employee: {{ $employee->employee_code }}
-        </h2>
-        <div class="flex justify-center items-center float-right">
-            <a href="{{ route('employees.index') }}"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span>
+                    <a href="{{ route('employees.index') }}">Employees</a><span aria-hidden="true">›</span>
+                    <span>{{ $employee->name }}</span>
+                </nav>
+                <div class="ak-person" style="align-items:center; margin-top:6px">
+                    <span class="ak-avatar" style="width:48px; height:48px; font-size:16px" aria-hidden="true">{{ $initials ?: '?' }}</span>
+                    <div>
+                        <h1 class="ak-title" style="margin:0">{{ $employee->name }}</h1>
+                        <p class="ak-sub" style="margin-top:2px">
+                            {{ $employee->employee_code }} &middot; {{ $employee->designation ?: 'No designation' }}
+                            &middot;
+                            @if ($employee->is_active)
+                                <span class="ak-status ak-status-green"><i aria-hidden="true"></i>Active</span>
+                            @else
+                                <span class="ak-status ak-status-red"><i aria-hidden="true"></i>Inactive</span>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('employees.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to Employees</a>
+                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                @can('employee-edit')
+                    <a href="{{ route('employees.edit', $employee) }}" class="ak-btn ak-btn-primary">Edit employee</a>
+                @endcan
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-status-message class="mb-4 mt-4" />
-                <div class="p-6">
-                    <form>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <x-label value="Employee Code" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->employee_code" disabled readonly />
-                            </div>
-                            <div>
-                                <x-label value="Name" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->name" disabled readonly />
-                            </div>
-                        </div>
+    @include('settings.partials.ui-style')
+    <style>
+        .us-grid { display: grid; gap: 20px; grid-template-columns: 1fr; }
+        @media (min-width: 1024px) { .us-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+        .us-list { margin: 0; display: flex; flex-direction: column; font-size: 14px; }
+        .us-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .us-list > div:last-child { border-bottom: 0; }
+        .us-list dt { color: var(--ak-muted); }
+        .us-list dd { margin: 0; font-weight: 600; color: var(--ak-text); text-align: right; word-break: break-word; }
+        @media print { .us-grid { display: block; } .uf-card { break-inside: avoid; box-shadow: none; margin-bottom: 12px; } }
+    </style>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Company / Principal" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->company_name ?: '—'" disabled readonly />
-                            </div>
-                            <div>
-                                <x-label value="Supplier" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->supplier?->supplier_name ?: '—'" disabled readonly />
-                            </div>
-                        </div>
+    <div class="ak-page">
+        <x-status-message />
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Designation" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->designation ?: '—'" disabled readonly />
-                            </div>
-                        </div>
+        {{-- KPI cards --}}
+        <section class="ak-kpis" aria-label="Employee summary">
+            <div class="ak-kpi">
+                <span class="ak-kpi-icon {{ $employee->is_active ? 'ak-tone-green' : 'ak-tone-amber' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Status</span>
+                    <span class="ak-kpi-value ak-kpi-value-sm">{{ $employee->is_active ? 'Active' : 'Inactive' }}</span>
+                    <span class="ak-kpi-hint">since {{ $employee->created_at?->format('d M Y') ?? '—' }}</span>
+                </span>
+            </div>
+            <div class="ak-kpi">
+                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.35m-16.5 11.65V9.35m0 0a3 3 0 0 0 3.75-.62 3 3 0 0 0 4.5 0 3 3 0 0 0 4.5 0 3 3 0 0 0 3.75.62m-16.5 0a3 3 0 0 1-.62-4.72L4.2 3.44A1.5 1.5 0 0 1 5.26 3h13.48a1.5 1.5 0 0 1 1.06.44l1.19 1.19a3 3 0 0 1-.62 4.72" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Supplier</span>
+                    <span class="ak-kpi-value ak-kpi-value-sm">{{ $employee->supplier?->supplier_name ?? 'None' }}</span>
+                    <span class="ak-kpi-hint">{{ $employee->company_name ?: 'no principal recorded' }}</span>
+                </span>
+            </div>
+            <div class="ak-kpi">
+                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5M3.75 21V8.25L12 3l8.25 5.25V21M9 21v-6h6v6" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Warehouse</span>
+                    <span class="ak-kpi-value ak-kpi-value-sm">{{ $employee->warehouse?->warehouse_name ?? 'Not assigned' }}</span>
+                    <span class="ak-kpi-hint">primary warehouse</span>
+                </span>
+            </div>
+            <div class="ak-kpi">
+                <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.12a7.5 7.5 0 0 1 15 0A17.93 17.93 0 0 1 12 21.75c-2.68 0-5.22-.58-7.5-1.63Z" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Linked user</span>
+                    <span class="ak-kpi-value ak-kpi-value-sm">{{ $employee->user?->name ?? 'None' }}</span>
+                    <span class="ak-kpi-hint">{{ $employee->user ? $employee->user->email : 'no login linked' }}</span>
+                </span>
+            </div>
+        </section>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Phone" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->phone ?: '—'" disabled readonly />
-                            </div>
-                            <div>
-                                <x-label value="Email" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->email ?: '—'" disabled readonly />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Assigned Warehouse" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->warehouse?->warehouse_name ?: '—'" disabled readonly />
-                            </div>
-                            <div>
-                                <x-label value="Company Entity" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->company?->company_name ?: '—'" disabled readonly />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Linked User" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->user?->name ?: '—'" disabled readonly />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Hire Date" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->hire_date?->format('d-m-Y') ?? '—'" disabled readonly />
-                            </div>
-                            <div>
-                                <x-label value="Status" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->is_active ? 'Active' : 'Inactive'" disabled readonly />
-                            </div>
-                        </div>
-
-                        <div class="mt-4">
-                            <x-label value="Address / Notes" />
-                            <textarea rows="3"
-                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
-                                disabled readonly>{{ $employee->address ?? '—' }}</textarea>
-                        </div>
-
-                        @if ($employee->salaries->isNotEmpty())
-                        <div class="mt-6">
-                            <x-label value="Salary Records" />
-                            <textarea rows="4"
-                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
-                                disabled
-                                readonly>{{ $employee->salaries->map(fn ($salary) => ($salary->month ?? 'N/A') . ' · ' . number_format((float) ($salary->net_salary ?? 0), 2))->implode(PHP_EOL) }}</textarea>
-                        </div>
-                        @endif
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <x-label value="Created At" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->created_at?->format('d-m-Y H:i:s') ?? '—'" disabled readonly />
-                            </div>
-                            <div>
-                                <x-label value="Last Updated" />
-                                <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$employee->updated_at?->format('d-m-Y H:i:s') ?? '—'" disabled readonly />
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-end mt-6 space-x-2">
-                            <a href="{{ route('employees.edit', $employee->id) }}"
-                                class="inline-flex items-center px-4 py-2 bg-blue-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                </svg>
-                                Edit Employee
-                            </a>
-                        </div>
-                    </form>
+        <div class="us-grid">
+            <section class="uf-card" aria-labelledby="us-profile">
+                <header class="uf-card-head"><h2 class="uf-card-title" id="us-profile">Profile</h2></header>
+                <div class="uf-body" style="padding-top:6px; padding-bottom:6px">
+                    <dl class="us-list">
+                        <div><dt>Employee code</dt><dd>{{ $employee->employee_code }}</dd></div>
+                        <div><dt>Full name</dt><dd>{{ $employee->name }}</dd></div>
+                        <div><dt>Designation</dt><dd>{{ $employee->designation ?: '—' }}</dd></div>
+                        <div><dt>Company / Principal</dt><dd>{{ $employee->company_name ?: '—' }}</dd></div>
+                        <div><dt>Phone</dt><dd>{{ $employee->phone ?: '—' }}</dd></div>
+                        <div><dt>Email</dt><dd>{{ $employee->email ?: '—' }}</dd></div>
+                        <div><dt>Hire date</dt><dd>{{ $employee->hire_date?->format('d M Y') ?? '—' }}</dd></div>
+                        <div><dt>Status</dt><dd>{{ $employee->is_active ? 'Active' : 'Inactive' }}</dd></div>
+                    </dl>
                 </div>
+            </section>
+
+            <div style="display:flex; flex-direction:column; gap:20px">
+                <section class="uf-card" aria-labelledby="us-assign">
+                    <header class="uf-card-head"><h2 class="uf-card-title" id="us-assign">Assignment</h2></header>
+                    <div class="uf-body" style="padding-top:6px; padding-bottom:6px">
+                        <dl class="us-list">
+                            <div><dt>Supplier</dt><dd>{{ $employee->supplier?->supplier_name ?? '—' }}</dd></div>
+                            <div><dt>Company entity</dt><dd>{{ $employee->company?->company_name ?? '—' }}</dd></div>
+                            <div><dt>Cost center</dt><dd>{{ $employee->costCenter?->name ?? '—' }}</dd></div>
+                            <div><dt>Warehouse</dt><dd>{{ $employee->warehouse?->warehouse_name ?? '—' }}</dd></div>
+                            <div><dt>Linked user</dt><dd>{{ $employee->user?->name ?? '—' }}</dd></div>
+                        </dl>
+                    </div>
+                </section>
+
+                <section class="uf-card" aria-labelledby="us-notes">
+                    <header class="uf-card-head"><h2 class="uf-card-title" id="us-notes">Address / notes</h2></header>
+                    <div class="uf-body" style="padding-top:6px; padding-bottom:6px">
+                        <p style="margin:8px 0; font-size:14px; white-space:pre-line">{{ $employee->address ?: '—' }}</p>
+                        <dl class="us-list" style="margin-top:8px">
+                            <div><dt>Added</dt><dd>{{ $employee->created_at?->format('d M Y, h:i A') ?? '—' }}</dd></div>
+                            <div><dt>Last updated</dt><dd>{{ $employee->updated_at?->format('d M Y, h:i A') ?? '—' }}</dd></div>
+                        </dl>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
-
-    <style>
-        input:disabled,
-        textarea:disabled {
-            cursor: not-allowed !important;
-        }
-    </style>
 </x-app-layout>

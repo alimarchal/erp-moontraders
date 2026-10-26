@@ -23,6 +23,7 @@ class RevenueDetail extends Model
         'notes',
         'posted_at',
         'posted_by',
+        'journal_entry_id',
     ];
 
     protected function casts(): array
@@ -47,6 +48,11 @@ class RevenueDetail extends Model
     public function postedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     public function isPosted(): bool

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\JournalEntry;
 use App\Models\RevenueCategory;
 use App\Models\RevenueDetail;
 use App\Models\Supplier;
@@ -92,13 +93,14 @@ it('creates updates and deletes revenue entries', function () {
     $this->assertSoftDeleted('revenue_details', ['id' => $revenue->id]);
 });
 
-it('posts revenue by marking timestamp and user only', function () {
+it('posts revenue by marking timestamp and user and creating the journal entry', function () {
+    seedGrnPostingAccounts();
     [$supplier, $category] = createRevenueCategoryFixture();
 
     $revenue = RevenueDetail::factory()->create([
         'supplier_id' => $supplier->id,
         'revenue_category_id' => $category->id,
-        'transaction_date' => '2026-05-10',
+        'transaction_date' => now()->toDateString(),
         'description' => 'Supplier display revenue',
         'amount' => 1800,
     ]);
@@ -109,7 +111,50 @@ it('posts revenue by marking timestamp and user only', function () {
     $revenue->refresh();
 
     expect($revenue->posted_at)->not->toBeNull()
-        ->and($revenue->posted_by)->toBe($this->user->id);
+        ->and($revenue->posted_by)->toBe($this->user->id)
+        ->and($revenue->journal_entry_id)->not->toBeNull();
+
+    $lines = JournalEntry::findOrFail($revenue->journal_entry_id)->details;
+    expect($lines->sum('debit'))->toEqual(1800)
+        ->and($lines->sum('credit'))->toEqual(1800)
+        ->and($lines->firstWhere('credit', '>', 0)->account->account_code)->toBe('4260')
+        ->and($lines->firstWhere('debit', '>', 0)->account->account_code)->toBe('1112');
+});
+
+it('does not post a revenue entry when the GL accounts are missing', function () {
+    [$supplier, $category] = createRevenueCategoryFixture();
+
+    $revenue = RevenueDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'revenue_category_id' => $category->id,
+        'transaction_date' => now()->toDateString(),
+        'amount' => 100,
+    ]);
+
+    $this->post(route('reports.revenue-detail.post', $revenue))->assertRedirect()->assertSessionHas('error');
+
+    expect($revenue->fresh()->posted_at)->toBeNull();
+});
+
+it('posts the missing journals of already posted revenue with the command', function () {
+    seedGrnPostingAccounts();
+    [$supplier, $category] = createRevenueCategoryFixture();
+
+    $revenue = RevenueDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'revenue_category_id' => $category->id,
+        'transaction_date' => now()->toDateString(),
+        'amount' => 250,
+        'posted_at' => now(),
+    ]);
+
+    $this->artisan('revenue:post-journals', ['--dry-run' => true])->assertSuccessful();
+    expect($revenue->fresh()->journal_entry_id)->toBeNull();
+
+    $this->artisan('revenue:post-journals')->assertSuccessful();
+    expect($revenue->fresh()->journal_entry_id)->not->toBeNull();
+
+    $this->artisan('revenue:post-journals')->expectsOutputToContain('nothing to do')->assertSuccessful();
 });
 
 it('does not edit or delete posted revenue entries', function () {

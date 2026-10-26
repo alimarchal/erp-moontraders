@@ -90,6 +90,8 @@ function seedGrnPostingAccounts(): void
         '2142' => ['Stock Received But Not Billed', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
         '4210' => ['FMR Allowance Liquid', 'Income', 'IncomeStatement', 'Revenue', 'credit'],
         '4220' => ['FMR Allowance Powder', 'Income', 'IncomeStatement', 'Revenue', 'credit'],
+        '4260' => ['Other Revenue', 'Income', 'IncomeStatement', 'Revenue', 'credit'],
+        '1112' => ['Pending Claims Debtors', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
         '5111' => ['Cost of Goods Sold', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
         '5213' => ['Inventory Shortage', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
         '5271' => ['Round Off', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],

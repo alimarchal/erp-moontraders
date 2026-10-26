@@ -243,7 +243,8 @@ class InventoryLedgerService
         ?string $notes = null,
         ?int $batchId = null,
         ?int $stockAdjustmentId = null,
-        ?int $salesSettlementId = null
+        ?int $salesSettlementId = null,
+        ?float $totalValue = null
     ): InventoryLedgerEntry {
         return $this->createEntry([
             'date' => $date,
@@ -258,6 +259,7 @@ class InventoryLedgerService
             'debit_qty' => $debitQty,
             'credit_qty' => $creditQty,
             'unit_cost' => $unitCost,
+            'total_value' => $totalValue,
             'notes' => $notes,
         ]);
     }
@@ -279,9 +281,10 @@ class InventoryLedgerService
         $netChange = ($data['debit_qty'] ?? 0) - ($data['credit_qty'] ?? 0);
         $runningBalance += $netChange;
 
-        // Calculate total value
+        // Calculate total value. A caller may state it outright: a cost revaluation moves no
+        // quantity, so its value cannot be derived from quantity × cost.
         $totalQty = max($data['debit_qty'] ?? 0, $data['credit_qty'] ?? 0);
-        $totalValue = $totalQty * ($data['unit_cost'] ?? 0);
+        $totalValue = $data['total_value'] ?? $totalQty * ($data['unit_cost'] ?? 0);
 
         return InventoryLedgerEntry::create(array_merge($data, [
             'running_balance' => $runningBalance,

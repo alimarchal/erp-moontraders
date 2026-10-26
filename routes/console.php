@@ -33,6 +33,13 @@ Schedule::command('inventory:verify-consistency')
     ->name('inventory-consistency-check')
     ->withoutOverlapping();
 
+// Every GRN line against the cost its receipt movement, batch and later issues/sales carry.
+// Report only: the alert email says which command repairs it.
+Schedule::command('inventory:verify-costs')
+    ->dailyAt('23:56')
+    ->name('grn-cost-check')
+    ->withoutOverlapping();
+
 // The general ledger's Stock In Hand and Van Stock against the value of the stock itself.
 // Report only: a gap means some document posted at a different value than it moved stock.
 Schedule::command('accounting:reconcile-stock-gl')

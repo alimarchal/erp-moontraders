@@ -15,6 +15,7 @@ use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Models\Warehouse;
 use App\Services\BatchRecostService;
+use App\Services\GrnCostDriftService;
 use App\Services\InventoryGlAdjustmentService;
 use App\Services\InventoryService;
 use Carbon\Carbon;
@@ -880,6 +881,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             $recostedMovements = 0;
             $valueDeltas = [];
             $vanValueDelta = 0.0;
+            $costJumps = [];
 
             foreach ($request->input('items') as $formItem) {
                 $item = DB::table('goods_receipt_note_items')
@@ -938,8 +940,27 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
                 $newQty = round((float) $item->qty_in_purchase_uom * $newFactor, 2);
                 $totalCost = (float) $item->total_cost; // invoice amount — intentionally unchanged
+
+                // total_cost is carried over as the line's value, so it must already be what the
+                // line is worth. One left over from an earlier quantity prices the corrected line
+                // wrongly in every ledger and sends the difference to Round Off.
+                $impliedTotal = (float) $item->qty_in_stock_uom * (float) $item->unit_cost;
+
+                if (abs($impliedTotal - $totalCost) > max(1.0, GrnCostDriftService::TOTAL_COST_TOLERANCE_RATIO * abs($totalCost))) {
+                    throw new \Exception(sprintf(
+                        'GRN item %d is not consistent: total cost %s but quantity × unit cost is %s. Run "php artisan stock:repair-grn-cost-drift" before correcting this line.',
+                        $item->id,
+                        number_format($totalCost, 2),
+                        number_format($impliedTotal, 2)
+                    ));
+                }
+
                 $newUnitCost = $newQty > 0 ? round($totalCost / $newQty, 6) : (float) $item->unit_cost;
                 $delta = $newQty - (float) $item->quantity_accepted;
+
+                if ((float) $item->unit_cost > 0 && abs($newUnitCost / (float) $item->unit_cost - 1) > 0.10) {
+                    $costJumps[] = sprintf('line %d: %s → %s', $item->line_no, number_format((float) $item->unit_cost, 2), number_format($newUnitCost, 2));
+                }
 
                 // 1. goods_receipt_note_items
                 DB::table('goods_receipt_note_items')->where('id', $item->id)->update([
@@ -1089,6 +1110,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             DB::commit();
 
             $message = 'GRN inventory corrections applied successfully.';
+
+            if ($costJumps !== []) {
+                $message .= ' Unit cost moved by more than 10% ('.implode('; ', $costJumps).') — check it against the other receipts of the product.';
+            }
 
             if ($recostedMovements > 0) {
                 Log::info('GRN correction re-costed already-posted stock movements', [

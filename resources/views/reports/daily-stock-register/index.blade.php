@@ -82,16 +82,8 @@
                 <x-input id="date" name="date" type="date" class="mt-1 block w-full" :value="$date" />
             </div>
 
-            <div class="relative">
-                <div class="flex justify-between items-center">
-                    <x-label for="supplier_id" value="Supplier" />
-                    @if($selectedSupplierId)
-                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['supplier_id', 'product_id', 'page']), ['supplier_id' => ''])) }}"
-                            class="text-xs text-red-600 hover:text-red-800 underline">
-                            Clear
-                        </a>
-                    @endif
-                </div>
+            <div>
+                <x-label for="supplier_id" value="Supplier" />
                 <select id="supplier_id" name="supplier_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
@@ -103,16 +95,8 @@
                 </select>
             </div>
 
-            <div class="relative">
-                <div class="flex justify-between items-center">
-                    <x-label for="product_id" value="Product" />
-                    @if($selectedProductId)
-                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['product_id', 'page']), ['product_id' => ''])) }}"
-                            class="text-xs text-red-600 hover:text-red-800 underline">
-                            Clear
-                        </a>
-                    @endif
-                </div>
+            <div>
+                <x-label for="product_id" value="Product" />
                 <select id="product_id" name="product_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Products</option>
@@ -122,10 +106,6 @@
                         </option>
                     @endforeach
                 </select>
-            </div>
-
-            <div class="flex items-end">
-                <x-button class="w-full justify-center">Filter</x-button>
             </div>
         </div>
     </x-filter-section>

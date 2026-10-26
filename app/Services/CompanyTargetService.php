@@ -60,7 +60,7 @@ class CompanyTargetService
 
         $employees = Employee::query()
             ->whereIn('id', $lines->pluck('employee_id')->merge($achieved->keys())->unique())
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'category'])
             ->keyBy('id');
 
         $anchor = $today->copy()->startOfDay();
@@ -79,7 +79,7 @@ class CompanyTargetService
             return [
                 'position' => $sheetOrder[$employee->id] ?? PHP_INT_MAX,
                 'employee' => $employee->name,
-                'label' => $employeeLines->pluck('target_label')->filter()->last() ?? CompanyTarget::DEFAULT_LABEL,
+                'label' => $employee->category ?: ($employeeLines->pluck('target_label')->filter()->last() ?? CompanyTarget::DEFAULT_LABEL),
                 'total' => $total,
                 'achieved' => $sales,
                 'remaining_per_day' => $remaining / $daysLeft,

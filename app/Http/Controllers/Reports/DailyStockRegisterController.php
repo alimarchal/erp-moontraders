@@ -131,11 +131,14 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 8. In Hand Value (at recorded ledger unit cost)
         // Mirrors the In Hand quantity formula: Opening + Purchase + BF - Sales - Shortage.
+        // A cost revaluation moves no quantity, so its ledger row carries the value it moved
+        // the batch by in total_value; without it the register drifts from the stock value.
         $inHandValues = InventoryLedgerEntry::query()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', '<=', $date)
             ->select('product_id', DB::raw("SUM(CASE
                 WHEN date < ? AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
+                    + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
                 WHEN date = ? AND transaction_type = 'purchase' AND warehouse_id IS NOT NULL THEN debit_qty * unit_cost
                 WHEN date = ? AND transaction_type IN ('sale', 'shortage') THEN -credit_qty * unit_cost
                 ELSE 0 END) as value"))

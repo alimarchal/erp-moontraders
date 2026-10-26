@@ -161,11 +161,18 @@ class StockAdjustmentService
 
         if ($revaluationValue !== null && (float) $item->adjustment_quantity != 0.0) {
             // The line's own movement below carries the quantity; this zero-quantity one is
-            // what marks the revaluation in all three ledgers for the nightly rebuild.
-            $this->recordMovement($adjustment, $item, 0.0);
+            // what marks the revaluation in all three ledgers for the nightly rebuild. The
+            // inventory ledger row also carries the value the revaluation moved the batch by,
+            // so reports that add up quantity × cost still agree with the stock value.
+            $this->recordMovement($adjustment, $item, 0.0, $revaluationValue);
         }
 
-        $movement = $this->recordMovement($adjustment, $item, (float) $item->adjustment_quantity);
+        $movement = $this->recordMovement(
+            $adjustment,
+            $item,
+            (float) $item->adjustment_quantity,
+            (float) $item->adjustment_quantity == 0.0 ? $revaluationValue : null
+        );
 
         $stockByBatch = CurrentStockByBatch::where('stock_batch_id', $item->stock_batch_id)
             ->where('warehouse_id', $adjustment->warehouse_id)
@@ -230,7 +237,7 @@ class StockAdjustmentService
      * Write the line's quantity to the inventory ledger, stock_movements and the stock
      * ledger together, so the three always hold the same rows for an adjustment.
      */
-    protected function recordMovement(StockAdjustment $adjustment, $item, float $quantity): StockMovement
+    protected function recordMovement(StockAdjustment $adjustment, $item, float $quantity, ?float $revaluationValue = null): StockMovement
     {
         app(InventoryLedgerService::class)->recordAdjustment(
             productId: $item->product_id,
@@ -242,7 +249,8 @@ class StockAdjustmentService
             date: $adjustment->adjustment_date,
             notes: "{$adjustment->adjustment_type} - {$adjustment->reason}",
             batchId: $item->stock_batch_id,
-            stockAdjustmentId: $adjustment->id
+            stockAdjustmentId: $adjustment->id,
+            totalValue: $quantity == 0.0 && $revaluationValue !== null ? round($revaluationValue, 2) : null
         );
 
         $movement = StockMovement::create([

@@ -192,6 +192,12 @@
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('notes', $adjustment->notes) }}</textarea>
                         </div>
 
+                        <label class="flex items-start mt-4 text-sm text-gray-700">
+                            <input type="checkbox" name="confirm_revaluation" value="1" {{ old('confirm_revaluation') ? 'checked' : '' }}
+                                class="mt-0.5 mr-2 rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                            <span>I changed a unit cost on purpose: carry the batch at that cost (revaluation). Leave this unticked so a mistyped cost is caught instead of revaluing the batch.</span>
+                        </label>
+
                         <div class="flex items-center justify-end mt-6">
                             <x-button>Update Adjustment</x-button>
                         </div>

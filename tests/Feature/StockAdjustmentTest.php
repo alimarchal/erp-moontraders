@@ -200,8 +200,8 @@ test('stock adjustment can be created as draft', function () {
 test('updating a stock adjustment keeps each item independent', function () {
     $secondProduct = Product::factory()->create();
 
-    $batchOne = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active']);
-    $batchTwo = StockBatch::factory()->create(['product_id' => $secondProduct->id, 'status' => 'active']);
+    $batchOne = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active', 'unit_cost' => 50.00]);
+    $batchTwo = StockBatch::factory()->create(['product_id' => $secondProduct->id, 'status' => 'active', 'unit_cost' => 25.00]);
 
     $adjustment = StockAdjustment::factory()->create([
         'warehouse_id' => $this->warehouse->id,
@@ -882,6 +882,17 @@ test('a corrected unit cost with no quantity change revalues the batch', functio
 
     expect((float) $details->where('chart_of_account_id', $stockInHandId)->sum('credit'))->toBe(500.0)
         ->and((float) $details->sum('debit'))->toBe(500.0);
+
+    // The inventory ledger row carries the value the revaluation moved the batch by, so a
+    // report adding up quantity × cost still agrees with the stock value.
+    $this->assertDatabaseHas('inventory_ledger_entries', [
+        'stock_adjustment_id' => $adjustment->id,
+        'stock_batch_id' => $batch->id,
+        'transaction_type' => 'adjustment',
+        'debit_qty' => 0,
+        'credit_qty' => 0,
+        'total_value' => -500.00,
+    ]);
 });
 
 test('a count posted at a corrected unit cost leaves the batch valued at that cost', function () {
@@ -952,4 +963,78 @@ test('a corrected unit cost is refused while part of the batch is out on a van',
     expect($result['success'])->toBeFalse()
         ->and($result['message'])->toContain('van')
         ->and((float) $batch->fresh()->unit_cost)->toBe(50.0);
+});
+
+test('a unit cost that differs from its batch is rejected until the revaluation is confirmed', function () {
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'active',
+        'unit_cost' => 360.35,
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'status' => 'draft',
+    ]);
+
+    $payload = [
+        'adjustment_date' => now()->format('Y-m-d'),
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'reason' => 'stock adjustment',
+        'items' => [
+            [
+                'product_id' => $this->product->id,
+                'stock_batch_id' => $batch->id,
+                'system_quantity' => 116,
+                'actual_quantity' => 0,
+                // 3060.35 typed for 360.35
+                'unit_cost' => 3060.35,
+                'uom_id' => $this->uom->id,
+            ],
+        ],
+    ];
+
+    $this->put(route('stock-adjustments.update', $adjustment), $payload)
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect($adjustment->items()->count())->toBe(0);
+
+    $this->put(route('stock-adjustments.update', $adjustment), $payload + ['confirm_revaluation' => 1])
+        ->assertRedirect(route('stock-adjustments.show', $adjustment));
+
+    expect($adjustment->items()->sole()->unit_cost)->toEqual(3060.35);
+});
+
+test('a unit cost equal to the batch cost needs no confirmation', function () {
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'active',
+        'unit_cost' => 360.35,
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'damage',
+        'status' => 'draft',
+    ]);
+
+    $this->put(route('stock-adjustments.update', $adjustment), [
+        'adjustment_date' => now()->format('Y-m-d'),
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'damage',
+        'reason' => 'damaged',
+        'items' => [
+            [
+                'product_id' => $this->product->id,
+                'stock_batch_id' => $batch->id,
+                'system_quantity' => 10,
+                'actual_quantity' => 9,
+                'unit_cost' => 360.35,
+                'uom_id' => $this->uom->id,
+            ],
+        ],
+    ])->assertRedirect(route('stock-adjustments.show', $adjustment));
 });

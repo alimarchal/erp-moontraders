@@ -107,6 +107,10 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         $this->authorizeSupplierId((int) $validated['supplier_id']);
         $this->validateProductsBelongToSupplier($validated['items'], (int) $validated['supplier_id']);
 
+        if ($error = $this->unconfirmedRevaluationError($request, $validated['items'])) {
+            return redirect()->back()->with('error', $error)->withInput();
+        }
+
         foreach ($validated['items'] as &$item) {
             $item['adjustment_quantity'] = $item['actual_quantity'] - $item['system_quantity'];
             $item['adjustment_value'] = $item['adjustment_quantity'] * $item['unit_cost'];
@@ -180,6 +184,10 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             $item['adjustment_value'] = $item['adjustment_quantity'] * $item['unit_cost'];
         }
         unset($item);
+
+        if ($error = $this->unconfirmedRevaluationError($request, $validated['items'])) {
+            return redirect()->back()->with('error', $error)->withInput();
+        }
 
         $stockAdjustment->update(Arr::except($validated, ['items']));
         $stockAdjustment->items()->delete();
@@ -256,6 +264,44 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         }
 
         return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    /**
+     * A line priced off its batch's cost revalues the batch when it posts, which moves the
+     * whole quantity on hand to the new cost. A mistyped cost (3060.35 for 360.35) does that
+     * silently, so the person has to say the change is deliberate.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function unconfirmedRevaluationError(Request $request, array $items): ?string
+    {
+        if ($request->boolean('confirm_revaluation')) {
+            return null;
+        }
+
+        $batches = StockBatch::query()
+            ->whereIn('id', collect($items)->pluck('stock_batch_id'))
+            ->get(['id', 'batch_code', 'unit_cost'])
+            ->keyBy('id');
+
+        $differs = collect($items)->filter(function (array $item) use ($batches): bool {
+            $batch = $batches->get($item['stock_batch_id']);
+
+            return $batch !== null && abs((float) $item['unit_cost'] - (float) $batch->unit_cost) > 0.01;
+        });
+
+        if ($differs->isEmpty()) {
+            return null;
+        }
+
+        $lines = $differs->map(fn (array $item) => sprintf(
+            '%s: entered %s, batch cost %s',
+            $batches[$item['stock_batch_id']]->batch_code,
+            number_format((float) $item['unit_cost'], 2),
+            number_format((float) $batches[$item['stock_batch_id']]->unit_cost, 2)
+        ))->implode('; ');
+
+        return "A unit cost differs from its batch's cost ({$lines}). Correct it, or tick the revaluation box if the batch should be carried at the new cost.";
     }
 
     private function authorizeSupplierId(int $supplierId): void

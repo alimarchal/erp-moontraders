@@ -315,7 +315,7 @@ it('approving a unit-cost-only ticket revalues the batch exactly like the Stock 
     $this->actingAs($this->admin);
 
     $beforeScreen = tableFingerprints();
-    $this->post(route('stock-adjustments.store'), withUnitCost(adjustmentPayload($this, $viaScreen, 100), 60))->assertSessionHasNoErrors()->assertRedirect();
+    $this->post(route('stock-adjustments.store'), ['confirm_revaluation' => 1] + withUnitCost(adjustmentPayload($this, $viaScreen, 100), 60))->assertSessionHasNoErrors()->assertRedirect();
     $adjustment = StockAdjustment::firstOrFail();
     $this->post(route('stock-adjustments.post', $adjustment), ['password' => 'password'])->assertRedirect();
     $touchedByScreen = collect(tableFingerprints())->filter(fn ($hash, $table) => ($beforeScreen[$table] ?? null) !== $hash)->keys()->sort()->values()->all();

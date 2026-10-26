@@ -129,6 +129,16 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
+        // 7b. Stock Adjustments (On Date): count differences and cost revaluations posted that day.
+        // They change the stock, so the day's closing In Hand includes them (as the end-of-day snapshot does).
+        $adjustments = InventoryLedgerEntry::query()
+            ->whereIn('product_id', $productIds)
+            ->whereDate('date', $date)
+            ->where('transaction_type', 'adjustment')
+            ->select('product_id', DB::raw('SUM(debit_qty - credit_qty) as qty'))
+            ->groupBy('product_id')
+            ->pluck('qty', 'product_id');
+
         // 8. In Hand Value (at recorded ledger unit cost)
         // Mirrors the In Hand quantity formula: Opening + Purchase + BF - Sales - Shortage.
         // A cost revaluation moves no quantity, so its ledger row carries the value it moved
@@ -141,13 +151,15 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
                     + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
                 WHEN date = ? AND transaction_type = 'purchase' AND warehouse_id IS NOT NULL THEN debit_qty * unit_cost
                 WHEN date = ? AND transaction_type IN ('sale', 'shortage') THEN -credit_qty * unit_cost
+                WHEN date = ? AND transaction_type = 'adjustment' AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
+                    + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
                 ELSE 0 END) as value"))
-            ->addBinding([$date, $date, $date], 'select')
+            ->addBinding([$date, $date, $date, $date], 'select')
             ->groupBy('product_id')
             ->pluck('value', 'product_id');
 
         // Assemble Data
-        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $vanBf, $vanIssue, $sales, $returns, $shortage, $inHandValues) {
+        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $vanBf, $vanIssue, $sales, $returns, $shortage, $adjustments, $inHandValues) {
             $pId = $product->id;
 
             // 1. Opening
@@ -174,10 +186,12 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             $short = $shortage[$pId] ?? 0;
 
             // 9. In Hand (Closing) -> System Stock (WH + Van)
-            // Logic: Opening (WH) + Purchase (WH) + BF (Van) - Sales (Van) - Shortage (Van).
+            // Logic: Opening (WH) + Purchase (WH) + BF (Van) + Adjustment - Sales (Van) - Shortage (Van).
             // This represents the total physical stock available in the company (Warhouse + Van).
             // Note: 'Issue' and 'Return' are internal transfers and do not change the System Stock total.
-            $inHand = $open + $purch + $bf - $sale - $short;
+            // Stock adjustments of the day change the system stock too.
+            $adj = $adjustments[$pId] ?? 0;
+            $inHand = $open + $purch + $bf + $adj - $sale - $short;
 
             return (object) [
                 'id' => $product->id,
@@ -191,6 +205,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
                 'return' => $ret,
                 'sale' => $sale,
                 'shortage' => $short,
+                'adjustment' => $adj,
                 'in_hand' => $inHand,
                 'in_hand_value' => (float) ($inHandValues[$pId] ?? 0),
             ];

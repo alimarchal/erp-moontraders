@@ -31,33 +31,90 @@ class EmployeeController extends Controller implements HasMiddleware
         return [
             new Middleware('can:employee-list', only: ['index', 'show', 'exportExcel']),
             new Middleware('can:employee-create', only: ['create', 'store']),
-            new Middleware('can:employee-edit', only: ['edit', 'update']),
+            new Middleware('can:employee-edit', only: ['edit', 'update', 'bulkUpdate']),
             new Middleware('can:employee-delete', only: ['destroy']),
         ];
     }
 
-    private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
-
-    private const DEFAULT_PER_PAGE = 15;
+    /** Rows-per-page choices on the list ("all" shows every matching employee on one page). */
+    public const PER_PAGE = [10, 50, 100, 500, 'all'];
 
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
-        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
-            $perPage = self::DEFAULT_PER_PAGE;
-        }
+        $requested = (string) $request->get('per_page', '10');
+        $perPage = in_array($requested, array_map('strval', self::PER_PAGE), true) ? $requested : '10';
 
-        $employees = $this->buildFilteredQuery()
-            ->paginate($perPage)
+        $query = $this->buildFilteredQuery();
+        $employees = $query->paginate($perPage === 'all' ? max(1, $query->getEloquentBuilder()->clone()->reorder()->count()) : (int) $perPage)
             ->withQueryString();
 
         return view('employees.index', [
             'employees' => $employees,
+            'perPage' => $perPage,
+            'stats' => $this->listStats($request),
             ...$this->getFilterOptions(),
         ]);
+    }
+
+    /**
+     * Headline numbers for the list. Tab counts follow the other filters
+     * (search, supplier, warehouse ...) but not the Active / Inactive tab itself.
+     *
+     * @return array{total: int, active: int, inactive: int, with_login: int, no_warehouse: int}
+     */
+    private function listStats(Request $request): array
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        unset($filters['is_active']);
+
+        $byStatus = $this->buildFilteredQuery(new Request(['filter' => $filters]))
+            ->getEloquentBuilder()
+            ->reorder()
+            ->selectRaw('is_active, COUNT(*) as aggregate')
+            ->groupBy('is_active')
+            ->pluck('aggregate', 'is_active');
+
+        return [
+            'total' => (int) $byStatus->sum(),
+            'active' => (int) ($byStatus[1] ?? 0),
+            'inactive' => (int) ($byStatus[0] ?? 0),
+            'with_login' => Employee::query()->whereNotNull('user_id')->count(),
+            'no_warehouse' => Employee::query()->where('is_active', true)->whereNull('warehouse_id')->count(),
+        ];
+    }
+
+    /**
+     * Activate, deactivate or delete several employees from the list.
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:employees,id',
+            'action' => 'required|in:activate,deactivate,delete',
+        ]);
+
+        $action = $request->action;
+        abort_if($action === 'delete' && ! $request->user()->can('employee-delete'), 403);
+
+        DB::transaction(function () use ($request, $action) {
+            $employees = Employee::whereIn('id', $request->ids);
+
+            if ($action === 'delete') {
+                $employees->get()->each->delete();
+
+                return;
+            }
+
+            $employees->update(['is_active' => $action === 'activate']);
+        });
+
+        $message = $action === 'delete' ? 'Employees deleted successfully.' : 'Employees updated successfully.';
+
+        return redirect()->route('employees.index')->with('success', $message);
     }
 
     /**
@@ -76,6 +133,7 @@ class EmployeeController extends Controller implements HasMiddleware
     public function create()
     {
         return view('employees.create', [
+            'employee' => new Employee(['is_active' => true]),
             'warehouseOptions' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'userOptions' => User::orderBy('name')->get(['id', 'name']),
             'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
@@ -142,7 +200,7 @@ class EmployeeController extends Controller implements HasMiddleware
      */
     public function show(Employee $employee)
     {
-        $employee->load(['warehouse', 'user', 'salaries', 'supplier', 'company']);
+        $employee->load(['warehouse', 'user', 'supplier', 'company', 'costCenter']);
 
         return view('employees.show', [
             'employee' => $employee,
@@ -234,10 +292,6 @@ class EmployeeController extends Controller implements HasMiddleware
      */
     public function destroy(Employee $employee)
     {
-        if ($employee->salaries()->exists()) {
-            return back()->with('error', 'Unable to delete employee while salary records exist. Please remove related salary history first.');
-        }
-
         try {
             $code = $employee->employee_code;
             $employee->delete();
@@ -259,12 +313,29 @@ class EmployeeController extends Controller implements HasMiddleware
     /**
      * Build the filtered query shared by index and export.
      */
-    private function buildFilteredQuery(): QueryBuilder
+    private function buildFilteredQuery(?Request $request = null): QueryBuilder
     {
         return QueryBuilder::for(
-            Employee::query()->with(['warehouse', 'user', 'supplier', 'company', 'costCenter'])
+            Employee::query()->with(['warehouse', 'user', 'supplier', 'company', 'costCenter']),
+            $request
         )
             ->allowedFilters([
+                // One box for the list page: code, name, company, designation, phone or email.
+                AllowedFilter::callback('search', function ($query, $value): void {
+                    $value = trim((string) $value);
+                    if ($value === '') {
+                        return;
+                    }
+                    // LOWER() keeps the match case-insensitive on MySQL and PostgreSQL alike.
+                    $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($value)).'%';
+                    $query->where(function ($q) use ($like) {
+                        foreach (['employee_code', 'name', 'company_name', 'designation', 'phone', 'email'] as $column) {
+                            $q->orWhereRaw("LOWER({$column}) LIKE ?", [$like]);
+                        }
+                    });
+                }),
+                AllowedFilter::callback('has_login', fn ($query, $value) => $value === 'Yes' ? $query->whereNotNull('user_id') : ($value === 'No' ? $query->whereNull('user_id') : null)),
+                AllowedFilter::callback('no_warehouse', fn ($query, $value) => $value === 'Yes' ? $query->whereNull('warehouse_id') : null),
                 AllowedFilter::partial('employee_code'),
                 AllowedFilter::partial('name'),
                 AllowedFilter::partial('company_name'),
@@ -280,7 +351,8 @@ class EmployeeController extends Controller implements HasMiddleware
                 AllowedFilter::exact('hire_date'),
                 AllowedFilter::callback('is_active', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
             ])
-            ->orderBy('employee_code');
+            ->allowedSorts(['employee_code', 'name', 'designation', 'hire_date', 'created_at'])
+            ->defaultSort('employee_code');
     }
 
     /**
@@ -294,7 +366,6 @@ class EmployeeController extends Controller implements HasMiddleware
             'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
             'costCenterOptions' => CostCenter::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'userOptions' => User::orderBy('name')->get(['id', 'name']),
-            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ];
     }
 

@@ -92,3 +92,18 @@ it('filters active employees that have no supplier', function () {
         ->assertSee('Without Supplier')
         ->assertDontSee('With Supplier');
 });
+
+it('saves an optional category and leaves it empty by default', function () {
+    $this->post(route('employees.store'), ['employee_code' => 'EMP-901', 'name' => 'No Category', 'is_active' => '1'])->assertRedirect();
+    expect(Employee::where('employee_code', 'EMP-901')->first()->category)->toBeNull();
+
+    $employee = Employee::factory()->create();
+    $this->put(route('employees.update', $employee), [
+        'employee_code' => $employee->employee_code,
+        'name' => $employee->name,
+        'category' => 'Powder',
+        'is_active' => '1',
+    ])->assertRedirect();
+
+    expect($employee->fresh()->category)->toBe('Powder');
+});

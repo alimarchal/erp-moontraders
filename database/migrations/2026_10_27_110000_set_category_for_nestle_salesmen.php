@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /** Salesman name => category, for employees of the Nestlé supplier. */
+    private const SUPPLIER = 'Nestlé Pakistan';
+
+    /** Salesman name => category, for employees of the Nestlé Pakistan supplier only. */
     private const CATEGORIES = [
         'Abbas Pharmacy' => 'Corporate',
         'Abbas Shah' => 'Powder',
@@ -21,12 +23,12 @@ return new class extends Migration
     ];
 
     /**
-     * Matches on name (case-insensitive) within Nestlé suppliers and only fills
+     * Matches on name (case-insensitive) within the exact supplier "Nestlé Pakistan" (not the HOD 19L one) and only fills
      * employees whose category is still empty, so manual edits are never overwritten.
      */
     public function up(): void
     {
-        $supplierIds = DB::table('suppliers')->where('supplier_name', 'like', 'Nestl%')->pluck('id');
+        $supplierIds = DB::table('suppliers')->where('supplier_name', self::SUPPLIER)->pluck('id');
 
         foreach (self::CATEGORIES as $name => $category) {
             DB::table('employees')
@@ -39,7 +41,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $supplierIds = DB::table('suppliers')->where('supplier_name', 'like', 'Nestl%')->pluck('id');
+        $supplierIds = DB::table('suppliers')->where('supplier_name', self::SUPPLIER)->pluck('id');
 
         foreach (self::CATEGORIES as $name => $category) {
             DB::table('employees')

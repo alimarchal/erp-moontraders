@@ -131,3 +131,12 @@ it('keeps the order of the target sheet and lists unplanned salesmen last', func
 
     expect($rows->pluck('employee')->all())->toBe(['Tayyab Ali', 'Atif Naqvi', 'Aaron Unplanned']);
 });
+
+it('shows the employee category in the Channel column, falling back to the target label', function () {
+    $this->tayyab->update(['category' => 'Powder']);
+
+    $rows = $this->actingAs($this->admin)->get(route('reports.company-target-summary.index', $this->query))->viewData('summary')['rows'];
+
+    expect($rows->firstWhere('employee', 'Tayyab Ali')['label'])->toBe('Powder')
+        ->and($rows->firstWhere('employee', 'Atif Naqvi')['label'])->toBe('Corporate');
+});

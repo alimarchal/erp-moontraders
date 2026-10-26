@@ -8,7 +8,7 @@
         <tr>
             <th class="text-center w-10 px-1 py-0.5">#</th>
             <th class="text-left px-1 py-0.5">Salesman</th>
-            <th class="text-left px-1 py-0.5">Channel</th>
+            <th class="text-center px-1 py-0.5">Channel</th>
             <th class="text-right px-1 py-0.5">Target</th>
             <th class="text-right px-1 py-0.5">Achieved</th>
             <th class="text-right px-1 py-0.5">Remaining/Day</th>
@@ -20,7 +20,7 @@
             <tr>
                 <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
                 <td class="px-1 py-0.5">{{ $row['employee'] }}</td>
-                <td class="px-1 py-0.5">{{ $row['label'] }}</td>
+                <td class="text-center px-1 py-0.5">{{ $row['label'] }}</td>
                 <td class="text-right font-mono px-1 py-0.5">{{ $money($row['total']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5">{{ $money($row['achieved']) }}</td>
                 <td class="text-right font-mono px-1 py-0.5">{{ $money($row['remaining_per_day']) }}</td>

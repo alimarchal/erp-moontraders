@@ -110,6 +110,16 @@
                                 @error('designation') <p class="uf-error">{{ $message }}</p> @enderror
                             </div>
                             <div class="uf-field">
+                                <label for="category">Category</label>
+                                <input id="category" type="text" name="category" value="{{ old('category', $employee->category) }}" maxlength="100" list="employee-categories" autocomplete="off" placeholder="e.g. Corporate, Powder, Liquid">
+                                <datalist id="employee-categories">
+                                    <option value="Corporate"></option>
+                                    <option value="Powder"></option>
+                                    <option value="Liquid"></option>
+                                </datalist>
+                                @error('category') <p class="uf-error">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="uf-field">
                                 <label for="company_name">Company / Principal</label>
                                 <input id="company_name" type="text" name="company_name" value="{{ old('company_name', $employee->company_name) }}" maxlength="255" placeholder="Nestle Pakistan">
                                 @error('company_name') <p class="uf-error">{{ $message }}</p> @enderror

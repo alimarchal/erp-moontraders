@@ -21,6 +21,7 @@ class Employee extends Model
         'name',
         'company_name',
         'designation',
+        'category',
         'phone',
         'email',
         'address',

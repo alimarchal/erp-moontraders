@@ -100,6 +100,7 @@
                         <div><dt>Employee code</dt><dd>{{ $employee->employee_code }}</dd></div>
                         <div><dt>Full name</dt><dd>{{ $employee->name }}</dd></div>
                         <div><dt>Designation</dt><dd>{{ $employee->designation ?: '—' }}</dd></div>
+                        <div><dt>Category</dt><dd>{{ $employee->category ?: '—' }}</dd></div>
                         <div><dt>Company / Principal</dt><dd>{{ $employee->company_name ?: '—' }}</dd></div>
                         <div><dt>Phone</dt><dd>{{ $employee->phone ?: '—' }}</dd></div>
                         <div><dt>Email</dt><dd>{{ $employee->email ?: '—' }}</dd></div>

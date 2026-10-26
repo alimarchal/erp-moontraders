@@ -221,6 +221,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             'products' => $dropdownProducts, // For the filter dropdown
             'selectedSupplierId' => $supplierId,
             'selectedProductId' => $productId,
+            'showAdjustment' => $request->input('show_adjustment', '1') !== '0',
         ]);
     }
 }

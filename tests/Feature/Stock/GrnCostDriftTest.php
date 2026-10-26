@@ -348,3 +348,14 @@ it('includes the stock adjustments of the report date in the daily stock registe
             && (float) $rows->sole()->adjustment === -2.0
             && (float) $rows->sole()->in_hand_value === 880.0);
 });
+
+it('hides the adjustment column of the daily stock register on request', function () {
+    Permission::create(['name' => 'report-inventory-daily-stock-register']);
+    $this->user->givePermissionTo('report-inventory-daily-stock-register');
+    $this->actingAs($this->user);
+
+    $query = ['date' => now()->toDateString(), 'supplier_id' => $this->supplier->id];
+
+    $this->get(route('reports.daily-stock-register.index', $query))->assertSuccessful()->assertSee('Stock adjustments posted on this date');
+    $this->get(route('reports.daily-stock-register.index', $query + ['show_adjustment' => '0']))->assertSuccessful()->assertDontSee('Stock adjustments posted on this date');
+});

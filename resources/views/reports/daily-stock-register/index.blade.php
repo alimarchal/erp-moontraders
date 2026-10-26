@@ -82,16 +82,8 @@
                 <x-input id="date" name="date" type="date" class="mt-1 block w-full" :value="$date" />
             </div>
 
-            <div class="relative">
-                <div class="flex justify-between items-center">
-                    <x-label for="supplier_id" value="Supplier" />
-                    @if($selectedSupplierId)
-                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['supplier_id', 'product_id', 'page']), ['supplier_id' => ''])) }}"
-                            class="text-xs text-red-600 hover:text-red-800 underline">
-                            Clear
-                        </a>
-                    @endif
-                </div>
+            <div>
+                <x-label for="supplier_id" value="Supplier" />
                 <select id="supplier_id" name="supplier_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
@@ -103,16 +95,8 @@
                 </select>
             </div>
 
-            <div class="relative">
-                <div class="flex justify-between items-center">
-                    <x-label for="product_id" value="Product" />
-                    @if($selectedProductId)
-                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['product_id', 'page']), ['product_id' => ''])) }}"
-                            class="text-xs text-red-600 hover:text-red-800 underline">
-                            Clear
-                        </a>
-                    @endif
-                </div>
+            <div>
+                <x-label for="product_id" value="Product" />
                 <select id="product_id" name="product_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Products</option>
@@ -124,8 +108,13 @@
                 </select>
             </div>
 
-            <div class="flex items-end">
-                <x-button class="w-full justify-center">Filter</x-button>
+            <div>
+                <x-label for="show_adjustment" value="Adjustment Column" />
+                <select id="show_adjustment" name="show_adjustment"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="1" {{ $showAdjustment ? 'selected' : '' }}>Show</option>
+                    <option value="0" {{ ! $showAdjustment ? 'selected' : '' }}>Hide</option>
+                </select>
             </div>
         </div>
     </x-filter-section>
@@ -153,7 +142,9 @@
                             <th class="w-20 text-center font-bold" title="Returns">Return</th>
                             <th class="w-20 text-center font-bold" title="Sales">Sales</th>
                             <th class="w-20 text-center font-bold" title="Shortage">Shortage</th>
-                            <th class="w-20 text-center font-bold" title="Stock adjustments posted on this date">Adjustment</th>
+                            @if ($showAdjustment)
+                                <th class="w-20 text-center font-bold" title="Stock adjustments posted on this date">Adjustment</th>
+                            @endif
                             <th class="w-20 text-center font-bold" title="In Hand Stock (System Total: WH + Van)">In
                                 Hand</th>
                             <th class="w-28 text-center font-bold" title="In Hand Stock Value (at ledger unit cost)">Stock Value</th>
@@ -174,7 +165,9 @@
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->return, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->sale, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->shortage, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->adjustment, 2), '0'), '.') }}</td>
+                                @if ($showAdjustment)
+                                    <td class="text-center">{{ rtrim(rtrim(number_format($row->adjustment, 2), '0'), '.') }}</td>
+                                @endif
                                 <td class="text-center bg-gray-100 font-bold">
                                     {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}
                                 </td>
@@ -182,7 +175,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="13" class="text-center py-4">No data found based on filters.</td>
+                                <td colspan="{{ $showAdjustment ? 13 : 12 }}" class="text-center py-4">No data found based on filters.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -213,9 +206,11 @@
                             <td class="text-center">
                                 {{ rtrim(rtrim(number_format($reportData->sum('shortage'), 2), '0'), '.') }}
                             </td>
-                            <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('adjustment'), 2), '0'), '.') }}
-                            </td>
+                            @if ($showAdjustment)
+                                <td class="text-center">
+                                    {{ rtrim(rtrim(number_format($reportData->sum('adjustment'), 2), '0'), '.') }}
+                                </td>
+                            @endif
                             <td class="text-center">
                                 {{ rtrim(rtrim(number_format($reportData->sum('in_hand'), 2), '0'), '.') }}
                             </td>

@@ -33,8 +33,7 @@ class CustomerController extends Controller implements HasMiddleware
         return [
             new Middleware('can:customer-list', only: ['index', 'show', 'exportExcel']),
             new Middleware('can:customer-create', only: ['create', 'store', 'importForm', 'import', 'importTemplate']),
-            new Middleware('can:customer-edit', only: ['edit', 'update']),
-            new Middleware('can:customer-delete', only: ['destroy']),
+            new Middleware('can:customer-edit', only: ['edit', 'update', 'toggleActive']),
         ];
     }
 
@@ -328,27 +327,46 @@ class CustomerController extends Controller implements HasMiddleware
     }
 
     /**
-     * "Delete" only deactivates the customer; records are never removed. Super admins only.
+     * The help page is for people who add customers and for super admins.
      */
-    public function destroy(Customer $customer)
+    public static function canViewHelp(?User $user): bool
     {
-        $user = auth()->user();
-        abort_unless($user->is_super_admin === 'Yes' || $user->hasRole('super-admin'), 403);
+        return $user !== null
+            && ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->can('customer-create'));
+    }
+
+    /**
+     * How customers (shops) work: lifecycle, import, status, where they are used.
+     */
+    public function help()
+    {
+        abort_unless(self::canViewHelp(auth()->user()), 403);
+
+        return view('customers.help');
+    }
+
+    /**
+     * Customers are never deleted: they are deactivated and can be activated again.
+     * History (settlements, balances, ledgers) always stays.
+     */
+    public function toggleActive(Customer $customer)
+    {
+        $activate = ! $customer->is_active;
 
         try {
-            $customer->update(['is_active' => false]);
+            $customer->update(['is_active' => $activate]);
 
-            return redirect()
-                ->route('customers.index')
-                ->with('success', "Customer '{$customer->customer_name}' deactivated. Its history is kept.");
+            return back()->with('success', $activate
+                ? "Customer '{$customer->customer_name}' activated."
+                : "Customer '{$customer->customer_name}' deactivated. Its history is kept.");
         } catch (\Throwable $e) {
-            Log::error('Error deactivating customer', [
+            Log::error('Error changing customer status', [
                 'customer_id' => $customer->id,
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->with('error', 'Failed to deactivate customer. Please try again.');
+            return back()->with('error', 'Failed to change the customer status. Please try again.');
         }
     }
 

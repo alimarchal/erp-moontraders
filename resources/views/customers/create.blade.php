@@ -12,12 +12,14 @@
             </div>
             <div class="ak-head-actions">
                 <a href="{{ route('customers.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <x-customer-help-link />
                 <a href="{{ route('customers.import.form') }}" class="ak-btn ak-btn-outline">Import Excel</a>
             </div>
         </div>
     </x-slot>
 
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
 
     <div class="ak-page">
         <x-status-message />

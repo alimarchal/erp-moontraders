@@ -674,7 +674,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('customers/import', [CustomerController::class, 'importForm'])->name('customers.import.form');
         Route::get('customers/import/template', [CustomerController::class, 'importTemplate'])->name('customers.import.template');
         Route::post('customers/import', [CustomerController::class, 'import'])->name('customers.import');
-        Route::resource('customers', CustomerController::class);
+        Route::get('customers/help', [CustomerController::class, 'help'])->name('customers.help');
+        Route::post('customers/{customer}/toggle-active', [CustomerController::class, 'toggleActive'])->name('customers.toggle-active');
+        Route::resource('customers', CustomerController::class)->except('destroy');
 
         /* RBAC — Users, Roles & Permissions */
         Route::resource('users', UserController::class);

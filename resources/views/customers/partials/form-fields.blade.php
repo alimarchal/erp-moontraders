@@ -71,7 +71,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
                 </div>
                 <div class="uf-field">
                     <label for="sales_rep_id">Assigned sales rep</label>
-                    <select id="sales_rep_id" name="sales_rep_id">
+                    <select id="sales_rep_id" name="sales_rep_id" class="js-select2">
                         <option value="">Unassigned</option>
                         @foreach ($salesRepOptions as $salesRep)
                             <option value="{{ $salesRep->id }}" @selected((int) $val('sales_rep_id', 0) === $salesRep->id)>{{ $salesRep->name }}</option>
@@ -142,7 +142,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
             <div class="cf-4">
                 <div class="uf-field">
                     <label for="channel_type">Channel type <span class="uf-req">*</span></label>
-                    <select id="channel_type" name="channel_type" required>
+                    <select id="channel_type" name="channel_type" class="js-select2" required>
                         @foreach ($channelTypes as $type)
                             <option value="{{ $type }}" @selected($val('channel_type', $channelTypes[0] ?? null) === $type)>{{ $type }}</option>
                         @endforeach
@@ -151,7 +151,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
                 </div>
                 <div class="uf-field">
                     <label for="customer_category">Category <span class="uf-req">*</span></label>
-                    <select id="customer_category" name="customer_category" required>
+                    <select id="customer_category" name="customer_category" class="js-select2" required>
                         @foreach ($customerCategories as $category)
                             <option value="{{ $category }}" @selected($val('customer_category', 'C') === $category)>Category {{ $category }}</option>
                         @endforeach
@@ -192,7 +192,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
                 </div>
                 <div class="uf-field">
                     <label for="it_status">IT status (FBR registered)</label>
-                    <select id="it_status" name="it_status">
+                    <select id="it_status" name="it_status" class="js-select2">
                         <option value="0" @selected((string) (int) $val('it_status', 0) === '0')>No</option>
                         <option value="1" @selected((string) (int) $val('it_status', 0) === '1')>Yes</option>
                     </select>
@@ -214,7 +214,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
             <div class="uf-fields">
                 <div class="uf-field">
                     <label for="receivable_account_id">Receivable account (AR)</label>
-                    <select id="receivable_account_id" name="receivable_account_id">
+                    <select id="receivable_account_id" name="receivable_account_id" class="js-select2">
                         <option value="">Not linked</option>
                         @foreach ($accountOptions as $account)
                             <option value="{{ $account->id }}" @selected((int) $val('receivable_account_id', 0) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>
@@ -224,7 +224,7 @@ $moneyValue = fn (string $field, $default) => old($field, optional($customer)->{
                 </div>
                 <div class="uf-field">
                     <label for="payable_account_id">Payable account (AP)</label>
-                    <select id="payable_account_id" name="payable_account_id">
+                    <select id="payable_account_id" name="payable_account_id" class="js-select2">
                         <option value="">Not linked</option>
                         @foreach ($accountOptions as $account)
                             <option value="{{ $account->id }}" @selected((int) $val('payable_account_id', 0) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>

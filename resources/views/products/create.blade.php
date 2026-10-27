@@ -18,6 +18,7 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
 
     <div class="ak-page">
         <x-status-message />

@@ -36,7 +36,7 @@
     $sortNames = ['customer_name' => 'Name', 'customer_code' => 'Code', 'city' => 'City', 'credit_limit' => 'Credit limit'];
     $sortField = ltrim($sort, '-');
     $authUser = auth()->user();
-    $canDeactivate = $authUser->can('customer-delete') && ($authUser->is_super_admin === 'Yes' || $authUser->hasRole('super-admin'));
+    $canToggle = $authUser->can('customer-edit');
 @endphp
 
 <x-app-layout>
@@ -51,6 +51,7 @@
             </div>
             <div class="ak-head-actions">
                 <a href="{{ route('settings.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <x-customer-help-link />
                 <a href="{{ route('customers.export.excel', request()->query()) }}" class="ak-btn ak-btn-outline">Export Excel</a>
                 @can('customer-create')
                     <a href="{{ route('customers.import.form') }}" class="ak-btn ak-btn-outline">Import Excel</a>
@@ -61,6 +62,7 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
 
     <div class="ak-page" x-data="customerList()">
         <x-status-message />
@@ -111,7 +113,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_channel">Channel</label>
-                        <select id="f_channel" name="filter[channel_type]">
+                        <select id="f_channel" name="filter[channel_type]" class="js-select2">
                             <option value="">All channels</option>
                             @foreach ($channelTypes as $type)
                                 <option value="{{ $type }}" @selected(($filters['channel_type'] ?? '') === $type)>{{ $type }}</option>
@@ -120,7 +122,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_category">Category</label>
-                        <select id="f_category" name="filter[customer_category]">
+                        <select id="f_category" name="filter[customer_category]" class="js-select2">
                             <option value="">All</option>
                             @foreach ($customerCategories as $category)
                                 <option value="{{ $category }}" @selected(($filters['customer_category'] ?? '') === $category)>Category {{ $category }}</option>
@@ -156,7 +158,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_rep">Sales rep</label>
-                        <select id="f_rep" name="filter[sales_rep_id]">
+                        <select id="f_rep" name="filter[sales_rep_id]" class="js-select2">
                             <option value="">All reps</option>
                             @foreach ($salesRepOptions as $rep)
                                 <option value="{{ $rep->id }}" @selected((string) ($filters['sales_rep_id'] ?? '') === (string) $rep->id)>{{ $rep->name }}</option>
@@ -239,13 +241,18 @@
                                                     @endcan
                                                 </span>
                                                 <span class="ak-slot">
-                                                    @if ($canDeactivate && $customer->is_active)
-                                                        <form method="POST" action="{{ route('customers.destroy', $customer) }}" @submit.prevent="askDelete($el, @js($customer->customer_name))">
+                                                    @if ($canToggle)
+                                                        <form method="POST" action="{{ route('customers.toggle-active', $customer) }}" @submit.prevent="askToggle($el, @js($customer->customer_name), {{ $customer->is_active ? 'true' : 'false' }})">
                                                             @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="ak-icon ak-icon-danger" title="Deactivate customer" aria-label="Deactivate {{ $customer->customer_name }}">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
-                                                            </button>
+                                                            @if ($customer->is_active)
+                                                                <button type="submit" class="ak-icon ak-icon-danger" title="Deactivate customer" aria-label="Deactivate {{ $customer->customer_name }}">
+                                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 3v9" /></svg>
+                                                                </button>
+                                                            @else
+                                                                <button type="submit" class="ak-icon" style="color:#15803d" title="Activate customer" aria-label="Activate {{ $customer->customer_name }}">
+                                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                                                                </button>
+                                                            @endif
                                                         </form>
                                                     @endif
                                                 </span>
@@ -287,12 +294,12 @@
                     </span>
                     <div>
                         <h3 id="cl-confirm-title" x-text="confirm.title"></h3>
-                        <p style="margin:8px 0 0; font-size:14px; color:#334155">The customer will be marked Inactive and can be re-activated from Edit. Nothing is deleted.</p>
+                        <p style="margin:8px 0 0; font-size:14px; color:#334155" x-text="confirm.active ? 'The customer will be marked Inactive and can be activated again from this list. Nothing is deleted.' : 'The customer will be marked Active again.'"></p>
                     </div>
                 </div>
                 <div class="uf-modal-foot">
                     <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
-                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : 'Deactivate customer'"></button>
+                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : (confirm.active ? 'Deactivate customer' : 'Activate customer')"></button>
                 </div>
             </div>
         </div>
@@ -302,8 +309,8 @@
         <script>
             function customerList() {
                 return {
-                    confirm: { open: false, title: '', busy: false, form: null },
-                    askDelete(form, name) { this.confirm = { open: true, title: 'Deactivate ' + name + '?', busy: false, form }; },
+                    confirm: { open: false, title: '', busy: false, form: null, active: true },
+                    askToggle(form, name, isActive) { this.confirm = { open: true, title: (isActive ? 'Deactivate ' : 'Activate ') + name + '?', busy: false, form, active: isActive }; },
                     runConfirm() {
                         if (this.confirm.busy || !this.confirm.form) return;
                         this.confirm.busy = true;

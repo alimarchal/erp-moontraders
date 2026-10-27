@@ -64,7 +64,7 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
             <div class="pf-4" style="margin-top:16px">
                 <div class="uf-field">
                     <label for="supplier_id">Preferred supplier</label>
-                    <select id="supplier_id" name="supplier_id">
+                    <select id="supplier_id" name="supplier_id" class="js-select2">
                         <option value="">Not linked</option>
                         @foreach ($supplierOptions as $supplier)
                             <option value="{{ $supplier->id }}" @selected((int) $val('supplier_id', 0) === $supplier->id)>{{ $supplier->supplier_name }}</option>
@@ -74,7 +74,7 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
                 </div>
                 <div class="uf-field">
                     <label for="category_id">Category</label>
-                    <select id="category_id" name="category_id">
+                    <select id="category_id" name="category_id" class="js-select2">
                         <option value="">Select category</option>
                         @foreach ($categoryOptions as $category)
                             <option value="{{ $category->id }}" @selected((int) $val('category_id', 0) === $category->id)>{{ $category->name }}</option>
@@ -107,7 +107,7 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
             <div class="pf-4">
                 <div class="uf-field">
                     <label for="uom_id">Base UOM (inventory) <span class="uf-req">*</span></label>
-                    <select id="uom_id" name="uom_id" required>
+                    <select id="uom_id" name="uom_id" class="js-select2" required>
                         <option value="">Select base UOM</option>
                         @foreach ($uomOptions as $uom)
                             <option value="{{ $uom->id }}" @selected((int) $val('uom_id', $product ? 0 : 24) === $uom->id)>{{ $uom->uom_name }} {{ $uom->symbol ? '('.$uom->symbol.')' : '' }}</option>
@@ -118,7 +118,7 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
                 </div>
                 <div class="uf-field">
                     <label for="sales_uom_id">Sales UOM (optional)</label>
-                    <select id="sales_uom_id" name="sales_uom_id">
+                    <select id="sales_uom_id" name="sales_uom_id" class="js-select2">
                         <option value="">Same as base UOM</option>
                         @foreach ($uomOptions as $uom)
                             <option value="{{ $uom->id }}" @selected((int) $val('sales_uom_id', $product ? 0 : 33) === $uom->id)>{{ $uom->uom_name }} {{ $uom->symbol ? '('.$uom->symbol.')' : '' }}</option>
@@ -135,7 +135,7 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
                 </div>
                 <div class="uf-field">
                     <label for="valuation_method">Valuation method <span class="uf-req">*</span></label>
-                    <select id="valuation_method" name="valuation_method" required>
+                    <select id="valuation_method" name="valuation_method" class="js-select2" required>
                         @foreach ($valuationMethods as $method)
                             <option value="{{ $method }}" @selected($val('valuation_method', 'FIFO') === $method)>{{ $method }}</option>
                         @endforeach

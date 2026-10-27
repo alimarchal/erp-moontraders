@@ -92,6 +92,11 @@
                     @endcan
                 @endif
                 @if ($isPosted)
+                    @can('goods-receipt-note-reverse')
+                        <button type="button" class="ak-btn ak-btn-outline" style="color:#b91c1c; border-color:#fca5a5"
+                            @if ($reversalRefusal) disabled title="{{ $reversalRefusal }}" @endif
+                            onclick="confirmReverseGrn()">Reverse GRN</button>
+                    @endcan
                     @role('super-admin')
                         <a href="{{ route('goods-receipt-notes.edit-special', $grn->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">Special Edit</a>
                     @endrole
@@ -418,7 +423,7 @@
 
     <!-- Password Modal -->
     <x-password-confirm-modal id="reverseGrnModal" title="Confirm GRN Reversal"
-        message="WARNING: This will reverse all stock entries and draft payments. This action cannot be undone."
+        message="WARNING: This will take the received stock out of the warehouse and post an offsetting journal entry. This action cannot be undone." errorKey="password"
         warningClass="text-red-600" confirmButtonText="Confirm Reverse"
         confirmButtonClass="bg-red-600 hover:bg-red-700" />
 
@@ -430,6 +435,11 @@
         errorKey="password"
         confirmButtonText="Post to Inventory" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" />
 
+    <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST" class="hidden">
+        @csrf
+        <input type="hidden" id="reverse_grn_password" name="password">
+    </form>
+
     <form id="postGrnForm" action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST" class="hidden">
         @csrf
         <input type="hidden" id="post_grn_password" name="password">
@@ -437,12 +447,7 @@
 
     <script>
         function confirmReverseGrn() {
-            if (!confirm('Are you sure you want to REVERSE this GRN? All stock entries and draft payments will be reversed. This action cannot be undone.')) {
-                return false;
-            }
-
             window.showPasswordModal('reverseGrnModal');
-            return false;
         }
 
         // Listen for password confirmation event
@@ -450,7 +455,7 @@
             const { modalId, password } = event.detail;
 
             if (modalId === 'reverseGrnModal') {
-                document.getElementById('password').value = password;
+                document.getElementById('reverse_grn_password').value = password;
                 document.getElementById('reverseGrnForm').submit();
             } else if (modalId === 'postGrnPasswordModal') {
                 document.getElementById('post_grn_password').value = password;

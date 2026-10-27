@@ -7,7 +7,7 @@ use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     foreach (['goods-receipt-note-list', 'goods-receipt-note-create', 'goods-receipt-note-edit', 'goods-receipt-note-delete', 'goods-receipt-note-post', 'goods-receipt-note-reverse'] as $perm) {
-        Permission::create(['name' => $perm]);
+        Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
     }
 
     $this->user = User::factory()->create();

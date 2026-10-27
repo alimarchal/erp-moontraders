@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -93,6 +94,30 @@ class GoodsReceiptNote extends Model
     public function ledgerEntry(): HasOne
     {
         return $this->hasOne(LedgerRegister::class, 'goods_receipt_note_id');
+    }
+
+    /**
+     * Ledger Register rows of this GRN's supplier that carry the same document number as the
+     * supplier invoice, other than the row raised from this GRN. Rows entered by hand before
+     * the GRN was posted (invoice, online payment, claim ...) are found this way.
+     *
+     * @return Collection<int, LedgerRegister>
+     */
+    public function matchingLedgerEntries(): Collection
+    {
+        $invoiceNumber = trim((string) $this->supplier_invoice_number);
+
+        if ($invoiceNumber === '') {
+            return new Collection;
+        }
+
+        return LedgerRegister::query()
+            ->where('supplier_id', $this->supplier_id)
+            ->where('document_number', $invoiceNumber)
+            ->where(fn ($query) => $query->whereNull('goods_receipt_note_id')->orWhere('goods_receipt_note_id', '!=', $this->id))
+            ->orderBy('transaction_date')
+            ->orderBy('id')
+            ->get();
     }
 
     public function isDraft(): bool

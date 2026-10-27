@@ -96,6 +96,16 @@ class LedgerRegisterService
             return $existing;
         }
 
+        $invoiceNumber = trim((string) $grn->supplier_invoice_number);
+
+        // The invoice may already have been entered by hand; a second row would post it twice.
+        if ($invoiceNumber !== '' && LedgerRegister::where('supplier_id', $grn->supplier_id)
+            ->where('document_type', DocumentType::Dr->value)
+            ->where('document_number', $invoiceNumber)
+            ->exists()) {
+            return null;
+        }
+
         $owed = round((float) DB::table('journal_entry_details as lines')
             ->join('chart_of_accounts as accounts', 'accounts.id', '=', 'lines.chart_of_account_id')
             ->where('lines.journal_entry_id', $grn->journal_entry_id)

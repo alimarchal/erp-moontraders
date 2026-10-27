@@ -10,6 +10,7 @@
     $isPosted = $grn->status === 'posted';
     $statusTone = ['draft' => 'ak-status-amber', 'posted' => 'ak-status-green', 'reversed' => 'ak-status-red'];
     $ledger = $grn->ledgerEntry;
+    $ledgerMatches = $isPosted || $isDraft ? $grn->matchingLedgerEntries() : collect();
     $ledgerStatus = $ledger ? ($ledger->isPosted() ? 'posted' : 'draft') : null;
     $ledgerTone = ['draft' => 'ak-status-amber', 'posted' => 'ak-status-green'];
     $ledgerUrl = $ledger && auth()->user()->can('report-audit-ledger-register')
@@ -375,10 +376,34 @@
                         @if ($ledgerUrl)
                             <p style="margin:10px 0 0"><a href="{{ $ledgerUrl }}" style="color:var(--ak-navy)">Open in Ledger Register →</a></p>
                         @endif
-                    @elseif ($isPosted)
+                    @elseif ($isPosted && $ledgerMatches->isEmpty())
                         <p class="ak-muted" style="margin:10px 0 0">No ledger entry was raised for this GRN.</p>
-                    @else
+                    @elseif (! $isPosted)
                         <p class="ak-muted" style="margin:10px 0 0">A draft invoice entry is added to the supplier Ledger Register when this GRN is posted.</p>
+                    @endif
+
+                    @if ($ledgerMatches->isNotEmpty())
+                        <p style="margin:12px 0 4px; font-weight:600">Already in the Ledger Register under invoice no. {{ $grn->supplier_invoice_number }}</p>
+                        <table class="gr-pay">
+                            <thead><tr><th>Date</th><th>Type</th><th>Status</th><th style="text-align:right">Invoice</th><th style="text-align:right">Online</th></tr></thead>
+                            <tbody>
+                                @foreach ($ledgerMatches as $match)
+                                    <tr>
+                                        <td>{{ $match->transaction_date?->format('d M Y') }}</td>
+                                        <td>{{ $match->document_type?->value }} &middot; {{ $match->document_type?->label() }}</td>
+                                        <td><span class="ak-status {{ $match->isPosted() ? 'ak-status-green' : 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $match->isPosted() ? 'Posted' : 'Draft' }}</span></td>
+                                        <td style="text-align:right">{{ $rs($match->invoice_amount) }}</td>
+                                        <td style="text-align:right">{{ $rs($match->online_amount) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        @if (! $ledger)
+                            <p class="ak-muted" style="margin:6px 0 0">No second draft row was raised for this GRN because the invoice is already there.</p>
+                        @endif
+                        @if (! $ledgerUrl && auth()->user()->can('report-audit-ledger-register'))
+                            <p style="margin:8px 0 0"><a href="{{ route('reports.ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'document_number' => $grn->supplier_invoice_number, 'date_from' => '2020-01-01', 'date_to' => now()->toDateString()]]) }}" style="color:var(--ak-navy)">Open in Ledger Register →</a></p>
+                        @endif
                     @endif
                 </div>
             </section>

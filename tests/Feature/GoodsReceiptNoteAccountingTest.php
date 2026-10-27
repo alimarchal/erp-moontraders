@@ -1131,3 +1131,42 @@ it('shows the GRN help link and page to super admins and users who can create GR
     $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']))
         ->get(route('goods-receipt-notes.help'))->assertSuccessful();
 });
+
+it('lists ledger rows already entered under the GRN invoice number and raises no second invoice row', function () {
+    grnReversalPermission($this);
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id, 'warehouse_id' => $this->warehouse->id, 'status' => 'draft',
+        'receipt_date' => now(), 'supplier_invoice_number' => 'MATCH-77',
+    ]);
+    $grn->items()->create([
+        'line_no' => 1, 'product_id' => $this->product->id, 'stock_uom_id' => $this->uom->id, 'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 10, 'uom_conversion_factor' => 1, 'qty_in_stock_uom' => 10, 'extended_value' => 1000,
+        'quantity_received' => 10, 'quantity_accepted' => 10, 'unit_cost' => 100, 'total_cost' => 1000,
+    ]);
+
+    LedgerRegister::create([
+        'supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DR',
+        'document_number' => 'MATCH-77', 'invoice_amount' => 1000, 'posted_at' => now(),
+    ]);
+    LedgerRegister::create([
+        'supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DZ',
+        'document_number' => 'MATCH-77', 'online_amount' => 400,
+    ]);
+    LedgerRegister::create([
+        'supplier_id' => Supplier::factory()->create()->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DR',
+        'document_number' => 'MATCH-77', 'invoice_amount' => 5,
+    ]);
+
+    expect(app(InventoryService::class)->postGrnToInventory($grn->fresh())['success'])->toBeTrue()
+        ->and(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(0)
+        ->and($grn->fresh()->matchingLedgerEntries())->toHaveCount(2);
+
+    $this->get(route('goods-receipt-notes.show', $grn))
+        ->assertSuccessful()
+        ->assertSee('Already in the Ledger Register under invoice no. MATCH-77')
+        ->assertSee('Invoices')
+        ->assertSee('Online')
+        ->assertSee('400.00')
+        ->assertSee('No second draft row was raised');
+});

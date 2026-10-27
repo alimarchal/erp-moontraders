@@ -20,6 +20,18 @@
                 word-wrap: break-word;
             }
 
+            .basis-col {
+                font-size: 11px;
+                color: #374151;
+                width: 34%;
+            }
+
+            @media print {
+                .basis-col {
+                    font-size: 8px;
+                }
+            }
+
             .print-only {
                 display: none;
             }
@@ -209,18 +221,25 @@
                 </select>
             </div>
 
-            <!-- Supplier -->
+            <!-- Company -->
             <div class="md:col-span-2 lg:col-span-2">
-                <x-label for="filter_supplier_id" value="Supplier" />
-                <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
-                    @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" {{ ($filters['supplier_id'] ?? '') == $supplier->id ? 'selected' : '' }}>
-                            {{ $supplier->supplier_name }}
-                        </option>
-                    @endforeach
-                </select>
+                <x-label for="filter_supplier_id" value="Company" />
+                @if ($canChooseCompany)
+                    <select id="filter_supplier_id" name="filter[supplier_id]"
+                        class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                        <option value="">Select a company</option>
+                        @foreach($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}" {{ ($filters['supplier_id'] ?? '') == $supplier->id ? 'selected' : '' }}>
+                                {{ $supplier->supplier_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @else
+                    <input type="hidden" name="filter[supplier_id]" value="{{ $suppliers->first()?->id }}">
+                    <div class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                        {{ $suppliers->first()?->supplier_name ?? 'No company is assigned to your account' }}
+                    </div>
+                @endif
             </div>
         </div>
     </x-filter-section>
@@ -231,6 +250,7 @@
             {{-- Report header --}}
             <div class="text-center py-4 no-print">
                 <p class="font-bold text-lg text-gray-800">Summary ROI Report</p>
+                <p class="text-xs mt-1"><a href="{{ route('reports.summary-roi.help') }}" class="font-semibold text-indigo-700 hover:underline">How this report is calculated</a></p>
                 <p class="text-sm text-gray-600">
                     For the Period of
                     {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }}
@@ -270,6 +290,18 @@
                 @endif
             </div>
 
+            @if (! $reportReady)
+                <div class="no-print rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+                    <p class="text-base font-semibold text-gray-800">
+                        {{ $canChooseCompany ? 'Select a company to load the report' : 'No company is assigned to your account' }}
+                    </p>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{ $canChooseCompany
+                            ? 'Nothing is calculated until a company is chosen. Pick one above and press Search.'
+                            : 'Ask an administrator to link your account to a company.' }}
+                    </p>
+                </div>
+            @else
             @php
                 $grossInflow = (float) ($grossInflow ?? 0);
                 $totalExpensesShown = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
@@ -316,6 +348,21 @@
             {{-- Consolidated statement under graphs --}}
             @php
                 $profitFromSale = (float) $grandTotals['gross_profit'];
+                $fmt = fn ($v) => number_format((float) $v, 2);
+                $basis = [
+                    'category' => 'Posted sales value of this category in the period',
+                    'total_sale' => 'Sum of the category sales above',
+                    'profit' => ($filters['average'] ?? '0') == '1'
+                        ? 'Sale − COGS at actual average cost: '.$fmt($grandTotals['basis_sales']).' − '.$fmt($grandTotals['basis_cogs'])
+                        : 'Qty sold × list price − qty sold × standard cost: '.$fmt($grandTotals['basis_sales']).' − '.$fmt($grandTotals['basis_cogs']),
+                    'scheme' => 'Scheme Received entries dated in the period',
+                    'fmr' => 'FMR allowance on posted GRN lines received in the period',
+                    'cash' => 'ZA 0.5% column of the supplier Ledger Register in the period',
+                    'other_allowance' => 'No source yet, always shown as —',
+                    'rate_increase' => 'No source yet, always shown as —',
+                    'revenue_row' => 'Posted Revenue Detail entries of this category in the period',
+                    'grand_revenue' => 'Profit From Sale + Scheme + FMR + Cash Discount + the revenue rows above',
+                ];
                 $postedRevenueTotal = (float) ($postedRevenueTotal ?? 0);
                 $postedRevenueRows = $postedRevenueRows ?? collect();
                 $grandRevenue = (float) ($grandRevenue ?? 0);
@@ -335,20 +382,23 @@
                             <thead>
                                 <tr class="bg-slate-200">
                                     <th class="text-center w-8">#</th>
-                                    <th colspan="2">Particulars</th>
+                                    <th>Particulars</th>
+                                    <th class="basis-col">How calculated</th>
                                     <th class="text-right">Amount (Rs.)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="bg-slate-200 font-semibold">
                                     <td class="text-center">#</td>
-                                    <td colspan="2">Category Wise Sale</td>
+                                    <td>Category Wise Sale</td>
+                                    <td class="basis-col">Basis</td>
                                     <td class="text-right">Amount</td>
                                 </tr>
                                 @forelse($categoryRows as $i => $row)
                                     <tr>
                                         <td class="text-center">{{ $i + 1 }}</td>
-                                        <td colspan="2">{{ $row['category_name'] }}</td>
+                                        <td>{{ $row['category_name'] }}</td>
+                                        <td class="basis-col">{{ $basis['category'] }}</td>
                                         <td class="text-right">{{ number_format($row['sale'], 2) }}</td>
                                     </tr>
                                 @empty
@@ -360,55 +410,65 @@
 
                                 <tr class="font-semibold bg-slate-100">
                                     <td></td>
-                                    <td colspan="2">Total Sale</td>
+                                    <td>Total Sale</td>
+                                    <td class="basis-col">{{ $basis['total_sale'] }}</td>
                                     <td class="text-right">{{ number_format($grandTotals['sale'], 2) }}</td>
                                 </tr>
                                 <tr><td colspan="4" class="py-1"></td></tr>
                                 <tr class="bg-slate-200 font-semibold">
                                     <td class="text-center">#</td>
-                                    <td colspan="2">Profit From Sale &amp; Other Revenue</td>
+                                    <td>Profit From Sale &amp; Other Revenue</td>
+                                    <td class="basis-col">Basis</td>
                                     <td class="text-right">Amount</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center">1</td>
-                                    <td colspan="2">Profit From Sale</td>
+                                    <td>Profit From Sale</td>
+                                    <td class="basis-col">{{ $basis['profit'] }}</td>
                                     <td class="text-right">{{ number_format($profitFromSale, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center">2</td>
-                                    <td colspan="2">Scheme Received</td>
+                                    <td>Scheme Received</td>
+                                    <td class="basis-col">{{ $basis['scheme'] }}</td>
                                     <td class="text-right">{{ number_format($grandTotals['schema_received'], 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center">3</td>
-                                    <td colspan="2">FMR Received</td>
+                                    <td>FMR Received</td>
+                                    <td class="basis-col">{{ $basis['fmr'] }}</td>
                                     <td class="text-right">{{ number_format($grandTotals['fmr_received'], 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center">4</td>
-                                    <td colspan="2">Cash Discount from Invoices (0.5%)</td>
+                                    <td>Cash Discount from Invoices (0.5%)</td>
+                                    <td class="basis-col">{{ $basis['cash'] }}</td>
                                     <td class="text-right">{{ number_format($grandTotals['cash_discount'], 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center">5</td>
-                                    <td colspan="2">Other Allowance from Company</td>
+                                    <td>Other Allowance from Company</td>
+                                    <td class="basis-col">{{ $basis['other_allowance'] }}</td>
                                     <td class="text-right">—</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center">6</td>
-                                    <td colspan="2">Rate Increase Profit</td>
+                                    <td>Rate Increase Profit</td>
+                                    <td class="basis-col">{{ $basis['rate_increase'] }}</td>
                                     <td class="text-right">—</td>
                                 </tr>
                                 @foreach($postedRevenueRows as $revenueRow)
                                     <tr>
                                         <td class="text-center">{{ 6 + $loop->iteration }}</td>
-                                        <td colspan="2">{{ $revenueRow['category_name'] }}</td>
+                                        <td>{{ $revenueRow['category_name'] }}</td>
+                                        <td class="basis-col">{{ $basis['revenue_row'] }}</td>
                                         <td class="text-right">{{ number_format($revenueRow['amount'], 2) }}</td>
                                     </tr>
                                 @endforeach
                                 <tr class="bg-slate-200 font-bold">
                                     <td></td>
-                                    <td colspan="2">Grand Revenue</td>
+                                    <td>Grand Revenue</td>
+                                    <td class="basis-col">{{ $basis['grand_revenue'] }}</td>
                                     <td class="text-right">{{ number_format($grandRevenue, 2) }}</td>
                                 </tr>
                             </tbody>
@@ -507,10 +567,13 @@
                 </div>
             </div>
 
+            @endif
+
         </div>{{-- end white card --}}
     </div>
 
     @push('scripts')
+        @if ($reportReady)
         <script>
             (function () {
                 if (typeof ApexCharts === 'undefined') {
@@ -644,5 +707,6 @@
                 window.addEventListener('afterprint', restoreAfterPrint);
             })();
         </script>
+        @endif
     @endpush
 </x-app-layout>

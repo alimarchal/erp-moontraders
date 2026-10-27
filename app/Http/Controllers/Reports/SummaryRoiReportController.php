@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -42,10 +43,23 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             $endDate = Carbon::parse($request->input('filter.end_date', Carbon::now()->endOfMonth()->format('Y-m-d')));
         }
 
-        // Default to Nestlé Pakistan (id=3)
-        $supplierId = $request->input('filter.supplier_id') ?: 3;
+        // No company is loaded until one is chosen. Admins and super admins pick any company;
+        // every other user is held to the company on their own account.
+        $canChooseCompany = $this->canChooseCompany();
+        $ownSupplierId = auth()->user()->supplier_id ? (int) auth()->user()->supplier_id : null;
+        $requestedSupplierId = $request->input('filter.supplier_id') ? (int) $request->input('filter.supplier_id') : null;
+
+        if (! $canChooseCompany && $requestedSupplierId !== null && $requestedSupplierId !== $ownSupplierId) {
+            abort(403, 'You can only see the report of your own company.');
+        }
+
+        $supplierId = $canChooseCompany ? $requestedSupplierId : $ownSupplierId;
         $employeeIds = $request->input('filter.employee_id');
         $useAveragePrices = $request->boolean('filter.average');
+
+        if ($supplierId === null) {
+            return $this->emptyReport($request, $startDate, $endDate, $canChooseCompany);
+        }
 
         $selectedSupplier = Supplier::query()
             ->select(['id', 'supplier_name', 'short_name'])
@@ -206,12 +220,13 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             $cogs = $data ? (float) $data->total_cogs : 0;
 
             if ($useAveragePrices) {
-                $grossProfit = $sale - $cogs;
+                $basisSales = $sale;
+                $basisCogs = $cogs;
             } else {
-                $defaultSales = $data ? (float) $data->total_default_sales : 0;
-                $defaultCogs = $data ? (float) $data->total_default_cogs : 0;
-                $grossProfit = $defaultSales - $defaultCogs;
+                $basisSales = $data ? (float) $data->total_default_sales : 0;
+                $basisCogs = $data ? (float) $data->total_default_cogs : 0;
             }
+            $grossProfit = $basisSales - $basisCogs;
 
             $allocatedExpenses = $sale * $expenseRatio;
             $netProfit = $grossProfit - $allocatedExpenses;
@@ -222,6 +237,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
                 'sale' => $sale,
                 'cogs' => $cogs,
                 'gross_profit' => $grossProfit,
+                'basis_sales' => $basisSales,
+                'basis_cogs' => $basisCogs,
                 'net_profit' => $netProfit,
                 'schema_received' => 0,
                 'fmr_received' => 0,
@@ -233,6 +250,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             'sale' => $categoryRows->sum('sale'),
             'cogs' => $categoryRows->sum('cogs'),
             'gross_profit' => $categoryRows->sum('gross_profit'),
+            'basis_sales' => $categoryRows->sum('basis_sales'),
+            'basis_cogs' => $categoryRows->sum('basis_cogs'),
             'net_profit' => $categoryRows->sum('net_profit'),
             'schema_received' => (float) SchemeReceived::where('supplier_id', $supplierId)
                 ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
@@ -336,16 +355,14 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         $profitCategoryTotal = (float) $profitCategoryRows->sum('amount');
 
         // ── Filter options ──
-        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $suppliers = $this->companyOptions($canChooseCompany, $ownSupplierId);
         $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code as code']);
         $vehicles = Vehicle::where('is_active', true)->orderBy('registration_number')->get(['id', 'registration_number']);
         $warehouses = Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name as name']);
 
         // ── Active filters for badge display ──
         $filters = $request->input('filter', []);
-        if (empty($filters['supplier_id'])) {
-            $filters['supplier_id'] = 3;
-        }
+        $filters['supplier_id'] = $supplierId;
 
         $filterBadges = [];
         if (! empty($filters['supplier_id'])) {
@@ -377,6 +394,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         $filterBadges[] = 'Average: '.($useAveragePrices ? 'Yes' : 'No');
 
         return view('reports.summary-roi.index', [
+            'reportReady' => true,
+            'canChooseCompany' => $canChooseCompany,
             'startDate' => $startDate->format('Y-m-d'),
             'endDate' => $endDate->format('Y-m-d'),
             'filters' => $filters,
@@ -397,6 +416,56 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             'profitCategoryTotal' => $profitCategoryTotal,
             'grossInflow' => $grossInflow,
             'grandRevenue' => $grandRevenue,
+        ]);
+    }
+
+    /**
+     * How the report works: sources, formulas, company rule.
+     */
+    public function help(): View
+    {
+        return view('reports.summary-roi.help');
+    }
+
+    /**
+     * Admins and super admins may open any company; everyone else sees only their own.
+     */
+    private function canChooseCompany(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->hasRole('admin');
+    }
+
+    /**
+     * @return Collection<int, Supplier>
+     */
+    private function companyOptions(bool $canChooseCompany, ?int $ownSupplierId)
+    {
+        return Supplier::where('disabled', false)
+            ->when(! $canChooseCompany, fn ($query) => $query->where('id', $ownSupplierId ?? 0))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+    }
+
+    /**
+     * The page before a company is chosen: filters only, nothing is calculated.
+     */
+    private function emptyReport(Request $request, Carbon $startDate, Carbon $endDate, bool $canChooseCompany): View
+    {
+        $ownSupplierId = auth()->user()->supplier_id ? (int) auth()->user()->supplier_id : null;
+
+        return view('reports.summary-roi.index', [
+            'reportReady' => false,
+            'canChooseCompany' => $canChooseCompany,
+            'startDate' => $startDate->format('Y-m-d'),
+            'endDate' => $endDate->format('Y-m-d'),
+            'filters' => $request->input('filter', []),
+            'filterBadges' => [],
+            'suppliers' => $this->companyOptions($canChooseCompany, $ownSupplierId),
+            'employees' => collect(),
+            'vehicles' => collect(),
+            'warehouses' => collect(),
         ]);
     }
 }

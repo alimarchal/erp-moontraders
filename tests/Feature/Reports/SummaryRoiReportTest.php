@@ -15,11 +15,15 @@ use App\Models\SalesSettlementItem;
 use App\Models\Supplier;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
     Permission::findOrCreate('report-sales-summary-roi');
 
+    // Admins may open any company; the tests below cover users tied to one company.
+    Role::findOrCreate('admin');
     $this->user = User::factory()->create();
+    $this->user->assignRole('admin');
     $this->user->givePermissionTo('report-sales-summary-roi');
 });
 
@@ -400,4 +404,65 @@ test('summary roi report profit from sale follows average filter mode', function
 
     expect((float) $defaultModeResponse->viewData('grandTotals')['gross_profit'])->toBe(1000.0)
         ->and((float) $averageModeResponse->viewData('grandTotals')['gross_profit'])->toBe(600.0);
+});
+
+test('summary roi loads nothing until a company is chosen', function () {
+    Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan', 'disabled' => false]);
+
+    $this->actingAs($this->user)->get(route('reports.summary-roi.index'))
+        ->assertSuccessful()
+        ->assertSee('Select a company to load the report')
+        ->assertDontSee('Summary ROI Statement')
+        ->assertViewHas('reportReady', false);
+});
+
+test('a user tied to a company sees only that company and cannot open another', function () {
+    $own = Supplier::factory()->create(['supplier_name' => 'Own Company', 'disabled' => false]);
+    $other = Supplier::factory()->create(['supplier_name' => 'Other Company', 'disabled' => false]);
+    $user = User::factory()->create(['supplier_id' => $own->id]);
+    $user->givePermissionTo('report-sales-summary-roi');
+
+    $this->actingAs($user)->get(route('reports.summary-roi.index'))
+        ->assertSuccessful()
+        ->assertViewHas('reportReady', true)
+        ->assertSee('Own Company')
+        ->assertDontSee('Other Company')
+        ->assertSee('Summary ROI Statement');
+
+    $this->get(route('reports.summary-roi.index', ['filter' => ['supplier_id' => $other->id]]))->assertForbidden();
+});
+
+test('a user without a company on the account gets no report', function () {
+    $user = User::factory()->create(['supplier_id' => null]);
+    $user->givePermissionTo('report-sales-summary-roi');
+
+    $this->actingAs($user)->get(route('reports.summary-roi.index'))
+        ->assertSuccessful()
+        ->assertSee('No company is assigned to your account')
+        ->assertViewHas('reportReady', false);
+});
+
+test('the left table explains how each figure is calculated and the help page opens', function () {
+    $supplier = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan', 'disabled' => false]);
+
+    $this->actingAs($this->user)
+        ->get(route('reports.summary-roi.index', ['filter' => ['supplier_id' => $supplier->id]]))
+        ->assertSuccessful()
+        ->assertSee('How calculated')
+        ->assertSee('Qty sold × list price − qty sold × standard cost')
+        ->assertSee('ZA 0.5% column of the supplier Ledger Register')
+        ->assertSee(route('reports.summary-roi.help'), false);
+
+    $this->get(route('reports.summary-roi.index', ['filter' => ['supplier_id' => $supplier->id, 'average' => 1]]))
+        ->assertSee('Sale − COGS at actual average cost');
+
+    $this->get(route('reports.summary-roi.help'))
+        ->assertSuccessful()
+        ->assertSee('How the Summary ROI report is calculated')
+        ->assertSee('Which company a user gets')
+        ->assertSee('Profit after Taxation');
+});
+
+test('the help page needs the summary roi permission', function () {
+    $this->actingAs(User::factory()->create())->get(route('reports.summary-roi.help'))->assertForbidden();
 });

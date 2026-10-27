@@ -789,6 +789,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('tts-summary', [TtsSummaryReportController::class, 'index'])->name('tts-summary.index');
         Route::get('roi', [RoiReportController::class, 'index'])->name('roi.index');
         Route::get('summary-roi', [SummaryRoiReportController::class, 'index'])->name('summary-roi.index');
+        Route::get('summary-roi/help', [SummaryRoiReportController::class, 'help'])->name('summary-roi.help');
         Route::get('scheme-discount', [SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');
         Route::get('percentage-expense', [PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');

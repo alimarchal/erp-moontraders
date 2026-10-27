@@ -73,7 +73,7 @@ it('imports products and skips existing codes', function () {
         ['new-1', 'Olivola 1L', 'Cooking Oil', 'Mezan', 'Piece', 'Case', 'fifo', '626', '596', '', 'No', 'Active'],
         ['OLD-1', 'Existing', '', '', 'Piece', '', '', '', '', '', '', ''],
         ['NEW-1', 'Repeat in file', '', '', 'Piece', '', '', '', '', '', '', ''],
-    ])->assertSessionHas('import_result.counts', ['created' => 1, 'skipped' => 2, 'errors' => 0]);
+    ])->assertSessionHas('import_result.counts', ['created' => 1, 'updated' => 0, 'unchanged' => 0, 'skipped' => 2, 'errors' => 0]);
 
     expect(Product::where('product_code', 'NEW-1')->first())
         ->product_name->toBe('Olivola 1L')
@@ -92,7 +92,7 @@ it('reports unknown lookups and missing fields without importing those rows', fu
         ['BAD-1', 'Bad Category', 'Nope', '', 'Piece', '', '', '', '', '', '', ''],
         ['', 'No Code', '', '', 'Piece', '', '', '', '', '', '', ''],
         ['GOOD-1', 'Good', '', '', 'Piece', '', '', '', '', '', '', ''],
-    ])->assertSessionHas('import_result.counts', ['created' => 1, 'skipped' => 0, 'errors' => 2]);
+    ])->assertSessionHas('import_result.counts', ['created' => 1, 'updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'errors' => 2]);
 
     expect(Product::pluck('product_code')->all())->toBe(['GOOD-1']);
 });

@@ -7,8 +7,8 @@ use App\Exports\CustomerImportTemplateExport;
 use App\Http\Requests\ImportCustomerRequest;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
-use App\Models\ChartOfAccount;
 use App\Imports\CustomerImport;
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -118,7 +118,10 @@ class CustomerController extends Controller implements HasMiddleware
     public function import(ImportCustomerRequest $request)
     {
         $dryRun = $request->boolean('dry_run');
-        $import = new CustomerImport($request->validated('duplicate_mode'), $dryRun);
+        $duplicateMode = $request->boolean('update_existing') || $request->validated('duplicate_mode') === CustomerImport::MODE_UPDATE
+            ? CustomerImport::MODE_UPDATE
+            : CustomerImport::MODE_SKIP;
+        $import = new CustomerImport($duplicateMode, $dryRun);
 
         DB::beginTransaction();
 
@@ -140,6 +143,8 @@ class CustomerController extends Controller implements HasMiddleware
                 'counts' => $import->counts(),
                 'report' => $import->report(),
                 'file' => $request->file('import_file')->getClientOriginalName(),
+                'duplicate_mode' => $duplicateMode,
+                'ignored_columns' => $import->ignoredColumns(),
             ]);
     }
 

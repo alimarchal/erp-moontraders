@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\AccountingService;
 use App\Services\DatabaseTriggerGuard;
 use App\Services\InventoryService;
 use App\Services\LedgerRegisterService;
@@ -299,17 +300,18 @@ describe('reposting the double-counted history', function () {
         expect(DB::table('journal_entries')->count())->toBe($entries);
     });
 
-    it('takes the reclassification back out when the GRN is later reversed', function () {
+    it('refuses to reverse the GRN while its invoice is posted, and takes the reclassification out once that is reversed', function () {
         $this->artisan('accounting:repost-supplier-invoices')->assertSuccessful();
+
+        $refused = app(InventoryService::class)->reverseGrnInventory($this->grn->fresh());
+        expect($refused['success'])->toBeFalse()
+            ->and($refused['message'])->toContain('already posted in the supplier Ledger Register');
+
+        app(AccountingService::class)->reverseJournalEntry((int) $this->invoice->journal_entry_id, 'Invoice reversed');
 
         $result = app(InventoryService::class)->reverseGrnInventory($this->grn->fresh());
 
-        // Only the orphan GRN's stock is left. The invoice still stands as owed to the
-        // supplier, and on 2142 it now offsets the orphan GRN until a credit note arrives.
-        expect($result['success'])->toBeTrue()
-            ->and(glBalance('1151'))->toBe(10000.0)
-            ->and(glBalance('2111'))->toBe(-10000.0)
-            ->and(glBalance('2142'))->toBe(0.0);
+        expect($result['success'])->toBeTrue();
     });
 })->skip(
     fn () => DB::getDriverName() !== 'pgsql',

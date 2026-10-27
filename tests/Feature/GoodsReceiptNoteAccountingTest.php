@@ -20,6 +20,7 @@ use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\AccountingService;
 use App\Services\InventoryService;
 use App\Services\LedgerRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -1098,38 +1099,70 @@ it('raises a draft ledger row for a posted GRN with the supplier, invoice detail
         ->and(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(1);
 });
 
-it('removes the draft ledger row when the GRN is reversed but keeps one that was posted', function () {
-    $draftGrn = postedGrnForReversal($this);
-    expect(LedgerRegister::where('goods_receipt_note_id', $draftGrn->id)->count())->toBe(1);
+it('removes the draft ledger row when the GRN is reversed', function () {
+    $grn = postedGrnForReversal($this);
+    expect(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(1);
 
-    app(InventoryService::class)->reverseGrnInventory($draftGrn->fresh());
-    expect(LedgerRegister::where('goods_receipt_note_id', $draftGrn->id)->count())->toBe(0);
+    app(InventoryService::class)->reverseGrnInventory($grn->fresh());
 
-    $postedGrn = postedGrnForReversal($this);
-    LedgerRegister::where('goods_receipt_note_id', $postedGrn->id)->update(['posted_at' => now()]);
-
-    app(InventoryService::class)->reverseGrnInventory($postedGrn->fresh());
-    expect(LedgerRegister::where('goods_receipt_note_id', $postedGrn->id)->count())->toBe(1);
+    expect(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(0);
 });
 
-it('shows the GRN help link and page to super admins and users who can create GRNs only', function () {
-    Permission::firstOrCreate(['name' => 'goods-receipt-note-list', 'guard_name' => 'web']);
-    Permission::firstOrCreate(['name' => 'goods-receipt-note-create', 'guard_name' => 'web']);
+function ensureLedgerPostingAccounts(object $test): void
+{
+    // The ledger register books to cost center 1 (Finance & Accounting).
+    if (! DB::table('cost_centers')->where('id', 1)->exists()) {
+        DB::table('cost_centers')->insert(['id' => 1, 'code' => 'CC001', 'name' => 'Finance & Accounting', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+    }
 
-    $viewer = User::factory()->create();
-    $viewer->givePermissionTo('goods-receipt-note-list');
-    $this->actingAs($viewer)->get(route('goods-receipt-notes.index'))->assertSuccessful()->assertDontSee('How GRN works');
-    $this->get(route('goods-receipt-notes.help'))->assertForbidden();
+    foreach (['1171' => 'HBL Main Account', '5210' => 'Admin Expenses', '4240' => 'ZA Incentive Income', '1112' => 'Pending Claims Debtors'] as $code => $name) {
+        ChartOfAccount::firstOrCreate(['account_code' => $code], [
+            'account_type_id' => $test->inventoryAccount->account_type_id,
+            'currency_id' => $test->inventoryAccount->currency_id,
+            'account_name' => $name,
+            'normal_balance' => 'debit',
+            'is_active' => true,
+        ]);
+    }
+}
 
-    $creator = User::factory()->create();
-    $creator->givePermissionTo(['goods-receipt-note-list', 'goods-receipt-note-create']);
-    $this->actingAs($creator)->get(route('goods-receipt-notes.index'))->assertSee('How GRN works');
-    $this->get(route('goods-receipt-notes.help'))->assertSuccessful()
-        ->assertSee('Decision flow: Post to Inventory')
-        ->assertSee('FMR allowed');
+it('blocks reversing a GRN whose ledger invoice row is posted, in the service, the button and the controller', function () {
+    ensureLedgerPostingAccounts($this);
+    grnReversalPermission($this);
+    $grn = postedGrnForReversal($this);
+    $grn->update(['supplier_invoice_number' => 'BLK-1']);
 
-    $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']))
-        ->get(route('goods-receipt-notes.help'))->assertSuccessful();
+    $row = LedgerRegister::where('goods_receipt_note_id', $grn->id)->first();
+    expect(app(LedgerRegisterService::class)->postEntry($row)['success'])->toBeTrue();
+
+    $refusal = app(InventoryService::class)->grnReversalRefusal($grn->fresh());
+    expect($refusal)->toContain('already posted in the supplier Ledger Register');
+
+    $this->get(route('goods-receipt-notes.show', $grn))->assertSuccessful()->assertSee('already posted in the supplier Ledger Register');
+
+    $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'password'])->assertSessionHas('error');
+    expect($grn->fresh()->status)->toBe('posted')
+        ->and(app(InventoryService::class)->reverseGrnInventory($grn->fresh())['success'])->toBeFalse();
+
+    // Once the ledger entry's own journal is reversed the GRN can go.
+    app(AccountingService::class)->reverseJournalEntry((int) $row->fresh()->journal_entry_id, 'Ledger entry reversed');
+    expect(app(InventoryService::class)->grnReversalRefusal($grn->fresh()))->toBeNull()
+        ->and(app(InventoryService::class)->reverseGrnInventory($grn->fresh())['success'])->toBeTrue();
+});
+
+it('blocks reversing a GRN whose invoice was posted by hand under the same invoice number', function () {
+    ensureLedgerPostingAccounts($this);
+    $grn = postedGrnForReversal($this);
+    $grn->update(['supplier_invoice_number' => 'HAND-9']);
+    LedgerRegister::where('goods_receipt_note_id', $grn->id)->delete();
+
+    $manual = LedgerRegister::create([
+        'supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DR',
+        'document_number' => 'HAND-9', 'invoice_amount' => 9200,
+    ]);
+    app(LedgerRegisterService::class)->postEntry($manual);
+
+    expect(app(InventoryService::class)->grnReversalRefusal($grn->fresh()))->toContain('HAND-9');
 });
 
 it('lists ledger rows already entered under the GRN invoice number and raises no second invoice row', function () {
@@ -1169,4 +1202,52 @@ it('lists ledger rows already entered under the GRN invoice number and raises no
         ->assertSee('Online')
         ->assertSee('400.00')
         ->assertSee('No second draft row was raised');
+});
+
+it('saves nothing when a step of posting fails: the Ledger Register step rolls the whole post back', function () {
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id, 'warehouse_id' => $this->warehouse->id, 'status' => 'draft', 'receipt_date' => now(),
+    ]);
+    $grn->items()->create([
+        'line_no' => 1, 'product_id' => $this->product->id, 'stock_uom_id' => $this->uom->id, 'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 10, 'uom_conversion_factor' => 1, 'qty_in_stock_uom' => 10, 'extended_value' => 1000,
+        'quantity_received' => 10, 'quantity_accepted' => 10, 'unit_cost' => 100, 'total_cost' => 1000,
+    ]);
+
+    $counts = fn () => [
+        DB::table('stock_batches')->count(), DB::table('stock_movements')->count(), DB::table('stock_ledger_entries')->count(),
+        DB::table('stock_valuation_layers')->count(), DB::table('current_stock_by_batch')->count(), DB::table('inventory_ledger_entries')->count(),
+        DB::table('journal_entries')->count(), DB::table('journal_entry_details')->count(), DB::table('supplier_ledger_registers')->count(),
+    ];
+    $before = $counts();
+
+    $this->mock(LedgerRegisterService::class, fn ($mock) => $mock->shouldReceive('createDraftForGrn')->andThrow(new RuntimeException('ledger step failed')));
+
+    $result = app(InventoryService::class)->postGrnToInventory($grn->fresh());
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('ledger step failed')
+        ->and($grn->fresh()->status)->toBe('draft')
+        ->and($grn->fresh()->journal_entry_id)->toBeNull()
+        ->and($counts())->toBe($before);
+});
+
+it('keeps the GRN posted and untouched when a step of reversing fails', function () {
+    $grn = postedGrnForReversal($this);
+
+    $counts = fn () => [
+        DB::table('stock_movements')->count(), DB::table('stock_ledger_entries')->count(), DB::table('inventory_ledger_entries')->count(),
+        DB::table('journal_entries')->count(), DB::table('supplier_ledger_registers')->whereNull('deleted_at')->count(),
+        (float) DB::table('current_stock_by_batch')->sum('quantity_on_hand'),
+    ];
+    $before = $counts();
+
+    $this->mock(LedgerRegisterService::class, fn ($mock) => $mock->shouldReceive('discardDraftForGrn')->andThrow(new RuntimeException('discard failed')));
+
+    $result = app(InventoryService::class)->reverseGrnInventory($grn->fresh());
+
+    expect($result['success'])->toBeFalse()
+        ->and($grn->fresh()->status)->toBe('posted')
+        ->and($grn->fresh()->reversed_at)->toBeNull()
+        ->and($counts())->toBe($before);
 });

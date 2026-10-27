@@ -21,7 +21,7 @@ class RepostSupplierInvoices extends Command
     protected $description = 'Take the double-counted purchases out of Stock In Hand and Creditors. Every purchase '
         .'reached the ledger twice: once from its GRN (Dr 1151 / Cr 2111) and again from the supplier invoice in the '
         .'ledger register (Dr 1151 / Cr 2111). This moves both onto Stock Received But Not Billed (2142), posts the '
-        .'GRNs that never got a journal entry, and cancels the auto-drafted supplier payments.';
+        .'GRNs that never got a journal entry.';
 
     /** @var array<string, int> */
     private array $accounts = [];
@@ -56,10 +56,9 @@ class RepostSupplierInvoices extends Command
             $grnReclassed = $this->reclassifyGrnCredits();
             $invoicesReclassed = $this->reclassifyLedgerRegisterInvoices();
             $grnsPosted = $this->postMissingGrnEntries();
-            $paymentsCancelled = $this->cancelDraftSupplierPayments();
 
             $after = $this->glBalances();
-            $this->report($before, $after, $grnReclassed, $invoicesReclassed, $grnsPosted, $paymentsCancelled, $receivedNotBilled);
+            $this->report($before, $after, $grnReclassed, $invoicesReclassed, $grnsPosted, $receivedNotBilled);
 
             $isDryRun ? DB::rollBack() : DB::commit();
         } catch (\Throwable $e) {
@@ -79,7 +78,6 @@ class RepostSupplierInvoices extends Command
             'grn_entries_reclassified' => $grnReclassed,
             'invoices_reclassified' => $invoicesReclassed,
             'missing_grn_entries_posted' => $grnsPosted,
-            'draft_payments_cancelled' => $paymentsCancelled,
         ]);
         $this->info('Done.');
 
@@ -232,18 +230,6 @@ class RepostSupplierInvoices extends Command
     }
 
     /**
-     * Every GRN used to raise a draft payment. Suppliers are paid through the ledger
-     * register, so posting any of these would take the same money out of Creditors twice.
-     */
-    private function cancelDraftSupplierPayments(): int
-    {
-        return DB::table('supplier_payments')
-            ->where('status', 'draft')
-            ->whereNull('deleted_at')
-            ->update(['status' => 'cancelled', 'updated_at' => now()]);
-    }
-
-    /**
      * @param  list<array{0: int, 1: float, 2: float, 3: string}>  $lines
      */
     private function post(string $date, string $reference, string $description, array $lines): void
@@ -304,13 +290,12 @@ class RepostSupplierInvoices extends Command
      * @param  array<string, float>  $before
      * @param  array<string, float>  $after
      */
-    private function report(array $before, array $after, int $grnReclassed, int $invoicesReclassed, int $grnsPosted, int $paymentsCancelled, StockReceivedNotBilledService $receivedNotBilled): void
+    private function report(array $before, array $after, int $grnReclassed, int $invoicesReclassed, int $grnsPosted, StockReceivedNotBilledService $receivedNotBilled): void
     {
         $this->table(['Step', 'Count'], [
             ['GRN entries moved from Creditors to 2142', $grnReclassed],
             ['Ledger register invoices moved from Stock In Hand to 2142', $invoicesReclassed],
             ['GRNs given their missing journal entry', $grnsPosted],
-            ['Draft supplier payments cancelled', $paymentsCancelled],
         ]);
 
         if ($this->roundOffGrns !== []) {

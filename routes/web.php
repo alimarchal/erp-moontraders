@@ -90,7 +90,6 @@ use App\Http\Controllers\SalesSettlementController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TaxCodeController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\TaxTransactionController;
@@ -420,6 +419,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | updates stock. Reverse creates a correcting entry.
     | Permissions: goods-receipt-note-list, -create, -edit, -delete, -post, -reverse, -import
     */
+    Route::get('goods-receipt-notes/help', [GoodsReceiptNoteController::class, 'help'])
+        ->name('goods-receipt-notes.help');
     Route::get('goods-receipt-notes/import-template', [GoodsReceiptNoteController::class, 'downloadImportTemplate'])
         ->name('goods-receipt-notes.import-template');
     Route::post('goods-receipt-notes/import', [GoodsReceiptNoteController::class, 'importItems'])
@@ -493,23 +494,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('api.sales-settlements.goods-issues.items');
     Route::get('api/products/{product}/amr-batches', [SalesSettlementController::class, 'fetchBatchesForProduct'])
         ->name('api.products.amr-batches');
-
-    /*
-    |----------------------------------------------------------------------
-    | Supplier Payments
-    |----------------------------------------------------------------------
-    | Record payments against GRNs. Post creates accounting entries.
-    | Permissions: supplier-payment-list, -create, -edit, -delete, -post, -reverse
-    */
-    Route::resource('supplier-payments', SupplierPaymentController::class);
-    Route::post('supplier-payments/{supplierPayment}/post', [SupplierPaymentController::class, 'post'])
-        ->name('supplier-payments.post');
-    Route::post('supplier-payments/{supplierPayment}/reverse', [SupplierPaymentController::class, 'reverse'])
-        ->name('supplier-payments.reverse');
-    Route::get('supplier-payments/create/{supplier}', [SupplierPaymentController::class, 'createForSupplier'])
-        ->name('supplier-payments.create-for-supplier');
-    Route::get('api/suppliers/{supplier}/unpaid-grns', [SupplierPaymentController::class, 'getUnpaidGrns'])
-        ->name('api.suppliers.unpaid-grns');
 
     /*
     |----------------------------------------------------------------------

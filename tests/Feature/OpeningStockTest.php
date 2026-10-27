@@ -7,9 +7,9 @@ use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
+use App\Models\LedgerRegister;
 use App\Models\Product;
 use App\Models\Supplier;
-use App\Models\SupplierPayment;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -222,7 +222,7 @@ it('does not create supplier payment for opening stock', function () {
         'import_file' => $file,
     ]);
 
-    expect(SupplierPayment::count())->toBe(0);
+    expect(LedgerRegister::count())->toBe(0);
 });
 
 it('validates required fields', function () {

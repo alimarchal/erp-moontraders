@@ -1,7 +1,7 @@
 {{--
     Goods Receipt Notes -> View (/goods-receipt-notes/{grn}).
     Same layout as the Goods Issue view: header with actions, KPI cards, the
-    received items (every column of the old screen), then details, payments,
+    received items (every column of the old screen), then details, supplier ledger entry,
     accounting, timeline and related links. Prints as a formal GRN.
 --}}
 @php
@@ -9,11 +9,12 @@
     $isDraft = $grn->status === 'draft';
     $isPosted = $grn->status === 'posted';
     $statusTone = ['draft' => 'ak-status-amber', 'posted' => 'ak-status-green', 'reversed' => 'ak-status-red'];
-    $payTone = ['unpaid' => 'ak-status-red', 'partial' => 'ak-status-amber', 'paid' => 'ak-status-green'];
-    $payments = $grn->payments()->orderBy('payment_date')->get();
-    $paymentStatus = $isPosted ? $grn->payment_status : null;
-    $totalPaid = $isPosted ? (float) $grn->total_paid : 0.0;
-    $balance = $isPosted ? (float) $grn->balance : 0.0;
+    $ledger = $grn->ledgerEntry;
+    $ledgerStatus = $ledger ? ($ledger->isPosted() ? 'posted' : 'draft') : null;
+    $ledgerTone = ['draft' => 'ak-status-amber', 'posted' => 'ak-status-green'];
+    $ledgerUrl = $ledger && auth()->user()->can('report-audit-ledger-register')
+        ? route('reports.ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'date_from' => $ledger->transaction_date?->copy()->startOfMonth()->toDateString(), 'date_to' => $ledger->transaction_date?->copy()->endOfMonth()->toDateString()]])
+        : null;
     $itemsTotalWithTax = (float) ($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total);
     $rs = fn ($value) => number_format((float) $value, 2);
     $user = auth()->user();
@@ -40,18 +41,16 @@
         $grn->posted_at ? ['at' => $grn->posted_at, 'text' => 'Posted to inventory at '.($grn->warehouse->warehouse_name ?? 'warehouse')] : null,
         $grn->reversed_at ? ['at' => $grn->reversed_at, 'text' => 'Reversed'.($grn->reversedBy ? ' by '.$grn->reversedBy->name : '')] : null,
     ])->filter()
-        ->merge($payments->map(fn ($payment) => [
-            'at' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date) : $payment->created_at,
-            'text' => 'Payment '.$payment->payment_number.' ('.ucfirst($payment->status).'): Rs '.number_format((float) $payment->pivot->allocated_amount, 2),
-        ]))
+        ->merge($ledger ? [[
+            'at' => $ledger->created_at,
+            'text' => 'Supplier ledger invoice entry raised as '.$ledgerStatus.': Rs '.number_format((float) $ledger->invoice_amount, 2),
+        ]] : [])
         ->filter(fn ($event) => $event['at'])
         ->sortBy('at')
         ->values();
 
     $links = array_filter([
         ['GRNs from '.$grn->supplier->supplier_name, route('goods-receipt-notes.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'receipt_date_from' => $since, 'receipt_date_to' => $today]])],
-        $isPosted ? ['Unpaid GRNs of this supplier', route('goods-receipt-notes.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'payment_status' => 'unpaid', 'receipt_date_from' => $since, 'receipt_date_to' => $today]])] : null,
-        $user->can('supplier-payment-list') ? ['Payments to this supplier', route('supplier-payments.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'payment_date_from' => $since, 'payment_date_to' => $today]])] : null,
         $user->can('report-audit-ledger-register') ? ['Supplier ledger register', route('reports.ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'date_from' => $grn->receipt_date?->copy()->startOfMonth()->toDateString(), 'date_to' => $grn->receipt_date?->copy()->endOfMonth()->toDateString()]])] : null,
         $grn->journal_entry_id && $user->can('journal-entry-list') ? ['Journal entry #'.$grn->journal_entry_id, route('journal-entries.show', $grn->journal_entry_id)] : null,
     ]);
@@ -74,7 +73,7 @@
                         <p class="ak-sub" style="margin-top:2px">
                             {{ $grn->receipt_date?->format('l, d M Y') }} &middot; {{ $grn->supplier->supplier_name }}
                             &middot; <span class="ak-status {{ $statusTone[$grn->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ ucfirst($grn->status) }}</span>
-                            @if ($paymentStatus) <span class="ak-status {{ $payTone[$paymentStatus] ?? '' }}"><i aria-hidden="true"></i>{{ ucfirst($paymentStatus) }}</span> @endif
+                            @if ($ledgerStatus) <span class="ak-status {{ $ledgerTone[$ledgerStatus] }}"><i aria-hidden="true"></i>Ledger {{ $ledgerStatus }}</span> @endif
                             @if ($grn->is_opening_stock) <span class="ak-pill" style="margin:0">Opening stock</span> @endif
                         </p>
                     </div>
@@ -83,6 +82,9 @@
             <div class="ak-head-actions">
                 <a href="{{ route('goods-receipt-notes.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to GRNs</a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                @if (\App\Http\Controllers\GoodsReceiptNoteController::canViewHelp(auth()->user()))
+                    <a href="{{ route('goods-receipt-notes.help') }}" class="ak-btn ak-btn-outline">How GRN works</a>
+                @endif
                 @if ($isDraft)
                     @can('goods-receipt-note-edit')
                         <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}" class="ak-btn ak-btn-outline">Edit</a>
@@ -172,9 +174,9 @@
                 <tr><th>GRN Number</th><td>{{ $grn->grn_number }}</td><th>Warehouse</th><td>{{ $grn->warehouse->warehouse_name }}</td></tr>
                 <tr><th>Supplier</th><td>{{ $grn->supplier->supplier_name }}</td><th>Receipt Date</th><td>{{ $grn->receipt_date?->format('d M Y') }}</td></tr>
                 <tr><th>Invoice #</th><td>{{ $grn->supplier_invoice_number ?? '—' }}</td><th>Invoice Date</th><td>{{ $grn->supplier_invoice_date ? $grn->supplier_invoice_date->format('d M Y') : '—' }}</td></tr>
-                <tr><th>Received By</th><td>{{ $grn->receivedBy->name ?? 'N/A' }}</td><th>Status</th><td>{{ ucfirst($grn->status) }}{{ $paymentStatus ? ' · '.ucfirst($paymentStatus) : '' }}</td></tr>
+                <tr><th>Received By</th><td>{{ $grn->receivedBy->name ?? 'N/A' }}</td><th>Status</th><td>{{ ucfirst($grn->status) }}{{ $ledgerStatus ? ' · Ledger '.$ledgerStatus : '' }}</td></tr>
                 @if ($isPosted)
-                    <tr><th>Grand Total</th><td>Rs {{ $rs($itemsTotalWithTax) }}</td><th>Paid / Balance</th><td>Rs {{ $rs($totalPaid) }} / Rs {{ $rs($balance) }}</td></tr>
+                    <tr><th>Grand Total</th><td>Rs {{ $rs($itemsTotalWithTax) }}</td><th>Ledger invoice entry</th><td>{{ $ledger ? 'Rs '.$rs($ledger->invoice_amount).' ('.ucfirst($ledgerStatus).')' : '—' }}</td></tr>
                 @endif
                 <tr><th>Printed</th><td colspan="3">{{ now()->format('d-M-Y h:i A') }} by {{ $user->name }}</td></tr>
             </table>
@@ -201,15 +203,18 @@
                 </span>
             </div>
             <div class="ak-kpi">
-                <span class="ak-kpi-icon {{ $paymentStatus === 'paid' ? 'ak-tone-green' : 'ak-tone-amber' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg></span>
+                <span class="ak-kpi-icon {{ $ledgerStatus === 'posted' ? 'ak-tone-green' : 'ak-tone-amber' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg></span>
                 <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Balance due</span>
-                    @if ($isPosted)
-                        <span class="ak-kpi-value {{ $balance > 0 ? 'db-down' : '' }}" style="{{ $balance > 0 ? 'color:#b91c1c' : '' }}">Rs {{ number_format($balance) }}</span>
-                        <span class="ak-kpi-hint">paid Rs {{ number_format($totalPaid) }} of Rs {{ number_format((float) $grn->grand_total) }} &middot; {{ ucfirst($paymentStatus) }}</span>
+                    <span class="ak-kpi-label">Supplier ledger</span>
+                    @if ($ledger)
+                        <span class="ak-kpi-value">Rs {{ number_format((float) $ledger->invoice_amount) }}</span>
+                        <span class="ak-kpi-hint">invoice entry &middot; {{ ucfirst($ledgerStatus) }}{{ $ledgerStatus === 'draft' ? ' (post it in the Ledger Register)' : '' }}</span>
+                    @elseif ($isPosted)
+                        <span class="ak-kpi-value ak-kpi-value-sm">No entry</span>
+                        <span class="ak-kpi-hint">raised only for GRNs posted after this feature</span>
                     @else
                         <span class="ak-kpi-value ak-kpi-value-sm">Not posted yet</span>
-                        <span class="ak-kpi-hint">payments start after posting</span>
+                        <span class="ak-kpi-hint">a draft ledger entry is raised on posting</span>
                     @endif
                 </span>
             </div>
@@ -356,37 +361,24 @@
                 </div>
             </section>
 
-            {{-- Payments --}}
-            <section class="uf-card" aria-labelledby="gr-payments">
-                <header class="uf-card-head"><h2 class="uf-card-title" id="gr-payments">Payments</h2></header>
+            {{-- Supplier ledger entry --}}
+            <section class="uf-card" aria-labelledby="gr-ledger">
+                <header class="uf-card-head"><h2 class="uf-card-title" id="gr-ledger">Supplier ledger entry</h2></header>
                 <div class="uf-body" style="padding-top:4px; padding-bottom:8px">
-                    @if ($isPosted)
+                    @if ($ledger)
                         <dl class="gr-list">
-                            <div><dt>Payment status</dt><dd><span class="ak-status {{ $payTone[$paymentStatus] ?? '' }}"><i aria-hidden="true"></i>{{ ucfirst($paymentStatus) }}</span></dd></div>
-                            <div><dt>Total amount</dt><dd>Rs {{ $rs($grn->grand_total) }}</dd></div>
-                            <div><dt>Total paid</dt><dd style="color:#047857">Rs {{ $rs($totalPaid) }}</dd></div>
-                            <div><dt>Balance due</dt><dd style="{{ $balance > 0 ? 'color:#b91c1c' : '' }}">Rs {{ $rs($balance) }}</dd></div>
+                            <div><dt>Status</dt><dd><span class="ak-status {{ $ledgerTone[$ledgerStatus] }}"><i aria-hidden="true"></i>{{ ucfirst($ledgerStatus) }}</span></dd></div>
+                            <div><dt>Document</dt><dd>{{ $ledger->document_type?->value }} &middot; {{ $ledger->document_number ?: '—' }}</dd></div>
+                            <div><dt>Date</dt><dd>{{ $ledger->transaction_date?->format('d M Y') }}</dd></div>
+                            <div><dt>Invoice amount</dt><dd>Rs {{ $rs($ledger->invoice_amount) }}</dd></div>
                         </dl>
-                    @endif
-                    @if ($payments->isNotEmpty())
-                        <table class="gr-pay" style="margin-top:8px">
-                            <thead><tr><th>Payment #</th><th>Date</th><th>Method</th><th>Status</th><th style="text-align:right">Allocated</th></tr></thead>
-                            <tbody>
-                                @foreach ($payments as $payment)
-                                    <tr>
-                                        <td>@can('supplier-payment-list')<a href="{{ route('supplier-payments.show', $payment->id) }}" style="color:var(--ak-navy)">{{ $payment->payment_number }}</a>@else{{ $payment->payment_number }}@endcan</td>
-                                        <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
-                                        <td>{{ ucwords(str_replace('_', ' ', $payment->payment_method)) }}</td>
-                                        <td><span class="ak-status {{ $payment->status === 'posted' ? 'ak-status-green' : 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ ucfirst($payment->status) }}</span></td>
-                                        <td style="text-align:right; font-weight:600">{{ $rs($payment->pivot->allocated_amount) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @elseif (! $isPosted)
-                        <p class="ak-muted" style="margin:10px 0 0">Payments can be made once this GRN is posted.</p>
+                        @if ($ledgerUrl)
+                            <p style="margin:10px 0 0"><a href="{{ $ledgerUrl }}" style="color:var(--ak-navy)">Open in Ledger Register →</a></p>
+                        @endif
+                    @elseif ($isPosted)
+                        <p class="ak-muted" style="margin:10px 0 0">No ledger entry was raised for this GRN.</p>
                     @else
-                        <p class="ak-muted" style="margin:10px 0 0">No payment made against this GRN yet.</p>
+                        <p class="ak-muted" style="margin:10px 0 0">A draft invoice entry is added to the supplier Ledger Register when this GRN is posted.</p>
                     @endif
                 </div>
             </section>

@@ -33,6 +33,7 @@ class LedgerRegister extends Model
         'posted_at',
         'posted_by',
         'journal_entry_id',
+        'goods_receipt_note_id',
     ];
 
     /**
@@ -67,6 +68,11 @@ class LedgerRegister extends Model
     public function postedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function goodsReceiptNote(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceiptNote::class);
     }
 
     public function supplier(): BelongsTo

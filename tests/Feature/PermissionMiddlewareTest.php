@@ -16,7 +16,7 @@ beforeEach(function () {
         'goods-issue-list', 'goods-issue-create', 'goods-issue-edit', 'goods-issue-delete', 'goods-issue-post',
         'goods-receipt-note-list', 'goods-receipt-note-create', 'goods-receipt-note-edit', 'goods-receipt-note-delete', 'goods-receipt-note-post', 'goods-receipt-note-reverse',
         'sales-settlement-list', 'sales-settlement-create', 'sales-settlement-edit', 'sales-settlement-delete', 'sales-settlement-post',
-        'supplier-payment-list', 'supplier-payment-create', 'supplier-payment-edit', 'supplier-payment-delete', 'supplier-payment-post', 'supplier-payment-reverse',
+
         'promotional-campaign-list', 'promotional-campaign-create', 'promotional-campaign-edit', 'promotional-campaign-delete',
         'setting-view', 'setting-update',
         'inventory-view',
@@ -110,20 +110,6 @@ test('user without setting-view cannot access settings index', function () {
 test('user with setting-view can access settings index', function () {
     $this->actingAs(userWithPermissions(['setting-view']))
         ->get(route('settings.index'))
-        ->assertSuccessful();
-});
-
-// ── Supplier Payments: Middleware enforced ───────────────────────────
-
-test('user without supplier-payment-list cannot access payments index', function () {
-    $this->actingAs(userWithPermissions())
-        ->get(route('supplier-payments.index'))
-        ->assertForbidden();
-});
-
-test('user with supplier-payment-list can access payments index', function () {
-    $this->actingAs(userWithPermissions(['supplier-payment-list']))
-        ->get(route('supplier-payments.index'))
         ->assertSuccessful();
 });
 

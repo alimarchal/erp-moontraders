@@ -161,6 +161,10 @@ class InventoryService
                 'journal_entry_id' => $journalEntry ? $journalEntry->id : null,
             ]);
 
+            // The supplier's invoice is booked through the Ledger Register: raise it as an
+            // editable draft carrying the amount this GRN left on Stock Received But Not Billed.
+            app(LedgerRegisterService::class)->createDraftForGrn($grn->fresh());
+
             DB::commit();
 
             return [
@@ -502,57 +506,6 @@ class InventoryService
     }
 
     /**
-     * Cancel or delete draft payments associated with a GRN
-     */
-    protected function cancelDraftPaymentsForGrn(GoodsReceiptNote $grn)
-    {
-        try {
-            // Find all draft payments associated with this GRN
-            $draftPayments = $grn->payments()
-                ->where('status', 'draft')
-                ->get();
-
-            if ($draftPayments->isEmpty()) {
-                Log::info("No draft payments found for GRN {$grn->grn_number}");
-
-                return;
-            }
-
-            foreach ($draftPayments as $payment) {
-                // Check if this payment is ONLY for this GRN or has other GRNs
-                $otherGrnsCount = $payment->grns()
-                    ->where('goods_receipt_notes.id', '!=', $grn->id)
-                    ->where('goods_receipt_notes.status', '!=', 'reversed')
-                    ->count();
-
-                if ($otherGrnsCount > 0) {
-                    // Payment has other non-reversed GRNs, just remove this GRN's allocation
-                    $payment->grnAllocations()
-                        ->where('grn_id', $grn->id)
-                        ->delete();
-
-                    // Recalculate payment amount
-                    $remainingAmount = $payment->grnAllocations()->sum('amount_allocated');
-                    $payment->amount = $remainingAmount;
-                    $payment->save();
-
-                    Log::info("Removed GRN {$grn->grn_number} allocation from payment {$payment->payment_number}");
-                } else {
-                    // Payment is only for this GRN, delete the entire payment
-                    $payment->grnAllocations()->delete();
-                    $payment->delete();
-
-                    Log::info("Deleted draft payment {$payment->payment_number} for reversed GRN {$grn->grn_number}");
-                }
-            }
-
-        } catch (\Exception $e) {
-            Log::error("Error cancelling draft payments for GRN {$grn->id}: ".$e->getMessage());
-            // Don't throw exception, just log it - reversal should still succeed
-        }
-    }
-
-    /**
      * Generate unique batch code (supports 5+ digit sequences beyond 9999)
      */
     private function generateBatchCode(): string
@@ -842,8 +795,8 @@ class InventoryService
             $grn->reversed_by = auth()->id();
             $grn->save();
 
-            // Cancel or delete any associated draft payments
-            $this->cancelDraftPaymentsForGrn($grn);
+            // The draft invoice row raised in the supplier Ledger Register goes with the GRN
+            app(LedgerRegisterService::class)->discardDraftForGrn($grn);
 
             // Create reversing journal entry for GL
             $this->createGrnReversingJournalEntry($grn);
@@ -877,10 +830,6 @@ class InventoryService
     {
         if ($grn->status !== 'posted') {
             return 'Only a posted GRN can be reversed.';
-        }
-
-        if ($grn->payments()->where('status', 'posted')->exists()) {
-            return 'This GRN has posted supplier payments. Reverse the payments first.';
         }
 
         if (! $grn->journal_entry_id && round((float) $grn->items()->sum('total_cost'), 2) > 0) {

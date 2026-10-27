@@ -13,6 +13,7 @@ use App\Models\Supplier;
 use App\Models\TaxCode;
 use App\Models\TaxRate;
 use App\Models\Uom;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\BatchRecostService;
 use App\Services\GrnCostDriftService;
@@ -49,13 +50,32 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     }
 
     /**
+     * The GRN help page is for people who create GRNs and for super admins.
+     */
+    public static function canViewHelp(?User $user): bool
+    {
+        return $user !== null
+            && ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->can('goods-receipt-note-create'));
+    }
+
+    /**
+     * How a GRN works: lifecycle, posting, supplier settings, ledger hand-off, reversal.
+     */
+    public function help()
+    {
+        abort_unless(self::canViewHelp(auth()->user()), 403);
+
+        return view('goods-receipt-notes.help');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
         $hasDateFilter = $request->filled('filter.receipt_date_from') || $request->filled('filter.receipt_date_to');
 
-        $query = GoodsReceiptNote::query()->with(['supplier', 'warehouse', 'receivedBy']);
+        $query = GoodsReceiptNote::query()->with(['supplier', 'warehouse', 'receivedBy', 'ledgerEntry']);
 
         if (! $hasDateFilter) {
             $today = now()->toDateString();
@@ -84,7 +104,6 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 AllowedFilter::exact('status'),
                 AllowedFilter::scope('receipt_date_from'),
                 AllowedFilter::scope('receipt_date_to'),
-                AllowedFilter::scope('payment_status'),
             ])
             ->defaultSort('-receipt_date')
             ->paginate(20)
@@ -620,9 +639,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $inventoryService = app(InventoryService::class);
         $result = $inventoryService->postGrnToInventory($goodsReceiptNote);
 
-        // No draft supplier payment is raised here any more: suppliers are paid through the
-        // ledger register (Online Amount), and posting an auto-drafted payment on top of that
-        // took the same money out of Creditors twice.
+        // Posting also raises a draft invoice entry in the supplier Ledger Register
+        // (see LedgerRegisterService::createDraftForGrn()).
         if ($result['success']) {
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote->id)

@@ -14,7 +14,6 @@ use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
 use App\Models\StockMovement;
 use App\Models\Supplier;
-use App\Models\SupplierPayment;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -493,12 +492,6 @@ class Dashboard extends Component
             ->when($this->scope['own_grns'], fn ($q) => $q->where('received_by', auth()->id()));
     }
 
-    private function supplierPayments(): Builder
-    {
-        return SupplierPayment::query()
-            ->when($this->scope['supplier_id'], fn ($q, $id) => $q->where('supplier_id', $id));
-    }
-
     /** Current stock joined to products, limited to the user's supplier. */
     private function stock(): Builder
     {
@@ -793,7 +786,7 @@ class Dashboard extends Component
 
     private function canSeeSupplierLedger(User $user): bool
     {
-        return $user->can('supplier-payment-list') || $user->can('report-audit-ledger-register');
+        return $user->can('report-audit-ledger-register');
     }
 
     private function ledger(): Builder
@@ -858,9 +851,6 @@ class Dashboard extends Component
         }
         if (isset($this->pendingItems['draftGrns'])) {
             $this->draftLinks['draftGrns'] = route('goods-receipt-notes.index', ['filter' => ['status' => 'draft']]);
-        }
-        if (isset($this->pendingItems['draftPayments'])) {
-            $this->draftLinks['draftPayments'] = route('supplier-payments.index', ['filter' => ['status' => 'draft']]);
         }
         if (isset($this->pendingItems['draftJournalEntries'])) {
             $this->draftLinks['draftJournalEntries'] = route('journal-entries.index', ['filter' => ['status' => 'draft']]);
@@ -1020,10 +1010,6 @@ class Dashboard extends Component
 
         if ($user->can('ticket-list')) {
             $this->pendingItems['pendingTickets'] = Ticket::query()->visibleTo($user)->where('status', 'pending')->count();
-        }
-
-        if ($user->can('supplier-payment-list')) {
-            $this->pendingItems['draftPayments'] = $this->supplierPayments()->where('status', 'draft')->count();
         }
     }
 
@@ -1484,7 +1470,6 @@ class Dashboard extends Component
             'drafts_total' => SalesSettlement::where('status', 'draft')->count()
                 + GoodsIssue::where('status', 'draft')->count()
                 + GoodsReceiptNote::where('status', 'draft')->count()
-                + SupplierPayment::where('status', 'draft')->count()
                 + JournalEntry::where('status', 'draft')->count(),
         ];
     }

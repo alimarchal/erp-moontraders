@@ -46,7 +46,23 @@ class CustomerImport implements ToCollection, WithHeadingRow
     private array $report = [];
 
     /** @var array<string, int> */
-    private array $counts = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
+    private array $counts = ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'skipped' => 0, 'errors' => 0];
+
+    /** Columns the importer understands. Any other heading in the file is reported as ignored. */
+    private const KNOWN_COLUMNS = [
+        'customer_code', 'customer_name', 'business_name', 'phone', 'email', 'ntn', 'owner_cnic', 'address', 'sub_locality', 'city',
+        'state', 'country', 'channel_type', 'customer_category', 'credit_limit', 'payment_terms', 'sales_rep', 'it_status', 'is_active',
+    ];
+
+    private const FIELD_LABELS = [
+        'customer_name' => 'Name', 'business_name' => 'Business', 'phone' => 'Phone', 'email' => 'Email', 'ntn' => 'NTN',
+        'owner_cnic' => 'CNIC', 'address' => 'Address', 'sub_locality' => 'Sub locality', 'city' => 'City', 'state' => 'State',
+        'country' => 'Country', 'channel_type' => 'Channel', 'customer_category' => 'Category', 'credit_limit' => 'Credit limit',
+        'payment_terms' => 'Payment terms', 'sales_rep_id' => 'Sales rep', 'it_status' => 'IT status', 'is_active' => 'Status',
+    ];
+
+    /** @var list<string> */
+    private array $ignoredColumns = [];
 
     /** @var array<string, int|null> customer code => customer id (null = created earlier in this file) */
     private array $codeIndex = [];
@@ -66,6 +82,13 @@ class CustomerImport implements ToCollection, WithHeadingRow
 
     public function collection(Collection $rows): void
     {
+        $this->ignoredColumns = collect($rows->first()?->keys() ?? [])
+            ->filter(fn ($key) => is_string($key) && $key !== '')
+            ->reject(fn (string $key) => in_array(self::ALIASES[$key] ?? $key, self::KNOWN_COLUMNS, true))
+            ->map(fn (string $key) => str_replace('_', ' ', $key))
+            ->values()
+            ->all();
+
         foreach ($rows as $offset => $raw) {
             $rowNumber = $offset + 2;
             $row = $this->normalise($raw->toArray());
@@ -76,6 +99,16 @@ class CustomerImport implements ToCollection, WithHeadingRow
 
             $this->processRow($rowNumber, $row);
         }
+    }
+
+    /**
+     * Headings of the file that were not recognised.
+     *
+     * @return list<string>
+     */
+    public function ignoredColumns(): array
+    {
+        return $this->ignoredColumns;
     }
 
     /**
@@ -152,13 +185,46 @@ class CustomerImport implements ToCollection, WithHeadingRow
             return;
         }
 
-        $changes = array_filter($attributes, fn ($v, $k) => $k !== 'customer_code' && $v !== null, ARRAY_FILTER_USE_BOTH);
+        $customer = Customer::query()->whereKey($matchId)->first();
+        $candidates = array_filter($attributes, fn ($v, $k) => $k !== 'customer_code' && $v !== null, ARRAY_FILTER_USE_BOTH);
+        $changes = [];
 
-        if (! $this->dryRun) {
-            Customer::query()->whereKey($matchId)->first()?->update($changes);
+        foreach ($candidates as $field => $new) {
+            $old = $customer?->getAttribute($field);
+            $same = match (true) {
+                is_bool($new) => (bool) $old === $new,
+                in_array($field, ['credit_limit'], true) => $old !== null && abs((float) $old - (float) $new) < 0.005,
+                $field === 'payment_terms', $field === 'sales_rep_id' => (int) $old === (int) $new && $old !== null,
+                default => trim((string) $old) === trim((string) $new),
+            };
+
+            if (! $same) {
+                $changes[$field] = $new;
+            }
         }
 
-        $this->log($rowNumber, 'updated', $row, "Existing customer updated (matched by {$matchedBy}).");
+        if ($changes === []) {
+            $this->log($rowNumber, 'unchanged', $row, "Already up to date (matched by {$matchedBy}).");
+
+            return;
+        }
+
+        $message = collect($changes)->map(function ($new, string $field) use ($customer) {
+            $show = fn ($value) => match (true) {
+                $value === null || $value === '' => '—',
+                is_bool($value) => $value ? 'Yes' : 'No',
+                $field === 'sales_rep_id' => User::whereKey($value)->value('name') ?? $value,
+                default => (string) $value,
+            };
+
+            return self::FIELD_LABELS[$field].' '.$show($customer?->getAttribute($field)).' → '.$show($new);
+        })->implode('; ');
+
+        if (! $this->dryRun) {
+            $customer?->update($changes);
+        }
+
+        $this->log($rowNumber, 'updated', $row, $message);
     }
 
     /**
@@ -312,6 +378,7 @@ class CustomerImport implements ToCollection, WithHeadingRow
         $counter = match ($action) {
             'created' => 'created',
             'updated' => 'updated',
+            'unchanged' => 'unchanged',
             'skipped' => 'skipped',
             default => 'errors',
         };

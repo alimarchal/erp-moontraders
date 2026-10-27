@@ -14,6 +14,7 @@ use App\Models\ProductPriceChangeLog;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Services\ProductPricingService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -117,12 +118,14 @@ class ProductController extends Controller implements HasMiddleware
     }
 
     /**
-     * Import products from Excel. Existing product codes are skipped, never overwritten.
+     * Import products from Excel. Existing product codes are skipped, unless the user may edit
+     * products and ticks "update existing", in which case only the filled-in columns are changed.
      */
     public function import(ImportProductRequest $request)
     {
         $dryRun = $request->boolean('dry_run');
-        $import = new ProductImport($dryRun, $this->getUserSupplierScope());
+        $updateExisting = $request->boolean('update_existing') && $request->user()->can('product-edit');
+        $import = new ProductImport($dryRun, $this->getUserSupplierScope(), $updateExisting, auth()->id(), $request->input('update_scope') === 'prices' ? 'prices' : 'all');
 
         DB::beginTransaction();
 
@@ -141,6 +144,9 @@ class ProductController extends Controller implements HasMiddleware
             ->route('products.import.form')
             ->with('import_result', [
                 'dry_run' => $dryRun,
+                'update_existing' => $updateExisting,
+                'update_scope' => $request->input('update_scope') === 'prices' ? 'prices' : 'all',
+                'ignored_columns' => $import->ignoredColumns(),
                 'counts' => $import->counts(),
                 'report' => $import->report(),
                 'file' => $request->file('import_file')->getClientOriginalName(),
@@ -421,7 +427,7 @@ class ProductController extends Controller implements HasMiddleware
     /**
      * Products visible to the current user (supplier-scoped users only see their own).
      *
-     * @return \Illuminate\Database\Eloquent\Builder<Product>
+     * @return Builder<Product>
      */
     private function baseQuery()
     {

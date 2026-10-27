@@ -19,6 +19,8 @@ class ImportProductRequest extends FormRequest
         return [
             'import_file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
             'dry_run' => ['nullable', 'boolean'],
+            'update_existing' => ['nullable', 'boolean'],
+            'update_scope' => ['nullable', 'in:all,prices'],
         ];
     }
 

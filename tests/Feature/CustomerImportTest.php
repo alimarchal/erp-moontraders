@@ -58,7 +58,7 @@ it('skips rows whose shop code already exists, in the system or in the file', fu
         ['c-1', 'Other Name', '', '', '', '', '', '', ''],
         ['N-1', 'Fresh Shop', '', '', '', '', '', '', ''],
         ['N-1', 'Fresh Shop Again', '', '', '', '', '', '', ''],
-    ])->assertSessionHas('import_result.counts', ['created' => 1, 'updated' => 0, 'skipped' => 2, 'errors' => 0]);
+    ])->assertSessionHas('import_result.counts', ['created' => 1, 'updated' => 0, 'unchanged' => 0, 'skipped' => 2, 'errors' => 0]);
 
     expect(Customer::count())->toBe(2);
 });
@@ -155,4 +155,35 @@ it('keeps column defaults when optional numeric fields are left blank on create'
         ->not->toBeNull()
         ->payment_terms->toBe(30)
         ->country->toBe('Pakistan');
+});
+
+it('lists each change as old to new, marks unchanged shops and saves nothing on a check only', function () {
+    Customer::factory()->create(['customer_code' => 'C-1', 'customer_name' => 'Shop One', 'phone' => '0300-1111111', 'city' => 'Muzaffarabad']);
+    Customer::factory()->create(['customer_code' => 'C-2', 'customer_name' => 'Shop Two', 'phone' => '0300-2222222', 'city' => 'Muzaffarabad']);
+
+    runCustomerImport([
+        ['C-1', 'Shop One', '0300-9999999', '', '', 'Muzaffarabad', '', '', ''],
+        ['C-2', 'Shop Two', '0300-2222222', '', '', 'Muzaffarabad', '', '', ''],
+        ['C-3', 'Brand New', '', '', '', '', '', '', ''],
+    ], ['update_existing' => '1', 'dry_run' => '1'])
+        ->assertSessionHas('import_result.counts.updated', 1)
+        ->assertSessionHas('import_result.counts.unchanged', 1)
+        ->assertSessionHas('import_result.counts.created', 1);
+
+    $report = collect(session('import_result.report'));
+    expect($report->firstWhere('name', 'Shop One')['message'])->toBe('Phone 0300-1111111 → 0300-9999999')
+        ->and($report->firstWhere('name', 'Shop Two')['action'])->toBe('unchanged');
+
+    expect(Customer::where('customer_code', 'C-1')->value('phone'))->toBe('0300-1111111')
+        ->and(Customer::where('customer_code', 'C-3')->exists())->toBeFalse();
+
+    runCustomerImport([['C-1', 'Shop One', '0300-9999999', '', '', 'Muzaffarabad', '', '', '']], ['update_existing' => '1']);
+    expect(Customer::where('customer_code', 'C-1')->value('phone'))->toBe('0300-9999999');
+});
+
+it('reports file columns it does not recognise', function () {
+    $file = UploadedFile::fake()->createWithContent('customers.csv', "Customer Code,Customer Name,Fone Number\nN-9,Typo Shop,0300-1\n");
+
+    test()->post(route('customers.import'), ['import_file' => $file, 'duplicate_mode' => 'skip', 'dry_run' => '1'])
+        ->assertSessionHas('import_result.ignored_columns', ['fone number']);
 });

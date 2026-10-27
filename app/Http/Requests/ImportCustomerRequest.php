@@ -20,7 +20,8 @@ class ImportCustomerRequest extends FormRequest
     {
         return [
             'import_file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
-            'duplicate_mode' => ['required', Rule::in([CustomerImport::MODE_SKIP, CustomerImport::MODE_UPDATE])],
+            'duplicate_mode' => ['nullable', Rule::in([CustomerImport::MODE_SKIP, CustomerImport::MODE_UPDATE])],
+            'update_existing' => ['nullable', 'boolean'],
             'dry_run' => ['nullable', 'boolean'],
         ];
     }

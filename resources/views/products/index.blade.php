@@ -63,6 +63,7 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
 
     <div class="ak-page" x-data="productList()">
         <x-status-message />
@@ -113,7 +114,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_supplier">Supplier</label>
-                        <select id="f_supplier" name="filter[supplier_id]">
+                        <select id="f_supplier" name="filter[supplier_id]" class="js-select2">
                             <option value="">All suppliers</option>
                             @foreach ($supplierOptions as $supplier)
                                 <option value="{{ $supplier->id }}" @selected((string) ($filters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
@@ -122,7 +123,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_category">Category</label>
-                        <select id="f_category" name="filter[category_id]">
+                        <select id="f_category" name="filter[category_id]" class="js-select2">
                             <option value="">All categories</option>
                             @foreach ($categoryOptions as $category)
                                 <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
@@ -154,7 +155,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_valuation">Valuation method</label>
-                        <select id="f_valuation" name="filter[valuation_method]">
+                        <select id="f_valuation" name="filter[valuation_method]" class="js-select2">
                             <option value="">Any</option>
                             @foreach ($valuationMethods as $method)
                                 <option value="{{ $method }}" @selected(($filters['valuation_method'] ?? '') === $method)>{{ $method }}</option>
@@ -163,7 +164,7 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_powder">Powder product</label>
-                        <select id="f_powder" name="filter[is_powder]">
+                        <select id="f_powder" name="filter[is_powder]" class="js-select2">
                             <option value="">Any</option>
                             <option value="1" @selected(($filters['is_powder'] ?? '') === '1')>Yes</option>
                             <option value="0" @selected(($filters['is_powder'] ?? '') === '0')>No</option>

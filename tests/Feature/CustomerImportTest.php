@@ -187,3 +187,38 @@ it('reports file columns it does not recognise', function () {
     test()->post(route('customers.import'), ['import_file' => $file, 'duplicate_mode' => 'skip', 'dry_run' => '1'])
         ->assertSessionHas('import_result.ignored_columns', ['fone number']);
 });
+
+it('uses searchable dropdowns on the customer and product screens and shows activate or deactivate buttons', function () {
+    Permission::findOrCreate('customer-edit');
+    Permission::findOrCreate('product-list');
+    $this->user->givePermissionTo(['customer-edit', 'product-list']);
+    Customer::factory()->create(['customer_name' => 'Active Shop', 'is_active' => true]);
+    Customer::factory()->create(['customer_name' => 'Dormant Shop', 'is_active' => false]);
+
+    $this->get(route('customers.index'))->assertSuccessful()
+        ->assertSee('class="js-select2"', false)
+        ->assertSee('select.js-select2', false)
+        ->assertSee('Deactivate customer')
+        ->assertSee('Activate customer')
+        ->assertDontSee('customers.destroy');
+
+    $this->get(route('customers.create'))->assertSuccessful()->assertSee('class="js-select2"', false);
+    $this->get(route('products.index'))->assertSuccessful()->assertSee('class="js-select2"', false);
+});
+
+it('shows the customer help page and its link only to users who can add customers or are super admins', function () {
+    Permission::findOrCreate('customer-edit');
+    Permission::findOrCreate('customer-list');
+
+    $viewer = User::factory()->create();
+    $viewer->givePermissionTo('customer-list');
+    $this->actingAs($viewer)->get(route('customers.index'))->assertSuccessful()->assertDontSee('How customers work');
+    $this->get(route('customers.help'))->assertForbidden();
+
+    $this->actingAs($this->user)->get(route('customers.index'))->assertSee('How customers work');
+    $this->get(route('customers.help'))->assertSuccessful()
+        ->assertSee('Customers are never deleted')
+        ->assertSee('Update customers that already exist');
+
+    $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']))->get(route('customers.help'))->assertSuccessful();
+});

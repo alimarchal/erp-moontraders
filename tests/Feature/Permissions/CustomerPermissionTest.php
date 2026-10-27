@@ -2,6 +2,7 @@
 
 use App\Models\Customer;
 use App\Models\User;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -50,26 +51,24 @@ it('denies update without customer-edit permission', function () {
     $this->put(route('customers.update', $customer), [])->assertForbidden();
 });
 
-it('denies destroy without customer-delete permission', function () {
-    $customer = Customer::factory()->create();
-    $this->delete(route('customers.destroy', $customer))->assertForbidden();
+it('has no delete route for customers', function () {
+    expect(Route::has('customers.destroy'))->toBeFalse();
 });
 
-it('denies destroy to a non super admin even with customer-delete permission', function () {
-    $this->user->givePermissionTo('customer-delete');
+it('denies activating or deactivating without customer-edit permission', function () {
     $customer = Customer::factory()->create(['is_active' => true]);
-
-    $this->delete(route('customers.destroy', $customer))->assertForbidden();
+    $this->post(route('customers.toggle-active', $customer))->assertForbidden();
 
     expect($customer->fresh()->is_active)->toBeTrue();
 });
 
-it('deactivates instead of deleting when a super admin destroys a customer', function () {
-    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
-    $this->user->givePermissionTo('customer-delete');
+it('deactivates and activates a customer without deleting anything', function () {
+    $this->user->givePermissionTo('customer-edit');
     $customer = Customer::factory()->create(['is_active' => true]);
 
-    $this->delete(route('customers.destroy', $customer))->assertRedirect(route('customers.index'));
-
+    $this->post(route('customers.toggle-active', $customer))->assertRedirect();
     $this->assertDatabaseHas('customers', ['id' => $customer->id, 'is_active' => false, 'deleted_at' => null]);
+
+    $this->post(route('customers.toggle-active', $customer))->assertRedirect();
+    $this->assertDatabaseHas('customers', ['id' => $customer->id, 'is_active' => true, 'deleted_at' => null]);
 });

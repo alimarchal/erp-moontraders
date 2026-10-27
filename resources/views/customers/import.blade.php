@@ -25,6 +25,7 @@
             </div>
             <div class="ak-head-actions">
                 <a href="{{ route('customers.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <x-customer-help-link />
                 <a href="{{ route('customers.import.template') }}" class="ak-btn ak-btn-outline">Download template</a>
             </div>
         </div>

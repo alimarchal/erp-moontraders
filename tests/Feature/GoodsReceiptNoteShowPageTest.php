@@ -2,10 +2,9 @@
 
 use App\Models\GoodsReceiptNote;
 use App\Models\GoodsReceiptNoteItem;
-use App\Models\PaymentGrnAllocation;
+use App\Models\LedgerRegister;
 use App\Models\Product;
 use App\Models\Supplier;
-use App\Models\SupplierPayment;
 use App\Models\User;
 
 beforeEach(function () {
@@ -41,20 +40,17 @@ it('shows every item column, batch details and the totals of a draft GRN', funct
         ->assertSee('postGrnPasswordModal', false);
 });
 
-it('shows the payment summary and history of a posted GRN', function () {
+it('shows the supplier ledger entry raised for a posted GRN', function () {
     $grn = GoodsReceiptNote::factory()->create(['supplier_id' => Supplier::factory()->create()->id, 'status' => 'posted', 'grand_total' => 10000, 'posted_at' => now()]);
-    $payment = SupplierPayment::create([
-        'payment_number' => 'PAY-2026-0042', 'supplier_id' => $grn->supplier_id, 'payment_date' => now()->toDateString(),
-        'payment_method' => 'bank_transfer', 'amount' => 4000, 'status' => 'posted', 'created_by' => $this->user->id,
+    LedgerRegister::create([
+        'supplier_id' => $grn->supplier_id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DR',
+        'document_number' => 'INV-777', 'invoice_amount' => 10000, 'goods_receipt_note_id' => $grn->id,
     ]);
-    PaymentGrnAllocation::create(['supplier_payment_id' => $payment->id, 'grn_id' => $grn->id, 'allocated_amount' => 4000]);
 
     $this->get(route('goods-receipt-notes.show', $grn))
         ->assertSuccessful()
-        ->assertSee('PAY-2026-0042')
-        ->assertSee('Bank Transfer')
-        ->assertSee('4,000.00')
-        ->assertSee('6,000.00')
-        ->assertSee('Partial')
-        ->assertSee(route('supplier-payments.show', $payment->id), false);
+        ->assertSee('Supplier ledger entry')
+        ->assertSee('INV-777')
+        ->assertSee('10,000.00')
+        ->assertSee('Ledger draft');
 });

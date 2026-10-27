@@ -4,6 +4,7 @@
             Edit Goods Receipt Note: {{ $grn->grn_number }}
         </h2>
         <div class="flex justify-center items-center float-right">
+            <x-grn-help-link class="mr-2" />
             <a href="{{ route('goods-receipt-notes.show', $grn) }}"
                 class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

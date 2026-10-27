@@ -7,7 +7,7 @@
         'settings.*', 'account-types.*', 'accounting-periods.*', 'investment-opening-balances.*', 'chart-of-accounts.*',
         'currencies.*', 'cost-centers.*', 'bank-accounts.*', 'journal-entries.*', 'tax-codes.*', 'tax-rates.*',
         'tax-transactions.*', 'product-tax-mappings.*', 'category-revenue.*', 'profit-categories.*',
-        'companies.*', 'users.*', 'roles.*', 'permissions.*', 'suppliers.*', 'supplier-payments.*', 'customers.*',
+        'companies.*', 'users.*', 'roles.*', 'permissions.*', 'suppliers.*', 'customers.*',
         'opening-customer-balances.*', 'employees.*', 'company-targets.*', 'promotional-campaigns.*', 'products.*',
         'product-categories.*', 'categories.*', 'uoms.*', 'warehouses.*', 'warehouse-types.*', 'vehicles.*',
         'stock-adjustments.*', 'product-recalls.*', 'claim-registers.*',

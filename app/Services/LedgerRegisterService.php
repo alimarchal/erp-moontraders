@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\DocumentType;
 use App\Models\ChartOfAccount;
+use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\LedgerRegister;
 use Carbon\Carbon;
@@ -73,6 +74,79 @@ class LedgerRegisterService
         Log::error("Failed to create OB JE for ledger register #{$entry->id}: ".$result['message']);
 
         return null;
+    }
+
+    /**
+     * Raise the draft invoice row a posted GRN needs in the supplier Ledger Register.
+     *
+     * The GRN credits 2142 Stock Received But Not Billed with what the supplier will invoice;
+     * this row carries that amount so posting it moves it into Creditors. It is an ordinary
+     * draft: every field can be corrected on the register before it is posted.
+     * Opening-stock GRNs and GRNs with nothing owed raise none.
+     */
+    public function createDraftForGrn(GoodsReceiptNote $grn): ?LedgerRegister
+    {
+        if ($grn->is_opening_stock || ! $grn->journal_entry_id) {
+            return null;
+        }
+
+        $existing = LedgerRegister::where('goods_receipt_note_id', $grn->id)->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $invoiceNumber = trim((string) $grn->supplier_invoice_number);
+
+        // The invoice may already have been entered by hand; a second row would post it twice.
+        if ($invoiceNumber !== '' && LedgerRegister::where('supplier_id', $grn->supplier_id)
+            ->where('document_type', DocumentType::Dr->value)
+            ->where('document_number', $invoiceNumber)
+            ->exists()) {
+            return null;
+        }
+
+        $owed = round((float) DB::table('journal_entry_details as lines')
+            ->join('chart_of_accounts as accounts', 'accounts.id', '=', 'lines.chart_of_account_id')
+            ->where('lines.journal_entry_id', $grn->journal_entry_id)
+            ->where('accounts.account_code', InventoryService::STOCK_RECEIVED_NOT_BILLED_CODE)
+            ->sum('lines.credit'), 2);
+
+        if ($owed <= 0) {
+            return null;
+        }
+
+        $grn->loadMissing('supplier', 'warehouse');
+
+        $entry = LedgerRegister::create([
+            'supplier_id' => $grn->supplier_id,
+            'transaction_date' => ($grn->supplier_invoice_date ?? $grn->receipt_date)->toDateString(),
+            'document_type' => DocumentType::Dr,
+            'document_number' => $grn->supplier_invoice_number,
+            'invoice_amount' => $owed,
+            'remarks' => "Auto-created from {$grn->grn_number}".($grn->warehouse ? " ({$grn->warehouse->warehouse_name})" : ''),
+            'goods_receipt_note_id' => $grn->id,
+        ]);
+
+        LedgerRegister::recalculateBalances($grn->supplier_id);
+
+        return $entry->fresh();
+    }
+
+    /**
+     * Remove the draft row a GRN raised, when the GRN is reversed. A row that was already
+     * posted stays: its journal entry is in the general ledger and is reversed there.
+     */
+    public function discardDraftForGrn(GoodsReceiptNote $grn): void
+    {
+        $entry = LedgerRegister::where('goods_receipt_note_id', $grn->id)->whereNull('posted_at')->first();
+
+        if (! $entry) {
+            return;
+        }
+
+        $entry->delete();
+        LedgerRegister::recalculateBalances($grn->supplier_id);
     }
 
     /**

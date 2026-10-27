@@ -32,7 +32,7 @@ class PermissionCatalog
         'Tax & Expenses' => ['tax', 'expense-detail', 'category-revenue', 'revenue-detail', 'profit-category', 'profit-after-category', 'scheme-received'],
         'Partners & Stakeholders' => ['supplier', 'customer', 'employee', 'company-target', 'employee-salary', 'employee-salary-transaction', 'opening-customer-balance', 'promotional-campaign'],
         'Inventory & Products' => ['product', 'category', 'uom', 'opening-stock', 'goods-receipt-note'],
-        'Inventory Operations' => ['stock-adjustment', 'stock-transfer', 'product-recall', 'supplier-payment', 'warehouse-type', 'claim-register'],
+        'Inventory Operations' => ['stock-adjustment', 'stock-transfer', 'product-recall', 'warehouse-type', 'claim-register'],
         'Asset Management' => ['vehicle', 'warehouse'],
         'Daily Operations' => ['goods-issue', 'sales-settlement'],
     ];
@@ -119,7 +119,6 @@ class PermissionCatalog
         'stock-adjustment' => 'Stock Adjustments',
         'stock-transfer' => 'Stock Transfers',
         'product-recall' => 'Product Recalls',
-        'supplier-payment' => 'Supplier Payments',
         'warehouse-type' => 'Warehouse Types',
         'claim-register' => 'Claim Register',
         'vehicle' => 'Vehicles',

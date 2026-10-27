@@ -30,7 +30,6 @@ function createDashboardPermissions(): void
     $permissions = [
         'sales-settlement-list', 'sales-settlement-create',
         'goods-receipt-note-list', 'goods-receipt-note-create',
-        'supplier-payment-list', 'supplier-payment-create',
         'inventory-view',
         'goods-issue-list', 'goods-issue-create',
         'journal-entry-list', 'journal-entry-create',

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GoodsReceiptNote extends Model
@@ -86,46 +88,36 @@ class GoodsReceiptNote extends Model
         return $this->hasMany(GoodsReceiptNoteItem::class, 'grn_id')->orderBy('line_no');
     }
 
-    public function paymentAllocations(): HasMany
+    /**
+     * The draft or posted Ledger Register invoice row raised when this GRN was posted.
+     */
+    public function ledgerEntry(): HasOne
     {
-        return $this->hasMany(PaymentGrnAllocation::class, 'grn_id');
+        return $this->hasOne(LedgerRegister::class, 'goods_receipt_note_id');
     }
 
-    public function payments()
+    /**
+     * Ledger Register rows of this GRN's supplier that carry the same document number as the
+     * supplier invoice, other than the row raised from this GRN. Rows entered by hand before
+     * the GRN was posted (invoice, online payment, claim ...) are found this way.
+     *
+     * @return Collection<int, LedgerRegister>
+     */
+    public function matchingLedgerEntries(): Collection
     {
-        return $this->belongsToMany(SupplierPayment::class, 'payment_grn_allocations', 'grn_id', 'supplier_payment_id')
-            ->withPivot('allocated_amount');
-    }
+        $invoiceNumber = trim((string) $this->supplier_invoice_number);
 
-    public function getPaymentStatusAttribute(): string
-    {
-        $totalPaid = $this->paymentAllocations()
-            ->whereHas('payment', function ($q) {
-                $q->where('status', 'posted');
-            })
-            ->sum('allocated_amount');
-
-        if ($totalPaid == 0) {
-            return 'unpaid';
-        } elseif ($totalPaid >= $this->grand_total) {
-            return 'paid';
-        } else {
-            return 'partial';
+        if ($invoiceNumber === '') {
+            return new Collection;
         }
-    }
 
-    public function getTotalPaidAttribute(): float
-    {
-        return (float) $this->paymentAllocations()
-            ->whereHas('payment', function ($q) {
-                $q->where('status', 'posted');
-            })
-            ->sum('allocated_amount');
-    }
-
-    public function getBalanceAttribute(): float
-    {
-        return $this->grand_total - $this->total_paid;
+        return LedgerRegister::query()
+            ->where('supplier_id', $this->supplier_id)
+            ->where('document_number', $invoiceNumber)
+            ->where(fn ($query) => $query->whereNull('goods_receipt_note_id')->orWhere('goods_receipt_note_id', '!=', $this->id))
+            ->orderBy('transaction_date')
+            ->orderBy('id')
+            ->get();
     }
 
     public function isDraft(): bool
@@ -146,32 +138,5 @@ class GoodsReceiptNote extends Model
     public function scopeReceiptDateTo($query, $date)
     {
         return $query->whereDate('receipt_date', '<=', $date);
-    }
-
-    public function scopePaymentStatus($query, $status)
-    {
-        if ($status === 'unpaid') {
-            return $query->whereDoesntHave('paymentAllocations', function ($q) {
-                $q->whereHas('payment', function ($subQ) {
-                    $subQ->where('status', 'posted');
-                });
-            });
-        } elseif ($status === 'paid') {
-            return $query->whereHas('paymentAllocations', function ($q) {
-                $q->whereHas('payment', function ($subQ) {
-                    $subQ->where('status', 'posted');
-                });
-            })
-                ->whereRaw('grand_total <= (SELECT COALESCE(SUM(allocated_amount), 0) FROM payment_grn_allocations WHERE grn_id = goods_receipt_notes.id AND supplier_payment_id IN (SELECT id FROM supplier_payments WHERE status = \'posted\'))');
-        } elseif ($status === 'partial') {
-            return $query->whereHas('paymentAllocations', function ($q) {
-                $q->whereHas('payment', function ($subQ) {
-                    $subQ->where('status', 'posted');
-                });
-            })
-                ->whereRaw('grand_total > (SELECT COALESCE(SUM(allocated_amount), 0) FROM payment_grn_allocations WHERE grn_id = goods_receipt_notes.id AND supplier_payment_id IN (SELECT id FROM supplier_payments WHERE status = \'posted\'))');
-        }
-
-        return $query;
     }
 }

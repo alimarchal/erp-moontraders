@@ -54,7 +54,6 @@ class RoleAndPermissionSeeder extends Seeder
 
             // Sales & Distribution
             'sales-settlement' => ['list', 'create', 'edit', 'delete', 'post', 'revert', 'view-own', 'view-all'],
-            'supplier-payment' => ['list', 'create', 'edit', 'delete', 'post', 'reverse'],
             'vehicle' => ['list', 'create', 'edit', 'delete'],
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
             'claim-register' => ['list', 'create', 'edit', 'delete', 'post'],
@@ -142,10 +141,6 @@ class RoleAndPermissionSeeder extends Seeder
             'tax-list',
             'supplier-list',
             'customer-list',
-            'supplier-payment-list',
-            'supplier-payment-create',
-            'supplier-payment-post',
-            'supplier-payment-reverse',
             'claim-register-list',
             'claim-register-create',
             'employee-salary-transaction-list',

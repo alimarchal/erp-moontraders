@@ -36,7 +36,7 @@ function catalogIndex(array $catalog): array
 
 it('arranges permissions like the settings and reports screens without losing any', function () {
     foreach (['report-financial-trial-balance', 'report-audit-ledger-register', 'report-audit-ledger-register-manage',
-        'report-audit-advance-tax-sales-register', 'goods-issue-view-own', 'supplier-payment-post', 'widget-create'] as $name) {
+        'report-audit-advance-tax-sales-register', 'goods-issue-view-own', 'goods-receipt-note-post', 'widget-create'] as $name) {
         Permission::firstOrCreate(['name' => $name]);
     }
 
@@ -48,7 +48,7 @@ it('arranges permissions like the settings and reports screens without losing an
         ->and($index['report-audit-ledger-register-manage'])->toMatchArray(['group' => 'report-audit-ledger-register', 'action' => 'manage'])
         ->and($index['report-audit-advance-tax-sales-register']['group'])->toBe('report-audit-advance-tax-sales-register')
         ->and($index['goods-issue-view-own'])->toMatchArray(['group' => 'goods-issue', 'action' => 'view-own'])
-        ->and($index['supplier-payment-post']['group'])->toBe('supplier-payment')
+        ->and($index['goods-receipt-note-post']['group'])->toBe('goods-receipt-note')
         ->and($index['widget-create'])->toMatchArray(['module' => 'other', 'group' => 'widget', 'action' => 'create']);
 });
 

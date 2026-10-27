@@ -35,7 +35,6 @@
         'draftSettlements' => ['Draft Settlements', 'sales-settlements.index'],
         'draftGoodsIssues' => ['Draft Goods Issues', 'goods-issues.index'],
         'draftGrns' => ['Draft GRNs', 'goods-receipt-notes.index'],
-        'draftPayments' => ['Draft Payments', 'supplier-payments.index'],
         'draftJournalEntries' => ['Draft Journal Entries', 'journal-entries.index'],
         'pendingTickets' => ['Pending Tickets', 'tickets.index'],
     ];

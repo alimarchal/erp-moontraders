@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DocumentType;
 use App\Models\AccountingPeriod;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
@@ -10,6 +11,7 @@ use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
 use App\Models\InventoryLedgerEntry;
 use App\Models\JournalEntry;
+use App\Models\LedgerRegister;
 use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Models\StockMovement;
@@ -19,6 +21,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
+use App\Services\LedgerRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -1075,4 +1078,95 @@ it('refuses to reverse with a wrong password or when the stock is already used',
     $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'password'])
         ->assertSessionHas('error');
     expect($grn->fresh()->status)->toBe('posted');
+});
+
+it('raises a draft ledger row for a posted GRN with the supplier, invoice details and the 2142 amount', function () {
+    $grn = postedGrnForReversal($this);
+    $grn->update(['supplier_invoice_number' => 'INV-55', 'supplier_invoice_date' => now()->subDay()->toDateString()]);
+    LedgerRegister::query()->delete();
+    $entry = app(LedgerRegisterService::class)->createDraftForGrn($grn->fresh());
+
+    expect($entry->supplier_id)->toBe($this->supplier->id)
+        ->and($entry->document_type)->toBe(DocumentType::Dr)
+        ->and($entry->document_number)->toBe('INV-55')
+        ->and($entry->transaction_date->toDateString())->toBe(now()->subDay()->toDateString())
+        ->and((float) $entry->invoice_amount)->toBe(9200.0)
+        ->and($entry->isPosted())->toBeFalse()
+        ->and($entry->goods_receipt_note_id)->toBe($grn->id);
+
+    expect(app(LedgerRegisterService::class)->createDraftForGrn($grn->fresh())->id)->toBe($entry->id)
+        ->and(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(1);
+});
+
+it('removes the draft ledger row when the GRN is reversed but keeps one that was posted', function () {
+    $draftGrn = postedGrnForReversal($this);
+    expect(LedgerRegister::where('goods_receipt_note_id', $draftGrn->id)->count())->toBe(1);
+
+    app(InventoryService::class)->reverseGrnInventory($draftGrn->fresh());
+    expect(LedgerRegister::where('goods_receipt_note_id', $draftGrn->id)->count())->toBe(0);
+
+    $postedGrn = postedGrnForReversal($this);
+    LedgerRegister::where('goods_receipt_note_id', $postedGrn->id)->update(['posted_at' => now()]);
+
+    app(InventoryService::class)->reverseGrnInventory($postedGrn->fresh());
+    expect(LedgerRegister::where('goods_receipt_note_id', $postedGrn->id)->count())->toBe(1);
+});
+
+it('shows the GRN help link and page to super admins and users who can create GRNs only', function () {
+    Permission::firstOrCreate(['name' => 'goods-receipt-note-list', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'goods-receipt-note-create', 'guard_name' => 'web']);
+
+    $viewer = User::factory()->create();
+    $viewer->givePermissionTo('goods-receipt-note-list');
+    $this->actingAs($viewer)->get(route('goods-receipt-notes.index'))->assertSuccessful()->assertDontSee('How GRN works');
+    $this->get(route('goods-receipt-notes.help'))->assertForbidden();
+
+    $creator = User::factory()->create();
+    $creator->givePermissionTo(['goods-receipt-note-list', 'goods-receipt-note-create']);
+    $this->actingAs($creator)->get(route('goods-receipt-notes.index'))->assertSee('How GRN works');
+    $this->get(route('goods-receipt-notes.help'))->assertSuccessful()
+        ->assertSee('Decision flow: Post to Inventory')
+        ->assertSee('FMR allowed');
+
+    $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']))
+        ->get(route('goods-receipt-notes.help'))->assertSuccessful();
+});
+
+it('lists ledger rows already entered under the GRN invoice number and raises no second invoice row', function () {
+    grnReversalPermission($this);
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id, 'warehouse_id' => $this->warehouse->id, 'status' => 'draft',
+        'receipt_date' => now(), 'supplier_invoice_number' => 'MATCH-77',
+    ]);
+    $grn->items()->create([
+        'line_no' => 1, 'product_id' => $this->product->id, 'stock_uom_id' => $this->uom->id, 'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 10, 'uom_conversion_factor' => 1, 'qty_in_stock_uom' => 10, 'extended_value' => 1000,
+        'quantity_received' => 10, 'quantity_accepted' => 10, 'unit_cost' => 100, 'total_cost' => 1000,
+    ]);
+
+    LedgerRegister::create([
+        'supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DR',
+        'document_number' => 'MATCH-77', 'invoice_amount' => 1000, 'posted_at' => now(),
+    ]);
+    LedgerRegister::create([
+        'supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DZ',
+        'document_number' => 'MATCH-77', 'online_amount' => 400,
+    ]);
+    LedgerRegister::create([
+        'supplier_id' => Supplier::factory()->create()->id, 'transaction_date' => now()->toDateString(), 'document_type' => 'DR',
+        'document_number' => 'MATCH-77', 'invoice_amount' => 5,
+    ]);
+
+    expect(app(InventoryService::class)->postGrnToInventory($grn->fresh())['success'])->toBeTrue()
+        ->and(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(0)
+        ->and($grn->fresh()->matchingLedgerEntries())->toHaveCount(2);
+
+    $this->get(route('goods-receipt-notes.show', $grn))
+        ->assertSuccessful()
+        ->assertSee('Already in the Ledger Register under invoice no. MATCH-77')
+        ->assertSee('Invoices')
+        ->assertSee('Online')
+        ->assertSee('400.00')
+        ->assertSee('No second draft row was raised');
 });

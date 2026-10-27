@@ -236,18 +236,6 @@ describe('reposting the double-counted history', function () {
         // A GRN posted to stock without any journal entry.
         $this->orphan = postPurchaseGrn($this);
         dropJournalEntry($this->orphan);
-
-        DB::table('supplier_payments')->insert([
-            'payment_number' => 'PAY-2026-000001',
-            'supplier_id' => $this->supplier->id,
-            'payment_date' => now()->toDateString(),
-            'payment_method' => 'bank_transfer',
-            'amount' => 10000,
-            'status' => 'draft',
-            'created_by' => $this->user->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     });
 
     it('starts out counting the purchase twice', function () {
@@ -260,8 +248,7 @@ describe('reposting the double-counted history', function () {
 
         $this->artisan('accounting:repost-supplier-invoices', ['--dry-run' => true])->assertSuccessful();
 
-        expect(DB::table('journal_entries')->count())->toBe($entries)
-            ->and(DB::table('supplier_payments')->value('status'))->toBe('draft');
+        expect(DB::table('journal_entries')->count())->toBe($entries);
     });
 
     it('leaves stock in hand equal to the stock and creditors equal to the invoices', function () {
@@ -271,8 +258,7 @@ describe('reposting the double-counted history', function () {
         expect(glBalance('1151'))->toBe(20000.0)
             ->and(glBalance('2111'))->toBe(-10000.0)
             ->and(glBalance('2142'))->toBe(-10000.0)
-            ->and($this->orphan->fresh()->journal_entry_id)->not->toBeNull()
-            ->and(DB::table('supplier_payments')->value('status'))->toBe('cancelled');
+            ->and($this->orphan->fresh()->journal_entry_id)->not->toBeNull();
 
         $books = DB::table('journal_entry_details')->selectRaw('SUM(debit) as debits, SUM(credit) as credits')->first();
         expect((float) $books->debits)->toBe((float) $books->credits);
@@ -330,7 +316,7 @@ describe('reposting the double-counted history', function () {
     'Staging the legacy journals needs trigger DDL, which MySQL/MariaDB cannot roll back.'
 );
 
-it('no longer raises a draft supplier payment when a GRN is posted', function () {
+it('raises an editable draft Ledger Register invoice entry when a GRN is posted', function () {
     Permission::firstOrCreate(['name' => 'goods-receipt-note-post', 'guard_name' => 'web']);
     $this->user->givePermissionTo('goods-receipt-note-post');
 
@@ -357,8 +343,31 @@ it('no longer raises a draft supplier payment when a GRN is posted', function ()
 
     $this->post(route('goods-receipt-notes.post', $grn), ['password' => 'password'])->assertRedirect();
 
+    $entry = LedgerRegister::where('goods_receipt_note_id', $grn->id)->first();
+
     expect($grn->fresh()->status)->toBe('posted')
-        ->and(DB::table('supplier_payments')->count())->toBe(0);
+        ->and($entry)->not->toBeNull()
+        ->and($entry->supplier_id)->toBe($this->supplier->id)
+        ->and($entry->document_type)->toBe(DocumentType::Dr)
+        ->and($entry->document_number)->toBe($grn->supplier_invoice_number)
+        ->and((float) $entry->invoice_amount)->toBe(1000.0)
+        ->and((float) $entry->balance)->toBe(-1000.0)
+        ->and($entry->isPosted())->toBeFalse()
+        ->and($entry->remarks)->toContain($grn->grn_number);
+
+    Permission::firstOrCreate(['name' => 'report-audit-ledger-register-edit', 'guard_name' => 'web']);
+    $this->user->givePermissionTo('report-audit-ledger-register-edit');
+
+    $this->put(route('reports.ledger-register.update', $entry), [
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => $entry->transaction_date->toDateString(),
+        'document_type' => 'DR',
+        'document_number' => 'EDITED-1',
+        'invoice_amount' => 900,
+    ])->assertSessionHasNoErrors();
+
+    expect($entry->fresh()->document_number)->toBe('EDITED-1')
+        ->and((float) $entry->fresh()->invoice_amount)->toBe(900.0);
 });
 
 it('refuses to edit or delete a ledger register entry that is already posted', function () {

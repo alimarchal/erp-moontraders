@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\DocumentType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
+use App\Models\LedgerRegister;
 use App\Models\StockBatch;
 use App\Models\StockLedgerEntry;
 use App\Models\StockMovement;
@@ -708,6 +710,10 @@ class InventoryService
 
             $receipts = $this->grnReceipts($grn);
 
+            if ($refusal = $this->grnLedgerRefusal($grn)) {
+                throw new \RuntimeException($refusal);
+            }
+
             $this->assertGrnStockStillOnHand($grn, $receipts);
             $this->assertGrnBatchesNotRevalued($grn, $receipts);
 
@@ -836,6 +842,10 @@ class InventoryService
             return 'This GRN has no journal entry of its own, so its value reached the general ledger another way (e.g. the supplier Ledger Register). Reverse it there first.';
         }
 
+        if ($refusal = $this->grnLedgerRefusal($grn)) {
+            return $refusal;
+        }
+
         try {
             $receipts = $this->grnReceipts($grn);
             $this->assertGrnStockStillOnHand($grn, $receipts);
@@ -845,6 +855,42 @@ class InventoryService
         }
 
         return null;
+    }
+
+    /**
+     * A GRN whose invoice is already posted in the supplier Ledger Register cannot be reversed:
+     * the supplier is owed that amount and may already have been paid against it. The row
+     * counts whether it was raised from this GRN or entered by hand under the same invoice
+     * number, and stops counting once its journal entry has itself been reversed.
+     */
+    protected function grnLedgerRefusal(GoodsReceiptNote $grn): ?string
+    {
+        $invoiceNumber = trim((string) $grn->supplier_invoice_number);
+
+        $row = LedgerRegister::query()
+            ->whereNotNull('posted_at')
+            ->whereNotNull('journal_entry_id')
+            ->where(function ($query) use ($grn, $invoiceNumber) {
+                $query->where('goods_receipt_note_id', $grn->id);
+
+                if ($invoiceNumber !== '') {
+                    $query->orWhere(fn ($match) => $match
+                        ->where('supplier_id', $grn->supplier_id)
+                        ->where('document_type', DocumentType::Dr->value)
+                        ->where('document_number', $invoiceNumber));
+                }
+            })
+            ->get()
+            ->first(fn (LedgerRegister $entry) => ! JournalEntry::where('reverses_entry_id', $entry->journal_entry_id)
+                ->where('status', 'posted')
+                ->exists());
+
+        if (! $row) {
+            return null;
+        }
+
+        return "The supplier invoice {$row->document_number} of this GRN is already posted in the supplier Ledger Register (the supplier may have been paid against it). "
+            .'Reverse that ledger entry\'s journal entry first, then reverse the GRN.';
     }
 
     /**

@@ -334,6 +334,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         return view('goods-receipt-notes.show', [
             'grn' => $goodsReceiptNote,
+            'reversalRefusal' => $goodsReceiptNote->status === 'posted' && auth()->user()->can('goods-receipt-note-reverse')
+                ? app(InventoryService::class)->grnReversalRefusal($goodsReceiptNote)
+                : null,
         ]);
     }
 
@@ -1273,24 +1276,18 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         // Log password confirmation
         Log::info("GRN reversal password confirmed for {$goodsReceiptNote->grn_number} by user: ".auth()->user()->name.' (ID: '.auth()->id().')');
 
-        // Check if GRN has any posted payments
-        $hasPostedPayments = $goodsReceiptNote->payments()
-            ->where('status', 'posted')
-            ->exists();
+        $inventoryService = app(InventoryService::class);
 
-        if ($hasPostedPayments) {
-            return redirect()
-                ->back()
-                ->with('error', 'Cannot reverse GRN that has posted payments. Please reverse the payments first.');
+        if ($refusal = $inventoryService->grnReversalRefusal($goodsReceiptNote)) {
+            return redirect()->back()->with('error', $refusal);
         }
 
-        $inventoryService = app(InventoryService::class);
         $result = $inventoryService->reverseGrnInventory($goodsReceiptNote);
 
         if ($result['success']) {
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
-                ->with('status', $result['message']);
+                ->with('success', $result['message']);
         }
 
         return redirect()

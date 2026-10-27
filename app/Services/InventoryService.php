@@ -753,37 +753,7 @@ class InventoryService
                 throw new \Exception('Only posted GRNs can be reversed');
             }
 
-            // Find all stock movements related to this GRN
-            $movements = StockMovement::where('reference_type', 'App\\Models\\GoodsReceiptNote')
-                ->where('reference_id', $grn->id)
-                ->where('movement_type', 'grn')
-                ->get();
-
-            if ($movements->isEmpty()) {
-                throw new \Exception('No stock movements found for this GRN');
-            }
-
-            // A GRN can carry more than one 'grn' movement per batch (edit-special
-            // corrections post the difference), so reverse the net received quantity.
-            $receipts = $movements
-                ->groupBy(fn (StockMovement $movement) => $movement->stock_batch_id.'|'.$movement->warehouse_id)
-                ->map(function ($batchMovements) {
-                    $first = $batchMovements->first();
-                    $quantity = (float) $batchMovements->sum('quantity');
-
-                    return (object) [
-                        'product_id' => (int) $first->product_id,
-                        'stock_batch_id' => (int) $first->stock_batch_id,
-                        'warehouse_id' => (int) $first->warehouse_id,
-                        'uom_id' => $first->uom_id,
-                        'quantity' => $quantity,
-                        'unit_cost' => $quantity > 0
-                            ? (float) $batchMovements->sum(fn ($movement) => (float) $movement->quantity * (float) $movement->unit_cost) / $quantity
-                            : (float) $first->unit_cost,
-                    ];
-                })
-                ->filter(fn ($receipt) => $receipt->quantity > StockValuationService::QTY_EPSILON)
-                ->values();
+            $receipts = $this->grnReceipts($grn);
 
             $this->assertGrnStockStillOnHand($grn, $receipts);
             $this->assertGrnBatchesNotRevalued($grn, $receipts);
@@ -898,6 +868,79 @@ class InventoryService
     }
 
     /**
+     * Why a posted GRN cannot be reversed right now, or null when it can.
+     *
+     * Runs the same checks reverseGrnInventory() enforces, without changing anything, so the
+     * GRN page can disable its Reverse button and say why.
+     */
+    public function grnReversalRefusal(GoodsReceiptNote $grn): ?string
+    {
+        if ($grn->status !== 'posted') {
+            return 'Only a posted GRN can be reversed.';
+        }
+
+        if ($grn->payments()->where('status', 'posted')->exists()) {
+            return 'This GRN has posted supplier payments. Reverse the payments first.';
+        }
+
+        if (! $grn->journal_entry_id && round((float) $grn->items()->sum('total_cost'), 2) > 0) {
+            return 'This GRN has no journal entry of its own, so its value reached the general ledger another way (e.g. the supplier Ledger Register). Reverse it there first.';
+        }
+
+        try {
+            $receipts = $this->grnReceipts($grn);
+            $this->assertGrnStockStillOnHand($grn, $receipts);
+            $this->assertGrnBatchesNotRevalued($grn, $receipts);
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+
+        return null;
+    }
+
+    /**
+     * Net quantity this GRN put into each batch.
+     *
+     * A GRN can carry more than one 'grn' movement per batch (edit-special corrections post
+     * the difference), so the net received quantity is what a reversal takes back.
+     *
+     * @return Collection<int, object>
+     *
+     * @throws \Exception when the GRN has no stock movements
+     */
+    protected function grnReceipts(GoodsReceiptNote $grn): Collection
+    {
+        $movements = StockMovement::where('reference_type', 'App\\Models\\GoodsReceiptNote')
+            ->where('reference_id', $grn->id)
+            ->where('movement_type', 'grn')
+            ->get();
+
+        if ($movements->isEmpty()) {
+            throw new \Exception('No stock movements found for this GRN');
+        }
+
+        return $movements
+            ->groupBy(fn (StockMovement $movement) => $movement->stock_batch_id.'|'.$movement->warehouse_id)
+            ->map(function ($batchMovements) {
+                $first = $batchMovements->first();
+                $quantity = (float) $batchMovements->sum('quantity');
+
+                return (object) [
+                    'product_id' => (int) $first->product_id,
+                    'stock_batch_id' => (int) $first->stock_batch_id,
+                    'warehouse_id' => (int) $first->warehouse_id,
+                    'uom_id' => $first->uom_id,
+                    'quantity' => $quantity,
+                    'unit_cost' => $quantity > 0
+                        ? (float) $batchMovements->sum(fn ($movement) => (float) $movement->quantity * (float) $movement->unit_cost) / $quantity
+                        : (float) $first->unit_cost,
+                ];
+            })
+            ->filter(fn ($receipt) => $receipt->quantity > StockValuationService::QTY_EPSILON)
+            ->values();
+    }
+
+    /**
      * A GRN can only be sent back while everything it received is still in its
      * batch. Once part of it has been issued, sold or adjusted, reversing the
      * whole receipt would take the batch below zero: current_stock_by_batch used
@@ -927,7 +970,8 @@ class InventoryService
         if ($shortfalls !== []) {
             throw new \RuntimeException(
                 "Stock from {$grn->grn_number} has already been issued, sold or adjusted ("
-                .implode('; ', $shortfalls)
+                .implode('; ', array_slice($shortfalls, 0, 3))
+                .(count($shortfalls) > 3 ? '; and '.(count($shortfalls) - 3).' more batches' : '')
                 .'). Return the remaining stock to the supplier with a stock adjustment instead.'
             );
         }

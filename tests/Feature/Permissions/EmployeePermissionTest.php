@@ -50,7 +50,7 @@ it('denies update without employee-edit permission', function () {
     $this->put(route('employees.update', $employee), [])->assertForbidden();
 });
 
-it('denies destroy without employee-delete permission', function () {
+it('denies activate and deactivate without employee-edit permission', function () {
     $employee = Employee::factory()->create();
-    $this->delete(route('employees.destroy', $employee))->assertForbidden();
+    $this->post(route('employees.bulk-update'), ['ids' => [$employee->id], 'action' => 'deactivate'])->assertForbidden();
 });

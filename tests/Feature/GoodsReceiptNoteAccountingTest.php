@@ -21,6 +21,7 @@ use App\Models\Warehouse;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
@@ -960,4 +961,118 @@ it('refuses to reverse a GRN whose batch a stock adjustment has revalued', funct
     expect($result['success'])->toBeFalse()
         ->and($result['message'])->toContain('revalued')
         ->and($grn->fresh()->status)->toBe('posted');
+});
+
+function postedGrnForReversal(object $test, float $quantity = 100, float $unitCost = 92): GoodsReceiptNote
+{
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $test->supplier->id,
+        'warehouse_id' => $test->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $test->product->id,
+        'stock_uom_id' => $test->uom->id,
+        'purchase_uom_id' => $test->uom->id,
+        'qty_in_purchase_uom' => $quantity,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => $quantity,
+        'extended_value' => $quantity * $unitCost,
+        'fmr_allowance' => 0,
+        'quantity_received' => $quantity,
+        'quantity_accepted' => $quantity,
+        'unit_cost' => $unitCost,
+        'total_cost' => $quantity * $unitCost,
+    ]);
+
+    expect(app(InventoryService::class)->postGrnToInventory($grn->fresh())['success'])->toBeTrue();
+
+    return $grn->fresh();
+}
+
+function grnReversalPermission(object $test, bool $grant = true): void
+{
+    foreach (['goods-receipt-note-list', 'goods-receipt-note-reverse'] as $name) {
+        Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+    }
+
+    $test->user = auth()->user();
+    $test->user->givePermissionTo('goods-receipt-note-list');
+
+    if ($grant) {
+        $test->user->givePermissionTo('goods-receipt-note-reverse');
+    }
+}
+
+it('shows an enabled Reverse GRN button on a posted GRN to a user with the reverse permission', function () {
+    grnReversalPermission($this);
+    $grn = postedGrnForReversal($this);
+
+    $this->get(route('goods-receipt-notes.show', $grn))
+        ->assertSuccessful()
+        ->assertSee('Reverse GRN')
+        ->assertDontSee('Only a posted GRN');
+
+    expect(app(InventoryService::class)->grnReversalRefusal($grn))->toBeNull();
+});
+
+it('hides the Reverse GRN button without the reverse permission', function () {
+    grnReversalPermission($this, grant: false);
+    $grn = postedGrnForReversal($this);
+
+    $this->get(route('goods-receipt-notes.show', $grn))
+        ->assertSuccessful()
+        ->assertDontSee('Reverse GRN');
+});
+
+it('disables the Reverse GRN button and says why once the received stock has been used', function () {
+    grnReversalPermission($this);
+    $grn = postedGrnForReversal($this);
+
+    CurrentStockByBatch::query()->where('product_id', $this->product->id)->update(['quantity_on_hand' => 40]);
+
+    $response = $this->get(route('goods-receipt-notes.show', $grn))->assertSuccessful();
+
+    $response->assertSee('Reverse GRN')->assertSee('has already been issued, sold or adjusted');
+    expect(app(InventoryService::class)->grnReversalRefusal($grn))->toContain('has 40 of the 100 received');
+});
+
+it('reverses a posted GRN from the page after password confirmation and restores stock and ledgers', function () {
+    grnReversalPermission($this);
+
+    $stockBefore = (float) CurrentStock::query()->where('product_id', $this->product->id)->sum('quantity_on_hand');
+    $grn = postedGrnForReversal($this);
+
+    $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'password'])
+        ->assertRedirect(route('goods-receipt-notes.show', $grn))
+        ->assertSessionHas('success');
+
+    expect($grn->fresh()->status)->toBe('reversed')
+        ->and($grn->fresh()->reversed_at)->not->toBeNull()
+        ->and((float) CurrentStock::query()->where('product_id', $this->product->id)->sum('quantity_on_hand'))->toBe($stockBefore)
+        ->and((float) InventoryLedgerEntry::query()->where('product_id', $this->product->id)->sum('debit_qty'))
+        ->toBe((float) InventoryLedgerEntry::query()->where('product_id', $this->product->id)->sum('credit_qty'))
+        ->and((float) DB::table('journal_entry_details as d')
+            ->join('journal_entries as e', 'e.id', '=', 'd.journal_entry_id')
+            ->where('e.status', 'posted')
+            ->selectRaw('SUM(d.debit) - SUM(d.credit) as net')
+            ->value('net'))->toBe(0.0);
+});
+
+it('refuses to reverse with a wrong password or when the stock is already used', function () {
+    grnReversalPermission($this);
+    $grn = postedGrnForReversal($this);
+
+    $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'wrong'])
+        ->assertSessionHas('error');
+    expect($grn->fresh()->status)->toBe('posted');
+
+    CurrentStockByBatch::query()->where('product_id', $this->product->id)->update(['quantity_on_hand' => 10]);
+
+    $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'password'])
+        ->assertSessionHas('error');
+    expect($grn->fresh()->status)->toBe('posted');
 });

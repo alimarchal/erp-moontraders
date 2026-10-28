@@ -5,6 +5,10 @@
     downloads the same sheet as a PDF. Layout uses tables only so the PDF engine renders it too.
 --}}
 @php
+    $exhibits = \App\Services\SettlementAttachmentService::exhibits($settlement);
+    $exhibitNo = $exhibits->pluck('no', 'key');
+    $showAtt = $exhibits->isNotEmpty();
+    $attCell = fn (string $section, $row) => $exhibitNo->get($section.':'.$row->id);
     $netSale = (float) $settlement->items->sum('total_sales_value');
     $creditSalesAmount = (float) ($settlement->credit_sales_amount ?? 0);
     $bankSalesAmount = (float) ($settlement->bank_transfer_amount ?? 0);
@@ -195,6 +199,12 @@
         table.p2-kpis td.bad { background: #e6e6e6; }
 
         .p2-sec { margin-top: 9px; }
+        .p2-att { margin-top: 8px; border: 1px solid #000; page-break-inside: avoid; }
+        .p2-att-head { background: #e6e6e6; border-bottom: 1px solid #000; padding: 3px 6px; font-size: 10px; font-weight: bold; }
+        .p2-att-head small { font-weight: normal; }
+        .p2-att-body { padding: 6px; text-align: center; }
+        .p2-att-body img { max-width: 100%; max-height: {{ $orientation === 'landscape' ? '300px' : '520px' }}; }
+        .p2-att-note { padding: 10px 6px; font-size: 10px; text-align: center; }
         .p2-h2 { margin: 0 0 3px; padding: 3px 2px 2px; border-top: 2.5px solid #000; border-bottom: 1px solid #000; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: .3px; page-break-after: avoid; break-after: avoid; }
         .p2-h2 small, .p2-h3 small { float: right; font-weight: bold; text-transform: none; letter-spacing: 0; font-size: 9px; padding-top: 1px; }
         .p2-h3 { margin: 0; padding: 2px 5px; border: 1px solid #000; border-bottom: 0; font-size: 9.5px; font-weight: bold; text-transform: uppercase; letter-spacing: .3px; page-break-after: avoid; break-after: avoid; }
@@ -373,7 +383,7 @@
         <section class="p2-sec">
             @php $secNo1 = ++$sectionNo; @endphp
                 <table class="p2">
-                    <thead><tr class="cap"><th colspan="6">{{ $secNo1 }} - Credit Sales <small>{{ $settlement->creditSales->count() }} customers - Rs {{ $money($settlement->creditSales->sum('sale_amount')) }}</small></th></tr><tr><th class="i">#</th><th>Customer</th><th>Address</th><th class="n">Prev. balance</th><th class="n">Credit sale</th><th class="n">New balance</th></tr></thead>
+                    <thead><tr class="cap"><th colspan="{{ $showAtt ? 7 : 6 }}">{{ $secNo1 }} - Credit Sales <small>{{ $settlement->creditSales->count() }} customers - Rs {{ $money($settlement->creditSales->sum('sale_amount')) }}</small></th></tr><tr><th class="i">#</th><th>Customer</th><th>Address</th><th class="n">Prev. balance</th><th class="n">Credit sale</th><th class="n">New balance</th>@if ($showAtt)<th class="c">Att.</th>@endif</tr></thead>
                     <tbody>
                         @forelse ($settlement->creditSales as $i => $creditSale)
                             <tr>
@@ -383,11 +393,12 @@
                                 <td class="n">{{ $money($creditSale->previous_balance) }}</td>
                                 <td class="n b">{{ $money($creditSale->sale_amount) }}</td>
                                 <td class="n">{{ $money($creditSale->new_balance) }}</td>
+                                @if ($showAtt)<td class="c">{{ $attCell('credit_sales', $creditSale) ? 'Att. '.$attCell('credit_sales', $creditSale) : '' }}</td>@endif
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="c muted">No credit sales recorded.</td></tr>
+                            <tr><td colspan="{{ $showAtt ? 7 : 6 }}" class="c muted">No credit sales recorded.</td></tr>
                         @endforelse
-                        <tr class="sum"><td colspan="4" class="n">Total credit sales</td><td class="n">{{ $money($settlement->creditSales->sum('sale_amount')) }}</td><td></td></tr>
+                        <tr class="sum"><td colspan="4" class="n">Total credit sales</td><td class="n">{{ $money($settlement->creditSales->sum('sale_amount')) }}</td><td @if ($showAtt) colspan="2" @endif></td></tr>
                     </tbody>
                 </table>
         </section>
@@ -396,7 +407,7 @@
         <section class="p2-sec">
             @php $secNo2 = ++$sectionNo; @endphp
                 <table class="p2">
-                    <thead><tr class="cap"><th colspan="7">{{ $secNo2 }} - Recoveries <small>{{ $settlement->recoveries->count() }} - cash {{ $money($recoveryCash) }} - bank {{ $money($recoveryBank) }}</small></th></tr><tr><th class="i">#</th><th>Customer</th><th>Address</th><th class="n">Prev. balance</th><th class="n">Recovered</th><th class="c">Method</th><th class="n">New balance</th></tr></thead>
+                    <thead><tr class="cap"><th colspan="{{ $showAtt ? 8 : 7 }}">{{ $secNo2 }} - Recoveries <small>{{ $settlement->recoveries->count() }} - cash {{ $money($recoveryCash) }} - bank {{ $money($recoveryBank) }}</small></th></tr><tr><th class="i">#</th><th>Customer</th><th>Address</th><th class="n">Prev. balance</th><th class="n">Recovered</th><th class="c">Method</th><th class="n">New balance</th>@if ($showAtt)<th class="c">Att.</th>@endif</tr></thead>
                     <tbody>
                         @forelse ($settlement->recoveries as $i => $recovery)
                             <tr>
@@ -407,11 +418,12 @@
                                 <td class="n b">{{ $money($recovery->amount) }}</td>
                                 <td class="c">{{ $recovery->payment_method === 'cash' ? 'Cash' : 'Bank' }}</td>
                                 <td class="n">{{ $money($recovery->new_balance) }}</td>
+                                @if ($showAtt)<td class="c">{{ $attCell('recoveries', $recovery) ? 'Att. '.$attCell('recoveries', $recovery) : '' }}</td>@endif
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="c muted">No recoveries recorded.</td></tr>
+                            <tr><td colspan="{{ $showAtt ? 8 : 7 }}" class="c muted">No recoveries recorded.</td></tr>
                         @endforelse
-                        <tr class="sum"><td colspan="4" class="n">Total recoveries</td><td class="n">{{ $money($settlement->recoveries->sum('amount')) }}</td><td colspan="2"></td></tr>
+                        <tr class="sum"><td colspan="4" class="n">Total recoveries</td><td class="n">{{ $money($settlement->recoveries->sum('amount')) }}</td><td colspan="{{ $showAtt ? 3 : 2 }}"></td></tr>
                     </tbody>
                 </table>
         </section>
@@ -421,7 +433,7 @@
                 <div class="p2-h2">{{ ++$sectionNo }} - Cheques &amp; Bank Transfers</div>
                     <div class="p2-h3">Cheque payments <small>Rs {{ $money($chequesTotal) }}</small></div>
                     <table class="p2">
-                        <thead><tr><th class="i">#</th><th class="c">Date</th><th>Cheque #</th><th>Customer</th><th>Bank</th><th>Deposit bank</th><th class="n">Amount</th></tr></thead>
+                        <thead><tr><th class="i">#</th><th class="c">Date</th><th>Cheque #</th><th>Customer</th><th>Bank</th><th>Deposit bank</th><th class="n">Amount</th>@if ($showAtt)<th class="c">Att.</th>@endif</tr></thead>
                         <tbody>
                             @forelse ($settlement->cheques as $i => $cheque)
                                 <tr>
@@ -432,16 +444,17 @@
                                     <td>{{ $cheque->bank_name ?? '-' }}</td>
                                     <td>{{ $cheque->bankAccount->account_name ?? '-' }}</td>
                                     <td class="n b">{{ $money($cheque->amount) }}</td>
+                                    @if ($showAtt)<td class="c">{{ $attCell('cheques', $cheque) ? 'Att. '.$attCell('cheques', $cheque) : '' }}</td>@endif
                                 </tr>
                             @empty
-                                <tr><td colspan="7" class="c muted">No cheques recorded.</td></tr>
+                                <tr><td colspan="{{ $showAtt ? 8 : 7 }}" class="c muted">No cheques recorded.</td></tr>
                             @endforelse
-                            <tr class="sum"><td colspan="6" class="n">Total cheques</td><td class="n">{{ $money($chequesTotal) }}</td></tr>
+                            <tr class="sum"><td colspan="6" class="n">Total cheques</td><td class="n">{{ $money($chequesTotal) }}</td>@if ($showAtt)<td></td>@endif</tr>
                         </tbody>
                     </table>
                     <div class="p2-h3 mt">Bank transfers / online from customers <small>Rs {{ $money($settlement->bankTransfers->sum('amount')) }}</small></div>
                     <table class="p2">
-                        <thead><tr><th class="i">#</th><th class="c">Date</th><th>Customer</th><th>Bank account</th><th>Ref #</th><th class="n">Amount</th></tr></thead>
+                        <thead><tr><th class="i">#</th><th class="c">Date</th><th>Customer</th><th>Bank account</th><th>Ref #</th><th class="n">Amount</th>@if ($showAtt)<th class="c">Att.</th>@endif</tr></thead>
                         <tbody>
                             @forelse ($settlement->bankTransfers as $i => $transfer)
                                 <tr>
@@ -451,11 +464,12 @@
                                     <td>{{ $transfer->bankAccount->account_name ?? '-' }}</td>
                                     <td>{{ $transfer->reference_number ?? '-' }}</td>
                                     <td class="n b">{{ $money($transfer->amount) }}</td>
+                                    @if ($showAtt)<td class="c">{{ $attCell('bank_transfers', $transfer) ? 'Att. '.$attCell('bank_transfers', $transfer) : '' }}</td>@endif
                                 </tr>
                             @empty
-                                <tr><td colspan="6" class="c muted">No bank transfers recorded.</td></tr>
+                                <tr><td colspan="{{ $showAtt ? 7 : 6 }}" class="c muted">No bank transfers recorded.</td></tr>
                             @endforelse
-                            <tr class="sum"><td colspan="5" class="n">Total bank transfers</td><td class="n">{{ $money($settlement->bankTransfers->sum('amount')) }}</td></tr>
+                            <tr class="sum"><td colspan="5" class="n">Total bank transfers</td><td class="n">{{ $money($settlement->bankTransfers->sum('amount')) }}</td>@if ($showAtt)<td></td>@endif</tr>
                         </tbody>
                     </table>
             </section>
@@ -685,6 +699,31 @@
                 </tbody>
             </table>
         </section>
+
+        @if ($exhibits->isNotEmpty())
+            <section class="p2-sec" style="page-break-before: always;">
+                <div class="p2-h2">Attachments <small>{{ $exhibits->count() }} {{ \Illuminate\Support\Str::plural('file', $exhibits->count()) }} - {{ $settlement->settlement_number }}</small></div>
+                @foreach ($exhibits as $exhibit)
+                    <div class="p2-att">
+                        <div class="p2-att-head">Att. {{ $exhibit['no'] }} - {{ $exhibit['label'] }}: {{ $exhibit['title'] }}
+                            <small>{{ $exhibit['reference'] !== '' ? ' - '.$exhibit['reference'] : '' }} - Rs {{ $money($exhibit['amount']) }}</small></div>
+                        @php $imageUri = $exhibit['is_pdf'] ? null : \App\Services\SettlementAttachmentService::imageDataUri($exhibit['path']); @endphp
+                        @if ($imageUri)
+                            <div class="p2-att-body"><img src="{{ $imageUri }}" alt="Att. {{ $exhibit['no'] }}"></div>
+                        @else
+                            <div class="p2-att-note">
+                                @if ($exhibit['is_pdf'])
+                                    <b>PDF attachment</b> - this is a separate PDF document. Open it from the link below and print it separately.
+                                @else
+                                    Image could not be embedded. Open it from the link below.
+                                @endif
+                                <br><a href="{{ $exhibit['url'] }}">{{ $exhibit['url'] }}</a>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </section>
+        @endif
 
         @if ($settlement->notes)
             <div class="p2-notes"><b>Notes:</b> {{ $settlement->notes }}</div>

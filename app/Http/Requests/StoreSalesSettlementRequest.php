@@ -40,6 +40,37 @@ class StoreSalesSettlementRequest extends FormRequest
                 ]);
             }
         }
+
+        // A "New Expense" line that was added but left empty (no account, no amount) is ignored.
+        if (is_array($this->expenses)) {
+            $this->merge([
+                'expenses' => array_values(array_filter($this->expenses, fn ($expense) => ! (
+                    empty($expense['expense_account_id']) && (float) ($expense['amount'] ?? 0) === 0.0
+                ))),
+            ]);
+        }
+    }
+
+    /**
+     * Plain-language validation messages that point at the row the user has to fix.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'expenses.*.expense_account_id.required_with' => 'Expense line :position has an amount but no expense account. Select an account for it or remove the line.',
+            'expenses.*.expense_account_id.exists' => 'Expense line :position has an invalid expense account. Please select it again.',
+            'recoveries_entries.*.bank_account_id.required_if' => 'Recovery :position is a bank/online recovery, so a bank account must be selected.',
+            'recoveries_entries.*.bank_account_id.exists' => 'Recovery :position has an invalid bank account. Please select the bank account again.',
+            'bank_transfers.*.bank_account_id.required_with' => 'Bank transfer :position needs a bank account.',
+            'bank_transfers.*.bank_account_id.exists' => 'Bank transfer :position has an invalid bank account. Please select it again.',
+            'bank_slips.*.bank_account_id.required_with' => 'Bank slip :position needs a bank account.',
+            'bank_slips.*.bank_account_id.exists' => 'Bank slip :position has an invalid bank account. Please select it again.',
+            'attachment_files.*.mimes' => 'Attachments must be a PDF, JPG, PNG or WEBP file.',
+            'attachment_files.*.max' => 'An attachment is larger than the allowed size.',
+            'attachment_files.*.uploaded' => 'An attachment could not be uploaded. Please try a smaller file.',
+        ];
     }
 
     /**

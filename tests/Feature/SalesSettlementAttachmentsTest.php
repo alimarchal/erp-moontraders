@@ -277,3 +277,31 @@ it('deletes attachment files when a draft settlement is deleted', function () {
 
     expect(Storage::disk('local')->exists($path))->toBeFalse();
 });
+
+it('ignores an empty expense line instead of failing the whole settlement', function () {
+    $this->actingAs($this->user)
+        ->post(route('sales-settlements.store'), attachmentPayload([
+            'expenses' => [['expense_account_id' => '', 'description' => '', 'amount' => 0]],
+        ]))
+        ->assertSessionHasNoErrors();
+});
+
+it('explains which line is wrong when an expense has an amount but no account', function () {
+    $response = $this->actingAs($this->user)
+        ->postJson(route('sales-settlements.store'), attachmentPayload([
+            'expenses' => [['expense_account_id' => '', 'amount' => 150]],
+        ]));
+
+    $response->assertStatus(422);
+    expect($response->json('errors')['expenses.0.expense_account_id'][0])->toContain('Expense line 1');
+});
+
+it('explains an invalid bank account on a bank recovery', function () {
+    $response = $this->actingAs($this->user)
+        ->postJson(route('sales-settlements.store'), attachmentPayload([
+            'recoveries_entries' => json_encode([['customer_id' => $this->customer->id, 'payment_method' => 'bank_transfer', 'bank_account_id' => 99999, 'amount' => 50]]),
+        ]));
+
+    $response->assertStatus(422);
+    expect($response->json('errors')['recoveries_entries.0.bank_account_id'][0])->toContain('Recovery 1');
+});

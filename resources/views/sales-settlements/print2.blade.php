@@ -84,10 +84,10 @@
             $amount = $advanceTaxIncomeTotal;
             $label .= ' - Income';
         }
-        $groupExpenseRows[] = ['label' => $label, 'code' => $predef['code'], 'amount' => $amount];
+        $groupExpenseRows[] = ['label' => $label, 'code' => $predef['code'], 'amount' => $amount, 'description' => $savedExpenseAmounts->get($accountId)?->description];
     }
     foreach ($settlement->expenses->reject(fn ($expense) => in_array($expense->expense_account_id, $predefinedIds)) as $expense) {
-        $groupExpenseRows[] = ['label' => $expense->expenseAccount->account_name ?? 'Unknown', 'code' => $expense->expenseAccount->account_code ?? '-', 'amount' => (float) $expense->amount];
+        $groupExpenseRows[] = ['label' => $expense->expenseAccount->account_name ?? 'Unknown', 'code' => $expense->expenseAccount->account_code ?? '-', 'amount' => (float) $expense->amount, 'description' => $expense->description];
     }
 
     // Cash notes
@@ -487,50 +487,46 @@
         @endphp
         <section class="p2-sec">
             <div class="p2-h2">{{ ++$sectionNo }} - Expense Details <small>total expenses Rs {{ $money($totalExpenses) }}</small></div>
-            @if ($productDetailTables)
-                <table class="lay"><tr>
-                    @foreach ($productDetailTables as $detail)
-                        @if (! $loop->first)<td class="gap"></td>@endif
-                        <td style="width:{{ count($productDetailTables) > 1 ? '50%' : '100%' }}">
-                            <div class="p2-h3">{{ $detail['title'] }} <small>{{ $detail['rows']->count() }} items - Rs {{ $money($detail['rows']->sum('amount')) }}</small></div>
-                            <table class="p2">
-                                <thead><tr><th class="i">#</th><th>Product</th><th class="n">Qty</th><th class="n">Amount</th></tr></thead>
-                                <tbody>
-                                    @forelse ($detail['rows'] as $i => $row)
-                                        <tr>
-                                            <td class="i">{{ $i + 1 }}</td>
-                                            <td>{{ $row->product->product_name ?? '-' }}</td>
-                                            <td class="n">{{ $money($row->quantity) }}</td>
-                                            <td class="n b">{{ $money($row->amount) }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="4" class="c muted">None recorded.</td></tr>
-                                    @endforelse
-                                    <tr class="sum"><td colspan="3" class="n">Total</td><td class="n">{{ $money($detail['rows']->sum('amount')) }}</td></tr>
-                                </tbody>
-                            </table>
-                        </td>
-                    @endforeach
-                </tr></table>
-            @endif
-            @foreach ($customerDetailTables as $detail)
-                @php $amountField = $detail['kind'] === 'tax' ? 'tax_amount' : 'amount'; @endphp
-                <div class="p2-h3 mt">{{ $detail['title'] }} <small>{{ $detail['rows']->count() }} customers - Rs {{ $money($detail['rows']->sum($amountField)) }}</small></div>
+            @foreach ($expenseDetailTables as $detail)
+                @php
+                    $amountField = $detail['kind'] === 'tax' ? 'tax_amount' : 'amount';
+                    $emptyText = ['product' => 'None recorded.', 'tax' => 'None recorded.', 'pct' => 'None recorded.'][$detail['kind']];
+                @endphp
+                <div class="p2-h3 {{ $loop->first ? '' : 'mt' }}">{{ $detail['title'] }} <small>{{ $detail['rows']->count() }} {{ $detail['kind'] === 'product' ? 'items' : 'customers' }} - Rs {{ $money($detail['rows']->sum($amountField)) }}</small></div>
                 <table class="p2">
-                    <thead><tr><th class="i">#</th><th>Customer</th><th class="c">Code</th><th class="c">Invoice #</th><th class="n">{{ $detail['kind'] === 'tax' ? 'Tax' : 'Amount' }}</th></tr></thead>
+                    @if ($detail['kind'] === 'product')
+                        <thead><tr><th class="i">#</th><th>Product</th><th>Batch</th><th class="n">Qty</th><th class="n">Amount</th><th>Notes</th></tr></thead>
+                    @elseif ($detail['kind'] === 'tax')
+                        <thead><tr><th class="i">#</th><th>Customer</th><th class="c">Invoice #</th><th class="n">Sale amount</th><th class="n">Rate %</th><th class="n">Tax</th><th>Notes</th></tr></thead>
+                    @else
+                        <thead><tr><th class="i">#</th><th>Customer</th><th class="c">Invoice #</th><th class="n">Amount</th><th>Notes</th></tr></thead>
+                    @endif
                     <tbody>
                         @forelse ($detail['rows'] as $i => $row)
                             <tr>
                                 <td class="i">{{ $i + 1 }}</td>
-                                <td>{{ $row->customer->customer_name ?? '-' }}</td>
-                                <td class="c">{{ $row->customer->customer_code ?? '' }}</td>
-                                <td class="c">{{ $row->invoice_number ?? '-' }}</td>
-                                <td class="n b">{{ $money($row->{$amountField}) }}</td>
+                                @if ($detail['kind'] === 'product')
+                                    <td>{{ $row->product->product_name ?? '-' }}</td>
+                                    <td>{{ $row->batch_code ?: '-' }}</td>
+                                    <td class="n">{{ $money($row->quantity) }}</td>
+                                    <td class="n b">{{ $money($row->amount) }}</td>
+                                @elseif ($detail['kind'] === 'tax')
+                                    <td>{{ $row->customer->customer_name ?? '-' }}{{ $row->customer?->customer_code ? ' ('.$row->customer->customer_code.')' : '' }}</td>
+                                    <td class="c">{{ $row->invoice_number ?: '-' }}</td>
+                                    <td class="n">{{ $money($row->sale_amount) }}</td>
+                                    <td class="n">{{ $money($row->tax_rate) }}</td>
+                                    <td class="n b">{{ $money($row->tax_amount) }}</td>
+                                @else
+                                    <td>{{ $row->customer->customer_name ?? '-' }}{{ $row->customer?->customer_code ? ' ('.$row->customer->customer_code.')' : '' }}</td>
+                                    <td class="c">{{ $row->invoice_number ?: '-' }}</td>
+                                    <td class="n b">{{ $money($row->amount) }}</td>
+                                @endif
+                                <td>{{ $row->notes ?: '-' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="c muted">None recorded.</td></tr>
+                            <tr><td colspan="{{ ['product' => 6, 'tax' => 7, 'pct' => 5][$detail['kind']] }}" class="c muted">{{ $emptyText }}</td></tr>
                         @endforelse
-                        <tr class="sum"><td colspan="4" class="n">Total</td><td class="n">{{ $money($detail['rows']->sum($amountField)) }}</td></tr>
+                        <tr class="sum"><td colspan="{{ ['product' => 4, 'tax' => 5, 'pct' => 3][$detail['kind']] }}" class="n">Total</td><td class="n">{{ $money($detail['rows']->sum($amountField)) }}</td><td></td></tr>
                     </tbody>
                 </table>
             @endforeach
@@ -543,17 +539,18 @@
                 <td style="width:50%">
                     <div class="p2-h3">Group expenses <small>paid by salesman from cash</small></div>
                     <table class="p2">
-                        <thead><tr><th class="i">#</th><th>Expense account</th><th class="c">COA</th><th class="n">Amount</th></tr></thead>
+                        <thead><tr><th class="i">#</th><th>Expense account</th><th class="c">COA</th><th>Description</th><th class="n">Amount</th></tr></thead>
                         <tbody>
                             @foreach ($groupExpenseRows as $i => $row)
                                 <tr>
                                     <td class="i">{{ $i + 1 }}</td>
                                     <td>{{ $row['label'] }}</td>
                                     <td class="c">{{ $row['code'] }}</td>
+                                    <td>{{ $row['description'] ?? '' }}</td>
                                     <td class="n {{ $row['amount'] > 0 ? 'b' : 'muted' }}">{{ $money($row['amount']) }}</td>
                                 </tr>
                             @endforeach
-                            <tr class="sum"><td colspan="3" class="n">Total expenses</td><td class="n">{{ $money($totalExpenses) }}</td></tr>
+                            <tr class="sum"><td colspan="4" class="n">Total expenses</td><td class="n">{{ $money($totalExpenses) }}</td></tr>
                         </tbody>
                     </table>
                     <div class="p2-h3 mt">Cash check</div>
@@ -570,26 +567,7 @@
                 </td>
                 <td class="gap"></td>
                 <td style="width:50%">
-                    <div class="p2-h3">Bank slips / deposits by salesman <small>Rs {{ $money($bankSlipsTotal) }}</small></div>
-                        <table class="p2">
-                            <thead><tr><th class="i">#</th><th>Bank</th><th>Ref #</th><th class="c">Date</th><th class="n">Amount</th></tr></thead>
-                            <tbody>
-                                @forelse ($settlement->bankSlips as $i => $slip)
-                                    <tr>
-                                        <td class="i">{{ $i + 1 }}</td>
-                                        <td>{{ $slip->bankAccount->account_name ?? '-' }}</td>
-                                        <td>{{ $slip->reference_number ?? '-' }}</td>
-                                        <td class="c">{{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}</td>
-                                        <td class="n b">{{ $money($slip->amount) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="5" class="c muted">No bank slips.</td></tr>
-                                @endforelse
-                                <tr class="sum"><td colspan="4" class="n">Total bank slips</td><td class="n">{{ $money($bankSlipsTotal) }}</td></tr>
-                            </tbody>
-                        </table>
-
-                    <div class="p2-h3 mt">Physical cash (notes counted) <small>Rs {{ $money($calculatedCash) }}</small></div>
+                    <div class="p2-h3">Physical cash (notes counted) <small>Rs {{ $money($calculatedCash) }}</small></div>
                         <table class="p2">
                             <thead><tr><th>Note</th><th class="n">Qty</th><th class="n">Value</th></tr></thead>
                             <tbody>
@@ -603,6 +581,26 @@
 
                 </td>
             </tr></table>
+            <div class="p2-h3 mt">Bank slips / deposits by salesman <small>Rs {{ $money($bankSlipsTotal) }}</small></div>
+            <table class="p2">
+                <thead><tr><th class="i">#</th><th>Bank</th><th>Ref #</th><th class="c">Date</th><th class="n">Amount</th><th>Notes</th>@if ($showAtt)<th class="c">Att.</th>@endif</tr></thead>
+                <tbody>
+                    @forelse ($settlement->bankSlips as $i => $slip)
+                        <tr>
+                            <td class="i">{{ $i + 1 }}</td>
+                            <td>{{ $slip->bankAccount->account_name ?? '-' }}</td>
+                            <td>{{ $slip->reference_number ?: '-' }}</td>
+                            <td class="c">{{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}</td>
+                            <td class="n b">{{ $money($slip->amount) }}</td>
+                            <td>{{ $slip->notes ?: '-' }}</td>
+                            @if ($showAtt)<td class="c">{{ $attCell('bank_slips', $slip) ? 'Att. '.$attCell('bank_slips', $slip) : '' }}</td>@endif
+                        </tr>
+                    @empty
+                        <tr><td colspan="{{ $showAtt ? 7 : 6 }}" class="c muted">No bank slips recorded.</td></tr>
+                    @endforelse
+                    <tr class="sum"><td colspan="4" class="n">Total bank slips</td><td class="n">{{ $money($bankSlipsTotal) }}</td><td @if ($showAtt) colspan="2" @endif></td></tr>
+                </tbody>
+            </table>
         </section>
 
         {{-- Sales summary and profit --}}

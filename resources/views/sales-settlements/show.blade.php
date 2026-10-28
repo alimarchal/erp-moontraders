@@ -636,197 +636,7 @@
                     <div class="border-2 border-black rounded-lg px-2 pb-2 mt-2">
                         <h3 class="font-bold text-md text-center text-black  pb-1">Expense Details</h3>
 
-                        {{-- Row 1: AMR Powder | AMR Liquid --}}
-                        @php
-                            $amrPowderCount = $settlement->amrPowders->count();
-                            $amrLiquidCount = $settlement->amrLiquids->count();
-                            $maxRowsAmr = max($amrPowderCount, $amrLiquidCount, 1);
-                        @endphp
-
-                        <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2">
-                            {{-- AMR Powder --}}
-                            <div>
-                                <h4 class="font-bold text-sm border-x border-t border-black  text-center">AMR Powder
-                                    (5252)</h4>
-                                <table class="report-table w-full">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="text-center w-6 px-1 py-0.5">#</th>
-                                            <th class="text-center px-1 py-0.5">
-                                                <span class="print:hidden"><x-tooltip
-                                                        text="Product Name">SKU</x-tooltip></span>
-                                                <span class="hidden print:inline">Product</span>
-                                            </th>
-                                            <th class="text-center px-1 py-0.5">Qty</th>
-                                            <th class="text-center px-1 py-0.5">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="tabular-nums">
-                                        @for($i = 0; $i < $maxRowsAmr; $i++)
-                                            @php $powder = $settlement->amrPowders->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
-                                                <td class="px-1 py-0.5">{{ $powder?->product->product_name ?? '-' }}</td>
-                                                <td class="text-right px-1 py-0.5">
-                                                    {{ $powder ? number_format($powder->quantity, 2) : '-' }}
-                                                </td>
-                                                <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $powder ? number_format($powder->amount, 2) : '-' }}
-                                                </td>
-                                            </tr>
-                                        @endfor
-                                    </tbody>
-                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                        <tr>
-                                            <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
-                                            <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->amrPowders->sum('amount'), 2) }}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            {{-- AMR Liquid --}}
-                            <div>
-                                <h4 class="font-bold text-sm border-x border-t border-black   text-center">AMR Liquid
-                                    (5262)</h4>
-                                <table class="report-table w-full">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="text-center w-6 px-1 py-0.5">#</th>
-                                            <th class="text-center px-1 py-0.5">
-                                                <span class="print:hidden"><x-tooltip
-                                                        text="Product Name">SKU</x-tooltip></span>
-                                                <span class="hidden print:inline">Product</span>
-                                            </th>
-                                            <th class="text-center px-1 py-0.5">Qty</th>
-                                            <th class="text-center px-1 py-0.5">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="tabular-nums">
-                                        @for($i = 0; $i < $maxRowsAmr; $i++)
-                                            @php $liquid = $settlement->amrLiquids->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
-                                                <td class="px-1 py-0.5">{{ $liquid?->product->product_name ?? '-' }}</td>
-                                                <td class="text-right px-1 py-0.5">
-                                                    {{ $liquid ? number_format($liquid->quantity, 2) : '-' }}
-                                                </td>
-                                                <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $liquid ? number_format($liquid->amount, 2) : '-' }}
-                                                </td>
-                                            </tr>
-                                        @endfor
-                                    </tbody>
-                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                        <tr>
-                                            <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
-                                            <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->amrLiquids->sum('amount'), 2) }}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-
-                        {{-- Row 2: Advance Tax | Percentage Expense --}}
-                        @php
-                            $advTaxCount = $advanceTaxEntries->count();
-                            $pctExpCount = $settlement->percentageExpenses->count();
-                            $maxRowsTax = max($advTaxCount, $pctExpCount, 1);
-                        @endphp
-
-                        <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
-                            {{-- Advance Tax --}}
-                            <div>
-                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance
-                                    Tax{{ $usesAdvanceTaxIncome ? ' - Income' : '' }}
-                                    Benifits To NTN Customer
-                                    (1161)</h4>
-                                <table class="report-table w-full">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="text-center w-6 px-1 py-0.5">#</th>
-                                            <th class="text-center px-1 py-0.5">
-                                                <span class="print:hidden"><x-tooltip
-                                                        text="Customer Name (Code)">Customer</x-tooltip></span>
-                                                <span class="hidden print:inline">Customer</span>
-                                            </th>
-                                            <th class="text-center px-1 py-0.5">Inv #</th>
-                                            <th class="text-center px-1 py-0.5">Tax</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="tabular-nums">
-                                        @for($i = 0; $i < $maxRowsTax; $i++)
-                                            @php $tax = $advanceTaxEntries->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
-                                                <td class="px-1 py-0.5">
-                                                    {{ $tax ? $tax->customer->customer_name . ' (' . $tax->customer->customer_code . ')' : '-' }}
-                                                </td>
-                                                <td class="text-right px-1 py-0.5">{{ $tax?->invoice_number ?? '-' }}</td>
-                                                <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $tax ? number_format($tax->tax_amount, 2) : '-' }}
-                                                </td>
-                                            </tr>
-                                        @endfor
-                                    </tbody>
-                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                        <tr>
-                                            <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
-                                            <td class="text-right px-1 py-0.5">
-                                                {{ number_format($advanceTaxEntries->sum('tax_amount'), 2) }}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            {{-- Percentage Expense --}}
-                            <div>
-                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Percentage
-                                    Expense (5223)</h4>
-                                <table class="report-table w-full">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="text-center w-6 px-1 py-0.5">#</th>
-                                            <th class="text-center px-1 py-0.5">
-                                                <span class="print:hidden"><x-tooltip
-                                                        text="Customer Name (Code)">Customer</x-tooltip></span>
-                                                <span class="hidden print:inline">Customer</span>
-                                            </th>
-                                            <th class="text-center px-1 py-0.5">Inv #</th>
-                                            <th class="text-center px-1 py-0.5">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="tabular-nums">
-                                        @for($i = 0; $i < $maxRowsTax; $i++)
-                                            @php $pctExp = $settlement->percentageExpenses->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
-                                                <td class="px-1 py-0.5">
-                                                    {{ $pctExp ? $pctExp->customer->customer_name . ' (' . $pctExp->customer->customer_code . ')' : '-' }}
-                                                </td>
-                                                <td class="px-1 py-0.5">{{ $pctExp?->invoice_number ?? '-' }}</td>
-                                                <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $pctExp ? number_format($pctExp->amount, 2) : '-' }}
-                                                </td>
-                                            </tr>
-                                        @endfor
-                                    </tbody>
-                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                        <tr>
-                                            <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
-                                            <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->percentageExpenses->sum('amount'), 2) }}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
+                        @include('sales-settlements.partials.expense-details')
 
                         {{-- Other Expenses --}}
                         @php
@@ -873,6 +683,7 @@
                                     $amount = $advanceTaxIncomeTotal;
                                 }
                                 $groupExpenseRows[] = [
+                                    'description' => $savedExpense?->description,
                                     'label' => $usesAdvanceTaxIncome && $predef['code'] === '1161'
                                         ? $predef['label'] . ' - Income'
                                         : $predef['label'],
@@ -884,6 +695,7 @@
                             }
                             foreach ($additionalExpenses as $expense) {
                                 $groupExpenseRows[] = [
+                                    'description' => $expense->description,
                                     'label' => $expense->expenseAccount->account_name ?? 'Unknown',
                                     'code' => $expense->expenseAccount->account_code ?? '-',
                                     'amount' => $expense->amount,
@@ -935,10 +747,10 @@
                         <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Expenses &
                             Cash/Bank Deposits Detail</h3>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-1 items-start print:flex print:gap-1"
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-1 items-start print:flex print:gap-1"
                             style="page-break-inside: avoid; break-inside: avoid;">
                             {{-- 1. Group Expenses --}}
-                            <div class="flex flex-col h-full print:w-1/3">
+                            <div class="flex flex-col h-full print:w-1/2">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center">Group Expenses
                                 </h4>
                                 <table class="report-table w-full flex-grow tabular-nums">
@@ -947,6 +759,7 @@
                                             <th class="text-center w-6 px-1 py-0.5">#</th>
                                             <th class="text-left px-1 py-0.5">Expense Account</th>
                                             <th class="text-center px-1 py-0.5">COA Code</th>
+                                            <th class="text-left px-1 py-0.5">Description</th>
                                             <th class="text-right px-1 py-0.5">Amount</th>
                                         </tr>
                                     </thead>
@@ -967,10 +780,12 @@
                                                             {{ $expRow['code'] }}
                                                         @endif
                                                     </td>
+                                                    <td class="px-1 py-0.5 text-xs" style="white-space:normal">{{ $expRow['description'] ?? '' }}</td>
                                                     <td class="text-right font-bold px-1 py-0.5">
                                                         {{ number_format($expRow['amount'], 2) }}
                                                     </td>
                                                 @else
+                                                    <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                                     <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                                     <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
                                                     <td class="text-right font-bold px-1 py-0.5 border-none">&nbsp;</td>
@@ -980,7 +795,7 @@
                                     </tbody>
                                     <tfoot class="bg-gray-50 font-bold">
                                         <tr>
-                                            <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:
+                                            <td colspan="4" class="text-right px-1 py-0.5 border-t border-black">Total:
                                             </td>
                                             <td class="text-right px-1 py-0.5 border-t border-black">
                                                 {{ number_format($settlement->expenses->sum('amount'), 2) }}
@@ -991,7 +806,7 @@
                             </div>
 
                             {{-- 2. Cash Detail --}}
-                            <div class="flex flex-col h-full print:w-1/3">
+                            <div class="flex flex-col h-full print:w-1/2">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center">Cash Detail
                                 </h4>
                                 <table class="report-table w-full flex-grow tabular-nums">
@@ -1034,60 +849,8 @@
                                 </table>
                             </div>
 
-                            {{-- 3. Bank Slips / Deposits --}}
-                            <div class="flex flex-col h-full print:w-1/3">
-                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips /
-                                    Deposits to Bank From Salesman</h4>
-                                <table class="report-table w-full flex-grow tabular-nums">
-                                    <thead>
-                                        <tr class="bg-gray-100">
-                                            <th class="text-center w-8 px-1 py-0.5">#</th>
-                                            <th class="text-left px-1 py-0.5">Bank</th>
-                                            <th class="text-center px-1 py-0.5">Date</th>
-                                            <th class="text-right px-1 py-0.5">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @php $slipCount = 0; @endphp
-                                        @foreach($settlement->bankSlips as $index => $slip)
-                                            @php $slipCount++; @endphp
-                                            <tr>
-                                                <td class="text-center px-1 py-0.5">{{ $index + 1 }}</td>
-                                                <td class="px-1 py-0.5 text-xs">
-                                                    {{ $slip->bankAccount->account_name ?? '-' }}
-                                                    <x-settlement-attachment-link :row="$slip" />
-                                                </td>
-                                                <td class="text-center px-1 py-0.5 text-xs">
-                                                    {{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}
-                                                </td>
-                                                <td class="text-right px-1 py-0.5 font-bold">
-                                                    {{ number_format($slip->amount, 2) }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-
-                                        {{-- Filler rows for height symmetry --}}
-                                        @for($i = $slipCount + 1; $i <= $maxRowsExp; $i++)
-                                            <tr>
-                                                <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
-                                                <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                                <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
-                                                <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
-                                            </tr>
-                                        @endfor
-                                    </tbody>
-                                    <tfoot class="bg-gray-50 font-bold">
-                                        <tr>
-                                            <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total
-                                                Bank Slips:</td>
-                                            <td class="text-right px-1 py-0.5 border-t border-black">
-                                                {{ number_format($settlement->bankSlips->sum('amount'), 2) }}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
                         </div>
+                        @include('sales-settlements.partials.bank-slips')
                     </div>
 
 

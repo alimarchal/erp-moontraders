@@ -147,6 +147,8 @@
                     </div>
                 </div>
 
+                <div><x-settlement-attachment-field /></div>
+
                 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-100">
@@ -158,13 +160,14 @@
                                 <th class="px-2 py-1 text-left text-gray-700">Deposit Bank</th>
                                 <th class="px-2 py-1 text-left text-gray-700">Cheque Date</th>
                                 <th class="px-2 py-1 text-right text-gray-700">Amount (₨)</th>
+                                <th class="px-2 py-1 text-center text-gray-700">Attachment</th>
                                 <th class="px-2 py-1 text-center text-gray-700">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-if="entries.length === 0">
                                 <tr>
-                                    <td colspan="8" class="px-2 py-4 text-center text-gray-500 italic">
+                                    <td colspan="9" class="px-2 py-4 text-center text-gray-500 italic">
                                         No cheque payment entries added yet.
                                     </td>
                                 </tr>
@@ -179,6 +182,7 @@
                                     <td class="px-2 py-1.5 text-gray-800" x-text="formatDate(entry.cheque_date)"></td>
                                     <td class="px-2 py-1.5 text-right font-semibold text-green-700"
                                         x-text="formatCurrency(entry.amount)"></td>
+                                    <td class="px-2 py-1.5 text-center"><x-settlement-attachment-cell /></td>
                                     <td class="px-2 py-1.5 text-center">
                                         <button type="button" @click="removeEntry(index)"
                                             class="text-red-600 hover:text-red-800 text-xs font-semibold">
@@ -194,6 +198,7 @@
                                 <td class="px-2 py-2 text-right font-bold text-green-900"
                                     x-text="formatCurrency(total)"></td>
                                 <td class="px-2 py-2"></td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -223,6 +228,7 @@
                     show: false,
                     customers,
                     bankAccounts,
+                    pendingAttachment: null,
                     form: {
                         customer_id: '',
                         bank_account_id: '',
@@ -318,6 +324,8 @@
                         const bankAccountName = this.bankAccountName(bankAccountId);
 
                         this.entries.push({
+
+                            ...(window.SettlementAttachments ? (SettlementAttachments.entryFields(this.pendingAttachment)) : {}),
                             customer_id: customerId,
                             customer_name: customerName,
                             bank_account_id: bankAccountId,
@@ -329,6 +337,8 @@
                         });
 
                         // Reset form
+
+                        this.pendingAttachment = null;
                         this.form.customer_id = '';
                         this.form.bank_account_id = '';
                         this.form.cheque_number = '';

@@ -128,6 +128,8 @@
                     </div>
                 </div>
 
+                <div><x-settlement-attachment-field /></div>
+
                 <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                     <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 border-b border-green-300">
                         <h4 class="text-sm font-bold text-white flex items-center gap-2">
@@ -167,6 +169,7 @@
                                         <th class="px-2 py-1 text-right text-gray-700 font-semibold">Credit Sale</th>
                                         <th class="px-2 py-1 text-right text-gray-700 font-semibold">New Balance</th>
                                         <th class="px-2 py-1 text-left text-gray-700 font-semibold">Notes</th>
+                                        <th class="px-2 py-1 text-center text-gray-700 font-semibold">Attachment</th>
                                         <th class="px-2 py-1 text-center text-gray-700 font-semibold">Action</th>
                                     </tr>
                                 </thead>
@@ -203,6 +206,7 @@
                                             <td class="px-2 py-1.5">
                                                 <span class="text-gray-600 text-xs" x-text="entry.notes || '-'"></span>
                                             </td>
+                                            <td class="px-2 py-1.5 text-center"><x-settlement-attachment-cell /></td>
                                             <td class="px-2 py-1.5 text-center">
                                                 <button type="button" @click="removeEntry(index)"
                                                     class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors">
@@ -240,7 +244,8 @@
                                                 x-text="formatCurrency(newBalanceTotal)"></span>
                                         </td>
                                         <td colspan="2"></td>
-                                    </tr>
+                                        <td></td>
+                            </tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -272,6 +277,7 @@
                     customers,
                     employeeId,
                     loadingCustomers: false,
+                    pendingAttachment: null,
                     form: {
                         customer_id: '',
                         invoice_number: '',
@@ -465,6 +471,8 @@
                         const invoiceNumber = this.form.invoice_number;
 
                         this.entries.push({
+
+                            ...(window.SettlementAttachments ? (SettlementAttachments.entryFields(this.pendingAttachment)) : {}),
                             customer_id: customerId,
                             customer_name: customerName,
                             invoice_number: invoiceNumber,
@@ -477,6 +485,8 @@
                         this.invoiceCounter++;
 
                         // Reset form
+
+                        this.pendingAttachment = null;
                         this.form.customer_id = '';
                         this.form.invoice_number = 'CSI-' + this.getDateCode() + '-' + String(this.invoiceCounter).padStart(5, '0');
                         this.form.previous_balance = 0;

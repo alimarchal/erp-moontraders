@@ -103,6 +103,8 @@
                         placeholder="Additional details..." @keydown.enter.prevent="addEntry()" />
                 </div>
 
+                <div><x-settlement-attachment-field /></div>
+
                 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm mt-4">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-100">
@@ -112,13 +114,14 @@
                                 <th class="px-2 py-1 text-left text-gray-700">Date/Ref</th>
                                 <th class="px-2 py-1 text-left text-gray-700">Note</th>
                                 <th class="px-2 py-1 text-right text-gray-700">Amount (₨)</th>
+                                <th class="px-2 py-1 text-center text-gray-700">Attachment</th>
                                 <th class="px-2 py-1 text-center text-gray-700">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-if="entries.length === 0">
                                 <tr class="bg-white">
-                                    <td colspan="6" class="px-2 py-4 text-center text-gray-500 italic">
+                                    <td colspan="7" class="px-2 py-4 text-center text-gray-500 italic">
                                         No bank slips added yet.
                                     </td>
                                 </tr>
@@ -134,6 +137,7 @@
                                     <td class="px-2 py-1.5 text-gray-800" x-text="entry.note || '-'"></td>
                                     <td class="px-2 py-1.5 text-right font-semibold text-green-700"
                                         x-text="formatCurrency(entry.amount)"></td>
+                                    <td class="px-2 py-1.5 text-center"><x-settlement-attachment-cell /></td>
                                     <td class="px-2 py-1.5 text-center">
                                         <button type="button" @click="removeEntry(index)"
                                             class="text-red-600 hover:text-red-800 text-xs font-semibold">
@@ -149,6 +153,7 @@
                                 <td class="px-2 py-2 text-right font-bold text-green-900" x-text="formatCurrency(total)">
                                 </td>
                                 <td class="px-2 py-2"></td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -177,6 +182,7 @@
         return {
             show: false,
             bankAccounts,
+            pendingAttachment: null,
             form: {
                 bank_account_id: '',
                 deposit_date: new Date().toISOString().split('T')[0],
@@ -242,6 +248,8 @@
                 const bankAccountName = this.bankAccountName(bankAccountId);
 
                 this.entries.push({
+
+                    ...(window.SettlementAttachments ? (SettlementAttachments.entryFields(this.pendingAttachment)) : {}),
                     bank_account_id: bankAccountId,
                     bank_account_name: bankAccountName,
                     deposit_date: depositDate,
@@ -251,6 +259,8 @@
                 });
 
                 // Reset form
+
+                this.pendingAttachment = null;
                 this.form.bank_account_id = '';
                 this.form.deposit_date = new Date().toISOString().split('T')[0];
                 this.form.reference_number = '';

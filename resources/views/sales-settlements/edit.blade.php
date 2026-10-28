@@ -51,6 +51,7 @@
                 'previous_balance' => (float) $sale->previous_balance,
                 'new_balance' => (float) $sale->new_balance,
                 'notes' => $sale->notes,
+                ...$sale->attachmentPayload(),
             ];
         });
         $creditSalesDecoded = old('credit_sales');
@@ -76,6 +77,7 @@
                 'amount' => (float) $recovery->amount,
                 'new_balance' => (float) $recovery->new_balance,
                 'notes' => $recovery->notes,
+                ...$recovery->attachmentPayload(),
             ];
         });
         $recoveriesDecoded = old('recoveries_entries');
@@ -102,6 +104,7 @@
                 'customer_id' => $transfer->customer_id,
                 'customer_name' => $transfer->customer->customer_name ?? null,
                 'notes' => $transfer->notes,
+                ...$transfer->attachmentPayload(),
             ];
         });
         $bankTransfersDecoded = old('bank_transfers');
@@ -126,6 +129,7 @@
                 'customer_id' => $cheque->customer_id,
                 'customer_name' => $cheque->customer->customer_name ?? 'N/A',
                 'notes' => $cheque->notes,
+                ...$cheque->attachmentPayload(),
             ];
         });
         $chequesDecoded = old('cheques');
@@ -204,7 +208,7 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <form method="POST"
                     action="{{ $isSpecialEdit ? route('sales-settlements.update-special', $settlement) : route('sales-settlements.update', $settlement) }}"
-                    id="settlementForm">
+                    id="settlementForm" enctype="multipart/form-data">
                     @csrf
                     @unless ($isSpecialEdit)
                         @method('PUT')
@@ -1027,6 +1031,7 @@
                                             inputId="total_bank_slips" />
                                         <x-cheque-payment-modal :customers="$customers" :bankAccounts="$bankAccounts"
                                             entriesInputId="cheques" />
+                                        <x-settlement-attachments />
                                         <x-credit-sales-modal :customers="$customers" entriesInputId="credit_sales"
                                             :initialEntries="$creditSalesDecoded" />
 

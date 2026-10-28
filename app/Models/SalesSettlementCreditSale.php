@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\HasSettlementAttachment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesSettlementCreditSale extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSettlementAttachment;
 
     protected $fillable = [
+        'attachment',
         'sales_settlement_id',
         'customer_id',
         'employee_id',
@@ -28,6 +30,11 @@ class SalesSettlementCreditSale extends Model
         'previous_balance' => 'decimal:2',
         'new_balance' => 'decimal:2',
     ];
+
+    protected function attachmentSection(): string
+    {
+        return 'credit_sales';
+    }
 
     public function salesSettlement(): BelongsTo
     {

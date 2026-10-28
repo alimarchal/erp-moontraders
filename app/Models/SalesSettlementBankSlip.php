@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasSettlementAttachment;
 use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesSettlementBankSlip extends Model
 {
-    use HasFactory, UserTracking;
+    use HasFactory, HasSettlementAttachment, UserTracking;
 
     protected $fillable = [
         'sales_settlement_id',
@@ -27,6 +28,11 @@ class SalesSettlementBankSlip extends Model
     protected $casts = [
         'amount' => 'decimal:2',
     ];
+
+    protected function attachmentSection(): string
+    {
+        return 'bank_slips';
+    }
 
     public function salesSettlement(): BelongsTo
     {

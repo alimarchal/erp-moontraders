@@ -479,6 +479,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Reconcile goods issued vs. cash/credit returned by salesmen.
     | Permissions: sales-settlement-list, -create, -edit, -delete, -post, -revert
     */
+    Route::get('sales-settlements/{salesSettlement}/attachments/{section}/{id}', [SalesSettlementController::class, 'attachment'])
+        ->whereNumber('id')
+        ->name('sales-settlements.attachments.show');
     Route::resource('sales-settlements', SalesSettlementController::class);
     Route::post('sales-settlements/{salesSettlement}/post', [SalesSettlementController::class, 'post'])
         ->name('sales-settlements.post');

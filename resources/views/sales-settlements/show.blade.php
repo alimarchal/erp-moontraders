@@ -677,7 +677,7 @@
                                                 @php $creditSale = $settlement->creditSales->get($i); @endphp
                                                 <tr>
                                                     <td class="text-center">{{ $i + 1 }}</td>
-                                                    <td>{{ $creditSale?->customer->customer_name ?? '-' }}</td>
+                                                    <td>{{ $creditSale?->customer->customer_name ?? '-' }} <x-settlement-attachment-link :row="$creditSale" /></td>
                                                     <td>{{ $creditSale?->customer->address ?? '-' }}</td>
                                                     <td class="text-right">
                                                         {{ $creditSale ? number_format($creditSale->previous_balance, 2) : '-' }}
@@ -759,7 +759,7 @@
                                                 @php $recovery = $settlement->recoveries->get($i); @endphp
                                                 <tr>
                                                     <td class="text-center">{{ $i + 1 }}</td>
-                                                    <td>{{ $recovery?->customer->customer_name ?? '-' }}</td>
+                                                    <td>{{ $recovery?->customer->customer_name ?? '-' }} <x-settlement-attachment-link :row="$recovery" /></td>
                                                     <td>{{ $recovery?->customer->address ?? '-' }}</td>
                                                     <td class="text-right">
                                                         {{ $recovery ? number_format($recovery->previous_balance, 2) : '-' }}
@@ -853,7 +853,7 @@
                                                     <td class="text-center">{{ $i + 1 }}</td>
                                                     <td>{{ $cheque && $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M-y') : '-' }}
                                                     </td>
-                                                    <td>{{ $cheque->cheque_number ?? '-' }}</td>
+                                                    <td>{{ $cheque->cheque_number ?? '-' }} <x-settlement-attachment-link :row="$cheque" /></td>
                                                     <td>{{ $cheque->customer->customer_name ?? '-' }}</td>
                                                     <td>{{ $cheque->bank_name ?? '-' }}</td>
                                                     <td>{{ $cheque->bankAccount->account_name ?? '-' }}</td>
@@ -921,7 +921,7 @@
                                                     </td>
                                                     <td>{{ $transfer->customer->customer_name ?? '-' }}</td>
                                                     <td>{{ $transfer->bankAccount->account_name ?? '-' }}</td>
-                                                    <td>{{ $transfer->reference_number ?? '-' }}</td>
+                                                    <td>{{ $transfer->reference_number ?? '-' }} <x-settlement-attachment-link :row="$transfer" /></td>
                                                     <td class="text-right font-bold">
                                                         {{ $transfer ? number_format($transfer->amount, 2) : '-' }}
                                                     </td>
@@ -1372,6 +1372,7 @@
                                                 <td class="text-center px-1 py-0.5">{{ $index + 1 }}</td>
                                                 <td class="px-1 py-0.5 text-xs">
                                                     {{ $slip->bankAccount->account_name ?? '-' }}
+                                                    <x-settlement-attachment-link :row="$slip" />
                                                 </td>
                                                 <td class="text-center px-1 py-0.5 text-xs">
                                                     {{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}
@@ -1959,4 +1960,5 @@
             }
         });
     </script>
+    <x-settlement-attachments />
 </x-app-layout>

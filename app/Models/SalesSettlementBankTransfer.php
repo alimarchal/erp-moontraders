@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\HasSettlementAttachment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesSettlementBankTransfer extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSettlementAttachment;
 
     protected $fillable = [
+        'attachment',
         'sales_settlement_id',
         'bank_account_id',
         'customer_id',
@@ -19,6 +21,11 @@ class SalesSettlementBankTransfer extends Model
         'transfer_date',
         'notes',
     ];
+
+    protected function attachmentSection(): string
+    {
+        return 'bank_transfers';
+    }
 
     protected function casts(): array
     {

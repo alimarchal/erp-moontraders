@@ -145,6 +145,9 @@ class StoreSalesSettlementRequest extends FormRequest
             'cheques.*.bank_name' => 'nullable|string|max:100',
             'cheques.*.cheque_date' => 'nullable|date',
 
+            'attachment_files' => 'nullable|array',
+            'attachment_files.*' => ['nullable', 'file', 'mimes:'.implode(',', config('settlement_attachments.extensions')), 'max:'.config('settlement_attachments.max_kb')],
+
             'percentage_expenses' => 'nullable|array',
             'percentage_expenses.*.customer_id' => 'required_with:percentage_expenses|exists:customers,id',
             'percentage_expenses.*.amount' => 'required_with:percentage_expenses|numeric|min:0',

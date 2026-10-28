@@ -35,15 +35,18 @@ use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\SalesSettlementRevertService;
+use App\Services\SettlementAttachmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -51,12 +54,19 @@ use Spatie\QueryBuilder\QueryBuilder;
 class SalesSettlementController extends Controller implements HasMiddleware
 {
     /**
+     * Attachment paths already stored on this settlement's rows before an update rebuilds them.
+     *
+     * @var array<int, string>
+     */
+    private array $existingAttachmentPaths = [];
+
+    /**
      * Get the middleware that should be assigned to the controller.
      */
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:sales-settlement-list', only: ['index', 'show']),
+            new Middleware('permission:sales-settlement-list', only: ['index', 'show', 'attachment']),
             new Middleware('permission:sales-settlement-create', only: ['create', 'store', 'getUnloadedProducts']),
             new Middleware('permission:sales-settlement-edit', only: ['edit', 'update']),
             new Middleware('permission:sales-settlement-delete', only: ['destroy']),
@@ -574,6 +584,30 @@ class SalesSettlementController extends Controller implements HasMiddleware
     }
 
     /**
+     * Stream a settlement row's attachment from the private (or S3) disk.
+     */
+    public function attachment(SalesSettlement $salesSettlement, string $section, int $id)
+    {
+        $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
+
+        $relation = [
+            'credit_sales' => 'creditSales',
+            'cheques' => 'cheques',
+            'bank_transfers' => 'bankTransfers',
+            'bank_slips' => 'bankSlips',
+            'recoveries' => 'recoveries',
+        ][$section] ?? null;
+
+        abort_if($relation === null, 404);
+
+        $path = $salesSettlement->{$relation}()->whereKey($id)->value('attachment');
+
+        abort_unless($path && Storage::disk(SettlementAttachmentService::disk())->exists($path), 404);
+
+        return Storage::disk(SettlementAttachmentService::disk())->response($path);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(StoreSalesSettlementRequest $request)
@@ -905,6 +939,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'reference_number' => $s->reference_number,
             'amount' => (float) $s->amount,
             'note' => $s->notes,
+            ...$s->attachmentPayload(),
         ]);
 
         $chequesDecoded = $salesSettlement->cheques->map(fn ($c) => [
@@ -1153,9 +1188,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'notes' => $request->notes,
         ]);
 
+        $this->existingAttachmentPaths = $this->collectAttachmentPaths($salesSettlement);
+
         $this->deleteAllChildRecords($salesSettlement);
 
         $this->createChildRecords($request, $salesSettlement, $goodsIssue, $itemFinancials, $payload);
+
+        $this->deleteReplacedAttachments($salesSettlement);
 
         $this->recalcSettlementFinancials($salesSettlement);
 
@@ -1179,6 +1218,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
         try {
             $settlementNumber = $salesSettlement->settlement_number;
 
+            $attachmentPaths = $this->collectAttachmentPaths($salesSettlement);
+
             // Force delete all related records to allow settlement_number reuse
             foreach ($salesSettlement->items as $item) {
                 $item->batches()->forceDelete();
@@ -1192,6 +1233,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $salesSettlement->bankTransfers()->forceDelete();
             $salesSettlement->cheques()->forceDelete();
             $salesSettlement->forceDelete();
+
+            DB::afterCommit(fn () => $this->deleteAttachmentFiles($attachmentPaths));
 
             DB::commit();
 
@@ -1377,6 +1420,71 @@ class SalesSettlementController extends Controller implements HasMiddleware
     }
 
     /**
+     * Pick the attachment for one submitted row: a newly uploaded file wins, otherwise a
+     * path already stored on this settlement is kept. Anything else is dropped.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function resolveAttachment(Request $request, SalesSettlement $settlement, string $section, array $entry): ?string
+    {
+        $service = app(SettlementAttachmentService::class);
+        $key = $entry['attachment_key'] ?? null;
+
+        if ($key && SettlementAttachmentService::enabled()) {
+            $file = $request->file('attachment_files.'.$key);
+
+            if ($file instanceof UploadedFile && SettlementAttachmentService::isAllowed($file)) {
+                $path = $service->store($file, $settlement->settlement_number, $section);
+                DB::afterRollBack(fn () => $service->delete($path));
+
+                return $path;
+            }
+        }
+
+        $existing = $entry['attachment'] ?? null;
+
+        return $existing && in_array($existing, $this->existingAttachmentPaths, true) ? $existing : null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function collectAttachmentPaths(SalesSettlement $settlement): array
+    {
+        return collect(['creditSales', 'cheques', 'bankTransfers', 'bankSlips', 'recoveries'])
+            ->flatMap(fn (string $relation) => $settlement->{$relation}()
+                ->whereNotNull('attachment')
+                ->pluck('attachment'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * After an update rebuilt the rows, delete (once the transaction commits) any stored
+     * file that no row references any more.
+     */
+    private function deleteReplacedAttachments(SalesSettlement $settlement): void
+    {
+        $stale = array_diff($this->existingAttachmentPaths, $this->collectAttachmentPaths($settlement));
+
+        DB::afterCommit(fn () => $this->deleteAttachmentFiles($stale));
+    }
+
+    /**
+     * @param  array<int, string>  $paths
+     */
+    private function deleteAttachmentFiles(array $paths): void
+    {
+        $service = app(SettlementAttachmentService::class);
+
+        foreach ($paths as $path) {
+            $service->delete($path);
+        }
+    }
+
+    /**
      * Delete all child records for a settlement before re-creating them.
      *
      * Handles proper deletion order: batches before items to avoid FK issues.
@@ -1435,6 +1543,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'reference_number' => $transfer['reference_number'] ?? null,
                 'transfer_date' => $transfer['transfer_date'] ?? $request->settlement_date,
                 'notes' => $transfer['notes'] ?? null,
+                'attachment' => $this->resolveAttachment($request, $settlement, 'bank_transfers', $transfer),
             ]);
         }
 
@@ -1450,6 +1559,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'account_holder_name' => $cheque['account_holder_name'] ?? null,
                 'status' => 'pending',
                 'notes' => $cheque['notes'] ?? null,
+                'attachment' => $this->resolveAttachment($request, $settlement, 'cheques', $cheque),
             ]);
         }
 
@@ -1462,6 +1572,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'reference_number' => $slip['reference_number'] ?? null,
                 'amount' => floatval($slip['amount'] ?? 0),
                 'notes' => $slip['note'] ?? null,
+                'attachment' => $this->resolveAttachment($request, $settlement, 'bank_slips', $slip),
             ]);
         }
 
@@ -1642,6 +1753,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
                 'new_balance' => floatval($recovery['new_balance'] ?? 0),
                 'notes' => $recovery['notes'] ?? null,
+                'attachment' => ($recovery['payment_method'] ?? 'cash') === 'cash'
+                    ? null
+                    : $this->resolveAttachment($request, $settlement, 'recoveries', $recovery),
             ]);
         }
 
@@ -1658,6 +1772,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
                 'new_balance' => floatval($creditSale['new_balance'] ?? 0),
                 'notes' => $creditSale['notes'] ?? null,
+                'attachment' => $this->resolveAttachment($request, $settlement, 'credit_sales', $creditSale),
             ]);
         }
     }

@@ -21,7 +21,7 @@
             <x-validation-errors class="mb-4" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <form method="POST" action="{{ route('sales-settlements.store') }}" id="settlementForm">
+                <form method="POST" action="{{ route('sales-settlements.store') }}" id="settlementForm" enctype="multipart/form-data">
                     @csrf
                     {{-- Hidden input to store current employee ID for credit sales modal --}}
                     <input type="hidden" id="current_settlement_employee_id" value="">
@@ -806,6 +806,7 @@
                                             inputId="total_bank_slips" />
                                         <x-cheque-payment-modal :customers="$customers" :bankAccounts="$bankAccounts"
                                             entriesInputId="cheques" />
+                                        <x-settlement-attachments />
                                         <x-credit-sales-modal :customers="$customers" entriesInputId="credit_sales" />
                                         <x-recoveries-modal :customers="$customers" :bankAccounts="$bankAccounts"
                                             entriesInputId="recoveries_entries" />

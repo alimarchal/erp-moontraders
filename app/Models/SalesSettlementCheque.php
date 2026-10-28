@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasSettlementAttachment;
 use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,9 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesSettlementCheque extends Model
 {
-    use HasFactory, UserTracking;
+    use HasFactory, HasSettlementAttachment, UserTracking;
 
     protected $fillable = [
+        'attachment',
         'sales_settlement_id',
         'customer_id',
         'bank_account_id',
@@ -27,6 +29,11 @@ class SalesSettlementCheque extends Model
         'updated_by',
         'status_updated_at',
     ];
+
+    protected function attachmentSection(): string
+    {
+        return 'cheques';
+    }
 
     protected function casts(): array
     {

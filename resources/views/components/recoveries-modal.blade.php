@@ -135,6 +135,8 @@
                     </div>
                 </div>
 
+                <div x-show="form.payment_method === 'bank_transfer'" class="mt-4"><x-settlement-attachment-field /></div>
+
                 <div class="mt-6">
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -147,6 +149,7 @@
                                     <th class="px-2 py-1 text-right text-xs font-bold text-gray-500 uppercase">Prev. Bal</th>
                                     <th class="px-2 py-1 text-right text-xs font-bold text-gray-500 uppercase">Recovery</th>
                                     <th class="px-2 py-1 text-right text-xs font-bold text-gray-500 uppercase">New Bal</th>
+                                    <th class="px-2 py-1 text-center text-xs font-bold text-gray-500 uppercase">Attachment</th>
                                     <th class="px-2 py-1 text-center text-xs font-bold text-gray-500 uppercase">Action</th>
                                 </tr>
                             </thead>
@@ -164,6 +167,7 @@
                                         <td class="px-2 py-1.5 text-sm text-gray-900 text-right" x-text="formatCurrency(entry.previous_balance)"></td>
                                         <td class="px-2 py-1.5 text-sm text-green-600 font-bold text-right" x-text="formatCurrency(entry.amount)"></td>
                                         <td class="px-2 py-1.5 text-sm text-green-600 font-bold text-right" x-text="formatCurrency(entry.new_balance)"></td>
+                                        <td class="px-2 py-1.5 text-center"><template x-if="entry.payment_method !== 'cash'"><div><x-settlement-attachment-cell /></div></template></td>
                                         <td class="px-2 py-1.5 text-sm text-center">
                                             <button type="button" @click="removeEntry(index)" class="text-red-600 hover:text-red-900">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -175,7 +179,7 @@
                                 </template>
                                 <template x-if="entries.length === 0">
                                     <tr>
-                                        <td colspan="7" class="px-2 py-4 text-center text-gray-500 italic">
+                                        <td colspan="8" class="px-2 py-4 text-center text-gray-500 italic">
                                             No recoveries added yet.
                                         </td>
                                     </tr>
@@ -188,7 +192,8 @@
                                     <td class="px-2 py-2 text-right text-sm text-green-700 bg-green-50" x-text="formatCurrency(recoveryTotal)"></td>
                                     <td class="px-2 py-2 text-right text-sm text-green-700 bg-green-50" x-text="formatCurrency(newBalanceTotal)"></td>
                                     <td></td>
-                                </tr>
+                                    <td></td>
+                            </tr>
                             </tfoot>
                         </table>
                     </div>
@@ -244,6 +249,8 @@
                         const now = new Date();
                         return String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
                     },
+
+                    pendingAttachment: null,
 
                     form: {
                         customer_id: '',
@@ -394,6 +401,8 @@
                         const bankAccountName = this.bankAccountName(this.form.bank_account_id);
 
                         this.entries.push({
+
+                            ...(window.SettlementAttachments ? (this.form.payment_method === 'bank_transfer' ? SettlementAttachments.entryFields(this.pendingAttachment) : {}) : {}),
                             customer_id: customerId,
                             customer_name: customerName,
                             recovery_number: recoveryNumber,
@@ -409,6 +418,8 @@
                         this.recoveryCounter++;
 
                         // Reset form
+
+                        this.pendingAttachment = null;
                         this.form.customer_id = '';
                         this.form.recovery_number = 'REC-' + this.getDateCode() + '-' + String(this.recoveryCounter).padStart(5, '0');
                         this.form.payment_method = 'cash';

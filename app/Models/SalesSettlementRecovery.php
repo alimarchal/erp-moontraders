@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasSettlementAttachment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,9 +10,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SalesSettlementRecovery extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasSettlementAttachment, SoftDeletes;
 
     protected $fillable = [
+        'attachment',
         'sales_settlement_id',
         'customer_id',
         'employee_id',
@@ -29,6 +31,11 @@ class SalesSettlementRecovery extends Model
         'previous_balance' => 'decimal:2',
         'new_balance' => 'decimal:2',
     ];
+
+    protected function attachmentSection(): string
+    {
+        return 'recoveries';
+    }
 
     public function salesSettlement(): BelongsTo
     {

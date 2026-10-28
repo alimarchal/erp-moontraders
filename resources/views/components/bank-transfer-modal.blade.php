@@ -109,6 +109,8 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                     </div>
                 </div>
 
+                <div><x-settlement-attachment-field /></div>
+
                 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-100">
@@ -119,13 +121,14 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                 <th class="px-2 py-1 text-left text-gray-700">Transfer Date</th>
                                 <th class="px-2 py-1 text-left text-gray-700">Reference</th>
                                 <th class="px-2 py-1 text-right text-gray-700">Amount (₨)</th>
+                                <th class="px-2 py-1 text-center text-gray-700">Attachment</th>
                                 <th class="px-2 py-1 text-center text-gray-700">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-if="entries.length === 0">
                                 <tr>
-                                    <td colspan="7" class="px-2 py-4 text-center text-gray-500 italic">
+                                    <td colspan="8" class="px-2 py-4 text-center text-gray-500 italic">
                                         No bank transfer entries added yet.
                                     </td>
                                 </tr>
@@ -139,6 +142,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                     <td class="px-2 py-1.5 text-gray-800" x-text="entry.reference_number || 'N/A'"></td>
                                     <td class="px-2 py-1.5 text-right font-semibold text-green-700"
                                         x-text="formatCurrency(entry.amount)"></td>
+                                    <td class="px-2 py-1.5 text-center"><x-settlement-attachment-cell /></td>
                                     <td class="px-2 py-1.5 text-center">
                                         <button type="button" @click="removeEntry(index)"
                                             class="text-red-600 hover:text-red-800 text-xs font-semibold">
@@ -154,6 +158,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                 <td class="px-2 py-2 text-right font-bold text-green-900" x-text="formatCurrency(total)">
                                 </td>
                                 <td class="px-2 py-2"></td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -183,6 +188,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             show: false,
             customers,
             bankAccounts,
+            pendingAttachment: null,
             form: {
                 bank_account_id: '',
                 customer_id: '',
@@ -262,6 +268,8 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 const customerName = customerId ? this.customerName(customerId) : null;
 
                 this.entries.push({
+
+                    ...(window.SettlementAttachments ? (SettlementAttachments.entryFields(this.pendingAttachment)) : {}),
                     bank_account_id: bankAccountId,
                     bank_account_name: bankAccountName,
                     customer_id: customerId || null,
@@ -272,6 +280,8 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 });
 
                 // Reset form
+
+                this.pendingAttachment = null;
                 this.form.bank_account_id = '';
                 this.form.customer_id = '';
                 this.form.transfer_date = new Date().toISOString().split('T')[0];

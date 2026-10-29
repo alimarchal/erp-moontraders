@@ -80,9 +80,7 @@
     <style>
         .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; margin-inline-start: 8px; }
         @page { margin: 10mm; }
-        .ak-tabs { gap: 10px; padding: 0 22px; }
-        .ak-tab { padding: 16px 18px 14px; gap: 10px; font-size: 15px; }
-        .ak-tab .ak-count { min-width: 26px; padding: 2px 8px; }
+        #ev-filter-panel { overflow: hidden; }
         .ev-ranges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
         .ev-ranges-label { font-size: 12px; font-weight: 600; color: var(--ak-muted); margin-right: 4px; }
         .ev-ranges a { padding: 4px 10px; border: 1px solid var(--ak-border); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--ak-text); text-decoration: none; background: #fff; }

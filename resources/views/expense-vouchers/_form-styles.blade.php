@@ -42,3 +42,11 @@
     /* Naskh sits a little high next to the sans-serif English; nudge it so both read on one line */
     .ev-bi .ev-ur { position: relative; top: 3px; }
 </style>
+<style>
+    .ev-form .ak-field input.ev-file { height: auto; padding: 10px 12px; font-size: 15px; background: #f8fafc; border-style: dashed; }
+    .ev-form .ak-field input.ev-file::file-selector-button { margin-right: 12px; padding: 8px 14px; border: 1px solid var(--ak-border); border-radius: 8px; background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .ev-current-file { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 8px; font-size: 14px; }
+    .ev-current-file a { color: #4338ca; font-weight: 600; text-decoration: underline; }
+    .ev-remove { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .ev-remove input { height: 18px; width: 18px; }
+</style>

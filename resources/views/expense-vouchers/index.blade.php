@@ -30,13 +30,13 @@
     $sortMark = fn (string $field) => $sort === $field ? "\u{25B2}" : ($sort === '-'.$field ? "\u{25BC}" : '');
 
     $names = [
-        'supplier_id' => $suppliers->pluck('supplier_name', 'id')->put('general', 'Moon Traders (general)'),
+        'owner' => $suppliers->mapWithKeys(fn ($s) => ['supplier:'.$s->id => $s->supplier_name])->union($companies->mapWithKeys(fn ($c) => ['company:'.$c->id => $c->company_name.' (general)'])),
         'expense_account_id' => $accounts->mapWithKeys(fn ($a) => [$a->id => $a->account_code.' - '.$a->account_name]),
         'created_by' => $people->pluck('name', 'id'),
         'checked_by' => $people->pluck('name', 'id'),
     ];
     $chipLabels = [
-        'search' => 'Search', 'supplier_id' => 'Company', 'expense_account_id' => 'Account', 'party_name' => 'Party', 'created_by' => 'Maker',
+        'search' => 'Search', 'owner' => 'Company', 'expense_account_id' => 'Account', 'party_name' => 'Party', 'created_by' => 'Maker',
         'checked_by' => 'Checker', 'amount_min' => 'Amount from', 'amount_max' => 'Amount to',
     ];
     $chipValue = fn (string $key, $value) => isset($names[$key]) ? ($names[$key][$value] ?? $value) : $value;
@@ -147,13 +147,13 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_supplier">Company</label>
-                        <select id="f_supplier" class="ev-select" name="filter[supplier_id]">
+                        <select id="f_supplier" class="ev-select" name="filter[owner]">
                             <option value="">All companies</option>
-                            @if (auth()->user()->hasAllSupplierAccess())
-                                <option value="general" @selected(($filters['supplier_id'] ?? '') === 'general')>Moon Traders (general)</option>
-                            @endif
+                            @foreach ($companies as $company)
+                                <option value="company:{{ $company->id }}" @selected(($filters['owner'] ?? '') === 'company:'.$company->id)>{{ $company->company_name }} (general)</option>
+                            @endforeach
                             @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" @selected((string) ($filters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
+                                <option value="supplier:{{ $supplier->id }}" @selected(($filters['owner'] ?? '') === 'supplier:'.$supplier->id)>{{ $supplier->supplier_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -274,13 +274,13 @@
                                     <tr>
                                         <td class="ak-c ak-muted">{{ $vouchers->firstItem() + $loop->index }}</td>
                                         <td data-label="Voucher">
-                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>
+                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>@if($voucher->attachment) <span title="Has an attachment" aria-label="Has an attachment">&#128206;</span>@endif
                                             <div class="ak-muted ak-hide-compact">{{ $voucher->created_at?->diffForHumans() }}</div>
                                         </td>
                                         <td class="ak-mono" data-label="Date">{{ $voucher->voucher_date->format('d M Y') }}</td>
                                         <td data-label="Party · company">
                                             <span class="ak-strong">{{ $voucher->party_name }}</span>
-                                            <div class="ak-muted">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? 'Moon Traders' }}</div>
+                                            <div class="ak-muted">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? $voucher->company?->company_name ?? 'Moon Traders' }}</div>
                                         </td>
                                         <td data-label="Expense account">{{ $voucher->expenseAccount?->account_name }}<div class="ak-muted ak-hide-compact">{{ $voucher->expenseAccount?->account_code }}</div></td>
                                         <td class="ak-num ak-strong" data-label="Amount (Rs)">{{ number_format((float) $voucher->amount, 2) }}</td>

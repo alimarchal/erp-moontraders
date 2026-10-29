@@ -519,6 +519,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Fuel, Van Work) with double-entry GL posting.
     | Permissions: expense-detail-list, -create, -edit, -delete, -post
     */
+    Route::get('expense-vouchers/{expense_voucher}/attachment', [ExpenseVoucherController::class, 'attachment'])->name('expense-vouchers.attachment');
     Route::get('expense-vouchers/help', [ExpenseVoucherController::class, 'help'])->name('expense-vouchers.help');
     Route::resource('expense-vouchers', ExpenseVoucherController::class);
     Route::post('expense-vouchers/{expense_voucher}/submit', [ExpenseVoucherController::class, 'submit'])->name('expense-vouchers.submit');

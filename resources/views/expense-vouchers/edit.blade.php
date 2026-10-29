@@ -21,7 +21,7 @@
     <div class="ak-page">
         <x-status-message />
         <x-validation-errors class="mb-4" />
-        <form method="POST" action="{{ route('expense-vouchers.update', $voucher) }}" class="ak-card ev-form">
+        <form method="POST" action="{{ route('expense-vouchers.update', $voucher) }}" class="ak-card ev-form" enctype="multipart/form-data">
             @csrf
             @method("PUT")
             @include('expense-vouchers._form')

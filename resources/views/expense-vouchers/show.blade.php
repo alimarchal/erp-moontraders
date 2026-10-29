@@ -76,7 +76,7 @@
                 </div>
                 <dl class="ev-dl">
                     <div><dt>Date <span class="ev-ur" lang="ur" dir="rtl">تاریخ</span></dt><dd>{{ $voucher->voucher_date->format('d M Y') }}</dd></div>
-                    <div><dt>Company <span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></dt><dd>{{ $voucher->supplier?->supplier_name ?? 'Moon Traders (general)' }}</dd></div>
+                    <div><dt>Company <span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></dt><dd>{{ $voucher->supplier?->supplier_name ?? (($voucher->company?->company_name ?? 'Moon Traders').' (general)') }}</dd></div>
                     <div><dt>Party name <span class="ev-ur" lang="ur" dir="rtl">پارٹی کا نام</span></dt><dd>{{ $voucher->party_name }}</dd></div>
                     <div><dt>Expense account <span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></dt><dd>{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
                     <div style="grid-column: 1 / -1"><dt>Narration <span class="ev-ur" lang="ur" dir="rtl">تفصیل</span></dt><dd>{{ $voucher->narration ?: '—' }}</dd></div>
@@ -106,6 +106,18 @@
                 </table>
             </section>
         </div>
+
+        @if($voucher->attachment)
+            @php $isPdf = strtolower(pathinfo($voucher->attachment, PATHINFO_EXTENSION)) === 'pdf'; @endphp
+            <section class="ak-card ev-pad" aria-label="Attachment">
+                <h2 style="margin:0 0 10px; font-size:15px; font-weight:700">Attachment <span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویز</span></h2>
+                @if($isPdf)
+                    <a href="{{ $voucher->attachment_url }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline">Open the PDF</a>
+                @else
+                    <a href="{{ $voucher->attachment_url }}" target="_blank" rel="noopener"><img src="{{ $voucher->attachment_url }}" alt="Voucher attachment" style="max-width:100%; max-height:420px; border:1px solid var(--ak-border); border-radius:10px"></a>
+                @endif
+            </section>
+        @endif
 
         @if($voucher->isEditable() || $voucher->status === 'pending')
             <section class="ak-card ev-pad no-print" aria-label="Actions" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start">

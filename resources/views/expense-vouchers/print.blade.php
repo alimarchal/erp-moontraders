@@ -26,7 +26,7 @@
     <table>
         <tr><td class="l">Voucher</td><td><b>{{ $voucher->voucher_number }}</b></td></tr>
         <tr><td class="l">Date</td><td>{{ $voucher->voucher_date->format('d-M-Y') }}</td></tr>
-        <tr><td class="l">Company</td><td>{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? 'Moon Traders' }}</td></tr>
+        <tr><td class="l">Company</td><td>{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? $voucher->company?->company_name ?? 'Moon Traders' }}</td></tr>
         <tr><td class="l">Paid to</td><td><b>{{ $voucher->party_name }}</b></td></tr>
         <tr><td class="l">Account</td><td>{{ $voucher->expenseAccount?->account_name }}</td></tr>
         @if($voucher->narration)<tr><td class="l">Note</td><td>{{ $voucher->narration }}</td></tr>@endif

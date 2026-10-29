@@ -27,11 +27,14 @@ return new class extends Migration
             $table->id();
             $table->string('voucher_number', 30)->unique();
             $table->date('voucher_date')->index();
+            // A voucher belongs to a distribution (supplier_id) or to Moon Traders itself (company_id, from the companies table).
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->string('party_name');
             $table->foreignId('expense_account_id')->constrained('chart_of_accounts');
             $table->decimal('amount', 15, 2);
             $table->text('narration')->nullable();
+            $table->string('attachment')->nullable();
             $table->string('status', 20)->default('draft')->index();
 
             $table->foreignId('submitted_by')->nullable()->constrained('users')->nullOnDelete();
@@ -48,6 +51,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['supplier_id', 'voucher_date', 'status']);
+            $table->index(['company_id', 'voucher_date', 'status']);
         });
 
         $now = now();

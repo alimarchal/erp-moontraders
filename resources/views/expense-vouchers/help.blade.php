@@ -81,7 +81,7 @@
                         <li>A <b>different user</b> with the approve permission opens it. <b>Approve</b> posts the ledger entry; <b>Reject</b> needs a reason and sends it back to the maker, who corrects and sends it again. The person who made the voucher can never approve it, not even a super admin.</li>
                         <li>Only an <b>approved</b> voucher can be printed: an 80 mm thermal slip with the party, account, amount and the maker and checker.</li>
                     </ol>
-                    <div class="gh-note">Most expenses belong to Moon Traders itself. An admin leaves the company empty (general expense). A user tied to one company always raises vouchers for that company.</div>
+                    <div class="gh-note">Most expenses belong to Moon Traders itself: an admin keeps the preselected Moon Traders company (general expense). A user tied to one company always raises vouchers for that company.</div>
                 </div>
                         <div class="ev-ur-col gh-rtl gh-scroll" dir="rtl" lang="ur">
                     
@@ -91,7 +91,7 @@
                         <li><b>چیکر</b> (جانچنے والا) کوئی <b>دوسرا صارف</b> ہوتا ہے جس کے پاس منظوری کی اجازت ہو۔ وہ واؤچر کھول کر <b>منظور (Approve)</b> کرتا ہے تو لیجر میں اندراج ہو جاتا ہے، یا <b>مسترد (Reject)</b> کرتا ہے تو وجہ لکھنا لازمی ہے اور واؤچر میکر کو واپس چلا جاتا ہے۔ جس نے واؤچر بنایا ہے وہ اسے کبھی منظور نہیں کر سکتا، سپر ایڈمن بھی نہیں۔</li>
                         <li>صرف <b>منظور شدہ</b> واؤچر کی 80mm تھرمل سلپ پرنٹ ہو سکتی ہے، جس میں پارٹی، کھاتہ، رقم اور میکر و چیکر کے نام ہوتے ہیں۔</li>
                     </ol>
-                    <div class="gh-note">زیادہ تر اخراجات موون ٹریڈرز (Moon Traders) کے اپنے ہوتے ہیں۔ ایڈمن کمپنی کے خانے میں "Moon Traders (general expense)" رکھتا ہے۔ جس صارف کا اکاؤنٹ کسی ایک کمپنی سے جڑا ہو وہ ہمیشہ اسی کمپنی کے واؤچر بناتا ہے۔ ایسے عمومی خرچ کا کھاتہ پہلے سے <bdi class="gh-code">5201 Moon Traders General Expenses</bdi> منتخب ہوتا ہے۔</div>
+                    <div class="gh-note">زیادہ تر اخراجات موون ٹریڈرز (Moon Traders) کے اپنے ہوتے ہیں۔ ایڈمن کے لیے کمپنی کے خانے میں "Moon Traders (general expense)" پہلے سے منتخب ہوتا ہے۔ جس صارف کا اکاؤنٹ کسی ایک کمپنی سے جڑا ہو وہ ہمیشہ اسی کمپنی کے واؤچر بناتا ہے۔ ایسے عمومی خرچ کا کھاتہ پہلے سے <bdi class="gh-code">5201 Moon Traders General Expenses</bdi> منتخب ہوتا ہے۔</div>
                 </div>
                     </div>
                 </div>
@@ -106,7 +106,7 @@
                     <table class="gh-table">
                         <thead><tr><th>Step</th><th>Tables written</th><th>Accounting effect</th></tr></thead>
                         <tbody>
-                            <tr><td>Submit for approval (or save as draft)</td><td><span class="gh-code">expense_vouchers</span> gets a new row: voucher number, maker, status pending (draft if only saved).</td><td>None.</td></tr>
+                            <tr><td>Submit for approval (or save as draft)</td><td><span class="gh-code">expense_vouchers</span> gets a new row: voucher number, maker, status pending (draft if only saved), and either <span class="gh-code">supplier_id</span> (a distribution) or <span class="gh-code">company_id</span> (Moon Traders, from the companies table). An optional attachment is stored on the private disk under <span class="gh-code">Vouchers/dd-mm-yyyy/</span> (the voucher date) and its path is kept in <span class="gh-code">attachment</span>.</td><td>None.</td></tr>
                             <tr><td>Edit or delete a draft</td><td><span class="gh-code">expense_vouchers</span> row is updated, or soft-deleted.</td><td>None.</td></tr>
                             <tr><td>Send to checker</td><td><span class="gh-code">expense_vouchers</span>: status pending, sent by, sent at.</td><td>None.</td></tr>
                             <tr><td>Reject</td><td><span class="gh-code">expense_vouchers</span>: status rejected, reason, checker, time.</td><td>None.</td></tr>
@@ -120,7 +120,7 @@
                     <table class="gh-table">
                         <thead><tr><th>مرحلہ</th><th>کون سی ٹیبل (Table) میں کیا ہوتا ہے</th><th>حسابی اثر</th></tr></thead>
                         <tbody>
-                            <tr><td>منظوری کے لیے جمع کرانا</td><td><bdi class="gh-code">expense_vouchers</bdi> میں نئی قطار: واؤچر نمبر، میکر، اسٹیٹس pending۔ (اگر صرف محفوظ کیا ہو تو اسٹیٹس draft۔)</td><td>کوئی نہیں۔</td></tr>
+                            <tr><td>منظوری کے لیے جمع کرانا</td><td><bdi class="gh-code">expense_vouchers</bdi> میں نئی قطار: واؤچر نمبر، میکر، اسٹیٹس pending۔ (اگر صرف محفوظ کیا ہو تو اسٹیٹس draft۔) ساتھ ہی یا تو <bdi class="gh-code">supplier_id</bdi> (ڈسٹری بیوشن) یا <bdi class="gh-code">company_id</bdi> (موون ٹریڈرز، companies ٹیبل سے)۔ منسلک فائل نجی ڈسک پر <bdi class="gh-code">Vouchers/dd-mm-yyyy/</bdi> فولڈر میں (واؤچر کی تاریخ کے مطابق) محفوظ ہوتی ہے اور اس کا راستہ <bdi class="gh-code">attachment</bdi> میں درج ہوتا ہے۔</td><td>کوئی نہیں۔</td></tr>
                             <tr><td>مسودے میں ترمیم یا حذف</td><td><bdi class="gh-code">expense_vouchers</bdi> کی قطار اپ ڈیٹ ہوتی ہے یا soft-delete۔</td><td>کوئی نہیں۔</td></tr>
                             <tr><td>مسترد کرنا</td><td><bdi class="gh-code">expense_vouchers</bdi>: اسٹیٹس rejected، وجہ، چیکر اور وقت۔</td><td>کوئی نہیں۔</td></tr>
                             <tr><td><b>منظور کرنا</b></td><td>ایک ہی ٹرانزیکشن میں: <bdi class="gh-code">journal_entries</bdi> میں ایک posted اندراج (حوالہ = واؤچر نمبر)، <bdi class="gh-code">journal_entry_details</bdi> میں دو لائنیں، اور <bdi class="gh-code">expense_vouchers</bdi> میں اسٹیٹس approved، چیکر، وقت اور journal entry کی آئی ڈی۔ اگر پوسٹنگ ناکام ہو جائے تو کچھ بھی محفوظ نہیں ہوتا۔</td><td><b>ڈیبٹ (Debit)</b> اخراجات کا کھاتہ، <b>کریڈٹ (Credit)</b> کیش <bdi class="gh-code">1121</bdi>، رقم واؤچر کے برابر اور تاریخ واؤچر والی۔</td></tr>

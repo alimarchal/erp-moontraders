@@ -45,6 +45,7 @@ use App\Http\Controllers\Reports\AdvanceTaxReportController;
 use App\Http\Controllers\Reports\AdvanceTaxSalesRegisterController;
 use App\Http\Controllers\Reports\AmrDisposeRegisterController;
 use App\Http\Controllers\Reports\BalanceSheetController;
+use App\Http\Controllers\Reports\CashCollectionDistributorController;
 use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\ChequeRegisterController;
 use App\Http\Controllers\Reports\ClaimRegisterReportController;
@@ -715,6 +716,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('goods-issue', [GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('cash-detail', [CashDetailController::class, 'index'])->name('cash-detail.index');
         Route::get('cash-detail/export/pdf', [CashDetailController::class, 'exportPdf'])->name('cash-detail.export.pdf');
+        Route::get('cash-collection-distributor', [CashCollectionDistributorController::class, 'index'])->name('cash-collection-distributor.index');
+        Route::get('cash-collection-distributor/export/pdf', [CashCollectionDistributorController::class, 'exportPdf'])->name('cash-collection-distributor.export.pdf');
         Route::get('investment-summary', [InvestmentSummaryController::class, 'index'])->name('investment-summary.index');
         Route::get('company-target-summary/export/excel', [CompanyTargetSummaryController::class, 'exportExcel'])->name('company-target-summary.export.excel');
         Route::get('company-target-summary/export/pdf', [CompanyTargetSummaryController::class, 'exportPdf'])->name('company-target-summary.export.pdf');

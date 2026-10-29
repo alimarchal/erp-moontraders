@@ -1,30 +1,36 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">New Expense Voucher</h2>
-        <div class="flex justify-center items-center float-right">
-            <a href="{{ route('expense-vouchers.index') }}" title="Back to vouchers"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            </a>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('expense-vouchers.index') }}">Expense Vouchers</a><span aria-hidden="true">›</span><span>New</span>
+                </nav>
+                <h1 class="ak-title">New expense voucher</h1>
+                <p class="ak-sub">Saved as a draft first; send it to the checker when it is ready.</p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline">How it works</a>
+                <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to vouchers</a>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 shadow-md" />
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <x-validation-errors class="mb-4" />
-                    <form method="POST" action="{{ route('expense-vouchers.store') }}">
-                        @csrf
-                        
-                        @include('expense-vouchers._form')
-                        <div class="flex items-center justify-end mt-6">
-                            <x-button>Save as draft</x-button>
-                        </div>
-                    </form>
-                </div>
+    @include('settings.partials.ui-style')
+    @include('expense-vouchers._form-styles')
+
+    <div class="ak-page">
+        <x-status-message />
+        <x-validation-errors class="mb-4" />
+        <form method="POST" action="{{ route('expense-vouchers.store') }}" class="ak-card ev-form">
+            @csrf
+            
+            @include('expense-vouchers._form')
+            <div class="ev-form-foot">
+                <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
+                <button type="submit" class="ak-btn ak-btn-primary">Save as draft</button>
             </div>
-        </div>
+        </form>
     </div>
+
+    @include('expense-vouchers._form-scripts')
 </x-app-layout>

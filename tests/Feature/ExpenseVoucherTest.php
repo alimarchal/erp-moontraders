@@ -128,3 +128,20 @@ it('lets an admin raise a general expense with no company, but not a company-bou
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['supplier_id' => null] + $this->payload)->assertSessionHasErrors('supplier_id');
 });
+
+it('lists vouchers with filters and opens the guide', function () {
+    $other = Supplier::factory()->create();
+    $base = ['expense_account_id' => $this->expense->id, 'status' => 'approved', 'voucher_date' => now()->format('Y-m-d')];
+    ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'party_name' => 'Ali Tea Stall', 'amount' => 700] + $base);
+    ExpenseVoucher::factory()->create(['supplier_id' => $other->id, 'party_name' => 'Other Co Party', 'amount' => 900] + $base);
+
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $parties = fn ($response) => $response->viewData('vouchers')->getCollection()->pluck('party_name')->sort()->values()->all();
+
+    expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall', 'Other Co Party'])
+        ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['supplier_id' => $this->supplier->id]]))))->toBe(['Ali Tea Stall'])
+        ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'Other Co Party', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
+        ->and($parties($this->actingAs($this->maker)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
+
+    $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('What each step writes to the database');
+});

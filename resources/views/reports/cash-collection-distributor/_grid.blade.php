@@ -5,7 +5,7 @@
     $rowCount = max(array_map(fn ($side) => count($side['rows']), $sides));
     $rowCount = max($rowCount, 1);
 @endphp
-<table class="p2 p2-twin">
+<table class="p2 p2-twin" @if(count($sides) === 1 && ! empty($left['half'])) style="width: 49%" @endif>
     <colgroup>
         @foreach ($sides as $side)
             @foreach ($side['cols'] as $col)

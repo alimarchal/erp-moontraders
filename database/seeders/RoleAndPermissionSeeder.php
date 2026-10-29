@@ -58,6 +58,7 @@ class RoleAndPermissionSeeder extends Seeder
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
             'claim-register' => ['list', 'create', 'edit', 'delete', 'post'],
             'expense-detail' => ['list', 'create', 'edit', 'delete', 'post'],
+            'expense-voucher' => ['list', 'create', 'edit', 'delete', 'approve', 'print'],
             'category-revenue' => ['list', 'create', 'edit', 'delete'],
             'revenue-detail' => ['create', 'edit', 'delete', 'post'],
             'profit-category' => ['list', 'create', 'edit', 'delete'],

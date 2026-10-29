@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\ExpenseVoucher;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementCheque;
 use App\Models\Supplier;
@@ -204,6 +205,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         ];
 
         if (! $allCompanies) {
+            $tables['expenses'] = $this->expenseTable((int) $supplierId, $date, $money, $total);
             $tables['salesmen'] = $this->salesmanTable($settlements, $money, $total);
         }
 
@@ -310,6 +312,32 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
     }
 
     /**
+     * Approved expense vouchers of the company on the report date, by party.
+     *
+     * @return array<string, mixed>
+     */
+    private function expenseTable(int $supplierId, string $date, callable $money, callable $total): array
+    {
+        $parties = ExpenseVoucher::query()
+            ->where('status', ExpenseVoucher::STATUS_APPROVED)
+            ->where('supplier_id', $supplierId)
+            ->whereDate('voucher_date', $date)
+            ->get(['party_name', 'amount'])
+            ->groupBy('party_name')
+            ->map(fn (Collection $own, string $party) => ['party' => $party, 'amount' => (float) $own->sum('amount')])
+            ->sortByDesc('amount')
+            ->values();
+
+        return [
+            'no' => 6, 'title' => 'Expenses', 'explain' => 'approved expense vouchers of the day',
+            'cols' => [['#', 'c', 8], ['Party Name', '', 62], ['Amount', 'n', 30]],
+            'rows' => $parties->map(fn ($row, $i) => [$i + 1, $row['party'], $money($row['amount'])])->all(),
+            'total' => ['label' => 'Total expenses', 'span' => 2, 'cells' => [$total($parties->sum('amount'))]],
+            'bold' => [2], 'empty' => 'No approved expense vouchers for this day.', 'half' => true,
+        ];
+    }
+
+    /**
      * @param  Collection<int, SalesSettlement>  $settlements
      * @return array<string, mixed>
      */
@@ -329,7 +357,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         })->sortByDesc('total')->values();
 
         return [
-            'no' => 6, 'title' => 'Salesman-wise Detail', 'explain' => 'settlement collections of the selected company',
+            'no' => 7, 'title' => 'Salesman-wise Detail', 'explain' => 'settlement collections of the selected company',
             'cols' => [['#', 'c', 4], ['Salesman', '', 30], ['Cash', 'n', 14], ['Bank Slips', 'n', 14], ['Bank Transfers', 'n', 14], ['Cheques', 'n', 12], ['Total', 'n', 12]],
             'rows' => $rows->map(fn ($row, $i) => [$i + 1, $row['name'], $money($row['cash']), $money($row['slips']), $money($row['transfers']), $money($row['cheques']), $money($row['total'])])->all(),
             'total' => ['label' => 'Total', 'span' => 2, 'cells' => [$total($rows->sum('cash')), $total($rows->sum('slips')), $total($rows->sum('transfers')), $total($rows->sum('cheques')), $total($rows->sum('total'))]],

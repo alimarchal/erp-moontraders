@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ChartOfAccount;
 use App\Models\ExpenseVoucher;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Services\ExpenseVoucherService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:expense-voucher-list', only: ['index', 'show']),
+            new Middleware('can:expense-voucher-list', only: ['index', 'show', 'help']),
             new Middleware('can:expense-voucher-create', only: ['create', 'store', 'submit']),
             new Middleware('can:expense-voucher-edit', only: ['edit', 'update']),
             new Middleware('can:expense-voucher-delete', only: ['destroy']),
@@ -28,30 +29,72 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         ];
     }
 
+    public const PER_PAGE = ['15', '25', '50', '100', 'all'];
+
+    public const SORTS = ['voucher_date' => 'voucher_date', 'voucher_number' => 'voucher_number', 'amount' => 'amount', 'created_at' => 'created_at'];
+
     public function index(Request $request)
     {
         $user = $request->user();
-        $filters = $request->input('filter', []);
+        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
+        $today = now()->toDateString();
+        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
+        $dateTo = $filters['date_to'] ?? $today;
 
-        $vouchers = ExpenseVoucher::query()
-            ->with(['supplier:id,supplier_name,short_name', 'expenseAccount:id,account_name', 'creator:id,name'])
+        $sort = (string) $request->input('sort', '-voucher_date');
+        $sortField = self::SORTS[ltrim($sort, '-')] ?? 'voucher_date';
+        $sortDirection = str_starts_with($sort, '-') ? 'desc' : 'asc';
+        $perPage = in_array((string) $request->input('per_page', '25'), self::PER_PAGE, true) ? (string) $request->input('per_page', '25') : '25';
+
+        $scoped = ExpenseVoucher::query()
             ->when(! $user->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $user->supplier_id ?? 0))
-            ->when($filters['supplier_id'] ?? null, fn ($query, $id) => $query->where('supplier_id', $id))
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('voucher_date', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('voucher_date', '<=', $date))
-            ->when($filters['search'] ?? null, fn ($query, $term) => $query->where(fn ($q) => $q->where('party_name', 'like', "%{$term}%")->orWhere('voucher_number', 'like', "%{$term}%")))
-            ->orderByDesc('voucher_date')
-            ->orderByDesc('id')
-            ->paginate(25)
+            ->whereDate('voucher_date', '>=', $dateFrom)
+            ->whereDate('voucher_date', '<=', $dateTo)
+            ->when($filters['supplier_id'] ?? null, fn ($query, $id) => $id === 'general' ? $query->whereNull('supplier_id') : $query->where('supplier_id', $id))
+            ->when($filters['expense_account_id'] ?? null, fn ($query, $id) => $query->where('expense_account_id', $id))
+            ->when($filters['party_name'] ?? null, fn ($query, $party) => $query->where('party_name', $party))
+            ->when($filters['created_by'] ?? null, fn ($query, $id) => $query->where('created_by', $id))
+            ->when($filters['checked_by'] ?? null, fn ($query, $id) => $query->where('checked_by', $id))
+            ->when($filters['amount_min'] ?? null, fn ($query, $amount) => $query->where('amount', '>=', $amount))
+            ->when($filters['amount_max'] ?? null, fn ($query, $amount) => $query->where('amount', '<=', $amount))
+            ->when($filters['search'] ?? null, fn ($query, $term) => $query->where(fn ($q) => $q
+                ->where('party_name', 'like', "%{$term}%")
+                ->orWhere('voucher_number', 'like', "%{$term}%")
+                ->orWhere('narration', 'like', "%{$term}%")));
+
+        $statusCounts = (clone $scoped)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        $query = (clone $scoped)
+            ->with(['supplier:id,supplier_name,short_name', 'expenseAccount:id,account_code,account_name', 'creator:id,name', 'checker:id,name'])
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status));
+
+        $totalAmount = (float) (clone $query)->sum('amount');
+        $vouchers = $query->orderBy($sortField, $sortDirection)->orderByDesc('id')
+            ->paginate($perPage === 'all' ? max($query->count(), 1) : (int) $perPage)
             ->withQueryString();
+
+        $visible = ExpenseVoucher::query()->when(! $user->hasAllSupplierAccess(), fn ($q) => $q->where('supplier_id', $user->supplier_id ?? 0));
 
         return view('expense-vouchers.index', [
             'vouchers' => $vouchers,
             'suppliers' => $this->suppliersFor($request),
+            'accounts' => $this->expenseAccounts(),
+            'parties' => (clone $visible)->distinct()->orderBy('party_name')->pluck('party_name'),
+            'people' => User::query()->whereIn('id', (clone $visible)->select('created_by')->union((clone $visible)->select('checked_by')))->orderBy('name')->get(['id', 'name']),
             'statuses' => ExpenseVoucher::statusLabels(),
+            'statusCounts' => $statusCounts,
             'filters' => $filters,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'sort' => $sort,
+            'perPage' => $perPage,
+            'totalAmount' => $totalAmount,
         ]);
+    }
+
+    public function help()
+    {
+        return view('expense-vouchers.help');
     }
 
     public function create(Request $request)
@@ -71,7 +114,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $this->authorizeCompany($request, $expenseVoucher);
 
         return view('expense-vouchers.show', [
-            'voucher' => $expenseVoucher->load(['supplier', 'expenseAccount', 'creator', 'submitter', 'checker', 'journalEntry']),
+            'voucher' => $expenseVoucher->load(['supplier', 'expenseAccount', 'creator', 'submitter', 'checker', 'journalEntry.details.account']),
         ]);
     }
 
@@ -184,12 +227,20 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         return [
             'suppliers' => $this->suppliersFor($request),
-            'accounts' => ChartOfAccount::query()
-                ->where('account_code', 'like', '52%')
-                ->where('account_code', '!=', '5200')
-                ->orderBy('account_name')
-                ->get(['id', 'account_code', 'account_name']),
+            'accounts' => $this->expenseAccounts(),
+            'parties' => ExpenseVoucher::query()
+                ->when(! $request->user()->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $request->user()->supplier_id ?? 0))
+                ->distinct()->orderBy('party_name')->pluck('party_name'),
         ];
+    }
+
+    private function expenseAccounts()
+    {
+        return ChartOfAccount::query()
+            ->where('account_code', 'like', '52%')
+            ->where('account_code', '!=', '5200')
+            ->orderBy('account_name')
+            ->get(['id', 'account_code', 'account_name']);
     }
 
     private function suppliersFor(Request $request)

@@ -259,3 +259,23 @@ it('lets only the maker edit, delete or submit a voucher, so the checker can alw
     $this->actingAs($this->maker)->post(route('expense-vouchers.submit', $voucher))->assertRedirect();
     $this->actingAs($other)->get(route('expense-vouchers.show', $voucher))->assertOk()->assertSee('Approve and post');
 });
+
+it('blocks only the user who made the voucher from checking it, even when someone else sent it', function () {
+
+    $this->mock(AccountingService::class, function ($mock) {
+        $currency = Currency::first() ?? Currency::factory()->create();
+        $period = AccountingPeriod::factory()->create(['start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth()]);
+        $entry = JournalEntry::factory()->create(['currency_id' => $currency->id, 'accounting_period_id' => $period->id, 'entry_date' => now(), 'status' => 'posted']);
+        $mock->shouldReceive('createJournalEntry')->once()->andReturn(['success' => true, 'data' => $entry]);
+    });
+
+    $this->actingAs($this->maker);
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id]);
+    $voucher->forceFill(['submitted_by' => $this->checker->id])->saveQuietly();
+
+    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    expect($voucher->fresh()->status)->toBe('pending');
+
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    expect($voucher->fresh()->status)->toBe('approved');
+});

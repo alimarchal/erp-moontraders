@@ -64,7 +64,7 @@
             <div class="ak-head-actions">
                 <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                    Filters <span class="ev-ur" lang="ur" dir="rtl">فلٹرز</span> @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
                 </button>
                 <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print <span class="ev-ur" lang="ur" dir="rtl">پرنٹ</span></button>
@@ -89,38 +89,22 @@
         .ev-ranges a:hover { background: var(--ak-soft); }
         .ev-ranges a.ev-clear { border-color: #fecaca; color: #b91c1c; background: #fff; }
         .ev-ranges a.ev-clear:hover { background: #fef2f2; }
-        #ev-filter-panel { overflow: hidden; }
         .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; color: var(--ak-navy); margin-inline-start: 8px; line-height: 1.5; font-size: 1.1em; }
         .ak-btn .ev-ur, .ak-primary-link .ev-ur, .ak-tab .ev-ur, .ak-chip .ev-ur, .ak-chips-clear .ev-ur, .ak-status .ev-ur, .ak-seg .ev-ur { color: inherit; margin-inline-start: 6px; }
         .ak-btn-primary .ev-ur { color: #fff; }
         .ak-title .ev-ur { font-size: 22px; margin-inline-start: 14px; }
         .ev-bi { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .ak-field label.ev-bi { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 15px; font-weight: 600; color: var(--ak-text); }
-        .ak-field label.ev-bi .ev-ur { font-size: 17px; position: relative; top: 2px; }
-        #ev-filter-panel.ak-card { padding: 6px 4px 8px; }
-        #ev-filter-panel .ak-field input, #ev-filter-panel .ak-field select, #ev-filter-panel .ak-search input { height: 46px; font-size: 16px; }
-        #ev-filter-panel .ev-filter-row .ak-field input[type="date"] { font-size: 16px; }
-        #ev-filter-panel .select2-container .select2-selection--single { height: 46px; font-size: 16px; }
-        #ev-filter-panel .select2-container .select2-selection__rendered { font-size: 16px; }
-        #ev-filter-panel .ak-filter-buttons .ak-btn { height: 46px; font-size: 15px; padding: 0 18px; }
-        #ev-filter-panel .ev-ranges a { padding: 7px 14px; font-size: 14px; }
-        #ev-filter-panel .ev-ranges-label { font-size: 14px; }
         .ak-tab .ev-ur { font-size: 16px; }
         .ak-seg .ev-ur { color: inherit; font-size: 14px; background: transparent; padding: 0; margin-inline-start: 6px; }
         .ev-ranges a .ev-ur { color: inherit; font-size: 15px; margin-inline-start: 6px; }
         .ev-ranges a[aria-current] .ev-ur, .ak-seg .is-on .ev-ur, .ak-tab.is-active .ak-count .ev-ur { color: #fff; }
         .ev-ranges a.ev-clear .ev-ur { color: inherit; }
-        .ev-filter-row { row-gap: 14px; }
-        .ev-filter-row .ak-filter-buttons { margin-top: 2px; }
-        #ev-filter-panel .ak-filter-buttons .ak-btn { display: inline-flex; align-items: center; gap: 6px; }
-        #ev-filter-panel .ak-filter-buttons .ak-btn .ev-ur { margin: 0; }
         .ak-dt th .ev-ur { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--ak-navy); }
         .ak-dt th a .ev-ur { color: inherit; }
         .ak-dt td .ev-ur { font-size: 13px; }
         .ev-ranges a[aria-current] { background: var(--ak-navy); border-color: var(--ak-navy); color: #fff; }
         .ev-filter-row { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; }
-        @media (min-width: 900px) { .ev-filter-row { grid-template-columns: minmax(220px, 2fr) 180px 180px minmax(180px, 1.4fr) 110px; }
-        .ev-filter-row .ak-filter-buttons { grid-column: 1 / -1; justify-content: flex-end; } }
+        @media (min-width: 900px) { .ev-filter-row { grid-template-columns: minmax(220px, 2fr) 160px 160px minmax(170px, 1.3fr) 90px auto; } }
         .ev-filter-row .ak-field input, .ev-filter-row .ak-field select { height: 38px; box-sizing: border-box; }
         .ev-filter-row .ak-field input[type="date"] { padding: 0 10px; font-size: 14px; }
         .ev-filter-row .ak-filter-buttons { display: flex; gap: 8px; }
@@ -159,7 +143,7 @@
 
             <div class="ev-filter-row">
                 <div class="ak-field">
-                    <label for="f_search" class="ev-bi"><span>Search</span><span class="ev-ur" lang="ur" dir="rtl">تلاش</span></label>
+                    <label for="f_search">Search</label>
                     <div class="ak-search">
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
                         <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
@@ -169,15 +153,15 @@
                     </div>
                 </div>
                 <div class="ak-field">
-                    <label for="f_from" class="ev-bi"><span>From</span><span class="ev-ur" lang="ur" dir="rtl">از تاریخ</span></label>
+                    <label for="f_from">From</label>
                     <input id="f_from" type="date" name="filter[date_from]" value="{{ $dateFrom }}">
                 </div>
                 <div class="ak-field">
-                    <label for="f_to" class="ev-bi"><span>To</span><span class="ev-ur" lang="ur" dir="rtl">تا تاریخ</span></label>
+                    <label for="f_to">To</label>
                     <input id="f_to" type="date" name="filter[date_to]" value="{{ $dateTo }}">
                 </div>
                 <div class="ak-field">
-                    <label for="f_supplier" class="ev-bi"><span>Company</span><span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></label>
+                    <label for="f_supplier">Company</label>
                     <select id="f_supplier" class="ev-select" name="filter[owner]">
                         <option value="">All companies</option>
                         @foreach ($companies as $company)
@@ -189,7 +173,7 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_per_page" class="ev-bi"><span>Rows</span><span class="ev-ur" lang="ur" dir="rtl">قطاریں</span></label>
+                    <label for="f_per_page">Rows</label>
                     <select id="f_per_page" name="per_page" onchange="this.form.requestSubmit()">
                         @foreach (\App\Http\Controllers\ExpenseVoucherController::PER_PAGE as $n)
                             <option value="{{ $n }}" @selected($perPage === (string) $n)>{{ $n === 'all' ? 'All' : $n }}</option>
@@ -198,17 +182,17 @@
                 </div>
                 <div class="ak-filter-buttons">
                     <button type="button" class="ak-btn ak-btn-ghost" @click="advanced = !advanced" :aria-expanded="advanced" aria-controls="ev-advanced">
-                        More filters <span class="ev-ur" lang="ur" dir="rtl">مزید فلٹرز</span> @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
+                        More filters @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
                     </button>
                     <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
-                        <span x-show="!busy">Apply <span class="ev-ur" lang="ur" dir="rtl">لاگو کریں</span></span><span x-show="busy" x-cloak>Searching… <span class="ev-ur" lang="ur" dir="rtl">تلاش جاری ہے</span></span>
+                        <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span>
                     </button>
                 </div>
             </div>
 
             <div id="ev-advanced" class="ev-advanced" x-show="advanced" x-cloak x-transition>
                 <div class="ak-field">
-                    <label for="f_account" class="ev-bi"><span>Expense account</span><span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></label>
+                    <label for="f_account">Expense account</label>
                     <select id="f_account" class="ev-select" name="filter[expense_account_id]">
                         <option value="">All accounts</option>
                         @foreach ($accounts as $account)
@@ -217,7 +201,7 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_party" class="ev-bi"><span>Party</span><span class="ev-ur" lang="ur" dir="rtl">پارٹی</span></label>
+                    <label for="f_party">Party</label>
                     <input id="f_party" type="text" name="filter[party_name]" value="{{ $filters['party_name'] ?? '' }}" list="party-suggestions" autocomplete="off" placeholder="Any party (part of the name)">
                     <datalist id="party-suggestions">
                         @foreach ($parties as $party)
@@ -226,7 +210,7 @@
                     </datalist>
                 </div>
                 <div class="ak-field">
-                    <label for="f_maker" class="ev-bi"><span>Maker</span><span class="ev-ur" lang="ur" dir="rtl">بنانے والا</span></label>
+                    <label for="f_maker">Maker</label>
                     <select id="f_maker" class="ev-select" name="filter[created_by]">
                         <option value="">Anyone</option>
                         @foreach ($people as $person)
@@ -235,7 +219,7 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_checker" class="ev-bi"><span>Checker</span><span class="ev-ur" lang="ur" dir="rtl">جانچنے والا</span></label>
+                    <label for="f_checker">Checker</label>
                     <select id="f_checker" class="ev-select" name="filter[checked_by]">
                         <option value="">Anyone</option>
                         @foreach ($people as $person)
@@ -244,20 +228,20 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_min" class="ev-bi"><span>Amount from</span><span class="ev-ur" lang="ur" dir="rtl">رقم از</span></label>
+                    <label for="f_min">Amount from</label>
                     <input id="f_min" type="number" step="0.01" min="0" name="filter[amount_min]" value="{{ $filters['amount_min'] ?? '' }}">
                 </div>
                 <div class="ak-field">
-                    <label for="f_max" class="ev-bi"><span>Amount to</span><span class="ev-ur" lang="ur" dir="rtl">رقم تا</span></label>
+                    <label for="f_max">Amount to</label>
                     <input id="f_max" type="number" step="0.01" min="0" name="filter[amount_max]" value="{{ $filters['amount_max'] ?? '' }}">
                 </div>
             </div>
             <nav class="ev-ranges" aria-label="Quick dates">
-                <span class="ev-ranges-label">Quick dates <span class="ev-ur" lang="ur" dir="rtl">تیز تاریخیں</span></span>
+                <span class="ev-ranges-label">Quick dates</span>
                 @foreach ($ranges as $label => [$from, $to, $urdu])
-                    <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }} <span class="ev-ur" lang="ur" dir="rtl">{{ $urdu }}</span></a>
+                    <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
                 @endforeach
-                <a href="{{ route('expense-vouchers.index') }}" class="ev-clear" title="Remove every filter and go back to this month">&times; Clear <span class="ev-ur" lang="ur" dir="rtl">صاف کریں</span></a>
+                <a href="{{ route('expense-vouchers.index') }}" class="ev-clear" title="Remove every filter and go back to this month">&times; Clear</a>
             </nav>
         </form>
         </section>
@@ -274,13 +258,13 @@
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">
-                    <span class="ak-chips-label">Filtered by <span class="ev-ur" lang="ur" dir="rtl">فلٹر شدہ</span></span>
+                    <span class="ak-chips-label">Filtered by</span>
                     @foreach ($chips as $key => $value)
                         <a href="{{ $withFilters(\Illuminate\Support\Arr::except($filters, $key)) }}" class="ak-chip" aria-label="Remove filter {{ $chipLabels[$key] ?? $key }}">
                             <b>{{ $chipLabels[$key] ?? \Illuminate\Support\Str::headline($key) }}:</b> {{ $chipValue($key, $value) }} <span aria-hidden="true">×</span>
                         </a>
                     @endforeach
-                    <a href="{{ $withFilters(\Illuminate\Support\Arr::only($filters, ['status', 'date_from', 'date_to'])) }}" class="ak-chips-clear">Clear all <span class="ev-ur" lang="ur" dir="rtl">سب صاف کریں</span></a>
+                    <a href="{{ $withFilters(\Illuminate\Support\Arr::only($filters, ['status', 'date_from', 'date_to'])) }}" class="ak-chips-clear">Clear all</a>
                 </div>
             @endif
 

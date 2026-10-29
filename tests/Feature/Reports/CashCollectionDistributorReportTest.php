@@ -79,14 +79,14 @@ it('counts cheques cleared on the day as cheque clearing and in the cash total',
 
 it('lists bank slips with distribution, salesman and account', function () {
     $settlement = ($this->settle)($this->nestle, 5000);
-    $bank = BankAccount::factory()->create(['bank_name' => 'Meezan', 'account_name' => 'Moon Traders']);
+    $bank = BankAccount::factory()->create(['bank_name' => 'Meezan', 'account_number' => '0123456789']);
     SalesSettlementBankSlip::create([
         'sales_settlement_id' => $settlement->id, 'employee_id' => $settlement->employee_id, 'bank_account_id' => $bank->id,
         'amount' => 4000, 'reference_number' => 'SLIP-9',
     ]);
 
     $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))
-        ->assertSee('Meezan - Moon Traders')->assertSee('SLIP-9')->assertSee('4,000.00');
+        ->assertSee('Meezan')->assertSee('0123456789')->assertSee('SLIP-9')->assertSee('4,000.00');
 });
 
 it('holds users without the all-companies permission to their own company', function () {

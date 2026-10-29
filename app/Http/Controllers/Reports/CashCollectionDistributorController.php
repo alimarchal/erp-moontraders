@@ -202,11 +202,11 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 'bold' => [2], 'empty' => 'No cheques for the selected filters.',
             ],
             'slips' => [
-                'no' => 5, 'title' => 'Bank Slip Details', 'explain' => 'distribution, salesman and the account the amount was submitted to',
-                'cols' => [['#', 'c', 4], ['Distribution', '', 20], ['Salesman', '', 22], ['Bank Account', '', 28], ['Reference', '', 12], ['Amount (Rs.)', 'n', 14]],
-                'rows' => $slipRows->map(fn ($row, $i) => [$i + 1, $row['company'], $row['salesman'], $row['account'], $row['reference'], $total($row['amount'])])->all(),
-                'total' => ['label' => 'Total bank slips', 'span' => 5, 'cells' => [$total($slipRows->sum('amount'))]],
-                'bold' => [5], 'empty' => 'No bank slips for the selected filters.',
+                'no' => 5, 'title' => 'Bank Slip Details', 'explain' => 'distribution, salesman and the bank account the amount was submitted to',
+                'cols' => [['#', 'c', 4], ['Distribution', '', 17], ['Salesman', '', 19], ['Bank', '', 19], ['Account No.', '', 18], ['Reference', '', 11], ['Amount (Rs.)', 'n', 12]],
+                'rows' => $slipRows->map(fn ($row, $i) => [$i + 1, $row['company'], $row['salesman'], $row['bank'], $row['accountNumber'], $row['reference'], $total($row['amount'])])->all(),
+                'total' => ['label' => 'Total bank slips', 'span' => 6, 'cells' => [$total($slipRows->sum('amount'))]],
+                'bold' => [6], 'empty' => 'No bank slips for the selected filters.',
             ],
         ];
 
@@ -282,7 +282,8 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             ->flatMap(fn (SalesSettlement $settlement) => $settlement->bankSlips->map(fn ($slip) => [
                 'company' => (string) $companies->firstWhere('id', $settlement->company_id)?->supplier_name,
                 'salesman' => (string) $settlement->employee?->name,
-                'account' => trim(($slip->bankAccount?->bank_name ?? '').' - '.($slip->bankAccount?->account_name ?? ''), ' -'),
+                'bank' => (string) $slip->bankAccount?->bank_name,
+                'accountNumber' => (string) $slip->bankAccount?->account_number,
                 'reference' => (string) $slip->reference_number,
                 'amount' => (float) $slip->amount,
             ]))

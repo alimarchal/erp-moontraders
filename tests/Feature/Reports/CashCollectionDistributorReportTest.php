@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\BankAccount;
+use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementBankSlip;
+use App\Models\SalesSettlementBankTransfer;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCheque;
+use App\Models\SalesSettlementRecovery;
 use App\Models\Supplier;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -133,4 +136,22 @@ it('opens the how-it-works guide for report users only', function () {
         ->assertSee('Expense vouchers (maker and checker)');
 
     $this->actingAs(User::factory()->create())->get(route('reports.cash-collection-distributor.help'))->assertForbidden();
+});
+
+it('counts bank transfers and bank recoveries as online from customer, and cash recoveries only in the notes', function () {
+    $settlement = ($this->settle)($this->nestle, 10000);
+    $customer = Customer::factory()->create();
+    SalesSettlementBankTransfer::factory()->create(['sales_settlement_id' => $settlement->id, 'customer_id' => $customer->id, 'amount' => 3000]);
+    foreach ([['bank_transfer', 2000], ['cash', 500]] as [$method, $amount]) {
+        SalesSettlementRecovery::create([
+            'sales_settlement_id' => $settlement->id, 'customer_id' => $customer->id, 'employee_id' => $settlement->employee_id,
+            'payment_method' => $method, 'amount' => $amount,
+        ]);
+    }
+
+    $tables = $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))->viewData('tables');
+
+    expect($tables['bank']['rows'][0][3])->toBe('5,000.00')
+        ->and($tables['cash']['rows'][0][2])->toBe('10,000.00')
+        ->and($tables['cash']['rows'][0][4])->toBe('15,000.00');
 });

@@ -133,7 +133,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             ->when($employeeIds !== [], fn ($q) => $q->whereIn('employee_id', $employeeIds));
 
         $settlements = $scope(SalesSettlement::query())
-            ->with(['employee:id,name,supplier_id,designation', 'cashDenominations', 'bankSlips.bankAccount', 'bankTransfers', 'cheques'])
+            ->with(['employee:id,name,supplier_id,designation', 'cashDenominations', 'bankSlips.bankAccount', 'bankTransfers', 'recoveries', 'cheques'])
             ->whereDate('settlement_date', $date)
             ->get()
             ->each(fn (SalesSettlement $settlement) => $settlement->setAttribute('company_id', (int) ($settlement->supplier_id ?? $settlement->employee?->supplier_id)))
@@ -159,7 +159,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 'cash' => $own->sum(fn ($s) => $this->cashOf($s)),
                 'clearing' => (float) $clearings->where('company_id', $company->id)->sum(fn (SalesSettlementCheque $cheque) => $cheque->clearedAmountOrFull()),
                 'slips' => (float) $own->sum(fn ($s) => $s->bankSlips->sum('amount')),
-                'transfers' => (float) $own->sum(fn ($s) => $s->bankTransfers->sum('amount')),
+                'transfers' => (float) $own->sum(fn ($s) => $this->onlineOf($s)),
                 'cheques' => (float) $own->sum(fn ($s) => $s->cheques->sum('amount')),
             ];
         })->each(fn ($row) => $row->collection = $row->cash + $row->slips + $row->transfers + $row->cheques)->values();
@@ -194,8 +194,8 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 'bold' => [1], 'empty' => '',
             ],
             'bank' => [
-                'no' => 3, 'title' => 'Bank Slips & Transfers', 'explain' => 'by distribution',
-                'cols' => [['#', 'c', 5], ['Distribution', '', 37], ['Bank Slips', 'n', 20], ['Bank Transfers', 'n', 20], ['Total', 'n', 18]],
+                'no' => 3, 'title' => 'Bank Slips & Online From Customer', 'explain' => 'slips deposited by salesmen, transfers and bank recoveries',
+                'cols' => [['#', 'c', 5], ['Distribution', '', 37], ['Bank Slips', 'n', 20], ['Online From Customer', 'n', 20], ['Total', 'n', 18]],
                 'rows' => $perCompany->map(fn ($row, $i) => [$i + 1, $row->name, $money($row->slips), $money($row->transfers), $money($row->slips + $row->transfers)])->all(),
                 'total' => ['label' => 'Total', 'span' => 2, 'cells' => [$total($totals['slips']), $total($totals['transfers']), $total($totals['slips'] + $totals['transfers'])]],
                 'bold' => [4], 'empty' => 'No bank slips or transfers for the selected filters.',
@@ -231,7 +231,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 ['Less: expenses paid (vouchers)', $total($expenseTotal)],
                 ['Cash in hand', $total($cashReceived - $expenseTotal)],
                 ['Bank slips', $total($totals['slips'])],
-                ['Bank transfers', $total($totals['transfers'])],
+                ['Bank transfers / online from customer', $total($totals['transfers'])],
                 ['Cheques', $total($totals['cheques'])],
             ],
             'total' => ['label' => 'Grand total (cash received + slips + transfers + cheques)', 'span' => 1, 'cells' => [$total($overall)]],
@@ -248,12 +248,22 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 ['Cash (settlement)', $total($totals['cash'])],
                 ['Cheque clearing', $total($totals['clearing'])],
                 ['Bank slips', $total($totals['slips'])],
-                ['Bank transfers', $total($totals['transfers'])],
+                ['Bank transfers / online from customer', $total($totals['transfers'])],
                 ['Cheques received', $total($totals['cheques'])],
                 ['Overall total', $total($overall), true],
             ],
             'tables' => $tables,
         ]);
+    }
+
+    /**
+     * Money that came straight from customers into a bank account: the settlement's bank transfers
+     * (Bank Transfers / Online From Customer) and the recoveries received by bank instead of cash.
+     */
+    private function onlineOf(SalesSettlement $settlement): float
+    {
+        return (float) $settlement->bankTransfers->sum('amount')
+            + (float) $settlement->recoveries->where('payment_method', '!=', 'cash')->sum('amount');
     }
 
     private function cashOf(SalesSettlement $settlement): float
@@ -379,7 +389,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 'name' => (string) $own->first()->employee?->name,
                 'cash' => $own->sum(fn ($s) => $this->cashOf($s)),
                 'slips' => (float) $own->sum(fn ($s) => $s->bankSlips->sum('amount')),
-                'transfers' => (float) $own->sum(fn ($s) => $s->bankTransfers->sum('amount')),
+                'transfers' => (float) $own->sum(fn ($s) => $this->onlineOf($s)),
                 'cheques' => (float) $own->sum(fn ($s) => $s->cheques->sum('amount')),
             ];
             $row['total'] = $row['cash'] + $row['slips'] + $row['transfers'] + $row['cheques'];

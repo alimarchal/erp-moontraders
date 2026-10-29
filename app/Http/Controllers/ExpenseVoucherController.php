@@ -52,7 +52,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             ->whereDate('voucher_date', '<=', $dateTo)
             ->when($filters['supplier_id'] ?? null, fn ($query, $id) => $id === 'general' ? $query->whereNull('supplier_id') : $query->where('supplier_id', $id))
             ->when($filters['expense_account_id'] ?? null, fn ($query, $id) => $query->where('expense_account_id', $id))
-            ->when($filters['party_name'] ?? null, fn ($query, $party) => $query->where('party_name', $party))
+            ->when($filters['party_name'] ?? null, fn ($query, $party) => $query->whereRaw('LOWER(party_name) LIKE ?', ['%'.mb_strtolower($party).'%']))
             ->when($filters['created_by'] ?? null, fn ($query, $id) => $query->where('created_by', $id))
             ->when($filters['checked_by'] ?? null, fn ($query, $id) => $query->where('checked_by', $id))
             ->when($filters['amount_min'] ?? null, fn ($query, $amount) => $query->where('amount', '>=', $amount))
@@ -186,6 +186,11 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $user = $request->user();
 
+        // The form's "Moon Traders (general)" choice is stored as no company.
+        if ($request->input('supplier_id') === ExpenseVoucher::GENERAL) {
+            $request->merge(['supplier_id' => null]);
+        }
+
         $data = $request->validate([
             'voucher_date' => ['required', 'date'],
             'supplier_id' => [$user->hasAllSupplierAccess() ? 'nullable' : 'required', 'exists:suppliers,id'],
@@ -228,6 +233,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         return [
             'suppliers' => $this->suppliersFor($request),
             'accounts' => $this->expenseAccounts(),
+            'defaultAccountId' => ChartOfAccount::where('account_code', ExpenseVoucher::DEFAULT_ACCOUNT_CODE)->value('id'),
             'parties' => ExpenseVoucher::query()
                 ->when(! $request->user()->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $request->user()->supplier_id ?? 0))
                 ->distinct()->orderBy('party_name')->pluck('party_name'),

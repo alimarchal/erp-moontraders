@@ -87,9 +87,9 @@
     .tk-sub td { background: #f8fafc; padding-top: 6px; padding-bottom: 10px; }
     .tk-batches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .tk-grid-table .select2-container .select2-selection--single { height: 36px; display: flex; align-items: center; border: 1px solid var(--ak-border-strong); border-radius: 8px; font-size: 14px; }
-    .tk-grid-table .select2-container .select2-selection__arrow { top: 4px !important; }
+    .tk-grid-table .select2-container .select2-selection__arrow { top: 50% !important; transform: translateY(-50%); height: 24px !important; }
     .tk-top .select2-container .select2-selection--single, .tk-gen4 .select2-container .select2-selection--single { height: 40px; display: flex; align-items: center; border: 1px solid var(--ak-border-strong); border-radius: 8px; font-size: 14px; }
-    .tk-top .select2-container .select2-selection__arrow, .tk-gen4 .select2-container .select2-selection__arrow { top: 7px !important; }
+    .tk-top .select2-container .select2-selection__arrow, .tk-gen4 .select2-container .select2-selection__arrow { top: 50% !important; transform: translateY(-50%); height: 24px !important; }
     .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
     .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
     .tk-batch { padding: 5px 10px; font-size: 12px; }

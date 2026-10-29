@@ -6,17 +6,16 @@
     </div>
     <div class="ak-field">
         <label for="supplier_id">Company (distribution)</label>
-        <select id="supplier_id" class="ev-select" name="supplier_id" @required(! auth()->user()->hasAllSupplierAccess())>
+        <select id="supplier_id" class="ev-select" name="supplier_id" required>
             @if(auth()->user()->hasAllSupplierAccess())
-                <option value="">Moon Traders (general expense)</option>
+                <option value="general" @selected(old('supplier_id', $voucher->exists ? ($voucher->supplier_id ?? 'general') : 'general') === 'general')>Moon Traders (general expense)</option>
             @elseif(! $isOwnCompanyOnly)
                 <option value="">Select company</option>
             @endif
             @foreach($suppliers as $supplier)
-                <option value="{{ $supplier->id }}" @selected((int) old('supplier_id', $voucher->supplier_id) === $supplier->id)>{{ $supplier->supplier_name }}</option>
+                <option value="{{ $supplier->id }}" @selected((string) old('supplier_id', $voucher->supplier_id) === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
             @endforeach
         </select>
-        <p class="ak-hint">Leave as Moon Traders for an expense of the business itself.</p>
     </div>
     <div class="ak-field">
         <label for="amount">Amount (Rs.)</label>
@@ -24,24 +23,20 @@
     </div>
     <div class="ak-field ev-span-2">
         <label for="party_name">Party name (paid to)</label>
-        <select id="party_name" class="ev-party" name="party_name" required>
-            <option value=""></option>
-            @php($currentParty = old('party_name', $voucher->party_name))
-            @if($currentParty && ! $parties->contains($currentParty))
-                <option value="{{ $currentParty }}" selected>{{ $currentParty }}</option>
-            @endif
+        <input id="party_name" type="text" name="party_name" required maxlength="255" list="party-suggestions" autocomplete="off"
+            value="{{ old('party_name', $voucher->party_name) }}" placeholder="Person, shop or company paid">
+        <datalist id="party-suggestions">
             @foreach($parties as $party)
-                <option value="{{ $party }}" @selected($currentParty === $party)>{{ $party }}</option>
+                <option value="{{ $party }}"></option>
             @endforeach
-        </select>
-        <p class="ak-hint">Pick a party used before, or type a new name and press Enter.</p>
+        </datalist>
     </div>
     <div class="ak-field">
         <label for="expense_account_id">Expense account</label>
         <select id="expense_account_id" class="ev-select" name="expense_account_id" required>
             <option value="">Select account</option>
             @foreach($accounts as $account)
-                <option value="{{ $account->id }}" @selected((int) old('expense_account_id', $voucher->expense_account_id) === $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
+                <option value="{{ $account->id }}" @selected((int) old('expense_account_id', $voucher->expense_account_id ?? ($defaultAccountId ?? null)) === $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
             @endforeach
         </select>
     </div>

@@ -140,8 +140,20 @@ it('lists vouchers with filters and opens the guide', function () {
 
     expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall', 'Other Co Party'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['supplier_id' => $this->supplier->id]]))))->toBe(['Ali Tea Stall'])
-        ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'Other Co Party', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
+        ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'other co', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
         ->and($parties($this->actingAs($this->maker)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
 
     $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('What each step writes to the database');
+});
+
+it('books a general voucher with no company and preselects Moon Traders and the default account', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $general = ChartOfAccount::factory()->create(['account_code' => ExpenseVoucher::DEFAULT_ACCOUNT_CODE, 'account_name' => 'Moon Traders General Expenses']);
+
+    $page = $this->actingAs($admin)->get(route('expense-vouchers.create'));
+    $page->assertOk()->assertSee('value="general" selected', false)->assertSee('value="'.$general->id.'" selected', false);
+
+    $this->actingAs($admin)->post(route('expense-vouchers.store'), ['supplier_id' => 'general', 'expense_account_id' => $general->id] + $this->payload)->assertRedirect();
+
+    expect(ExpenseVoucher::first()->supplier_id)->toBeNull();
 });

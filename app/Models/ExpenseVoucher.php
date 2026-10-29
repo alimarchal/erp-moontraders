@@ -20,6 +20,12 @@ class ExpenseVoucher extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
+    /** Expense account that general (Moon Traders) vouchers default to. */
+    public const DEFAULT_ACCOUNT_CODE = '5201';
+
+    /** Form value for a voucher that belongs to no company. */
+    public const GENERAL = 'general';
+
     protected $fillable = [
         'voucher_number',
         'voucher_date',

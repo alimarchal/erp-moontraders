@@ -5,7 +5,7 @@
                 <nav class="ak-crumbs" aria-label="Breadcrumb">
                     <a href="{{ route('expense-vouchers.index') }}">Expense Vouchers</a><span aria-hidden="true">›</span><span>New</span>
                 </nav>
-                <h1 class="ak-title">New expense voucher</h1>
+                <h1 class="ak-title">New expense voucher <span class="ev-ur" lang="ur" dir="rtl" style="font-size:22px">نیا اخراجاتی واؤچر</span></h1>
                 <p class="ak-sub">Saved as a draft first; send it to the checker when it is ready.</p>
             </div>
             <div class="ak-head-actions">
@@ -26,8 +26,8 @@
             
             @include('expense-vouchers._form')
             <div class="ev-form-foot">
-                <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
-                <button type="submit" class="ak-btn ak-btn-primary">Save as draft</button>
+                <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline">Cancel <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:17px">منسوخ کریں</span></a>
+                <button type="submit" class="ak-btn ak-btn-primary">Save as draft <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:17px">مسودہ محفوظ کریں</span></button>
             </div>
         </form>
     </div>

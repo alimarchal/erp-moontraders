@@ -32,7 +32,9 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Geeza Pro', serif; font-size: 14px; font-weight: 600; color: var(--ak-navy); text-transform: none; letter-spacing: 0; margin-inline-start: 8px; }
         .ev-steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0; padding: 0; list-style: none; }
         .ev-steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ak-muted); }
         .ev-steps li + li::before { content: ''; width: 28px; height: 2px; background: var(--ak-border); }
@@ -73,13 +75,13 @@
                     <div><div class="ak-muted" style="font-size:12px; text-transform:uppercase">Amount</div><div class="ev-amount">Rs {{ number_format($voucher->amount, 2) }}</div></div>
                 </div>
                 <dl class="ev-dl">
-                    <div><dt>Date</dt><dd>{{ $voucher->voucher_date->format('d M Y') }}</dd></div>
-                    <div><dt>Company</dt><dd>{{ $voucher->supplier?->supplier_name ?? 'Moon Traders (general)' }}</dd></div>
-                    <div><dt>Party name</dt><dd>{{ $voucher->party_name }}</dd></div>
-                    <div><dt>Expense account</dt><dd>{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
-                    <div style="grid-column: 1 / -1"><dt>Narration</dt><dd>{{ $voucher->narration ?: '—' }}</dd></div>
-                    <div><dt>Made</dt><dd>{{ $voucher->creator?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->created_at?->format('d M Y h:i A') }}</span></dd></div>
-                    <div><dt>Checked</dt><dd>@if($voucher->checked_at){{ $voucher->checker?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->checked_at->format('d M Y h:i A') }}</span>@else — @endif</dd></div>
+                    <div><dt>Date <span class="ev-ur" lang="ur" dir="rtl">تاریخ</span></dt><dd>{{ $voucher->voucher_date->format('d M Y') }}</dd></div>
+                    <div><dt>Company <span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></dt><dd>{{ $voucher->supplier?->supplier_name ?? 'Moon Traders (general)' }}</dd></div>
+                    <div><dt>Party name <span class="ev-ur" lang="ur" dir="rtl">پارٹی کا نام</span></dt><dd>{{ $voucher->party_name }}</dd></div>
+                    <div><dt>Expense account <span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></dt><dd>{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
+                    <div style="grid-column: 1 / -1"><dt>Narration <span class="ev-ur" lang="ur" dir="rtl">تفصیل</span></dt><dd>{{ $voucher->narration ?: '—' }}</dd></div>
+                    <div><dt>Made <span class="ev-ur" lang="ur" dir="rtl">تیار کنندہ</span></dt><dd>{{ $voucher->creator?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->created_at?->format('d M Y h:i A') }}</span></dd></div>
+                    <div><dt>Checked <span class="ev-ur" lang="ur" dir="rtl">جانچ کنندہ</span></dt><dd>@if($voucher->checked_at){{ $voucher->checker?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->checked_at->format('d M Y h:i A') }}</span>@else — @endif</dd></div>
                 </dl>
                 @if($voucher->status === 'rejected' && $voucher->rejection_reason)
                     <div class="ak-alert ak-alert-error" style="margin-top:16px"><b>Rejected:</b> {{ $voucher->rejection_reason }}</div>

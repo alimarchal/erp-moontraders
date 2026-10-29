@@ -54,10 +54,11 @@
         <label for="narration" class="ev-bi"><span>Narration</span><span class="ev-ur" lang="ur" dir="rtl">تفصیل / بیان</span></label>
         <textarea id="narration" name="narration" rows="3" maxlength="1000" placeholder="What was this expense for?  |  یہ خرچ کس مد میں ہوا؟">{{ old('narration', $voucher->narration) }}</textarea>
     </div>
+    @if(\App\Services\ExpenseVoucherAttachmentService::enabled())
     <div class="ak-field ev-span-3">
         <label for="attachment" class="ev-bi"><span>Attachment (optional): receipt, bill or photo</span><span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویز (اختیاری): رسید، بل یا تصویر</span></label>
         <input id="attachment" type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp" class="ev-file">
-        <p class="ak-hint">PDF, JPG, PNG or WEBP, up to {{ round(config('settlement_attachments.max_kb') / 1024) }} MB. Kept privately under Vouchers / {{ optional($voucher->voucher_date)->format('d-m-Y') ?? 'dd-mm-yyyy of the voucher' }}.</p>
+        <p class="ak-hint">PDF, JPG, PNG or WEBP, up to {{ round(config('voucher_attachments.max_kb') / 1024) }} MB. Kept privately under Vouchers / {{ optional($voucher->voucher_date)->format('d-m-Y') ?? 'dd-mm-yyyy of the voucher' }}.</p>
         @if($voucher->exists && $voucher->attachment)
             <div class="ev-current-file">
                 <a href="{{ $voucher->attachment_url }}" target="_blank" rel="noopener">Current attachment ({{ strtoupper(pathinfo($voucher->attachment, PATHINFO_EXTENSION)) }})</a>
@@ -65,4 +66,5 @@
             </div>
         @endif
     </div>
+    @endif
 </div>

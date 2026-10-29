@@ -274,7 +274,7 @@
                                     <tr>
                                         <td class="ak-c ak-muted">{{ $vouchers->firstItem() + $loop->index }}</td>
                                         <td data-label="Voucher">
-                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>@if($voucher->attachment) <span title="Has an attachment" aria-label="Has an attachment">&#128206;</span>@endif
+                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>@if($voucher->attachment_url) <span title="Has an attachment" aria-label="Has an attachment">&#128206;</span>@endif
                                             <div class="ak-muted ak-hide-compact">{{ $voucher->created_at?->diffForHumans() }}</div>
                                         </td>
                                         <td class="ak-mono" data-label="Date">{{ $voucher->voucher_date->format('d M Y') }}</td>

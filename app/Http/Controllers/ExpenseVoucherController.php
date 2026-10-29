@@ -108,7 +108,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $this->authorizeCompany($request, $expenseVoucher);
 
-        abort_unless($this->attachments->exists($expenseVoucher->attachment), 404);
+        abort_unless(ExpenseVoucherAttachmentService::enabled() && $this->attachments->exists($expenseVoucher->attachment), 404);
 
         return $this->attachments->response($expenseVoucher->attachment);
     }

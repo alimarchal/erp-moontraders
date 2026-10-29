@@ -107,7 +107,7 @@
             </section>
         </div>
 
-        @if($voucher->attachment)
+        @if($voucher->attachment_url)
             @php $isPdf = strtolower(pathinfo($voucher->attachment, PATHINFO_EXTENSION)) === 'pdf'; @endphp
             <section class="ak-card ev-pad" aria-label="Attachment">
                 <h2 style="margin:0 0 10px; font-size:15px; font-weight:700">Attachment <span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویز</span></h2>

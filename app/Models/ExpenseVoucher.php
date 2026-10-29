@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ExpenseVoucherAttachmentService;
 use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -72,7 +73,7 @@ class ExpenseVoucher extends Model
      */
     public function getAttachmentUrlAttribute(): ?string
     {
-        return $this->attachment ? route('expense-vouchers.attachment', $this) : null;
+        return $this->attachment && ExpenseVoucherAttachmentService::enabled() ? route('expense-vouchers.attachment', $this) : null;
     }
 
     public function statusLabel(): string

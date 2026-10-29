@@ -125,3 +125,12 @@ it('downloads a pdf and renders the print sheet', function () {
     $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'layout' => 'print']))
         ->assertOk()->assertSee('Prepared By');
 });
+
+it('opens the how-it-works guide for report users only', function () {
+    $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.help'))
+        ->assertOk()
+        ->assertSee('How the Cash Collection Distributor report works')
+        ->assertSee('Expense vouchers (maker and checker)');
+
+    $this->actingAs(User::factory()->create())->get(route('reports.cash-collection-distributor.help'))->assertForbidden();
+});

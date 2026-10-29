@@ -15,6 +15,7 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Collection;
+use Illuminate\View\View;
 
 /**
  * Daily cash collection by distribution (company): cash, cheque clearing, bank slips, bank transfers,
@@ -41,6 +42,11 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         }
 
         return view('reports.cash-collection-distributor', $data);
+    }
+
+    public function help(): View
+    {
+        return view('reports.cash-collection-distributor.help');
     }
 
     /**

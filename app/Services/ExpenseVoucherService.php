@@ -129,7 +129,7 @@ class ExpenseVoucherService
             throw new RuntimeException('Only a voucher waiting for approval can be approved or rejected.');
         }
 
-        if ((int) $voucher->created_by === $checker->id || (int) $voucher->submitted_by === $checker->id) {
+        if ((int) $voucher->created_by === $checker->id) {
             throw new RuntimeException('The maker of a voucher cannot also be its checker.');
         }
     }

@@ -63,6 +63,8 @@
 
     /* Page */
     .ak-page { max-width: 80rem; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 20px; }
+    /* Flash messages (x-status-message) are flex items here; give them the full width of the page */
+    .ak-page > [role="alert"] { width: 100%; max-width: none; margin-left: 0; margin-right: 0; box-sizing: border-box; }
     @media (min-width: 640px) { .ak-page { padding-left: 24px; padding-right: 24px; } }
     @media (min-width: 1024px) { .ak-page { padding-left: 32px; padding-right: 32px; } }
     .ak-alert { padding: 12px 16px; border-radius: var(--ak-radius); border: 1px solid; font-size: 14px; }

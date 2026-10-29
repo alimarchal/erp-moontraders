@@ -49,7 +49,7 @@ class PermissionCatalog
         ],
         'Receivables & Core Reports' => [
             'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-sales-credit-sales',
-            'report-audit-cash-detail', 'report-audit-investment-summary', 'report-audit-claim-register',
+            'report-audit-cash-detail', 'report-audit-cash-detail-all-companies', 'report-audit-investment-summary', 'report-audit-claim-register',
             'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-amr-dispose-register',
         ],
         'Audit & Product Reports' => [
@@ -135,6 +135,7 @@ class PermissionCatalog
         'report-audit-customer-account-statement' => 'Customer Account Statement',
         'report-sales-credit-sales' => 'Salesman Credit History',
         'report-audit-cash-detail' => 'Cash Collection Detail',
+        'report-audit-cash-detail-all-companies' => 'Cash Collection Detail - All Companies',
         'report-audit-investment-summary' => 'Investment Summary',
         'report-audit-company-target-summary' => 'Company Target Summary',
         'report-audit-advance-tax-customer-summary' => 'Advance Tax Customer Summary',

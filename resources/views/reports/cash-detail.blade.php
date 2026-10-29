@@ -1,10 +1,61 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Cash Detail Report" :createRoute="null" createLabel="" :showSearch="true"
-            :showRefresh="true" backRoute="reports.index" />
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('reports.index') }}">Reports</a><span aria-hidden="true">›</span>
+                    <span>Cash Detail Report</span>
+                </nav>
+                <h1 class="ak-title" style="margin:6px 0 0">Cash Detail Report</h1>
+            </div>
+            <div class="ak-head-actions no-print">
+                <button type="button" id="toggle" class="ak-btn ak-btn-outline" title="Show or hide the filters" aria-label="Filters">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                </button>
+                @if($hasQuery)
+                    <button type="button" class="ak-btn ak-btn-outline" data-print-url="{{ route('reports.cash-detail.index', request()->query() + ['layout' => 'print']) }}" onclick="cdPrintSheet(this)" title="Print the report sheet (A4)" aria-label="Print">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83c-.24.03-.48.06-.72.1m.72-.1a42.4 42.4 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.17c.24.03.48.06.72.1m-.72-.1L17.66 18m0 0 .23 2.5a1.13 1.13 0 0 1-1.12 1.24H7.23a1.13 1.13 0 0 1-1.12-1.24L6.34 18m11.32 0h1.09A2.25 2.25 0 0 0 21 15.75V9.46c0-1.08-.77-2.01-1.84-2.18a48 48 0 0 0-1.41-.2M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.46c0-1.08.77-2.01 1.84-2.18.47-.07.94-.14 1.41-.2m0 0a48.6 48.6 0 0 1 11.5 0m-11.5 0V3.38c0-.62.5-1.13 1.13-1.13h9.24c.63 0 1.13.5 1.13 1.13v3.7M18 10.5h.01" /></svg>
+                    </button>
+                    <a href="{{ route('reports.cash-detail.export.pdf', request()->query()) }}" class="ak-btn ak-btn-outline" title="Download PDF" aria-label="Download PDF">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                    </a>
+                @endif
+                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh" aria-label="Refresh">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.02 9.35h4.99M2.99 19.64v-4.99m0 0h4.99m-4.99 0 3.18 3.18a8.25 8.25 0 0 0 13.8-3.7M4.03 9.87a8.25 8.25 0 0 1 13.8-3.7l3.18 3.18m0-4.99v4.99" /></svg>
+                </a>
+                <a href="{{ route('reports.index') }}" class="ak-btn ak-btn-outline" title="Back to Reports" aria-label="Back to Reports">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+                </a>
+        </div>
     </x-slot>
 
+    @include('settings.partials.ui-style')
+
     @push('header')
+        @include('reports.cash-detail._sheet-styles')
+        <style>
+            /* On screen the sheet is read at arm's length, so it is set larger than on paper. */
+            .cd-screen { font-size: 14px; line-height: 1.4; color: #000; }
+            .cd-screen .p2-title { font-size: 26px; }
+            .cd-screen .p2-subtitle { font-size: 16px; }
+            .cd-screen .p2-no { font-size: 20px; }
+            .cd-screen table.p2-meta { font-size: 14px; margin: 8px 0 10px; }
+            .cd-screen table.p2-meta td { padding: 3px 8px 3px 0; }
+            .cd-screen table.p2-kpis td { padding: 6px 10px; }
+            .cd-screen table.p2-kpis small { font-size: 11px; min-height: 30px; }
+            .cd-screen table.p2-kpis b { font-size: 19px; }
+            .cd-screen .p2-gap { height: 14px; }
+            .cd-screen table.p2 { font-size: 14px; line-height: 1.35; }
+            .cd-screen table.p2 th, .cd-screen table.p2 td { padding: 3px 8px; }
+            .cd-screen table.p2 th { font-size: 12px; }
+            .cd-screen table.p2 tr.cap th { font-size: 16px; padding: 4px 2px 3px; }
+            .cd-screen table.p2 tr.cap th small { font-size: 13px; }
+            .cd-screen table.p2 .calc { font-size: 11px; }
+            .cd-screen .p2-note { font-size: 13px; padding: 6px 10px; }
+            /* The printed-by line and signature boxes belong to the print and PDF sheets only. */
+            .cd-screen .p2-foot, .cd-screen .p2-sign { display: none; }
+            @media (max-width: 767px) { .cd-screen { font-size: 12px; } .cd-screen table.p2 { font-size: 12px; } }
+        </style>
         <style>
             .report-table {
                 width: 100%;
@@ -127,11 +178,14 @@
                 <x-input id="date" class="block mt-1 w-full" type="date" name="date" :value="$date" required />
             </div>
             
-            {{-- Supplier Filter --}}
+            {{-- Company Filter --}}
             <div>
-                <x-label for="supplier_id" value="{{ __('Supplier') }}" />
-                <select id="supplier_id" name="supplier_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
+                <x-label for="supplier_id" value="{{ __('Company') }}" />
+                <select id="supplier_id" name="supplier_id" required class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">Select company</option>
+                    @if($canChooseCompany)
+                        <option value="all" {{ $allCompanies ? 'selected' : '' }}>All Companies</option>
+                    @endif
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->id }}" {{ $supplierId == $supplier->id ? 'selected' : '' }}>
                             {{ $supplier->supplier_name }}
@@ -168,313 +222,60 @@
         </div>
     </x-filter-section>
 
+    @unless($hasQuery)
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4 no-print">
+            <div class="bg-white shadow-xl sm:rounded-lg p-10 text-center text-gray-600">
+                <p class="text-lg font-semibold text-gray-800">No company selected</p>
+                <p class="mt-1 text-sm">Choose a company{{ $canChooseCompany ? ' (or All Companies)' : '' }}, pick the date and click Apply to load the Cash Detail Report.</p>
+            </div>
+        </div>
+    @else
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
-        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-2">
-                    Moon Traders<br>
-                    CASH DETAIL REPORT<br>
-                    <span class="text-sm font-semibold">
-                        Date:{{ \Carbon\Carbon::parse($date)->format('d-M-Y') }}
-                    </span><br>
-                     @if($supplierId)
-                        <span class="text-sm font-semibold">
-                            Supplier: {{ $suppliers->find($supplierId)->supplier_name }}
-                        </span><br>
-                     @endif
-                     
-                     @if($designation)
-                        <span class="text-sm font-semibold">
-                            Designation: {{ $designation }}
-                        </span><br>
-                     @endif
-
-                     @if(!empty($employeeIds))
-                        <span class="text-sm font-semibold">
-                            Salesmen: 
-                            @foreach($allEmployees->whereIn('id', $employeeIds) as $emp)
-                                {{ $emp->name }}@if(!$loop->last), @endif
-                            @endforeach
-                        </span><br>
-                     @endif
-                    <span class="print-only print-info text-xs text-center">
-                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
-                    </span>
-                </p>
-
-                {{-- Main Content Grid --}}
-
-                    @php
-                        // Calculate maximum rows to ensure all tables identify with the same height
-                        // Natural rows for Cash Detail is 8 (7 denoms + 1 coin)
-                        $maxRows = max($salesmanData->count(), $bankSlipsData->count(), 8);
-                        $maxRows2 = max($bankTransfersData->count(), $chequesData->count(), 1);
-                    @endphp
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-1 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
-                        
-                        {{-- 1. Salesman Cash --}}
-                        <div class="flex flex-col h-full print:w-1/3">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Salesman Cash</h4>
-                            <table class="report-table w-full flex-grow tabular-nums">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
-                                        <th class="text-left px-1 py-0.5">Salesman</th>
-                                        <th class="text-right px-1 py-0.5">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $totalSalesmanAmount = 0; @endphp
-                                    @forelse($salesmanData as $index => $data)
-                                        @php $totalSalesmanAmount += $data->amount; @endphp
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
-                                            <td class="px-1 py-0.5">{{ $data->salesman_name }}</td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ $data->amount > 0 ? number_format($data->amount, 0) : '-' }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No data found</td></tr>
-                                    @endforelse
-                                    {{-- Filler rows --}}
-                                    @for($i = $salesmanData->count(); $i < $maxRows; $i++)
-                                        <tr>
-                                            <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                            <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                            <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
-                                        </tr>
-                                    @endfor
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold">
-                                    <tr>
-                                        <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalSalesmanAmount, 0) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        {{-- 2. Cash Detail --}}
-                        <div class="flex flex-col h-full print:w-1/3">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Cash Detail</h4>
-                            <table class="report-table w-full flex-grow tabular-nums">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
-                                        <th class="text-center px-1 py-0.5">Denom</th>
-                                        <th class="text-center px-1 py-0.5">Qty</th>
-                                        <th class="text-right px-1 py-0.5">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php 
-                                        $grandTotalCash = 0; 
-                                        $denomsList = [5000, 1000, 500, 100, 50, 20, 10];
-                                        $sr = 1;
-                                    @endphp
-                                    
-                                    @foreach($denomsList as $val)
-                                        @php 
-                                            $qty = $denominations[$val] ?? 0;
-                                            $subtotal = $qty * $val;
-                                            $grandTotalCash += $subtotal;
-                                        @endphp
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $sr++ }}</td>
-                                            <td class="text-center font-bold px-1 py-0.5">{{ $val }}</td>
-                                            <td class="text-center px-1 py-0.5">{{ $qty > 0 ? $qty : '-' }}</td>
-                                            <td class="text-right px-1 py-0.5">{{ $qty > 0 ? number_format($subtotal, 0) : '-' }}</td>
-                                        </tr>
-                                    @endforeach
-                                    
-                                    {{-- Coins --}}
-                                    @php 
-                                        $coins = $denominations['coins'] ?? 0;
-                                        $grandTotalCash += $coins;
-                                    @endphp
-                                    <tr>
-                                        <td class="text-center px-1 py-0.5">{{ $sr++ }}</td>
-                                        <td class="text-center font-bold px-1 py-0.5">Coins</td>
-                                        <td class="text-center px-1 py-0.5">-</td>
-                                        <td class="text-right px-1 py-0.5">{{ $coins > 0 ? number_format($coins, 0) : '-' }}</td>
-                                    </tr>
-                                    
-                                    {{-- Filler rows --}}
-                                    @for($i = 8; $i < $maxRows; $i++)
-                                        <tr>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                        </tr>
-                                    @endfor
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold">
-                                    <tr>
-                                        <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($grandTotalCash, 0) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        {{-- 3. Bank Slips --}}
-                        <div class="print:w-1/3">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips</h4>
-                            <table class="report-table w-full tabular-nums">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
-                                        <th class="text-left px-1 py-0.5">Salesman</th>
-                                        <th class="text-right px-1 py-0.5">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $totalBankSlips = 0; @endphp
-                                    @forelse($bankSlipsData as $index => $slip)
-                                        @php $totalBankSlips += $slip->amount; @endphp
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
-                                            <td class="px-1 py-0.5">{{ $slip->salesman_name }}</td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ $slip->amount > 0 ? number_format($slip->amount, 2) : '-' }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No bank slips</td></tr>
-                                    @endforelse
-                                    </tbody>
-                                    {{-- Filler rows --}}
-                                    @for($i = $bankSlipsData->count(); $i < $maxRows; $i++)
-                                        <tr>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                        </tr>
-                                    @endfor
-                                <tfoot class="bg-gray-50 font-bold">
-                                    <tr>
-                                        <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalBankSlips, 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                    </div>
-                    
-                     {{-- Grand Total Summary --}}
-                     <div class="mt-1 border border-black p-1 bg-gray-50 flex justify-between items-center font-bold">
-                         <span>Grand Total (Salesman Cash + Bank Slips):</span>
-                         <span class="text-md">{{ number_format($totalSalesmanAmount + $totalBankSlips, 2) }}</span>
-                     </div>
-
-                     {{-- Row 2: Bank Transfers + Cheques --}}
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-1 mt-2 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
-
-                         {{-- 4. Bank Transfers --}}
-                         <div class="flex flex-col h-full print:w-1/2">
-                             <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Transfers</h4>
-                             <table class="report-table w-full flex-grow tabular-nums">
-                                 <thead>
-                                     <tr class="bg-gray-100">
-                                         <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
-                                         <th class="text-left px-1 py-0.5">Salesman</th>
-                                         <th class="text-right px-1 py-0.5">Amount</th>
-                                     </tr>
-                                 </thead>
-                                 <tbody>
-                                     @php $totalBankTransfers = 0; @endphp
-                                     @forelse($bankTransfersData as $row)
-                                         @php $totalBankTransfers += $row->amount; @endphp
-                                         <tr>
-                                             <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
-                                             <td class="px-1 py-0.5">{{ $row->salesman_name }}</td>
-                                             <td class="text-right font-bold px-1 py-0.5">{{ $row->amount > 0 ? number_format($row->amount, 2) : '-' }}</td>
-                                         </tr>
-                                     @empty
-                                         <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No bank transfers</td></tr>
-                                     @endforelse
-                                     @for($i = $bankTransfersData->count(); $i < $maxRows2; $i++)
-                                         <tr>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                         </tr>
-                                     @endfor
-                                 </tbody>
-                                 <tfoot class="bg-gray-50 font-bold">
-                                     <tr>
-                                         <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                         <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalBankTransfers, 2) }}</td>
-                                     </tr>
-                                 </tfoot>
-                             </table>
-                         </div>
-
-                         {{-- 5. Cheques --}}
-                         <div class="flex flex-col h-full print:w-1/2">
-                             <h4 class="font-bold text-sm border-x border-t border-black text-center">Cheques</h4>
-                             <table class="report-table w-full flex-grow tabular-nums">
-                                 <thead>
-                                     <tr class="bg-gray-100">
-                                         <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
-                                         <th class="text-left px-1 py-0.5">Salesman</th>
-                                         <th class="text-right px-1 py-0.5">Amount</th>
-                                     </tr>
-                                 </thead>
-                                 <tbody>
-                                     @php $totalCheques = 0; @endphp
-                                     @forelse($chequesData as $row)
-                                         @php $totalCheques += $row->amount; @endphp
-                                         <tr>
-                                             <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
-                                             <td class="px-1 py-0.5">{{ $row->salesman_name }}</td>
-                                             <td class="text-right font-bold px-1 py-0.5">{{ $row->amount > 0 ? number_format($row->amount, 2) : '-' }}</td>
-                                         </tr>
-                                     @empty
-                                         <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No cheques</td></tr>
-                                     @endforelse
-                                     @for($i = $chequesData->count(); $i < $maxRows2; $i++)
-                                         <tr>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                         </tr>
-                                     @endfor
-                                 </tbody>
-                                 <tfoot class="bg-gray-50 font-bold">
-                                     <tr>
-                                         <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                         <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalCheques, 2) }}</td>
-                                     </tr>
-                                 </tfoot>
-                             </table>
-                         </div>
-
-                     </div>
-
-                     {{-- Grand Total Row 2: Bank Transfers + Cheques --}}
-                     <div class="mt-1 border border-black p-1 bg-gray-50 flex justify-between items-center font-bold">
-                         <span>Grand Total (Bank Transfers + Cheques):</span>
-                         <span class="text-md">{{ number_format($totalBankTransfers + $totalCheques, 2) }}</span>
-                     </div>
-
-                     {{-- Overall Grand Total --}}
-                     <div class="mt-1 border-2 border-black p-1 bg-gray-200 flex justify-between items-center font-bold text-lg">
-                         <span>Overall Grand Total (Cash + Bank Slips + Bank Transfers + Cheques):</span>
-                         <span>{{ number_format($totalSalesmanAmount + $totalBankSlips + $totalBankTransfers + $totalCheques, 2) }}</span>
-                     </div>
-
+                <div class="cd-screen">
+                    @include('reports.cash-detail._sheet')
+                </div>
             </div>
         </div>
     </div>
 
+    @endunless
+
     @push('scripts')
         <script>
+            /** Loads the printable sheet in a hidden frame, then opens the browser print dialog for it. */
+            function cdPrintSheet(button) {
+                document.getElementById('cd-print-frame')?.remove();
+                const frame = document.createElement('iframe');
+                frame.id = 'cd-print-frame';
+                frame.setAttribute('aria-hidden', 'true');
+                frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+                button.disabled = true;
+                frame.onload = () => {
+                    button.disabled = false;
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                };
+                frame.src = button.dataset.printUrl;
+                document.body.appendChild(frame);
+            }
+
+            // Ctrl+P / Cmd+P prints the same sheet as the Print button instead of the screen page.
+            document.addEventListener('keydown', (event) => {
+                if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'p') {
+                    const button = document.querySelector('[data-print-url]');
+                    if (button && !button.disabled) {
+                        event.preventDefault();
+                        cdPrintSheet(button);
+                    }
+                }
+            });
+
             $(document).ready(function () {
                 $('#supplier_id').select2({
                     width: '100%',
-                    placeholder: 'All Suppliers',
-                    allowClear: true
+                    placeholder: 'Select company'
                 });
 
                 $('#designation').select2({

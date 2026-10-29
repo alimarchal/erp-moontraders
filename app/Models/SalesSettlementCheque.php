@@ -7,6 +7,7 @@ use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesSettlementCheque extends Model
 {
@@ -24,6 +25,7 @@ class SalesSettlementCheque extends Model
         'account_holder_name',
         'status',
         'cleared_date',
+        'cleared_amount',
         'notes',
         'created_by',
         'updated_by',
@@ -39,6 +41,7 @@ class SalesSettlementCheque extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'cleared_amount' => 'decimal:2',
             'cheque_date' => 'date',
             'cleared_date' => 'date',
             'status_updated_at' => 'datetime',
@@ -58,6 +61,19 @@ class SalesSettlementCheque extends Model
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);
+    }
+
+    public function histories(): HasMany
+    {
+        return $this->hasMany(SalesSettlementChequeHistory::class)->latest('id');
+    }
+
+    /**
+     * What the bank actually paid: the cleared amount, or the cheque amount when none was recorded.
+     */
+    public function clearedAmountOrFull(): float
+    {
+        return (float) ($this->cleared_amount ?? $this->amount);
     }
 
     public function isPending(): bool

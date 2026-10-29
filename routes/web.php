@@ -810,6 +810,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::prefix('cheque-register')->name('cheque-register.')->group(function () {
             Route::get('/', [ChequeRegisterController::class, 'index'])->name('index');
             Route::post('/{cheque}/update-status', [ChequeRegisterController::class, 'updateStatus'])->name('update-status');
+            Route::get('/{cheque}/history', [ChequeRegisterController::class, 'history'])->name('history');
         });
 
         /* AMR Dispose Register */

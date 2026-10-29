@@ -306,6 +306,11 @@
                                         class="text-indigo-600 hover:text-indigo-800 hover:underline font-mono">
                                         {{ $cheque->cheque_number }}
                                     </a>
+                                    <button type="button" class="no-print ml-1 align-middle text-gray-400 hover:text-indigo-600"
+                                        title="Status history"
+                                        @click="$dispatch('open-cheque-history-modal', { url: '{{ route('reports.cheque-register.history', $cheque->id) }}' })">
+                                        <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </button>
                                 </td>
                                 <td class="px-2 text-black">{{ $cheque->bank_name }}</td>
                                 <td class="px-2 text-black">{{ $cheque->employee_name ?? '—' }}</td>
@@ -316,6 +321,9 @@
                                 </td>
                                 <td class="text-center px-2 whitespace-nowrap text-black">
                                     {{ $cheque->cleared_date ? \Carbon\Carbon::parse($cheque->cleared_date)->format('d-M-y') : '—' }}
+                                    @if($cheque->status === 'cleared' && $cheque->cleared_amount !== null && (float) $cheque->cleared_amount !== (float) $cheque->amount)
+                                        <div class="text-[10px] font-mono text-amber-700" title="Amount actually cleared">Rs {{ number_format($cheque->cleared_amount, 2) }}</div>
+                                    @endif
                                 </td>
                                 @can('report-audit-cheque-register-manage')
                                     <td class="text-center px-2 no-print">
@@ -330,7 +338,9 @@
                                         <button type="button" @click="$dispatch('open-cheque-status-modal', {
                                                         url: '{{ route('reports.cheque-register.update-status', $cheque->id) }}',
                                                         status: '{{ $cheque->status }}',
-                                                        clearedDate: '{{ $cheque->cleared_date?->format('Y-m-d') }}'
+                                                        clearedDate: '{{ $cheque->cleared_date?->format('Y-m-d') }}',
+                                                        amount: '{{ $cheque->amount }}',
+                                                        clearedAmount: '{{ $cheque->cleared_amount }}'
                                                     })"
                                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold transition {{ $statusConfig['class'] }}">
                                             @if($statusConfig['tick'])
@@ -423,10 +433,23 @@
                                 </select>
                             </div>
 
+                            <div x-show="form.status === 'cleared'" class="space-y-4">
+                                <div>
+                                    <x-label value="Cleared Date" />
+                                    <x-input type="date" name="cleared_date" x-model="form.cleared_date"
+                                        x-bind:required="form.status === 'cleared'" class="mt-1 block w-full" />
+                                </div>
+                                <div>
+                                    <x-label value="Amount Cleared (cash the salesman brings back)" />
+                                    <x-input type="number" step="0.01" min="0" name="cleared_amount" x-model="form.cleared_amount"
+                                        class="mt-1 block w-full" />
+                                    <p class="mt-1 text-xs text-gray-500">Cheque amount: Rs <span x-text="form.amount"></span>. Change it only if the bank cleared a different amount.</p>
+                                </div>
+                            </div>
+
                             <div>
-                                <x-label value="Cleared Date" />
-                                <x-input type="date" name="cleared_date" x-model="form.cleared_date"
-                                    class="mt-1 block w-full" />
+                                <x-label value="Notes (optional)" />
+                                <x-input type="text" name="notes" maxlength="500" x-model="form.notes" class="mt-1 block w-full" />
                             </div>
 
                             <div class="flex justify-end gap-3 pt-2">
@@ -454,12 +477,18 @@
                         form: {
                             status: 'pending',
                             cleared_date: '',
+                            cleared_amount: '',
+                            amount: '',
+                            notes: '',
                         },
 
                         open(detail) {
                             this.formAction = detail.url;
                             this.form.status = detail.status || 'pending';
                             this.form.cleared_date = detail.clearedDate || '';
+                            this.form.amount = detail.amount || '';
+                            this.form.cleared_amount = detail.clearedAmount || detail.amount || '';
+                            this.form.notes = '';
                             this.show = true;
                         },
 
@@ -471,5 +500,70 @@
             </script>
         @endpush
     @endcan
+
+    {{-- Status History Modal --}}
+    <div x-data="chequeHistoryModal()" x-on:open-cheque-history-modal.window="open($event.detail)" x-cloak class="no-print">
+        <div x-show="show" x-on:keydown.escape.window="close()" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" @click="close()"></div>
+            <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
+                <div class="relative w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl" @click.outside="close()">
+                    <div class="bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
+                        <h3 class="text-base font-bold">Cheque <span x-text="data.cheque_number"></span> - Status History</h3>
+                        <button type="button" @click="close()" class="text-gray-300 hover:text-white">&times;</button>
+                    </div>
+                    <div class="p-4 max-h-[70vh] overflow-y-auto">
+                        <p x-show="loading" class="text-sm text-gray-500">Loading...</p>
+                        <p x-show="! loading && data.entries.length === 0" class="text-sm text-gray-500">No status change has been recorded for this cheque yet.</p>
+                        <table x-show="data.entries.length > 0" class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 text-left text-xs uppercase text-gray-600">
+                                    <th class="px-2 py-1">When</th><th class="px-2 py-1">Change</th><th class="px-2 py-1">Cleared</th><th class="px-2 py-1">By</th><th class="px-2 py-1">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="entry in data.entries" :key="entry.when + entry.to">
+                                    <tr class="border-b align-top">
+                                        <td class="px-2 py-1 whitespace-nowrap" x-text="entry.when"></td>
+                                        <td class="px-2 py-1 whitespace-nowrap"><span x-text="entry.from"></span> &rarr; <b x-text="entry.to"></b></td>
+                                        <td class="px-2 py-1 whitespace-nowrap"><span x-text="entry.cleared_date || '-'"></span><span x-show="entry.cleared_amount"> / Rs <span x-text="entry.cleared_amount"></span></span></td>
+                                        <td class="px-2 py-1" x-text="entry.by || '-'"></td>
+                                        <td class="px-2 py-1" x-text="entry.notes || ''"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            function chequeHistoryModal() {
+                return {
+                    show: false,
+                    loading: false,
+                    data: { cheque_number: '', entries: [] },
+
+                    async open(detail) {
+                        this.data = { cheque_number: '', entries: [] };
+                        this.loading = true;
+                        this.show = true;
+                        try {
+                            const response = await fetch(detail.url, { headers: { Accept: 'application/json' } });
+                            this.data = await response.json();
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+
+                    close() {
+                        this.show = false;
+                    },
+                };
+            }
+        </script>
+    @endpush
 
 </x-app-layout>

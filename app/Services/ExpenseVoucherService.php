@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChartOfAccount;
+use App\Models\Company;
 use App\Models\ExpenseVoucher;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +50,8 @@ class ExpenseVoucherService
             'status' => ExpenseVoucher::STATUS_PENDING,
             'submitted_by' => $maker->id,
             'submitted_at' => now(),
+            'checked_by' => null,
+            'checked_at' => null,
             'rejection_reason' => null,
         ]);
 
@@ -126,26 +129,29 @@ class ExpenseVoucherService
             throw new RuntimeException('Only a voucher waiting for approval can be approved or rejected.');
         }
 
-        if ((int) $voucher->submitted_by === $checker->id || (int) $voucher->created_by === $checker->id) {
+        if ((int) $voucher->created_by === $checker->id || (int) $voucher->submitted_by === $checker->id) {
             throw new RuntimeException('The maker of a voucher cannot also be its checker.');
         }
     }
 
     /**
-     * EV-2026-0001: running number per year; call inside a transaction.
+     * MT-EV-2026-000001: company code, document type, year and a six digit running number taken from
+     * the year's counter row, which is locked for the length of the transaction so two vouchers can
+     * never get the same number (the column is unique as well).
      */
     private function nextNumber(): string
     {
-        $prefix = 'EV-'.now()->format('Y').'-';
+        $year = (int) now()->format('Y');
 
-        $last = ExpenseVoucher::withTrashed()
-            ->where('voucher_number', 'like', $prefix.'%')
-            ->lockForUpdate()
-            ->orderByDesc('id')
-            ->value('voucher_number');
+        DB::table('expense_voucher_sequences')->insertOrIgnore(['year' => $year, 'last_number' => 0]);
 
-        $next = $last ? ((int) substr($last, strlen($prefix))) + 1 : 1;
+        $last = (int) DB::table('expense_voucher_sequences')->where('year', $year)->lockForUpdate()->value('last_number');
+        $next = $last + 1;
 
-        return $prefix.str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        DB::table('expense_voucher_sequences')->where('year', $year)->update(['last_number' => $next]);
+
+        $code = Company::query()->orderBy('id')->value('abbr') ?: 'MT';
+
+        return strtoupper($code).'-EV-'.$year.'-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
     }
 }

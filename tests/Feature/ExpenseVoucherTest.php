@@ -10,7 +10,9 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\ExpenseVoucherAttachmentService;
+use App\Services\ExpenseVoucherService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 
@@ -20,7 +22,8 @@ beforeEach(function () {
     }
 
     $this->supplier = Supplier::factory()->create();
-    $this->moonTraders = Company::first() ?? Company::factory()->create(['company_name' => 'Moon Traders']);
+    $this->moonTraders = Company::first() ?? Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT']);
+    $this->prefix = strtoupper($this->moonTraders->abbr ?: 'MT');
     $this->expense = ChartOfAccount::factory()->create(['account_code' => '5221', 'account_name' => 'Miscellaneous Expenses']);
     ChartOfAccount::factory()->create(['account_code' => '1121', 'account_name' => 'Cash']);
 
@@ -44,7 +47,7 @@ it('saves a draft with a running voucher number', function () {
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'draft'] + $this->payload)->assertRedirect();
 
     expect(ExpenseVoucher::orderBy('id')->pluck('voucher_number')->all())
-        ->toBe(['EV-'.now()->format('Y').'-0001', 'EV-'.now()->format('Y').'-0002'])
+        ->toBe([$this->prefix.'-EV-'.now()->format('Y').'-000001', $this->prefix.'-EV-'.now()->format('Y').'-000002'])
         ->and(ExpenseVoucher::first()->status)->toBe('draft')
         ->and(ExpenseVoucher::first()->created_by)->toBe($this->maker->id);
 });
@@ -56,7 +59,8 @@ it('blocks a maker from vouchers of another company', function () {
 });
 
 it('lets a different user approve, which posts the ledger entry', function () {
-    $voucher = ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'amount' => 1500, 'created_by' => $this->maker->id]);
+    $this->actingAs($this->maker); // the voucher is stamped with the signed-in user as its maker
+    $voucher = ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'amount' => 1500]);
     $this->actingAs($this->maker)->post(route('expense-vouchers.submit', $voucher))->assertRedirect();
     expect($voucher->fresh()->status)->toBe('pending');
 
@@ -80,7 +84,8 @@ it('lets a different user approve, which posts the ledger entry', function () {
 });
 
 it('does not let the maker check their own voucher', function () {
-    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'created_by' => $this->maker->id, 'submitted_by' => $this->maker->id]);
+    $this->actingAs($this->maker); // the voucher is stamped with the signed-in user as its maker
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'submitted_by' => $this->maker->id]);
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
 
@@ -88,7 +93,8 @@ it('does not let the maker check their own voucher', function () {
 });
 
 it('sends a rejected voucher back to the maker with the reason', function () {
-    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'created_by' => $this->maker->id, 'submitted_by' => $this->maker->id]);
+    $this->actingAs($this->maker); // the voucher is stamped with the signed-in user as its maker
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'submitted_by' => $this->maker->id]);
 
     $this->actingAs($this->checker)->post(route('expense-vouchers.reject', $voucher), [])->assertSessionHasErrors('rejection_reason');
     $this->actingAs($this->checker)->post(route('expense-vouchers.reject', $voucher), ['rejection_reason' => 'No receipt'])->assertRedirect();
@@ -98,7 +104,8 @@ it('sends a rejected voucher back to the maker with the reason', function () {
 });
 
 it('prints only approved vouchers', function () {
-    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'party_name' => 'Ali Tea Stall', 'created_by' => $this->maker->id, 'submitted_by' => $this->maker->id]);
+    $this->actingAs($this->maker); // the voucher is stamped with the signed-in user as its maker
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'party_name' => 'Ali Tea Stall', 'submitted_by' => $this->maker->id]);
     $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertForbidden();
 
     $voucher->update(['status' => 'approved', 'checked_by' => $this->checker->id, 'checked_at' => now()]);
@@ -173,7 +180,7 @@ it('submits a new voucher for approval in one step and resubmits an edited one',
     $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800] + $this->payload)->assertRedirect();
 
     $voucher->refresh();
-    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull();
+    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull()->and($voucher->checked_by)->toBeNull()->and($voucher->checked_at)->toBeNull();
 });
 
 it('lets anyone who works with vouchers open the guide, and a clearable company means a general expense', function () {
@@ -218,4 +225,37 @@ it('rejects an attachment of a type that is not allowed', function () {
     Storage::fake(ExpenseVoucherAttachmentService::disk());
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['attachment' => UploadedFile::fake()->create('run.exe', 10)] + $this->payload)->assertSessionHasErrors('attachment');
+});
+
+it('uses a uuid in the links and keeps voucher numbers unique and running per year', function () {
+    $this->actingAs($this->maker);
+    $first = ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id]);
+
+    expect($first->uuid)->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/')
+        ->and(route('expense-vouchers.show', $first))->toContain($first->uuid)->not->toContain('/expense-vouchers/'.$first->id.'/');
+
+    $this->get(route('expense-vouchers.show', $first))->assertOk();
+    $this->get('/expense-vouchers/'.$first->id)->assertNotFound();
+
+    app(ExpenseVoucherService::class)->create([...Arr::except($this->payload, ['owner']), 'supplier_id' => $this->supplier->id, 'company_id' => null]);
+    app(ExpenseVoucherService::class)->create([...Arr::except($this->payload, ['owner']), 'supplier_id' => $this->supplier->id, 'company_id' => null]);
+    $numbers = ExpenseVoucher::pluck('voucher_number')->filter(fn ($n) => str_contains($n, '-EV-'.now()->format('Y').'-'))->sort()->values()->all();
+
+    expect($numbers)->toBe([$this->prefix.'-EV-'.now()->format('Y').'-000001', $this->prefix.'-EV-'.now()->format('Y').'-000002'])
+        ->and(count(array_unique($numbers)))->toBe(2);
+});
+
+it('lets only the maker edit, delete or submit a voucher, so the checker can always be someone else', function () {
+    $this->actingAs($this->maker);
+    $voucher = ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id]);
+
+    $other = User::factory()->create(['supplier_id' => $this->supplier->id]);
+    $other->givePermissionTo(['expense-voucher-list', 'expense-voucher-create', 'expense-voucher-edit', 'expense-voucher-delete', 'expense-voucher-approve']);
+
+    $this->actingAs($other)->post(route('expense-vouchers.submit', $voucher))->assertForbidden();
+    $this->actingAs($other)->get(route('expense-vouchers.edit', $voucher))->assertForbidden();
+    $this->actingAs($other)->delete(route('expense-vouchers.destroy', $voucher))->assertForbidden();
+
+    $this->actingAs($this->maker)->post(route('expense-vouchers.submit', $voucher))->assertRedirect();
+    $this->actingAs($other)->get(route('expense-vouchers.show', $voucher))->assertOk()->assertSee('Approve and post');
 });

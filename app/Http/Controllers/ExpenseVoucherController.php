@@ -151,6 +151,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public function edit(Request $request, ExpenseVoucher $expenseVoucher)
     {
         $this->authorizeCompany($request, $expenseVoucher);
+        $this->authorizeMaker($request, $expenseVoucher);
         abort_unless($expenseVoucher->isEditable(), 403, 'Only a draft or rejected voucher can be changed.');
 
         return view('expense-vouchers.edit', $this->formData($request) + ['voucher' => $expenseVoucher]);
@@ -159,6 +160,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public function update(Request $request, ExpenseVoucher $expenseVoucher): RedirectResponse
     {
         $this->authorizeCompany($request, $expenseVoucher);
+        $this->authorizeMaker($request, $expenseVoucher);
 
         $data = $this->validated($request);
         $oldAttachment = $expenseVoucher->attachment;
@@ -186,6 +188,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public function destroy(Request $request, ExpenseVoucher $expenseVoucher): RedirectResponse
     {
         $this->authorizeCompany($request, $expenseVoucher);
+        $this->authorizeMaker($request, $expenseVoucher);
         abort_unless($expenseVoucher->isEditable(), 403, 'Only a draft or rejected voucher can be deleted.');
 
         $expenseVoucher->delete();
@@ -196,6 +199,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public function submit(Request $request, ExpenseVoucher $expenseVoucher): RedirectResponse
     {
         $this->authorizeCompany($request, $expenseVoucher);
+        $this->authorizeMaker($request, $expenseVoucher);
 
         return $this->attempt(fn () => $this->service->submit($expenseVoucher, $request->user()), $expenseVoucher, 'Voucher sent to the checker.');
     }
@@ -284,6 +288,15 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         }
 
         return redirect()->route('expense-vouchers.show', $voucher)->with('success', $message);
+    }
+
+    /**
+     * Only the user who made a voucher may change it, delete it or send it to the checker, so the
+     * maker and the checker are always two different people.
+     */
+    private function authorizeMaker(Request $request, ExpenseVoucher $voucher): void
+    {
+        abort_unless((int) $voucher->created_by === $request->user()->id, 403, 'Only the user who made this voucher can change it or send it to the checker.');
     }
 
     private function authorizeCompany(Request $request, ExpenseVoucher $voucher): void

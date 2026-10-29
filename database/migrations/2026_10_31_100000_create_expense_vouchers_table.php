@@ -25,6 +25,7 @@ return new class extends Migration
     {
         Schema::create('expense_vouchers', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->string('voucher_number', 30)->unique();
             $table->date('voucher_date')->index();
             // A voucher belongs to a distribution (supplier_id) or to Moon Traders itself (company_id, from the companies table).
@@ -54,6 +55,12 @@ return new class extends Migration
             $table->index(['company_id', 'voucher_date', 'status']);
         });
 
+        // One counter row per year, so voucher numbers (EV-2026-00001) never repeat, even with many users at once.
+        Schema::create('expense_voucher_sequences', function (Blueprint $table) {
+            $table->unsignedSmallInteger('year')->primary();
+            $table->unsignedInteger('last_number')->default(0);
+        });
+
         $now = now();
 
         DB::table('permissions')->insertOrIgnore(array_map(fn ($name) => [
@@ -81,6 +88,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('expense_vouchers');
+        Schema::dropIfExists('expense_voucher_sequences');
 
         $permissionIds = DB::table('permissions')->whereIn('name', self::PERMISSIONS)->where('guard_name', 'web')->pluck('id');
 

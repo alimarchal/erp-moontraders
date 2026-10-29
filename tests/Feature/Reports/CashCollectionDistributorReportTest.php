@@ -86,7 +86,22 @@ it('lists bank slips with distribution, salesman and account', function () {
     ]);
 
     $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))
-        ->assertSee('Meezan')->assertSee('0123456789')->assertSee('SLIP-9')->assertSee('4,000.00');
+        ->assertSee('Meezan')->assertSee('0123456789')->assertSee('4,000.00');
+});
+
+it('puts each bank account of a salesman in its own column', function () {
+    $settlement = ($this->settle)($this->nestle, 5000);
+    $first = BankAccount::factory()->create(['bank_name' => 'Meezan', 'account_number' => '111']);
+    $second = BankAccount::factory()->create(['bank_name' => 'HBL', 'account_number' => '222']);
+    foreach ([[$first, 1000], [$second, 2500], [$first, 500]] as [$bank, $amount]) {
+        SalesSettlementBankSlip::create(['sales_settlement_id' => $settlement->id, 'employee_id' => $settlement->employee_id, 'bank_account_id' => $bank->id, 'amount' => $amount]);
+    }
+
+    $slips = $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))->viewData('tables')['slips'];
+
+    expect($slips['cols'])->toHaveCount(6)
+        ->and($slips['rows'])->toHaveCount(1)
+        ->and(array_slice($slips['rows'][0], 3))->toBe(['2,500.00', '1,500.00', '4,000.00']);
 });
 
 it('holds users without the all-companies permission to their own company', function () {

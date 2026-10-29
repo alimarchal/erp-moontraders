@@ -24,7 +24,7 @@
         <tr>
             @foreach ($sides as $side)
                 @foreach ($side['cols'] as $col)
-                    <th class="{{ $col[1] }}">{{ $col[0] }}</th>
+                    <th class="{{ $col[1] }}">{!! nl2br(e($col[0])) !!}</th>
                 @endforeach
                 @if ($loop->first && count($sides) === 2)<th class="sp"></th>@endif
             @endforeach

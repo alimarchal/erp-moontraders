@@ -167,7 +167,6 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         $overall = array_sum($totals);
 
         $denominations = $this->denominations($settlements, $totals['clearing']);
-        $slipRows = $this->slipRows($settlements, $companies);
 
         $money = fn ($value) => $value > 0 ? number_format((float) $value, 2) : '-';
         $total = fn ($value) => number_format((float) $value, 2);
@@ -201,13 +200,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 'total' => ['label' => 'Total', 'span' => 2, 'cells' => [$total($totals['cheques'])]],
                 'bold' => [2], 'empty' => 'No cheques for the selected filters.',
             ],
-            'slips' => [
-                'no' => 5, 'title' => 'Bank Slip Details', 'explain' => 'distribution, salesman and the bank account the amount was submitted to',
-                'cols' => [['#', 'c', 4], ['Distribution', '', 17], ['Salesman', '', 19], ['Bank', '', 19], ['Account No.', '', 18], ['Reference', '', 11], ['Amount (Rs.)', 'n', 12]],
-                'rows' => $slipRows->map(fn ($row, $i) => [$i + 1, $row['company'], $row['salesman'], $row['bank'], $row['accountNumber'], $row['reference'], $total($row['amount'])])->all(),
-                'total' => ['label' => 'Total bank slips', 'span' => 6, 'cells' => [$total($slipRows->sum('amount'))]],
-                'bold' => [6], 'empty' => 'No bank slips for the selected filters.',
-            ],
+            'slips' => $this->slipTable($settlements, $companies, $money, $total),
         ];
 
         if (! $allCompanies) {
@@ -272,23 +265,48 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
     }
 
     /**
+     * One row per distribution and salesman, one column per bank account the slips were submitted to
+     * (a salesman may use more than one account), so every amount sits under its account.
+     *
      * @param  Collection<int, SalesSettlement>  $settlements
      * @param  Collection<int, Supplier>  $companies
-     * @return Collection<int, array<string, mixed>>
+     * @return array<string, mixed>
      */
-    private function slipRows(Collection $settlements, Collection $companies): Collection
+    private function slipTable(Collection $settlements, Collection $companies, callable $money, callable $total): array
     {
-        return $settlements
-            ->flatMap(fn (SalesSettlement $settlement) => $settlement->bankSlips->map(fn ($slip) => [
-                'company' => (string) $companies->firstWhere('id', $settlement->company_id)?->supplier_name,
-                'salesman' => (string) $settlement->employee?->name,
-                'bank' => (string) $slip->bankAccount?->bank_name,
-                'accountNumber' => (string) $slip->bankAccount?->account_number,
-                'reference' => (string) $slip->reference_number,
-                'amount' => (float) $slip->amount,
-            ]))
-            ->sortBy([['company', 'asc'], ['salesman', 'asc']])
-            ->values();
+        $slips = $settlements->flatMap(fn (SalesSettlement $settlement) => $settlement->bankSlips->map(fn ($slip) => [
+            'company' => (string) $companies->firstWhere('id', $settlement->company_id)?->supplier_name,
+            'salesman' => (string) $settlement->employee?->name,
+            'account' => (int) $slip->bank_account_id,
+            'label' => trim(($slip->bankAccount?->bank_name ?? '')."\n".($slip->bankAccount?->account_number ?? '')),
+            'amount' => (float) $slip->amount,
+        ]));
+
+        $accounts = $slips->unique('account')->sortBy('label')->pluck('label', 'account');
+        $rows = $slips->groupBy(fn ($slip) => $slip['company']."\0".$slip['salesman'])->sortKeys()->values();
+        $width = $accounts->isEmpty() ? 0 : round(50 / $accounts->count(), 2);
+
+        $cols = [['#', 'c', 4], ['Distribution', '', $accounts->isEmpty() ? 40 : 16], ['Salesman', '', $accounts->isEmpty() ? 40 : 18]];
+        foreach ($accounts as $label) {
+            $cols[] = [$label, 'n', $width];
+        }
+        $cols[] = ['Total', 'n', $accounts->isEmpty() ? 16 : 12];
+
+        $tableRows = $rows->map(function (Collection $own, int $i) use ($accounts, $money) {
+            $cells = $accounts->keys()->map(fn ($id) => $money($own->where('account', $id)->sum('amount')))->all();
+
+            return [$i + 1, $own->first()['company'], $own->first()['salesman'], ...$cells, $money($own->sum('amount'))];
+        })->all();
+
+        $columnTotals = $accounts->keys()->map(fn ($id) => $total($slips->where('account', $id)->sum('amount')))->all();
+
+        return [
+            'no' => 5, 'title' => 'Bank Slip Details', 'explain' => 'distribution, salesman and the bank account each amount was submitted to',
+            'cols' => $cols,
+            'rows' => $tableRows,
+            'total' => ['label' => 'Total bank slips', 'span' => 3, 'cells' => [...$columnTotals, $total($slips->sum('amount'))]],
+            'bold' => [count($cols) - 1], 'empty' => 'No bank slips for the selected filters.',
+        ];
     }
 
     /**

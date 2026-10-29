@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class ExpenseVoucher extends Model
 {
@@ -25,6 +26,7 @@ class ExpenseVoucher extends Model
     public const DEFAULT_ACCOUNT_CODE = '5201';
 
     protected $fillable = [
+        'uuid',
         'voucher_number',
         'voucher_date',
         'supplier_id',
@@ -43,6 +45,29 @@ class ExpenseVoucher extends Model
         'journal_entry_id',
         'printed_at',
     ];
+
+    /**
+     * Every voucher gets a random uuid; links use it instead of the running id.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (ExpenseVoucher $voucher) {
+            $voucher->uuid ??= (string) Str::uuid();
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    /**
+     * A link that is not a uuid (an old numeric id, for example) is simply not found.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return Str::isUuid((string) $value) ? parent::resolveRouteBinding($value, $field) : null;
+    }
 
     protected function casts(): array
     {

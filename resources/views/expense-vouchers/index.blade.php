@@ -109,7 +109,8 @@
         .ev-advanced { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 12px; }
         @media (min-width: 900px) { .ev-advanced { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         .ev-advanced .ak-field input { height: 38px; box-sizing: border-box; }
-        .ev-table { min-width: 980px; }
+        .ev-table { min-width: 1060px; }
+        .ev-table .ak-primary-link { white-space: nowrap; }
         .ev-table tfoot td { position: sticky; bottom: 0; font-weight: 700; background: #f8fafc; border-top: 2px solid var(--ak-border); }
         .ak-status-slate { background: #f1f5f9; color: #475569; }
         .ak-status-slate i { background: #64748b; }

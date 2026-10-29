@@ -28,8 +28,13 @@
         </select>
     </div>
     <div class="ak-field">
-        <label for="amount" class="ev-bi"><span>Amount (Rs.)</span><span class="ev-ur" lang="ur" dir="rtl">رقم (روپے)</span></label>
-        <input id="amount" type="number" step="0.01" min="0.01" name="amount" required value="{{ old('amount', $voucher->amount) }}">
+        <label for="expense_account_id" class="ev-bi"><span>Expense account</span><span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></label>
+        <select id="expense_account_id" class="ev-select" name="expense_account_id" required>
+            <option value="">Select account</option>
+            @foreach($accounts as $account)
+                <option value="{{ $account->id }}" @selected((int) old('expense_account_id', $voucher->expense_account_id ?? ($defaultAccountId ?? null)) === $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
+            @endforeach
+        </select>
     </div>
     <div class="ak-field ev-span-2">
         <label for="party_name" class="ev-bi"><span>Party name (paid to)</span><span class="ev-ur" lang="ur" dir="rtl">پارٹی کا نام (جسے ادائیگی کی گئی)</span></label>
@@ -42,13 +47,8 @@
         </datalist>
     </div>
     <div class="ak-field">
-        <label for="expense_account_id" class="ev-bi"><span>Expense account</span><span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></label>
-        <select id="expense_account_id" class="ev-select" name="expense_account_id" required>
-            <option value="">Select account</option>
-            @foreach($accounts as $account)
-                <option value="{{ $account->id }}" @selected((int) old('expense_account_id', $voucher->expense_account_id ?? ($defaultAccountId ?? null)) === $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
-            @endforeach
-        </select>
+        <label for="amount" class="ev-bi"><span>Amount (Rs.)</span><span class="ev-ur" lang="ur" dir="rtl">رقم (روپے)</span></label>
+        <input id="amount" type="number" step="0.01" min="0.01" name="amount" required value="{{ old('amount', $voucher->amount) }}">
     </div>
     <div class="ak-field ev-span-3">
         <label for="narration" class="ev-bi"><span>Narration</span><span class="ev-ur" lang="ur" dir="rtl">تفصیل / بیان</span></label>

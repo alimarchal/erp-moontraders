@@ -61,7 +61,7 @@
                 <p class="ak-sub">Daily expenses with a maker and a checker &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
-                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works</a>
+                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
                 @can('expense-voucher-create')
                     <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New voucher</a>
@@ -71,7 +71,9 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; margin-inline-start: 8px; }
         @page { margin: 10mm; }
         .ev-ranges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
         .ev-ranges-label { font-size: 12px; font-weight: 600; color: var(--ak-muted); margin-right: 4px; }

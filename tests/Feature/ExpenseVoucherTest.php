@@ -143,7 +143,7 @@ it('lists vouchers with filters and opens the guide', function () {
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'other co', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
         ->and($parties($this->actingAs($this->maker)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
 
-    $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('What each step writes to the database');
+    $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('اخراجاتی واؤچر کیسے کام کرتا ہے')->assertSee('What each step writes to the database');
 });
 
 it('books a general voucher with no company and preselects Moon Traders and the default account', function () {
@@ -169,4 +169,15 @@ it('submits a new voucher for approval in one step and resubmits an edited one',
 
     $voucher->refresh();
     expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull();
+});
+
+it('lets anyone who works with vouchers open the guide, and a clearable company means a general expense', function () {
+    $maker = User::factory()->create();
+    $maker->givePermissionTo('expense-voucher-create');
+    $this->actingAs($maker)->get(route('expense-vouchers.help'))->assertOk();
+    $this->actingAs(User::factory()->create())->get(route('expense-vouchers.help'))->assertForbidden();
+
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin)->post(route('expense-vouchers.store'), ['action' => 'draft', 'supplier_id' => ''] + $this->payload)->assertRedirect();
+    expect(ExpenseVoucher::first()->supplier_id)->toBeNull();
 });

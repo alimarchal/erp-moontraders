@@ -6,8 +6,9 @@
     </div>
     <div class="ak-field">
         <label for="supplier_id" class="ev-bi"><span>Company (distribution)</span><span class="ev-ur" lang="ur" dir="rtl">کمپنی / ڈسٹری بیوشن</span></label>
-        <select id="supplier_id" class="ev-select" name="supplier_id" required>
+        <select id="supplier_id" class="ev-select" name="supplier_id" @if(auth()->user()->hasAllSupplierAccess()) data-clearable="1" data-placeholder="Moon Traders (general expense)" @else required @endif>
             @if(auth()->user()->hasAllSupplierAccess())
+                <option value=""></option>
                 <option value="general" @selected(old('supplier_id', $voucher->exists ? ($voucher->supplier_id ?? 'general') : 'general') === 'general')>Moon Traders (general expense)</option>
             @elseif(! $isOwnCompanyOnly)
                 <option value="">Select company</option>

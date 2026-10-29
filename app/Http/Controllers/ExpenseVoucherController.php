@@ -20,7 +20,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:expense-voucher-list', only: ['index', 'show', 'help']),
+            new Middleware('can:expense-voucher-list', only: ['index', 'show']),
             new Middleware('can:expense-voucher-create', only: ['create', 'store', 'submit']),
             new Middleware('can:expense-voucher-edit', only: ['edit', 'update']),
             new Middleware('can:expense-voucher-delete', only: ['destroy']),
@@ -92,8 +92,13 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function help()
+    /**
+     * The guide, English and Urdu (right to left) side by side.
+     */
+    public function help(Request $request)
     {
+        abort_unless($request->user()->canAny(['expense-voucher-list', 'expense-voucher-create', 'expense-voucher-approve', 'expense-voucher-print']), 403);
+
         return view('expense-vouchers.help');
     }
 

@@ -6,8 +6,9 @@
                 const $select = $(this);
                 $select.select2({
                     width: '100%',
-                    placeholder: $select.find('option[value=""]').text() || 'Select',
-                    allowClear: false,
+                    placeholder: $select.data('placeholder') || $select.find('option[value=""]').text() || 'Select',
+                    // The company can be cleared with the cross; an empty company is a general (Moon Traders) expense.
+                    allowClear: !!$select.data('clearable'),
                 });
             });
         });

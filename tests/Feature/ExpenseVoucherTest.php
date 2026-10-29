@@ -100,16 +100,31 @@ it('prints only approved vouchers', function () {
     $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertOk()->assertSee('Ali Tea Stall', false)->assertSee('80mm', false);
 });
 
-it('shows approved vouchers as party expenses on the distributor report for one company', function () {
+it('shows approved vouchers by party on the distributor report, general ones only under All Companies', function () {
     Permission::findOrCreate('report-audit-cash-collection-distributor');
     Permission::findOrCreate('report-audit-cash-collection-distributor-all-companies');
     $this->checker->givePermissionTo(['report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies']);
 
-    ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'party_name' => 'Ali Tea Stall', 'amount' => 700, 'status' => 'approved']);
-    ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'party_name' => 'Draft Party', 'amount' => 900, 'status' => 'draft']);
+    $base = ['expense_account_id' => $this->expense->id, 'status' => 'approved'];
+    ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'party_name' => 'Ali Tea Stall', 'amount' => 700] + $base);
+    ExpenseVoucher::factory()->create(['supplier_id' => null, 'party_name' => 'Paint Material', 'amount' => 14300] + $base);
+    ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'party_name' => 'Draft Party', 'amount' => 900, 'status' => 'draft', 'expense_account_id' => $this->expense->id]);
 
-    $tables = $this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->supplier->id]))->viewData('tables');
+    $one = $this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->supplier->id]))->viewData('tables');
+    $all = $this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))->viewData('tables');
 
-    expect($tables['expenses']['rows'])->toBe([[1, 'Ali Tea Stall', '700.00']]);
-    $this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))->assertViewHas('tables', fn ($t) => ! isset($t['expenses']));
+    expect(collect($one['expenses']['rows'])->pluck(1)->all())->toBe(['Ali Tea Stall'])
+        ->and(collect($all['expenses']['rows'])->pluck(1)->all())->toBe(['Paint Material', 'Ali Tea Stall'])
+        ->and($all['expenses']['rows'][0][2])->toBe('Moon Traders')
+        ->and($all['expenses']['total']['cells'][0])->toBe('15,000.00')
+        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (vouchers)', '15,000.00']);
+});
+
+it('lets an admin raise a general expense with no company, but not a company-bound user', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+
+    $this->actingAs($admin)->post(route('expense-vouchers.store'), ['supplier_id' => null] + $this->payload)->assertRedirect();
+    expect(ExpenseVoucher::first()->supplier_id)->toBeNull();
+
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['supplier_id' => null] + $this->payload)->assertSessionHasErrors('supplier_id');
 });

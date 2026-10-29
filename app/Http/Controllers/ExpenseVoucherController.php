@@ -145,7 +145,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
 
         $data = $request->validate([
             'voucher_date' => ['required', 'date'],
-            'supplier_id' => ['required', 'exists:suppliers,id'],
+            'supplier_id' => [$user->hasAllSupplierAccess() ? 'nullable' : 'required', 'exists:suppliers,id'],
             'party_name' => ['required', 'string', 'max:255'],
             'expense_account_id' => ['required', 'exists:chart_of_accounts,id'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999999'],
@@ -153,6 +153,8 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         ]);
 
         abort_if(! $user->hasAllSupplierAccess() && (int) $data['supplier_id'] !== (int) $user->supplier_id, 403, 'You can only raise vouchers for your own company.');
+
+        $data['supplier_id'] = $data['supplier_id'] ?? null;
 
         return $data;
     }

@@ -29,16 +29,14 @@
     @include('reports.cash-collection-distributor._grid', ['left' => $tables['bank'], 'right' => $tables['cheques']])
     <div class="p2-gap"></div>
     @include('reports.cash-collection-distributor._grid', ['left' => $tables['slips']])
-    @isset($tables['expenses'])
-        <div class="p2-gap"></div>
-        @include('reports.cash-collection-distributor._grid', ['left' => $tables['expenses']])
-    @endisset
+    <div class="p2-gap"></div>
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['expenses'], 'right' => $tables['summary']])
     @isset($tables['salesmen'])
         <div class="p2-gap"></div>
         @include('reports.cash-collection-distributor._grid', ['left' => $tables['salesmen']])
     @endisset
 
-    <div class="p2-note">Cash is the denomination count where one was entered, otherwise the cash collected on the settlement. Cheque clearing is the cash a salesman brings back on the day a cheque is cleared; it is not part of a settlement and is counted with the notes. Overall total = cash + cheque clearing + bank slips + bank transfers + cheques.</div>
+    <div class="p2-note">Cash is the denomination count where one was entered, otherwise the cash collected on the settlement. Cheque clearing is the cash a salesman brings back on the day a cheque is cleared; it is not part of a settlement and is counted with the notes. Total Collection = cash + bank slips + bank transfers + cheques of the day's settlements. Grand total = cash received (including cheque clearing) + bank slips + bank transfers + cheques; expenses paid by voucher come out of the cash received.</div>
 
     <p class="p2-foot">Printed {{ now()->format('d-M-Y h:i A') }} by {{ auth()->user()->name ?? '' }}</p>
 

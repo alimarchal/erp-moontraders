@@ -7,11 +7,13 @@
     </div>
     <div>
         <x-label for="supplier_id" value="Company (distribution)" />
-        <select id="supplier_id" name="supplier_id" required
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            @unless($isOwnCompanyOnly)
+        <select id="supplier_id" name="supplier_id"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" @required(! auth()->user()->hasAllSupplierAccess())>
+            @if(auth()->user()->hasAllSupplierAccess())
+                <option value="">Moon Traders (general expense)</option>
+            @elseunless($isOwnCompanyOnly)
                 <option value="">Select company</option>
-            @endunless
+            @endif
             @foreach($suppliers as $supplier)
                 <option value="{{ $supplier->id }}" @selected((int) old('supplier_id', $voucher->supplier_id) === $supplier->id)>{{ $supplier->supplier_name }}</option>
             @endforeach

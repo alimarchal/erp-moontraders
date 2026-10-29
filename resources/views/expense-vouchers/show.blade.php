@@ -31,7 +31,7 @@
                 </div>
                 <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 mt-6 text-sm">
                     <div><dt class="text-gray-500">Date</dt><dd class="font-semibold">{{ $voucher->voucher_date->format('l, d M Y') }}</dd></div>
-                    <div><dt class="text-gray-500">Company</dt><dd class="font-semibold">{{ $voucher->supplier?->supplier_name }}</dd></div>
+                    <div><dt class="text-gray-500">Company</dt><dd class="font-semibold">{{ $voucher->supplier?->supplier_name ?? 'Moon Traders (general)' }}</dd></div>
                     <div><dt class="text-gray-500">Party name</dt><dd class="font-semibold">{{ $voucher->party_name }}</dd></div>
                     <div><dt class="text-gray-500">Expense account</dt><dd class="font-semibold">{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
                     <div class="md:col-span-2"><dt class="text-gray-500">Narration</dt><dd class="font-semibold">{{ $voucher->narration ?: '-' }}</dd></div>

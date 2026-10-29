@@ -87,6 +87,9 @@
         .ev-ranges-label { font-size: 12px; font-weight: 600; color: var(--ak-muted); margin-right: 4px; }
         .ev-ranges a { padding: 4px 10px; border: 1px solid var(--ak-border); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--ak-text); text-decoration: none; background: #fff; }
         .ev-ranges a:hover { background: var(--ak-soft); }
+        .ev-ranges a.ev-clear { border-color: #fecaca; color: #b91c1c; background: #fff; }
+        .ev-ranges a.ev-clear:hover { background: #fef2f2; }
+        #ev-filter-panel { overflow: hidden; }
         .ev-ranges a[aria-current] { background: var(--ak-navy); border-color: var(--ak-navy); color: #fff; }
         .ev-filter-row { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; }
         @media (min-width: 900px) { .ev-filter-row { grid-template-columns: minmax(220px, 2fr) 160px 160px minmax(170px, 1.3fr) 90px auto; } }
@@ -226,6 +229,7 @@
                 @foreach ($ranges as $label => [$from, $to])
                     <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
                 @endforeach
+                <a href="{{ route('expense-vouchers.index') }}" class="ev-clear" title="Remove every filter and go back to this month">&times; Clear</a>
             </nav>
         </form>
         </section>

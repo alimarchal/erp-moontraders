@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
 class CashDetailController extends Controller implements HasMiddleware
 {
+    private const ALL_COMPANIES = 'all';
+
     public static function middleware(): array
     {
         return [
@@ -21,16 +26,108 @@ class CashDetailController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
+        $data = $this->reportData($request);
+
+        if ($request->query('layout') === 'print' && $data['hasQuery']) {
+            return view('reports.cash-detail.pdf', $data + ['totals' => $this->totals($data), 'orientation' => 'portrait', 'isPdf' => false]);
+        }
+
+        return view('reports.cash-detail', $data + ['totals' => $this->totals($data), 'orientation' => 'portrait']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, float>
+     */
+    private function totals(array $data): array
+    {
+        return [
+            'totalCash' => (float) $data['salesmanData']->sum('amount'),
+            'totalBankSlips' => (float) $data['bankSlipsData']->sum('amount'),
+            'totalBankTransfers' => (float) $data['bankTransfersData']->sum('amount'),
+            'totalCheques' => (float) $data['chequesData']->sum('amount'),
+        ];
+    }
+
+    /**
+     * A4 PDF of the same report, portrait or landscape (?orientation=).
+     */
+    public function exportPdf(Request $request): Response
+    {
+        $data = $this->reportData($request);
+        abort_unless($data['hasQuery'], 422, 'Select a company and apply the filters before downloading.');
+
+        $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+        $date = Carbon::parse($data['date']);
+
+        $pdf = Pdf::loadView('reports.cash-detail.pdf', $data + ['totals' => $this->totals($data), 'orientation' => $orientation])
+            ->setPaper('a4', $orientation);
+        $pdf->render();
+        $canvas = $pdf->getDomPDF()->getCanvas();
+        $canvas->page_text($canvas->get_width() - 80, $canvas->get_height() - 25, 'Page {PAGE_NUM} of {PAGE_COUNT}', $pdf->getDomPDF()->getFontMetrics()->getFont('Helvetica'), 7);
+
+        return $pdf->download('cash-detail-'.$date->format('Y-m-d').'.pdf');
+    }
+
+    /**
+     * Admins and super admins, or anyone holding the All Companies permission, may pick any company
+     * or "All"; every other user is held to the company on their own account. Nothing is loaded
+     * until a company is chosen and the filters are applied.
+     *
+     * @return array<string, mixed>
+     */
+    private function reportData(Request $request): array
+    {
+        $user = $request->user();
+        $canChooseCompany = $user->can('report-audit-cash-detail-all-companies') || $user->isTicketAdmin();
+        $ownSupplierId = $user->supplier_id ? (int) $user->supplier_id : null;
+
+        $requested = (string) $request->input('supplier_id', '');
+        $allCompanies = false;
+        $supplierId = null;
+
+        if ($canChooseCompany) {
+            $allCompanies = $requested === self::ALL_COMPANIES;
+            $supplierId = ctype_digit($requested) ? (int) $requested : null;
+        } else {
+            abort_if($requested !== '' && (! ctype_digit($requested) || (int) $requested !== $ownSupplierId), 403, 'You can only see the report of your own company.');
+            $supplierId = $requested !== '' ? $ownSupplierId : null;
+        }
+
+        $hasQuery = $allCompanies || $supplierId !== null;
+
         $date = $request->input('date', now()->format('Y-m-d'));
-        $supplierId = $request->input('supplier_id', Supplier::where('supplier_name', 'Nestlé Pakistan')->value('id'));
         $designation = $request->input('designation', 'Salesman');
-        $employeeIds = $request->input('employee_ids', []); // Array of selected employee IDs
+        $employeeIds = $request->input('employee_ids', []);
 
-        $suppliers = Supplier::orderBy('supplier_name')->get();
-        // Fetch unique designations
+        $suppliers = Supplier::query()
+            ->when(! $canChooseCompany, fn ($query) => $query->where('id', $ownSupplierId ?? 0))
+            ->orderBy('supplier_name')
+            ->get();
         $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
+        $companyLabel = $allCompanies ? 'All Companies' : (string) $suppliers->firstWhere('id', $supplierId)?->supplier_name;
 
-        // Fetch all employees (Salesmen) to populate the filter
+        if (! $hasQuery) {
+            return [
+                'date' => $date,
+                'supplierId' => $supplierId,
+                'allCompanies' => false,
+                'canChooseCompany' => $canChooseCompany,
+                'hasQuery' => false,
+                'companyLabel' => '',
+                'designation' => $designation,
+                'employeeIds' => $employeeIds,
+                'suppliers' => $suppliers,
+                'designations' => $designations,
+                'allEmployees' => collect(),
+                'salesmanData' => collect(),
+                'denominations' => ['5000' => 0, '1000' => 0, '500' => 0, '100' => 0, '50' => 0, '20' => 0, '10' => 0, 'coins' => 0],
+                'bankSlipsData' => collect(),
+                'bankTransfersData' => collect(),
+                'chequesData' => collect(),
+            ];
+        }
+
         $allEmployees = Employee::query();
 
         if ($supplierId) {
@@ -62,7 +159,14 @@ class CashDetailController extends Controller implements HasMiddleware
         }
 
         // We get the relevant employees
-        $employees = $employeesQuery->orderBy('name')->get();
+        $employees = $employeesQuery->with('supplier:id,short_name')->orderBy('name')->get();
+
+        // With All Companies the company's short name follows the salesman, e.g. "Raja Safeer (Nestle)".
+        $employees->each(function (Employee $employee) use ($allCompanies) {
+            $employee->display_name = $allCompanies && $employee->supplier?->short_name
+                ? $employee->name.' ('.$employee->supplier->short_name.')'
+                : $employee->name;
+        });
 
         // Fetch ALL matching settlements once (with relationships) to reuse across all sections.
         // This eliminates the N+1 problem and ensures all settlements per employee are included.
@@ -103,7 +207,7 @@ class CashDetailController extends Controller implements HasMiddleware
             });
 
             return (object) [
-                'salesman_name' => $employee->name,
+                'salesman_name' => $employee->display_name,
                 'amount' => $amount,
                 'has_settlement' => $employeeSettlements->isNotEmpty(),
             ];
@@ -150,7 +254,7 @@ class CashDetailController extends Controller implements HasMiddleware
             $amount = $employeeSettlements->sum(fn ($settlement) => (float) $settlement->bankSlips->sum('amount'));
 
             return (object) [
-                'salesman_name' => $employee->name,
+                'salesman_name' => $employee->display_name,
                 'amount' => $amount,
                 'has_settlement' => $employeeSettlements->isNotEmpty(),
             ];
@@ -171,7 +275,7 @@ class CashDetailController extends Controller implements HasMiddleware
             $amount = $employeeSettlements->sum(fn ($settlement) => (float) $settlement->bankTransfers->sum('amount'));
 
             return (object) [
-                'salesman_name' => $employee->name,
+                'salesman_name' => $employee->display_name,
                 'amount' => $amount,
                 'has_settlement' => $employeeSettlements->isNotEmpty(),
             ];
@@ -192,7 +296,7 @@ class CashDetailController extends Controller implements HasMiddleware
             $amount = $employeeSettlements->sum(fn ($settlement) => (float) $settlement->cheques->sum('amount'));
 
             return (object) [
-                'salesman_name' => $employee->name,
+                'salesman_name' => $employee->display_name,
                 'amount' => $amount,
                 'has_settlement' => $employeeSettlements->isNotEmpty(),
             ];
@@ -206,9 +310,13 @@ class CashDetailController extends Controller implements HasMiddleware
 
         $chequesData = $chequesData->sortByDesc('amount')->values();
 
-        return view('reports.cash-detail', compact(
+        return compact(
             'date',
             'supplierId',
+            'allCompanies',
+            'canChooseCompany',
+            'hasQuery',
+            'companyLabel',
             'designation',
             'employeeIds',
             'suppliers',
@@ -219,6 +327,6 @@ class CashDetailController extends Controller implements HasMiddleware
             'bankSlipsData',
             'bankTransfersData',
             'chequesData'
-        ));
+        );
     }
 }

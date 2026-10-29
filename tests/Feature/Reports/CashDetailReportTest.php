@@ -21,23 +21,86 @@ class CashDetailReportTest extends TestCase
     {
         parent::setUp();
         Permission::create(['name' => 'report-audit-cash-detail']);
+        Permission::findOrCreate('report-audit-cash-detail-all-companies');
     }
 
     public function test_cash_detail_report_loads_successfully()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-audit-cash-detail');
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
 
         $response = $this->actingAs($user)->get(route('reports.cash-detail.index'));
 
         $response->assertStatus(200);
         $response->assertViewIs('reports.cash-detail');
+        $response->assertSee('No company selected');
+    }
+
+    public function test_report_stays_empty_until_a_company_is_applied()
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
+        $supplier = Supplier::factory()->create();
+        $employee = Employee::factory()->create(['name' => 'Hidden Man', 'supplier_id' => $supplier->id, 'designation' => 'Salesman']);
+        SalesSettlement::factory()->create(['employee_id' => $employee->id, 'settlement_date' => now()->format('Y-m-d'), 'cash_collected' => 700]);
+
+        $this->actingAs($user)->get(route('reports.cash-detail.index'))->assertDontSee('Hidden Man');
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => 'all']))->assertSee('Hidden Man');
+    }
+
+    public function test_user_without_all_companies_permission_is_held_to_own_company()
+    {
+        $own = Supplier::factory()->create();
+        $other = Supplier::factory()->create();
+        $user = User::factory()->create(['supplier_id' => $own->id]);
+        $user->givePermissionTo('report-audit-cash-detail');
+
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => $own->id]))->assertOk();
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => $other->id]))->assertForbidden();
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => 'all']))->assertForbidden();
+        $this->actingAs($user)->get(route('reports.cash-detail.export.pdf', ['supplier_id' => $other->id]))->assertForbidden();
+    }
+
+    public function test_all_companies_shows_company_short_name_beside_the_salesman()
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
+        $supplier = Supplier::factory()->create(['short_name' => 'Nestle']);
+        $employee = Employee::factory()->create(['name' => 'Raja Safeer', 'supplier_id' => $supplier->id, 'designation' => 'Salesman']);
+        SalesSettlement::factory()->create(['employee_id' => $employee->id, 'settlement_date' => now()->format('Y-m-d'), 'cash_collected' => 700]);
+
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => 'all']))->assertSee('Raja Safeer (Nestle)', false);
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => $supplier->id]))->assertDontSee('Raja Safeer (Nestle)', false);
+    }
+
+    public function test_print_layout_renders_the_printable_sheet()
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
+
+        $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => 'all', 'layout' => 'print']))
+            ->assertOk()
+            ->assertViewIs('reports.cash-detail.pdf')
+            ->assertSee('Prepared By');
+    }
+
+    public function test_pdf_downloads_for_selected_company_and_requires_one()
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
+        $supplier = Supplier::factory()->create();
+
+        $this->actingAs($user)->get(route('reports.cash-detail.export.pdf'))->assertStatus(422);
+
+        $response = $this->actingAs($user)->get(route('reports.cash-detail.export.pdf', ['supplier_id' => $supplier->id, 'orientation' => 'landscape']));
+        $response->assertOk();
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
     }
 
     public function test_cash_detail_report_displays_data()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-audit-cash-detail');
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
         $supplier = Supplier::factory()->create(['supplier_name' => 'Nestlé Pakistan']);
         $employee = Employee::factory()->create([
             'name' => 'John Doe',
@@ -57,18 +120,18 @@ class CashDetailReportTest extends TestCase
             'total_amount' => 5000,
         ]);
 
-        $response = $this->actingAs($user)->get(route('reports.cash-detail.index'));
+        $response = $this->actingAs($user)->get(route('reports.cash-detail.index', ['supplier_id' => $supplier->id]));
 
         $response->assertStatus(200);
         $response->assertSee('John Doe');
         $response->assertSee('5,000'); // Amount
-        $response->assertSee('5000'); // Denomination Label
+        $response->assertSee('Cash Denominations');
     }
 
     public function test_cash_detail_report_sums_multiple_settlements_per_employee()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-audit-cash-detail');
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
 
         $supplier = Supplier::factory()->create();
         $employee = Employee::factory()->create([
@@ -139,7 +202,7 @@ class CashDetailReportTest extends TestCase
     public function test_cash_detail_report_sums_bank_slips_across_multiple_settlements()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-audit-cash-detail');
+        $user->givePermissionTo(['report-audit-cash-detail', 'report-audit-cash-detail-all-companies']);
 
         $supplier = Supplier::factory()->create();
         $employee = Employee::factory()->create([

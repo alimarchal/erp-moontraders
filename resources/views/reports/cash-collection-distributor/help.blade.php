@@ -76,16 +76,17 @@
                     <table class="gh-table">
                         <thead><tr><th>Table</th><th>What it shows</th><th>Source</th></tr></thead>
                         <tbody>
-                            <tr><td><b>1 - Cash by Distribution</b></td><td>Per company: <b>Cash</b> (the notes counted in the settlement, or the cash collected when no count was entered), <b>Cheque Clearing</b> (cheques cleared that day) and <b>Total Cash</b> (both together).</td><td>Settlements, cheque register</td></tr>
-                            <tr><td><b>2 - Cash Denominations</b></td><td>Notes by denomination from the settlements, coins, and the <b>Cheque clearing</b> cash a salesman brings back. The total here equals the Total Cash of table 1.</td><td>Settlement cash counts, cheque register</td></tr>
+                            <tr><td><b>1 - Collection by Distribution</b></td><td>Per company: <b>Cash</b> (the notes counted in the settlement, or the cash collected when no count was entered), <b>Cheque Clearing</b> (cheques cleared that day) and <b>Total Collection</b> (cash + bank slips + bank transfers + cheques of the day's settlements, like the Amount on the paper sheet).</td><td>Settlements, cheque register</td></tr>
+                            <tr><td><b>2 - Cash Denominations</b></td><td>Notes by denomination from the settlements, coins, and the <b>Cheque clearing</b> cash a salesman brings back. The total is the cash received that day (settlement cash + cheque clearing).</td><td>Settlement cash counts, cheque register</td></tr>
                             <tr><td><b>3 - Bank Slips &amp; Transfers</b></td><td>Per company: bank slips, bank transfers and their total.</td><td>Settlements</td></tr>
                             <tr><td><b>4 - Cheques</b></td><td>Per company: cheques received in the settlements of the day.</td><td>Settlements</td></tr>
                             <tr><td><b>5 - Bank Slip Details</b></td><td>One row per distribution and salesman, one column per bank account (bank name and account number). A salesman who used two accounts has an amount under each.</td><td>Settlement bank slips</td></tr>
-                            <tr><td><b>6 - Expenses</b></td><td>Single company only: approved expense vouchers of the day by party name.</td><td>Expense vouchers</td></tr>
-                            <tr><td><b>7 - Salesman-wise Detail</b></td><td>Single company only: cash, slips, transfers and cheques for each salesman.</td><td>Settlements</td></tr>
+                            <tr><td><b>6 - Expenses</b></td><td>Approved expense vouchers of the day by party. A single company shows its own vouchers; All Companies also shows the general (Moon Traders) ones that belong to no company.</td><td>Expense vouchers</td></tr>
+                            <tr><td><b>7 - Cash Summary</b></td><td>Notes and coins + cheque clearing = cash received; less expenses paid = cash in hand; then bank slips, transfers and cheques; and the grand total of the day.</td><td>All of the above</td></tr>
+                            <tr><td><b>8 - Salesman-wise Detail</b></td><td>Single company only: cash, slips, transfers and cheques for each salesman.</td><td>Settlements</td></tr>
                         </tbody>
                     </table>
-                    <div class="gh-note"><b>Overall total</b> = cash + cheque clearing + bank slips + bank transfers + cheques. A cheque is counted twice on purpose: once when it is received (table 4) and again, as cash, on the day it is cleared (table 1).</div>
+                    <div class="gh-note"><b>Grand total</b> = cash received (settlement cash + cheque clearing) + bank slips + bank transfers + cheques. A cheque is counted twice on purpose: once when it is received (table 4) and again, as cash, on the day it is cleared. Expenses paid by voucher come out of the cash received.</div>
                 </div>
             </section>
 
@@ -118,7 +119,7 @@
                         <li>A rejected voucher goes back to the maker, who corrects it and sends it again.</li>
                         <li>Only an <b>approved</b> voucher can be printed: an 80 mm thermal slip with the party, account, amount and the maker and checker names.</li>
                     </ol>
-                    <div class="gh-note">Only approved vouchers appear in the Expenses table of this report. Drafts, pending and rejected ones do not.</div>
+                    <div class="gh-note">Only approved vouchers appear in the Expenses table of this report. Drafts, pending and rejected ones do not. Most expenses belong to Moon Traders itself: an admin leaves the company empty (general expense); a user tied to one company always raises vouchers for that company.</div>
                 </div>
             </section>
 

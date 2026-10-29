@@ -56,7 +56,7 @@
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-2 py-1 font-mono"><a class="text-indigo-600 hover:underline" href="{{ route('expense-vouchers.show', $voucher) }}">{{ $voucher->voucher_number }}</a></td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $voucher->voucher_date->format('d-M-Y') }}</td>
-                            <td class="px-2 py-1">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name }}</td>
+                            <td class="px-2 py-1">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? 'Moon Traders' }}</td>
                             <td class="px-2 py-1">{{ $voucher->party_name }}</td>
                             <td class="px-2 py-1">{{ $voucher->expenseAccount?->account_name }}</td>
                             <td class="px-2 py-1 text-right font-mono">{{ number_format($voucher->amount, 2) }}</td>

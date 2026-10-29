@@ -43,6 +43,7 @@
     $chips = \Illuminate\Support\Arr::except($filters, ['status', 'date_from', 'date_to']);
     $advancedKeys = ['expense_account_id', 'party_name', 'created_by', 'checked_by', 'amount_min', 'amount_max'];
     $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
+    $activeFilterCount = count($chips) + (($filters['date_from'] ?? null) || ($filters['date_to'] ?? null) ? 1 : 0);
     $periodLabel = $dateFrom === $dateTo
         ? \Carbon\Carbon::parse($dateFrom)->format('d M Y')
         : \Carbon\Carbon::parse($dateFrom)->format('d M Y').' – '.\Carbon\Carbon::parse($dateTo)->format('d M Y');
@@ -61,6 +62,10 @@
                 <p class="ak-sub">Daily expenses with a maker and a checker &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
+                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+                </button>
                 <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
                 @can('expense-voucher-create')
@@ -75,6 +80,9 @@
     <style>
         .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; margin-inline-start: 8px; }
         @page { margin: 10mm; }
+        .ak-tabs { gap: 10px; padding: 0 22px; }
+        .ak-tab { padding: 16px 18px 14px; gap: 10px; font-size: 15px; }
+        .ak-tab .ak-count { min-width: 26px; padding: 2px 8px; }
         .ev-ranges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
         .ev-ranges-label { font-size: 12px; font-weight: 600; color: var(--ak-muted); margin-right: 4px; }
         .ev-ranges a { padding: 4px 10px; border: 1px solid var(--ak-border); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--ak-text); text-decoration: none; background: #fff; }
@@ -121,6 +129,7 @@
                 @endforeach
             </div>
 
+            <div id="ev-filter-panel" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @ev-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
             <form method="GET" action="{{ route('expense-vouchers.index') }}" class="ak-filters"
                 x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
                 @if ($tab !== '') <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
@@ -228,6 +237,7 @@
                     @endforeach
                 </nav>
             </form>
+            </div>
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">

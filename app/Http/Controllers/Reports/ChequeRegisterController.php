@@ -7,17 +7,19 @@ use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\SalesSettlementCheque;
 use App\Models\Supplier;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 
 class ChequeRegisterController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-audit-cheque-register', only: ['index']),
+            new Middleware('can:report-audit-cheque-register', only: ['index', 'history']),
             new Middleware('can:report-audit-cheque-register-manage', only: ['updateStatus']),
         ];
     }
@@ -159,16 +161,58 @@ class ChequeRegisterController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'status' => ['required', 'in:pending,cleared,bounced,cancelled'],
-            'cleared_date' => ['nullable', 'date'],
+            'cleared_date' => ['required_if:status,cleared', 'nullable', 'date'],
+            'cleared_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $cheque->update([
-            'status' => $validated['status'],
-            'cleared_date' => $validated['cleared_date'] ?? null,
-            'status_updated_at' => now(),
-        ]);
+        $isCleared = $validated['status'] === 'cleared';
+        $clearedAmount = $isCleared ? (float) ($validated['cleared_amount'] ?? $cheque->amount) : null;
+
+        DB::transaction(function () use ($cheque, $validated, $isCleared, $clearedAmount) {
+            $fromStatus = $cheque->status;
+
+            $cheque->update([
+                'status' => $validated['status'],
+                'cleared_date' => $isCleared ? $validated['cleared_date'] : null,
+                'cleared_amount' => $clearedAmount,
+                'status_updated_at' => now(),
+            ]);
+
+            $cheque->histories()->create([
+                'from_status' => $fromStatus,
+                'to_status' => $validated['status'],
+                'cleared_date' => $isCleared ? $validated['cleared_date'] : null,
+                'cleared_amount' => $clearedAmount,
+                'notes' => $validated['notes'] ?? null,
+                'changed_by' => auth()->id(),
+            ]);
+        });
 
         return redirect()->back()->with('success', 'Cheque status updated successfully.');
+    }
+
+    /**
+     * Every status change of a cheque, newest first, for the history popup.
+     */
+    public function history(SalesSettlementCheque $cheque): JsonResponse
+    {
+        $cheque->loadMissing('salesSettlement');
+        $this->authorizeChequeAccess($cheque);
+
+        return response()->json([
+            'cheque_number' => $cheque->cheque_number,
+            'amount' => number_format((float) $cheque->amount, 2),
+            'entries' => $cheque->histories()->with('changedBy:id,name')->get()->map(fn ($entry) => [
+                'when' => $entry->created_at?->format('d-M-Y h:i A'),
+                'from' => $entry->from_status ? ucfirst($entry->from_status) : 'New',
+                'to' => ucfirst($entry->to_status),
+                'cleared_date' => $entry->cleared_date?->format('d-M-Y'),
+                'cleared_amount' => $entry->cleared_amount !== null ? number_format((float) $entry->cleared_amount, 2) : null,
+                'notes' => $entry->notes,
+                'by' => $entry->changedBy?->name,
+            ])->all(),
+        ]);
     }
 
     private function getUserSupplierScope(): ?int

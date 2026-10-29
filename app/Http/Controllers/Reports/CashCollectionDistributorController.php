@@ -150,7 +150,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             return (object) [
                 'name' => $company->supplier_name,
                 'cash' => $own->sum(fn ($s) => $this->cashOf($s)),
-                'clearing' => (float) $clearings->where('company_id', $company->id)->sum('amount'),
+                'clearing' => (float) $clearings->where('company_id', $company->id)->sum(fn (SalesSettlementCheque $cheque) => $cheque->clearedAmountOrFull()),
                 'slips' => (float) $own->sum(fn ($s) => $s->bankSlips->sum('amount')),
                 'transfers' => (float) $own->sum(fn ($s) => $s->bankTransfers->sum('amount')),
                 'cheques' => (float) $own->sum(fn ($s) => $s->cheques->sum('amount')),

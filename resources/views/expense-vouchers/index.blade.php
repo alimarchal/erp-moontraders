@@ -120,6 +120,116 @@
             <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
         @endif
 
+        <section id="ev-filter-panel" class="ak-card" aria-label="Filters" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @ev-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
+        <form method="GET" action="{{ route('expense-vouchers.index') }}" class="ak-filters"
+            x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
+            @if ($tab !== '') <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
+            @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
+
+            <div class="ev-filter-row">
+                <div class="ak-field">
+                    <label for="f_search">Search</label>
+                    <div class="ak-search">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
+                        <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
+                            placeholder="Voucher no., party or narration" x-ref="search"
+                            @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $refs.search.focus(); }">
+                        <kbd aria-hidden="true">/</kbd>
+                    </div>
+                </div>
+                <div class="ak-field">
+                    <label for="f_from">From</label>
+                    <input id="f_from" type="date" name="filter[date_from]" value="{{ $dateFrom }}">
+                </div>
+                <div class="ak-field">
+                    <label for="f_to">To</label>
+                    <input id="f_to" type="date" name="filter[date_to]" value="{{ $dateTo }}">
+                </div>
+                <div class="ak-field">
+                    <label for="f_supplier">Company</label>
+                    <select id="f_supplier" class="ev-select" name="filter[owner]">
+                        <option value="">All companies</option>
+                        @foreach ($companies as $company)
+                            <option value="company:{{ $company->id }}" @selected(($filters['owner'] ?? '') === 'company:'.$company->id)>{{ $company->company_name }} (general)</option>
+                        @endforeach
+                        @foreach ($suppliers as $supplier)
+                            <option value="supplier:{{ $supplier->id }}" @selected(($filters['owner'] ?? '') === 'supplier:'.$supplier->id)>{{ $supplier->supplier_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
+                    <label for="f_per_page">Rows</label>
+                    <select id="f_per_page" name="per_page" onchange="this.form.requestSubmit()">
+                        @foreach (\App\Http\Controllers\ExpenseVoucherController::PER_PAGE as $n)
+                            <option value="{{ $n }}" @selected($perPage === (string) $n)>{{ $n === 'all' ? 'All' : $n }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-filter-buttons">
+                    <button type="button" class="ak-btn ak-btn-ghost" @click="advanced = !advanced" :aria-expanded="advanced" aria-controls="ev-advanced">
+                        More filters @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
+                    </button>
+                    <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
+                        <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="ev-advanced" class="ev-advanced" x-show="advanced" x-cloak x-transition>
+                <div class="ak-field">
+                    <label for="f_account">Expense account</label>
+                    <select id="f_account" class="ev-select" name="filter[expense_account_id]">
+                        <option value="">All accounts</option>
+                        @foreach ($accounts as $account)
+                            <option value="{{ $account->id }}" @selected((string) ($filters['expense_account_id'] ?? '') === (string) $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
+                    <label for="f_party">Party</label>
+                    <input id="f_party" type="text" name="filter[party_name]" value="{{ $filters['party_name'] ?? '' }}" list="party-suggestions" autocomplete="off" placeholder="Any party (part of the name)">
+                    <datalist id="party-suggestions">
+                        @foreach ($parties as $party)
+                            <option value="{{ $party }}"></option>
+                        @endforeach
+                    </datalist>
+                </div>
+                <div class="ak-field">
+                    <label for="f_maker">Maker</label>
+                    <select id="f_maker" class="ev-select" name="filter[created_by]">
+                        <option value="">Anyone</option>
+                        @foreach ($people as $person)
+                            <option value="{{ $person->id }}" @selected((string) ($filters['created_by'] ?? '') === (string) $person->id)>{{ $person->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
+                    <label for="f_checker">Checker</label>
+                    <select id="f_checker" class="ev-select" name="filter[checked_by]">
+                        <option value="">Anyone</option>
+                        @foreach ($people as $person)
+                            <option value="{{ $person->id }}" @selected((string) ($filters['checked_by'] ?? '') === (string) $person->id)>{{ $person->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
+                    <label for="f_min">Amount from</label>
+                    <input id="f_min" type="number" step="0.01" min="0" name="filter[amount_min]" value="{{ $filters['amount_min'] ?? '' }}">
+                </div>
+                <div class="ak-field">
+                    <label for="f_max">Amount to</label>
+                    <input id="f_max" type="number" step="0.01" min="0" name="filter[amount_max]" value="{{ $filters['amount_max'] ?? '' }}">
+                </div>
+            </div>
+            <nav class="ev-ranges" aria-label="Quick dates">
+                <span class="ev-ranges-label">Quick dates</span>
+                @foreach ($ranges as $label => [$from, $to])
+                    <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
+                @endforeach
+            </nav>
+        </form>
+        </section>
+
         <section class="ak-card" aria-label="Expense vouchers">
             <div class="ak-tabs" role="tablist">
                 @foreach (['' => ['All', $statusTotal], 'draft' => ['Draft', $statusCounts['draft'] ?? 0], 'pending' => ['Pending approval', $statusCounts['pending'] ?? 0], 'approved' => ['Approved', $statusCounts['approved'] ?? 0], 'rejected' => ['Rejected', $statusCounts['rejected'] ?? 0]] as $key => [$label, $count])
@@ -129,115 +239,6 @@
                 @endforeach
             </div>
 
-            <div id="ev-filter-panel" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @ev-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
-            <form method="GET" action="{{ route('expense-vouchers.index') }}" class="ak-filters"
-                x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
-                @if ($tab !== '') <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
-                @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
-
-                <div class="ev-filter-row">
-                    <div class="ak-field">
-                        <label for="f_search">Search</label>
-                        <div class="ak-search">
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
-                            <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
-                                placeholder="Voucher no., party or narration" x-ref="search"
-                                @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $refs.search.focus(); }">
-                            <kbd aria-hidden="true">/</kbd>
-                        </div>
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_from">From</label>
-                        <input id="f_from" type="date" name="filter[date_from]" value="{{ $dateFrom }}">
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_to">To</label>
-                        <input id="f_to" type="date" name="filter[date_to]" value="{{ $dateTo }}">
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_supplier">Company</label>
-                        <select id="f_supplier" class="ev-select" name="filter[owner]">
-                            <option value="">All companies</option>
-                            @foreach ($companies as $company)
-                                <option value="company:{{ $company->id }}" @selected(($filters['owner'] ?? '') === 'company:'.$company->id)>{{ $company->company_name }} (general)</option>
-                            @endforeach
-                            @foreach ($suppliers as $supplier)
-                                <option value="supplier:{{ $supplier->id }}" @selected(($filters['owner'] ?? '') === 'supplier:'.$supplier->id)>{{ $supplier->supplier_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_per_page">Rows</label>
-                        <select id="f_per_page" name="per_page" onchange="this.form.requestSubmit()">
-                            @foreach (\App\Http\Controllers\ExpenseVoucherController::PER_PAGE as $n)
-                                <option value="{{ $n }}" @selected($perPage === (string) $n)>{{ $n === 'all' ? 'All' : $n }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-filter-buttons">
-                        <button type="button" class="ak-btn ak-btn-ghost" @click="advanced = !advanced" :aria-expanded="advanced" aria-controls="ev-advanced">
-                            More filters @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
-                        </button>
-                        <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
-                            <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div id="ev-advanced" class="ev-advanced" x-show="advanced" x-cloak x-transition>
-                    <div class="ak-field">
-                        <label for="f_account">Expense account</label>
-                        <select id="f_account" class="ev-select" name="filter[expense_account_id]">
-                            <option value="">All accounts</option>
-                            @foreach ($accounts as $account)
-                                <option value="{{ $account->id }}" @selected((string) ($filters['expense_account_id'] ?? '') === (string) $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_party">Party</label>
-                        <input id="f_party" type="text" name="filter[party_name]" value="{{ $filters['party_name'] ?? '' }}" list="party-suggestions" autocomplete="off" placeholder="Any party (part of the name)">
-                        <datalist id="party-suggestions">
-                            @foreach ($parties as $party)
-                                <option value="{{ $party }}"></option>
-                            @endforeach
-                        </datalist>
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_maker">Maker</label>
-                        <select id="f_maker" class="ev-select" name="filter[created_by]">
-                            <option value="">Anyone</option>
-                            @foreach ($people as $person)
-                                <option value="{{ $person->id }}" @selected((string) ($filters['created_by'] ?? '') === (string) $person->id)>{{ $person->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_checker">Checker</label>
-                        <select id="f_checker" class="ev-select" name="filter[checked_by]">
-                            <option value="">Anyone</option>
-                            @foreach ($people as $person)
-                                <option value="{{ $person->id }}" @selected((string) ($filters['checked_by'] ?? '') === (string) $person->id)>{{ $person->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_min">Amount from</label>
-                        <input id="f_min" type="number" step="0.01" min="0" name="filter[amount_min]" value="{{ $filters['amount_min'] ?? '' }}">
-                    </div>
-                    <div class="ak-field">
-                        <label for="f_max">Amount to</label>
-                        <input id="f_max" type="number" step="0.01" min="0" name="filter[amount_max]" value="{{ $filters['amount_max'] ?? '' }}">
-                    </div>
-                </div>
-                <nav class="ev-ranges" aria-label="Quick dates">
-                    <span class="ev-ranges-label">Quick dates</span>
-                    @foreach ($ranges as $label => [$from, $to])
-                        <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
-                    @endforeach
-                </nav>
-            </form>
-            </div>
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">

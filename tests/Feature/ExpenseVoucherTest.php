@@ -35,8 +35,8 @@ beforeEach(function () {
 });
 
 it('saves a draft with a running voucher number', function () {
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $this->payload)->assertRedirect();
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $this->payload)->assertRedirect();
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'draft'] + $this->payload)->assertRedirect();
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'draft'] + $this->payload)->assertRedirect();
 
     expect(ExpenseVoucher::orderBy('id')->pluck('voucher_number')->all())
         ->toBe(['EV-'.now()->format('Y').'-0001', 'EV-'.now()->format('Y').'-0002'])
@@ -156,4 +156,17 @@ it('books a general voucher with no company and preselects Moon Traders and the 
     $this->actingAs($admin)->post(route('expense-vouchers.store'), ['supplier_id' => 'general', 'expense_account_id' => $general->id] + $this->payload)->assertRedirect();
 
     expect(ExpenseVoucher::first()->supplier_id)->toBeNull();
+});
+
+it('submits a new voucher for approval in one step and resubmits an edited one', function () {
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'submit'] + $this->payload)->assertRedirect();
+
+    $voucher = ExpenseVoucher::first();
+    expect($voucher->status)->toBe('pending')->and($voucher->submitted_by)->toBe($this->maker->id);
+
+    $voucher->update(['status' => 'rejected', 'checked_by' => $this->checker->id, 'rejection_reason' => 'No receipt']);
+    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800] + $this->payload)->assertRedirect();
+
+    $voucher->refresh();
+    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull();
 });

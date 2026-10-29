@@ -106,7 +106,11 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $voucher = $this->service->create($this->validated($request));
 
-        return redirect()->route('expense-vouchers.show', $voucher)->with('success', 'Voucher '.$voucher->voucher_number.' saved as a draft.');
+        if ($request->input('action') === 'draft') {
+            return redirect()->route('expense-vouchers.show', $voucher)->with('success', 'Voucher '.$voucher->voucher_number.' saved as a draft.');
+        }
+
+        return $this->attempt(fn () => $this->service->submit($voucher, $request->user()), $voucher, 'Voucher '.$voucher->voucher_number.' submitted for approval.');
     }
 
     public function show(Request $request, ExpenseVoucher $expenseVoucher)
@@ -130,7 +134,16 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $this->authorizeCompany($request, $expenseVoucher);
 
-        return $this->attempt(fn () => $this->service->update($expenseVoucher, $this->validated($request)), $expenseVoucher, 'Voucher updated.');
+        $data = $this->validated($request);
+
+        if ($request->input('action') === 'draft') {
+            return $this->attempt(fn () => $this->service->update($expenseVoucher, $data), $expenseVoucher, 'Voucher updated.');
+        }
+
+        return $this->attempt(function () use ($expenseVoucher, $data, $request) {
+            $this->service->update($expenseVoucher, $data);
+            $this->service->submit($expenseVoucher->fresh(), $request->user());
+        }, $expenseVoucher, 'Voucher submitted for approval.');
     }
 
     public function destroy(Request $request, ExpenseVoucher $expenseVoucher): RedirectResponse

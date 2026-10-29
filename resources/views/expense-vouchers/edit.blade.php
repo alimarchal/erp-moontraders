@@ -6,7 +6,7 @@
                     <a href="{{ route('expense-vouchers.index') }}">Expense Vouchers</a><span aria-hidden="true">›</span><span>{{ $voucher->voucher_number }}</span>
                 </nav>
                 <h1 class="ak-title">Edit {{ $voucher->voucher_number }} <span class="ev-ur" lang="ur" dir="rtl" style="font-size:22px">اخراجاتی واؤچر میں ترمیم</span></h1>
-                <p class="ak-sub">A draft or rejected voucher can be changed and sent again.</p>
+                <p class="ak-sub">A draft or rejected voucher can be changed and submitted again.</p>
             </div>
             <div class="ak-head-actions">
                 <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline">How it works</a>
@@ -27,7 +27,8 @@
             @include('expense-vouchers._form')
             <div class="ev-form-foot">
                 <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline">Cancel <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:17px">منسوخ کریں</span></a>
-                <button type="submit" class="ak-btn ak-btn-primary">Update voucher <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:17px">واؤچر اپ ڈیٹ کریں</span></button>
+                <button type="submit" name="action" value="draft" class="ak-btn ak-btn-outline">Save changes <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:17px">تبدیلیاں محفوظ کریں</span></button>
+                <button type="submit" name="action" value="submit" class="ak-btn ak-btn-primary">Submit for approval <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:17px">منظوری کے لیے جمع کرائیں</span></button>
             </div>
         </form>
     </div>

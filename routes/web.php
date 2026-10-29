@@ -27,6 +27,7 @@ use App\Http\Controllers\CurrentStockController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseDetailController;
+use App\Http\Controllers\ExpenseVoucherController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\InvestmentOpeningBalanceController;
@@ -518,6 +519,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Fuel, Van Work) with double-entry GL posting.
     | Permissions: expense-detail-list, -create, -edit, -delete, -post
     */
+    Route::resource('expense-vouchers', ExpenseVoucherController::class);
+    Route::post('expense-vouchers/{expense_voucher}/submit', [ExpenseVoucherController::class, 'submit'])->name('expense-vouchers.submit');
+    Route::post('expense-vouchers/{expense_voucher}/approve', [ExpenseVoucherController::class, 'approve'])->name('expense-vouchers.approve');
+    Route::post('expense-vouchers/{expense_voucher}/reject', [ExpenseVoucherController::class, 'reject'])->name('expense-vouchers.reject');
+    Route::get('expense-vouchers/{expense_voucher}/print', [ExpenseVoucherController::class, 'print'])->name('expense-vouchers.print');
+
     Route::resource('expense-details', ExpenseDetailController::class);
     Route::post('expense-details/{expenseDetail}/post', [ExpenseDetailController::class, 'post'])
         ->name('expense-details.post');

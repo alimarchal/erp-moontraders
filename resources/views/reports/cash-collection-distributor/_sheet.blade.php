@@ -29,6 +29,10 @@
     @include('reports.cash-collection-distributor._grid', ['left' => $tables['bank'], 'right' => $tables['cheques']])
     <div class="p2-gap"></div>
     @include('reports.cash-collection-distributor._grid', ['left' => $tables['slips']])
+    @isset($tables['expenses'])
+        <div class="p2-gap"></div>
+        @include('reports.cash-collection-distributor._grid', ['left' => $tables['expenses']])
+    @endisset
     @isset($tables['salesmen'])
         <div class="p2-gap"></div>
         @include('reports.cash-collection-distributor._grid', ['left' => $tables['salesmen']])

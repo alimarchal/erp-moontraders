@@ -633,7 +633,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-expense-detail', 'report-audit-percentage-expense', 'report-audit-profit-after-category', 'report-audit-revenue-detail', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-scheme-received', 'report-sales-summary-roi', 'report-sales-tts-summary'])
+                @canany(['report-audit-expense-detail', 'expense-voucher-list', 'report-audit-percentage-expense', 'report-audit-profit-after-category', 'report-audit-revenue-detail', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-scheme-received', 'report-sales-summary-roi', 'report-sales-tts-summary'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Profitability &amp; Schemes</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -688,6 +688,18 @@
                             @can('report-audit-expense-detail')
                                 <x-settings-row data-settings-item data-search="expense detail track and manage operational expenses by category profitability and schemes returns, expenses, revenue and schemes" x-bind:hidden="! matches($el)" href="{{ route('reports.expense-detail.index') }}" label="Expense Detail"
                                     description="Track & manage operational expenses by category" icon-bg="bg-red-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('expense-voucher-list')
+                                <x-settings-row data-settings-item data-search="expense vouchers daily expenses maker checker approval thermal print profitability and schemes returns, expenses, revenue and schemes" x-bind:hidden="! matches($el)" href="{{ route('expense-vouchers.index') }}" label="Expense Vouchers"
+                                    description="Daily expense vouchers with maker and checker" icon-bg="bg-rose-600">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">

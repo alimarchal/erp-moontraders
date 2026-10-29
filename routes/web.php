@@ -723,6 +723,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('goods-issue', [GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('cash-detail', [CashDetailController::class, 'index'])->name('cash-detail.index');
         Route::get('cash-detail/export/pdf', [CashDetailController::class, 'exportPdf'])->name('cash-detail.export.pdf');
+        Route::get('cash-collection-distributor/help', [CashCollectionDistributorController::class, 'help'])->name('cash-collection-distributor.help');
         Route::get('cash-collection-distributor', [CashCollectionDistributorController::class, 'index'])->name('cash-collection-distributor.index');
         Route::get('cash-collection-distributor/export/pdf', [CashCollectionDistributorController::class, 'exportPdf'])->name('cash-collection-distributor.export.pdf');
         Route::get('investment-summary', [InvestmentSummaryController::class, 'index'])->name('investment-summary.index');

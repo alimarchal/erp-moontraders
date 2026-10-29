@@ -18,12 +18,12 @@
     };
     $rangeUrl = fn (string $from, string $to) => $withFilters(array_merge($filters, ['date_from' => $from, 'date_to' => $to]));
     $ranges = [
-        'Today' => [$today, $today],
-        'Yesterday' => [now()->subDay()->toDateString(), now()->subDay()->toDateString()],
-        'This week' => [now()->startOfWeek()->toDateString(), $today],
-        'This month' => [now()->startOfMonth()->toDateString(), $today],
-        'Last 30 days' => [now()->subDays(29)->toDateString(), $today],
-        'All' => ['2020-01-01', $today],
+        'Today' => [$today, $today, 'آج'],
+        'Yesterday' => [now()->subDay()->toDateString(), now()->subDay()->toDateString(), 'کل'],
+        'This week' => [now()->startOfWeek()->toDateString(), $today, 'اس ہفتے'],
+        'This month' => [now()->startOfMonth()->toDateString(), $today, 'اس مہینے'],
+        'Last 30 days' => [now()->subDays(29)->toDateString(), $today, 'پچھلے 30 دن'],
+        'All' => ['2020-01-01', $today, 'سب'],
     ];
     $sortUrl = fn (string $field) => request()->fullUrlWithQuery(['sort' => $sort === '-'.$field ? $field : '-'.$field, 'page' => null]);
     $ariaSort = fn (string $field) => $sort === $field ? 'ascending' : ($sort === '-'.$field ? 'descending' : 'none');
@@ -58,18 +58,18 @@
                 <nav class="ak-crumbs" aria-label="Breadcrumb">
                     <a href="{{ route('dashboard') }}">Dashboard</a><span aria-hidden="true">›</span><span>Expense Vouchers</span>
                 </nav>
-                <h1 class="ak-title">Expense Vouchers</h1>
+                <h1 class="ak-title">Expense Vouchers <span class="ev-ur" lang="ur" dir="rtl">اخراجاتی واؤچر</span></h1>
                 <p class="ak-sub">Daily expenses with a maker and a checker &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
                 <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+                    Filters <span class="ev-ur" lang="ur" dir="rtl">فلٹرز</span> @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
                 </button>
                 <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
-                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print <span class="ev-ur" lang="ur" dir="rtl">پرنٹ</span></button>
                 @can('expense-voucher-create')
-                    <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New voucher</a>
+                    <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New voucher <span class="ev-ur" lang="ur" dir="rtl">نیا واؤچر</span></a>
                 @endcan
             </div>
         </div>
@@ -90,9 +90,37 @@
         .ev-ranges a.ev-clear { border-color: #fecaca; color: #b91c1c; background: #fff; }
         .ev-ranges a.ev-clear:hover { background: #fef2f2; }
         #ev-filter-panel { overflow: hidden; }
+        .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; color: var(--ak-navy); margin-inline-start: 8px; line-height: 1.5; font-size: 1.1em; }
+        .ak-btn .ev-ur, .ak-primary-link .ev-ur, .ak-tab .ev-ur, .ak-chip .ev-ur, .ak-chips-clear .ev-ur, .ak-status .ev-ur, .ak-seg .ev-ur { color: inherit; margin-inline-start: 6px; }
+        .ak-btn-primary .ev-ur { color: #fff; }
+        .ak-title .ev-ur { font-size: 22px; margin-inline-start: 14px; }
+        .ev-bi { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .ak-field label.ev-bi { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 15px; font-weight: 600; color: var(--ak-text); }
+        .ak-field label.ev-bi .ev-ur { font-size: 17px; position: relative; top: 2px; }
+        #ev-filter-panel.ak-card { padding: 6px 4px 8px; }
+        #ev-filter-panel .ak-field input, #ev-filter-panel .ak-field select, #ev-filter-panel .ak-search input { height: 46px; font-size: 16px; }
+        #ev-filter-panel .ev-filter-row .ak-field input[type="date"] { font-size: 16px; }
+        #ev-filter-panel .select2-container .select2-selection--single { height: 46px; font-size: 16px; }
+        #ev-filter-panel .select2-container .select2-selection__rendered { font-size: 16px; }
+        #ev-filter-panel .ak-filter-buttons .ak-btn { height: 46px; font-size: 15px; padding: 0 18px; }
+        #ev-filter-panel .ev-ranges a { padding: 7px 14px; font-size: 14px; }
+        #ev-filter-panel .ev-ranges-label { font-size: 14px; }
+        .ak-tab .ev-ur { font-size: 16px; }
+        .ak-seg .ev-ur { color: inherit; font-size: 14px; background: transparent; padding: 0; margin-inline-start: 6px; }
+        .ev-ranges a .ev-ur { color: inherit; font-size: 15px; margin-inline-start: 6px; }
+        .ev-ranges a[aria-current] .ev-ur, .ak-seg .is-on .ev-ur, .ak-tab.is-active .ak-count .ev-ur { color: #fff; }
+        .ev-ranges a.ev-clear .ev-ur { color: inherit; }
+        .ev-filter-row { row-gap: 14px; }
+        .ev-filter-row .ak-filter-buttons { margin-top: 2px; }
+        #ev-filter-panel .ak-filter-buttons .ak-btn { display: inline-flex; align-items: center; gap: 6px; }
+        #ev-filter-panel .ak-filter-buttons .ak-btn .ev-ur { margin: 0; }
+        .ak-dt th .ev-ur { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--ak-navy); }
+        .ak-dt th a .ev-ur { color: inherit; }
+        .ak-dt td .ev-ur { font-size: 13px; }
         .ev-ranges a[aria-current] { background: var(--ak-navy); border-color: var(--ak-navy); color: #fff; }
         .ev-filter-row { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; }
-        @media (min-width: 900px) { .ev-filter-row { grid-template-columns: minmax(220px, 2fr) 160px 160px minmax(170px, 1.3fr) 90px auto; } }
+        @media (min-width: 900px) { .ev-filter-row { grid-template-columns: minmax(220px, 2fr) 180px 180px minmax(180px, 1.4fr) 110px; }
+        .ev-filter-row .ak-filter-buttons { grid-column: 1 / -1; justify-content: flex-end; } }
         .ev-filter-row .ak-field input, .ev-filter-row .ak-field select { height: 38px; box-sizing: border-box; }
         .ev-filter-row .ak-field input[type="date"] { padding: 0 10px; font-size: 14px; }
         .ev-filter-row .ak-filter-buttons { display: flex; gap: 8px; }
@@ -131,7 +159,7 @@
 
             <div class="ev-filter-row">
                 <div class="ak-field">
-                    <label for="f_search">Search</label>
+                    <label for="f_search" class="ev-bi"><span>Search</span><span class="ev-ur" lang="ur" dir="rtl">تلاش</span></label>
                     <div class="ak-search">
                         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
                         <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
@@ -141,15 +169,15 @@
                     </div>
                 </div>
                 <div class="ak-field">
-                    <label for="f_from">From</label>
+                    <label for="f_from" class="ev-bi"><span>From</span><span class="ev-ur" lang="ur" dir="rtl">از تاریخ</span></label>
                     <input id="f_from" type="date" name="filter[date_from]" value="{{ $dateFrom }}">
                 </div>
                 <div class="ak-field">
-                    <label for="f_to">To</label>
+                    <label for="f_to" class="ev-bi"><span>To</span><span class="ev-ur" lang="ur" dir="rtl">تا تاریخ</span></label>
                     <input id="f_to" type="date" name="filter[date_to]" value="{{ $dateTo }}">
                 </div>
                 <div class="ak-field">
-                    <label for="f_supplier">Company</label>
+                    <label for="f_supplier" class="ev-bi"><span>Company</span><span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></label>
                     <select id="f_supplier" class="ev-select" name="filter[owner]">
                         <option value="">All companies</option>
                         @foreach ($companies as $company)
@@ -161,7 +189,7 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_per_page">Rows</label>
+                    <label for="f_per_page" class="ev-bi"><span>Rows</span><span class="ev-ur" lang="ur" dir="rtl">قطاریں</span></label>
                     <select id="f_per_page" name="per_page" onchange="this.form.requestSubmit()">
                         @foreach (\App\Http\Controllers\ExpenseVoucherController::PER_PAGE as $n)
                             <option value="{{ $n }}" @selected($perPage === (string) $n)>{{ $n === 'all' ? 'All' : $n }}</option>
@@ -170,17 +198,17 @@
                 </div>
                 <div class="ak-filter-buttons">
                     <button type="button" class="ak-btn ak-btn-ghost" @click="advanced = !advanced" :aria-expanded="advanced" aria-controls="ev-advanced">
-                        More filters @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
+                        More filters <span class="ev-ur" lang="ur" dir="rtl">مزید فلٹرز</span> @if ($advancedCount)<span class="ak-count ak-count-dark">{{ $advancedCount }}</span>@endif
                     </button>
                     <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
-                        <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Searching…</span>
+                        <span x-show="!busy">Apply <span class="ev-ur" lang="ur" dir="rtl">لاگو کریں</span></span><span x-show="busy" x-cloak>Searching… <span class="ev-ur" lang="ur" dir="rtl">تلاش جاری ہے</span></span>
                     </button>
                 </div>
             </div>
 
             <div id="ev-advanced" class="ev-advanced" x-show="advanced" x-cloak x-transition>
                 <div class="ak-field">
-                    <label for="f_account">Expense account</label>
+                    <label for="f_account" class="ev-bi"><span>Expense account</span><span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></label>
                     <select id="f_account" class="ev-select" name="filter[expense_account_id]">
                         <option value="">All accounts</option>
                         @foreach ($accounts as $account)
@@ -189,7 +217,7 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_party">Party</label>
+                    <label for="f_party" class="ev-bi"><span>Party</span><span class="ev-ur" lang="ur" dir="rtl">پارٹی</span></label>
                     <input id="f_party" type="text" name="filter[party_name]" value="{{ $filters['party_name'] ?? '' }}" list="party-suggestions" autocomplete="off" placeholder="Any party (part of the name)">
                     <datalist id="party-suggestions">
                         @foreach ($parties as $party)
@@ -198,7 +226,7 @@
                     </datalist>
                 </div>
                 <div class="ak-field">
-                    <label for="f_maker">Maker</label>
+                    <label for="f_maker" class="ev-bi"><span>Maker</span><span class="ev-ur" lang="ur" dir="rtl">بنانے والا</span></label>
                     <select id="f_maker" class="ev-select" name="filter[created_by]">
                         <option value="">Anyone</option>
                         @foreach ($people as $person)
@@ -207,7 +235,7 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_checker">Checker</label>
+                    <label for="f_checker" class="ev-bi"><span>Checker</span><span class="ev-ur" lang="ur" dir="rtl">جانچنے والا</span></label>
                     <select id="f_checker" class="ev-select" name="filter[checked_by]">
                         <option value="">Anyone</option>
                         @foreach ($people as $person)
@@ -216,29 +244,29 @@
                     </select>
                 </div>
                 <div class="ak-field">
-                    <label for="f_min">Amount from</label>
+                    <label for="f_min" class="ev-bi"><span>Amount from</span><span class="ev-ur" lang="ur" dir="rtl">رقم از</span></label>
                     <input id="f_min" type="number" step="0.01" min="0" name="filter[amount_min]" value="{{ $filters['amount_min'] ?? '' }}">
                 </div>
                 <div class="ak-field">
-                    <label for="f_max">Amount to</label>
+                    <label for="f_max" class="ev-bi"><span>Amount to</span><span class="ev-ur" lang="ur" dir="rtl">رقم تا</span></label>
                     <input id="f_max" type="number" step="0.01" min="0" name="filter[amount_max]" value="{{ $filters['amount_max'] ?? '' }}">
                 </div>
             </div>
             <nav class="ev-ranges" aria-label="Quick dates">
-                <span class="ev-ranges-label">Quick dates</span>
-                @foreach ($ranges as $label => [$from, $to])
-                    <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
+                <span class="ev-ranges-label">Quick dates <span class="ev-ur" lang="ur" dir="rtl">تیز تاریخیں</span></span>
+                @foreach ($ranges as $label => [$from, $to, $urdu])
+                    <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }} <span class="ev-ur" lang="ur" dir="rtl">{{ $urdu }}</span></a>
                 @endforeach
-                <a href="{{ route('expense-vouchers.index') }}" class="ev-clear" title="Remove every filter and go back to this month">&times; Clear</a>
+                <a href="{{ route('expense-vouchers.index') }}" class="ev-clear" title="Remove every filter and go back to this month">&times; Clear <span class="ev-ur" lang="ur" dir="rtl">صاف کریں</span></a>
             </nav>
         </form>
         </section>
 
         <section class="ak-card" aria-label="Expense vouchers">
             <div class="ak-tabs" role="tablist">
-                @foreach (['' => ['All', $statusTotal], 'draft' => ['Draft', $statusCounts['draft'] ?? 0], 'pending' => ['Pending approval', $statusCounts['pending'] ?? 0], 'approved' => ['Approved', $statusCounts['approved'] ?? 0], 'rejected' => ['Rejected', $statusCounts['rejected'] ?? 0]] as $key => [$label, $count])
+                @foreach (['' => ['All', $statusTotal, 'تمام'], 'draft' => ['Draft', $statusCounts['draft'] ?? 0, 'مسودہ'], 'pending' => ['Pending approval', $statusCounts['pending'] ?? 0, 'منظوری کا منتظر'], 'approved' => ['Approved', $statusCounts['approved'] ?? 0, 'منظور شدہ'], 'rejected' => ['Rejected', $statusCounts['rejected'] ?? 0, 'مسترد']] as $key => [$label, $count, $urdu])
                     <a href="{{ $tabUrl($key) }}" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === $key ? 'is-active' : '' }}">
-                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
+                        {{ $label }} <span class="ev-ur" lang="ur" dir="rtl">{{ $urdu }}</span> <span class="ak-count">{{ number_format($count) }}</span>
                     </a>
                 @endforeach
             </div>
@@ -246,13 +274,13 @@
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">
-                    <span class="ak-chips-label">Filtered by</span>
+                    <span class="ak-chips-label">Filtered by <span class="ev-ur" lang="ur" dir="rtl">فلٹر شدہ</span></span>
                     @foreach ($chips as $key => $value)
                         <a href="{{ $withFilters(\Illuminate\Support\Arr::except($filters, $key)) }}" class="ak-chip" aria-label="Remove filter {{ $chipLabels[$key] ?? $key }}">
                             <b>{{ $chipLabels[$key] ?? \Illuminate\Support\Str::headline($key) }}:</b> {{ $chipValue($key, $value) }} <span aria-hidden="true">×</span>
                         </a>
                     @endforeach
-                    <a href="{{ $withFilters(\Illuminate\Support\Arr::only($filters, ['status', 'date_from', 'date_to'])) }}" class="ak-chips-clear">Clear all</a>
+                    <a href="{{ $withFilters(\Illuminate\Support\Arr::only($filters, ['status', 'date_from', 'date_to'])) }}" class="ak-chips-clear">Clear all <span class="ev-ur" lang="ur" dir="rtl">سب صاف کریں</span></a>
                 </div>
             @endif
 
@@ -264,8 +292,8 @@
                     <div class="ak-dt-toolbar">
                         <p><b>{{ number_format($vouchers->total()) }}</b> {{ \Illuminate\Support\Str::plural('voucher', $vouchers->total()) }} &middot; Rs <b>{{ number_format($totalAmount, 2) }}</b></p>
                         <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
-                            <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
-                            <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>
+                            <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable <span class="ev-ur" lang="ur" dir="rtl">آرام دہ</span></button>
+                            <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact <span class="ev-ur" lang="ur" dir="rtl">مختصر</span></button>
                         </div>
                     </div>
                     <div class="ak-dt-scroll" :class="compact && 'is-compact'" tabindex="0" aria-label="Expense vouchers table">
@@ -274,13 +302,13 @@
                             <thead>
                                 <tr>
                                     <th scope="col" class="ak-c" style="width:48px">#</th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('voucher_number') }}"><a href="{{ $sortUrl('voucher_number') }}">Voucher <span aria-hidden="true">{{ $sortMark('voucher_number') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('voucher_date') }}"><a href="{{ $sortUrl('voucher_date') }}">Date <span aria-hidden="true">{{ $sortMark('voucher_date') }}</span></a></th>
-                                    <th scope="col">Party &middot; company</th>
-                                    <th scope="col">Expense account</th>
-                                    <th scope="col" class="ak-num" aria-sort="{{ $ariaSort('amount') }}"><a href="{{ $sortUrl('amount') }}">Amount (Rs) <span aria-hidden="true">{{ $sortMark('amount') }}</span></a></th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Maker &middot; checker</th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('voucher_number') }}"><a href="{{ $sortUrl('voucher_number') }}">Voucher <span class="ev-ur" lang="ur" dir="rtl">واؤچر</span> <span aria-hidden="true">{{ $sortMark('voucher_number') }}</span></a></th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('voucher_date') }}"><a href="{{ $sortUrl('voucher_date') }}">Date <span class="ev-ur" lang="ur" dir="rtl">تاریخ</span> <span aria-hidden="true">{{ $sortMark('voucher_date') }}</span></a></th>
+                                    <th scope="col">Party &middot; company <span class="ev-ur" lang="ur" dir="rtl">پارٹی / کمپنی</span></th>
+                                    <th scope="col">Expense account <span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></th>
+                                    <th scope="col" class="ak-num" aria-sort="{{ $ariaSort('amount') }}"><a href="{{ $sortUrl('amount') }}">Amount (Rs) <span class="ev-ur" lang="ur" dir="rtl">رقم (روپے)</span> <span aria-hidden="true">{{ $sortMark('amount') }}</span></a></th>
+                                    <th scope="col">Status <span class="ev-ur" lang="ur" dir="rtl">اسٹیٹس</span></th>
+                                    <th scope="col">Maker &middot; checker <span class="ev-ur" lang="ur" dir="rtl">میکر / چیکر</span></th>
                                     <th scope="col" class="ak-c ak-sticky-end"><span class="sr-only">Actions</span></th>
                                 </tr>
                             </thead>
@@ -300,7 +328,7 @@
                                         <td data-label="Expense account">{{ $voucher->expenseAccount?->account_name }}<div class="ak-muted ak-hide-compact">{{ $voucher->expenseAccount?->account_code }}</div></td>
                                         <td class="ak-num ak-strong" data-label="Amount (Rs)">{{ number_format((float) $voucher->amount, 2) }}</td>
                                         <td data-label="Status">
-                                            <span class="ak-status {{ $statusTone[$voucher->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $voucher->statusLabel() }}</span>
+                                            <span class="ak-status {{ $statusTone[$voucher->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $voucher->statusLabel() }} <span class="ev-ur" lang="ur" dir="rtl">{{ ['draft' => 'مسودہ', 'pending' => 'منظوری کا منتظر', 'approved' => 'منظور', 'rejected' => 'مسترد'][$voucher->status] ?? '' }}</span></span>
                                         </td>
                                         <td data-label="Maker · checker">
                                             {{ $voucher->creator?->name ?? '—' }}
@@ -351,11 +379,11 @@
             @else
                 <div class="ak-empty">
                     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
-                    <h2>No vouchers for {{ $periodLabel }}{{ $chips || $tab ? ' with these filters' : '' }}</h2>
+                    <h2>No vouchers for {{ $periodLabel }}{{ $chips || $tab ? ' with these filters' : '' }} <span class="ev-ur" lang="ur" dir="rtl">اس مدت میں کوئی واؤچر نہیں</span></h2>
                     <p>Pick a wider date range above (for example “This month” or “All”), or remove a filter.</p>
                     <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
-                        <a href="{{ $rangeUrl(now()->startOfMonth()->toDateString(), $today) }}" class="ak-btn ak-btn-outline">Show this month</a>
-                        @can('expense-voucher-create') <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-primary">＋ New voucher</a> @endcan
+                        <a href="{{ $rangeUrl(now()->startOfMonth()->toDateString(), $today) }}" class="ak-btn ak-btn-outline">Show this month <span class="ev-ur" lang="ur" dir="rtl">اس مہینے کے دکھائیں</span></a>
+                        @can('expense-voucher-create') <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-primary">＋ New voucher <span class="ev-ur" lang="ur" dir="rtl">نیا واؤچر</span></a> @endcan
                     </div>
                 </div>
             @endif

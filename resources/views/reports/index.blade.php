@@ -406,7 +406,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-cash-detail', 'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-audit-opening-customer-balance', 'report-sales-credit-sales'])
+                @canany(['report-audit-cash-detail', 'report-audit-cash-collection-distributor', 'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-audit-opening-customer-balance', 'report-sales-credit-sales'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Receivables &amp; Collections</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -475,6 +475,18 @@
                             @can('report-audit-cash-detail')
                                 <x-settings-row data-settings-item data-search="cash collection detail daily cash collection breakdown receivables and collections credit, collections and customer statements" x-bind:hidden="! matches($el)" href="{{ route('reports.cash-detail.index') }}" label="Cash Collection Detail"
                                     description="Daily cash collection breakdown" icon-bg="bg-emerald-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-cash-collection-distributor')
+                                <x-settings-row data-settings-item data-search="cash collection distributor distribution cheque clearing bank slips receivables and collections credit, collections and customer statements" x-bind:hidden="! matches($el)" href="{{ route('reports.cash-collection-distributor.index') }}" label="Cash Collection Distributor"
+                                    description="Daily cash, cheque clearing and bank slips by distribution" icon-bg="bg-teal-600">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">

@@ -363,15 +363,15 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
     private function expenseRows(?int $supplierId, string $date): Collection
     {
         return ExpenseVoucher::query()
-            ->with('supplier:id,supplier_name,short_name')
+            ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr'])
             ->where('status', ExpenseVoucher::STATUS_APPROVED)
             ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
             ->whereDate('voucher_date', $date)
             ->get()
-            ->groupBy(fn (ExpenseVoucher $voucher) => $voucher->party_name."\0".$voucher->supplier_id)
+            ->groupBy(fn (ExpenseVoucher $voucher) => $voucher->party_name."\0".$voucher->supplier_id."\0".$voucher->company_id)
             ->map(fn (Collection $own) => [
                 'party' => $own->first()->party_name,
-                'company' => (string) ($own->first()->supplier?->short_name ?? $own->first()->supplier?->supplier_name ?? 'Moon Traders'),
+                'company' => (string) ($own->first()->supplier?->short_name ?? $own->first()->supplier?->supplier_name ?? $own->first()->company?->company_name ?? 'Moon Traders'),
                 'amount' => (float) $own->sum('amount'),
             ])
             ->sortByDesc('amount')

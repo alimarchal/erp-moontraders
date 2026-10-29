@@ -30,13 +30,13 @@
     $sortMark = fn (string $field) => $sort === $field ? "\u{25B2}" : ($sort === '-'.$field ? "\u{25BC}" : '');
 
     $names = [
-        'supplier_id' => $suppliers->pluck('supplier_name', 'id')->put('general', 'Moon Traders (general)'),
+        'owner' => $suppliers->mapWithKeys(fn ($s) => ['supplier:'.$s->id => $s->supplier_name])->union($companies->mapWithKeys(fn ($c) => ['company:'.$c->id => $c->company_name.' (general)'])),
         'expense_account_id' => $accounts->mapWithKeys(fn ($a) => [$a->id => $a->account_code.' - '.$a->account_name]),
         'created_by' => $people->pluck('name', 'id'),
         'checked_by' => $people->pluck('name', 'id'),
     ];
     $chipLabels = [
-        'search' => 'Search', 'supplier_id' => 'Company', 'expense_account_id' => 'Account', 'party_name' => 'Party', 'created_by' => 'Maker',
+        'search' => 'Search', 'owner' => 'Company', 'expense_account_id' => 'Account', 'party_name' => 'Party', 'created_by' => 'Maker',
         'checked_by' => 'Checker', 'amount_min' => 'Amount from', 'amount_max' => 'Amount to',
     ];
     $chipValue = fn (string $key, $value) => isset($names[$key]) ? ($names[$key][$value] ?? $value) : $value;
@@ -61,7 +61,7 @@
                 <p class="ak-sub">Daily expenses with a maker and a checker &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
-                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works</a>
+                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
                 @can('expense-voucher-create')
                     <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New voucher</a>
@@ -71,7 +71,9 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; margin-inline-start: 8px; }
         @page { margin: 10mm; }
         .ev-ranges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
         .ev-ranges-label { font-size: 12px; font-weight: 600; color: var(--ak-muted); margin-right: 4px; }
@@ -92,7 +94,7 @@
         .ak-status-slate i { background: #64748b; }
         .ak-filters .select2-container { width: 100% !important; display: block; }
         .ak-filters .select2-container .select2-selection--single { height: 38px; margin-top: 0; padding: 0 30px 0 12px; display: flex; align-items: center; border: 1px solid var(--ak-border); border-radius: 8px; box-shadow: none; font-size: 14px; }
-        .ak-filters .select2-container .select2-selection__arrow { top: 6px !important; }
+        .ak-filters .select2-container .select2-selection__arrow { top: 50% !important; transform: translateY(-50%); height: 24px !important; }
         .ak-filters .select2-container--focus .select2-selection--single, .ak-filters .select2-container--open .select2-selection--single { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
         .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
         .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
@@ -145,13 +147,13 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_supplier">Company</label>
-                        <select id="f_supplier" class="ev-select" name="filter[supplier_id]">
+                        <select id="f_supplier" class="ev-select" name="filter[owner]">
                             <option value="">All companies</option>
-                            @if (auth()->user()->hasAllSupplierAccess())
-                                <option value="general" @selected(($filters['supplier_id'] ?? '') === 'general')>Moon Traders (general)</option>
-                            @endif
+                            @foreach ($companies as $company)
+                                <option value="company:{{ $company->id }}" @selected(($filters['owner'] ?? '') === 'company:'.$company->id)>{{ $company->company_name }} (general)</option>
+                            @endforeach
                             @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" @selected((string) ($filters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->supplier_name }}</option>
+                                <option value="supplier:{{ $supplier->id }}" @selected(($filters['owner'] ?? '') === 'supplier:'.$supplier->id)>{{ $supplier->supplier_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -185,12 +187,12 @@
                     </div>
                     <div class="ak-field">
                         <label for="f_party">Party</label>
-                        <select id="f_party" class="ev-select" name="filter[party_name]">
-                            <option value="">All parties</option>
+                        <input id="f_party" type="text" name="filter[party_name]" value="{{ $filters['party_name'] ?? '' }}" list="party-suggestions" autocomplete="off" placeholder="Any party (part of the name)">
+                        <datalist id="party-suggestions">
                             @foreach ($parties as $party)
-                                <option value="{{ $party }}" @selected(($filters['party_name'] ?? '') === $party)>{{ $party }}</option>
+                                <option value="{{ $party }}"></option>
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                     <div class="ak-field">
                         <label for="f_maker">Maker</label>
@@ -272,13 +274,13 @@
                                     <tr>
                                         <td class="ak-c ak-muted">{{ $vouchers->firstItem() + $loop->index }}</td>
                                         <td data-label="Voucher">
-                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>
+                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>@if($voucher->attachment_url) <span title="Has an attachment" aria-label="Has an attachment">&#128206;</span>@endif
                                             <div class="ak-muted ak-hide-compact">{{ $voucher->created_at?->diffForHumans() }}</div>
                                         </td>
                                         <td class="ak-mono" data-label="Date">{{ $voucher->voucher_date->format('d M Y') }}</td>
                                         <td data-label="Party · company">
                                             <span class="ak-strong">{{ $voucher->party_name }}</span>
-                                            <div class="ak-muted">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? 'Moon Traders' }}</div>
+                                            <div class="ak-muted">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? $voucher->company?->company_name ?? 'Moon Traders' }}</div>
                                         </td>
                                         <td data-label="Expense account">{{ $voucher->expenseAccount?->account_name }}<div class="ak-muted ak-hide-compact">{{ $voucher->expenseAccount?->account_code }}</div></td>
                                         <td class="ak-num ak-strong" data-label="Amount (Rs)">{{ number_format((float) $voucher->amount, 2) }}</td>

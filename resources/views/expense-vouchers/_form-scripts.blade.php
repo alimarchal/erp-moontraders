@@ -1,17 +1,16 @@
 @push('scripts')
     <script>
-        // Searchable dropdowns; the party box also accepts a new name typed in.
+        // Searchable dropdowns. The party box is plain text (anyone can be paid) with earlier names as suggestions.
         $(function () {
             $('.ev-select').each(function () {
                 const $select = $(this);
                 $select.select2({
                     width: '100%',
-                    placeholder: $select.find('option[value=""]').text() || 'Select',
-                    // Clearing the company goes back to a general (Moon Traders) expense.
-                    allowClear: ! $select.prop('required') && $select.find('option[value=""]').length > 0,
+                    placeholder: $select.data('placeholder') || $select.find('option[value=""]').text() || 'Select',
+                    // The company can be cleared with the cross; an empty company is a general (Moon Traders) expense.
+                    allowClear: !!$select.data('clearable'),
                 });
             });
-            $('.ev-party').select2({ width: '100%', tags: true, placeholder: 'Party name', allowClear: true });
         });
     </script>
 @endpush

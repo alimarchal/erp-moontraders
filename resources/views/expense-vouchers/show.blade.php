@@ -16,7 +16,7 @@
             </div>
             <div class="ak-head-actions no-print">
                 <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to vouchers</a>
-                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline">How it works</a>
+                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 @if($voucher->isApproved())
                     @can('expense-voucher-print')
                         <a href="{{ route('expense-vouchers.print', $voucher) }}" target="_blank" class="ak-btn ak-btn-outline" title="Print the 80mm thermal slip">Print slip</a>
@@ -32,7 +32,9 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
+        .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Geeza Pro', serif; font-size: 14px; font-weight: 600; color: var(--ak-navy); text-transform: none; letter-spacing: 0; margin-inline-start: 8px; }
         .ev-steps { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0; padding: 0; list-style: none; }
         .ev-steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ak-muted); }
         .ev-steps li + li::before { content: ''; width: 28px; height: 2px; background: var(--ak-border); }
@@ -73,13 +75,13 @@
                     <div><div class="ak-muted" style="font-size:12px; text-transform:uppercase">Amount</div><div class="ev-amount">Rs {{ number_format($voucher->amount, 2) }}</div></div>
                 </div>
                 <dl class="ev-dl">
-                    <div><dt>Date</dt><dd>{{ $voucher->voucher_date->format('d M Y') }}</dd></div>
-                    <div><dt>Company</dt><dd>{{ $voucher->supplier?->supplier_name ?? 'Moon Traders (general)' }}</dd></div>
-                    <div><dt>Party name</dt><dd>{{ $voucher->party_name }}</dd></div>
-                    <div><dt>Expense account</dt><dd>{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
-                    <div style="grid-column: 1 / -1"><dt>Narration</dt><dd>{{ $voucher->narration ?: '—' }}</dd></div>
-                    <div><dt>Made</dt><dd>{{ $voucher->creator?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->created_at?->format('d M Y h:i A') }}</span></dd></div>
-                    <div><dt>Checked</dt><dd>@if($voucher->checked_at){{ $voucher->checker?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->checked_at->format('d M Y h:i A') }}</span>@else — @endif</dd></div>
+                    <div><dt>Date <span class="ev-ur" lang="ur" dir="rtl">تاریخ</span></dt><dd>{{ $voucher->voucher_date->format('d M Y') }}</dd></div>
+                    <div><dt>Company <span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></dt><dd>{{ $voucher->supplier?->supplier_name ?? (($voucher->company?->company_name ?? 'Moon Traders').' (general)') }}</dd></div>
+                    <div><dt>Party name <span class="ev-ur" lang="ur" dir="rtl">پارٹی کا نام</span></dt><dd>{{ $voucher->party_name }}</dd></div>
+                    <div><dt>Expense account <span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></dt><dd>{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
+                    <div style="grid-column: 1 / -1"><dt>Narration <span class="ev-ur" lang="ur" dir="rtl">تفصیل</span></dt><dd>{{ $voucher->narration ?: '—' }}</dd></div>
+                    <div><dt>Made <span class="ev-ur" lang="ur" dir="rtl">تیار کنندہ</span></dt><dd>{{ $voucher->creator?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->created_at?->format('d M Y h:i A') }}</span></dd></div>
+                    <div><dt>Checked <span class="ev-ur" lang="ur" dir="rtl">جانچ کنندہ</span></dt><dd>@if($voucher->checked_at){{ $voucher->checker?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->checked_at->format('d M Y h:i A') }}</span>@else — @endif</dd></div>
                 </dl>
                 @if($voucher->status === 'rejected' && $voucher->rejection_reason)
                     <div class="ak-alert ak-alert-error" style="margin-top:16px"><b>Rejected:</b> {{ $voucher->rejection_reason }}</div>
@@ -104,6 +106,18 @@
                 </table>
             </section>
         </div>
+
+        @if($voucher->attachment_url)
+            @php $isPdf = strtolower(pathinfo($voucher->attachment, PATHINFO_EXTENSION)) === 'pdf'; @endphp
+            <section class="ak-card ev-pad" aria-label="Attachment">
+                <h2 style="margin:0 0 10px; font-size:15px; font-weight:700">Attachment <span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویز</span></h2>
+                @if($isPdf)
+                    <a href="{{ $voucher->attachment_url }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline">Open the PDF</a>
+                @else
+                    <a href="{{ $voucher->attachment_url }}" target="_blank" rel="noopener"><img src="{{ $voucher->attachment_url }}" alt="Voucher attachment" style="max-width:100%; max-height:420px; border:1px solid var(--ak-border); border-radius:10px"></a>
+                @endif
+            </section>
+        @endif
 
         @if($voucher->isEditable() || $voucher->status === 'pending')
             <section class="ak-card ev-pad no-print" aria-label="Actions" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start">

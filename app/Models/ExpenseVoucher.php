@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ExpenseVoucherAttachmentService;
 use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,14 +21,19 @@ class ExpenseVoucher extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
+    /** Expense account that general (Moon Traders) vouchers default to. */
+    public const DEFAULT_ACCOUNT_CODE = '5201';
+
     protected $fillable = [
         'voucher_number',
         'voucher_date',
         'supplier_id',
+        'company_id',
         'party_name',
         'expense_account_id',
         'amount',
         'narration',
+        'attachment',
         'status',
         'submitted_by',
         'submitted_at',
@@ -62,6 +68,14 @@ class ExpenseVoucher extends Model
         ];
     }
 
+    /**
+     * Protected URL of the attachment (the file itself is on a private disk).
+     */
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment && ExpenseVoucherAttachmentService::enabled() ? route('expense-vouchers.attachment', $this) : null;
+    }
+
     public function statusLabel(): string
     {
         return self::statusLabels()[$this->status] ?? ucfirst($this->status);
@@ -83,6 +97,12 @@ class ExpenseVoucher extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /** Moon Traders itself (companies table), for an expense that belongs to no distribution. */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function expenseAccount(): BelongsTo

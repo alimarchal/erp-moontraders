@@ -140,3 +140,19 @@ it('shows the employee category in the Channel column, falling back to the targe
     expect($rows->firstWhere('employee', 'Tayyab Ali')['label'])->toBe('Powder')
         ->and($rows->firstWhere('employee', 'Atif Naqvi')['label'])->toBe('Corporate');
 });
+
+it('leaves out people with no target and no sales', function () {
+    $helper = Employee::factory()->create(['supplier_id' => $this->nestle->id, 'designation' => 'Helper', 'name' => 'Shahid Shah']);
+    SalesSettlement::factory()->create([
+        'supplier_id' => $this->nestle->id,
+        'employee_id' => $helper->id,
+        'settlement_date' => '2026-10-10',
+        'total_sales_amount' => 0,
+        'status' => 'posted',
+    ]);
+
+    $rows = $this->actingAs($this->admin)->get(route('reports.company-target-summary.index', $this->query))->viewData('summary')['rows'];
+
+    expect($rows->pluck('employee')->all())->not->toContain('Shahid Shah')
+        ->and($rows->pluck('employee')->all())->toContain('Atif Naqvi');
+});

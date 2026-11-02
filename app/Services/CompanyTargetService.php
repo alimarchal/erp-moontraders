@@ -85,7 +85,8 @@ class CompanyTargetService
                 'remaining_per_day' => $remaining / $daysLeft,
                 'percentage' => $total > 0 ? $sales / $total * 100 : 0.0,
             ];
-        })->sortBy([['position', 'asc'], ['employee', 'asc']])->values();
+        })->reject(fn (array $row) => $row['total'] <= 0 && $row['achieved'] <= 0)
+            ->sortBy([['position', 'asc'], ['employee', 'asc']])->values();
 
         $total = (float) $rows->sum('total');
         $sales = (float) $rows->sum('achieved');

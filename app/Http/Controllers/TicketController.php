@@ -51,6 +51,12 @@ class TicketController extends Controller implements HasMiddleware
         $user = $request->user();
         $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
 
+        // The list opens on the tickets waiting for a decision; the "All" tab sends filter[status]=all.
+        if (! isset($filters['status'])) {
+            $filters['status'] = TicketStatus::Pending->value;
+            $request->merge(['filter' => array_merge((array) $request->input('filter', []), ['status' => $filters['status']])]);
+        }
+
         $sort = (string) $request->input('sort', '-created_at');
         if (! in_array(ltrim($sort, '-'), self::SORTS, true)) {
             $sort = '-created_at';
@@ -98,7 +104,7 @@ class TicketController extends Controller implements HasMiddleware
     {
         return Ticket::query()
             ->visibleTo($user)
-            ->when($filters['status'] ?? null, fn ($q, $value) => $q->where('status', $value))
+            ->when($filters['status'] ?? null, fn ($q, $value) => $value === 'all' ? $q : $q->where('status', $value))
             ->when($filters['type'] ?? null, fn ($q, $value) => $q->where('type', $value))
             ->when($filters['supplier_id'] ?? null, fn ($q, $value) => $q->where('supplier_id', $value))
             ->when($filters['created_by'] ?? null, fn ($q, $value) => $q->where('created_by', $value))

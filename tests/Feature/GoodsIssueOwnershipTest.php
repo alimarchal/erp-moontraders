@@ -29,7 +29,7 @@ it('user with only list permission sees only their own goods issues on index', f
     $otherIssue = GoodsIssue::factory()->create(['issued_by' => $otherUser->id]);
 
     $this->actingAs($user)
-        ->get(route('goods-issues.index'))
+        ->get(route('goods-issues.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($ownIssue->issue_number)
         ->assertDontSee($otherIssue->issue_number);
@@ -46,7 +46,7 @@ it('user with view-all permission sees all goods issues on index', function () {
     $issue2 = GoodsIssue::factory()->create(['issued_by' => $otherUser2->id]);
 
     $this->actingAs($admin)
-        ->get(route('goods-issues.index'))
+        ->get(route('goods-issues.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($issue1->issue_number)
         ->assertSee($issue2->issue_number);
@@ -62,7 +62,7 @@ it('super admin flag user sees all goods issues on index', function () {
     $issue2 = GoodsIssue::factory()->create(['issued_by' => $otherUser2->id]);
 
     $this->actingAs($superAdmin)
-        ->get(route('goods-issues.index'))
+        ->get(route('goods-issues.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($issue1->issue_number)
         ->assertSee($issue2->issue_number);
@@ -88,7 +88,7 @@ it('scopes goods issues by assigned supplier for non-admin users', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('goods-issues.index'))
+        ->get(route('goods-issues.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($allowedIssue->issue_number)
         ->assertDontSee($blockedIssue->issue_number);
@@ -102,7 +102,7 @@ it('forbids non-admin user from directly filtering goods issues for another supp
     $user->assignRole($this->regularRole);
 
     $this->actingAs($user)
-        ->get(route('goods-issues.index', ['filter[supplier_id]' => $supplierB->id]))
+        ->get(route('goods-issues.index', ['filter[supplier_id]' => $supplierB->id, 'filter[status]' => 'all']))
         ->assertForbidden();
 });
 

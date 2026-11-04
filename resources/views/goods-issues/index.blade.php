@@ -1,15 +1,14 @@
 {{--
-    Goods Issues list (/goods-issues). Same layout as Settings -> Users:
-    KPI cards that double as filters, status tabs, one search box with quick
-    date ranges, removable filter chips, a sortable table with comfortable /
-    compact density, and a pager with rows-per-page. Query parameters are
+    Goods Issues list (/goods-issues). Same layout as Sales Settlements:
+    hidden-by-default filters, sticky status tabs, quick dates, removable chips,
+    a compact sortable table (View + more-actions menu) and a pager. Query parameters are
     unchanged (filter[...], sort, per_page); dates still default to today.
 --}}
 @php
     $authUser = auth()->user();
     $filters = array_filter((array) request('filter', []), fn ($v) => $v !== null && $v !== '');
     $sort = (string) request('sort', '-issue_date');
-    $tab = $filters['status'] ?? '';
+    $tab = ($filters['status'] ?? '') === 'all' ? '' : ($filters['status'] ?? '');
     $today = now()->toDateString();
     $dateFrom = $filters['issue_date_from'] ?? $today;
     $dateTo = $filters['issue_date_to'] ?? $today;
@@ -17,13 +16,22 @@
     $withFilters = fn (array $f) => request()->fullUrlWithQuery(['filter' => $f ?: null, 'page' => null]);
     $tabUrl = function (string $status) use ($filters, $withFilters) {
         $f = \Illuminate\Support\Arr::except($filters, ['status', 'settlement']);
-        if ($status !== '') {
-            $f['status'] = $status;
-        }
+        $f['status'] = $status !== '' ? $status : 'all';
 
         return $withFilters($f);
     };
     $pendingUrl = $withFilters(array_merge(\Illuminate\Support\Arr::except($filters, ['status']), ['settlement' => 'pending']));
+    $onPending = ($filters['settlement'] ?? '') === 'pending';
+    $shortGi = fn (?string $n) => preg_replace('/^GI-\d{4}-0*/', 'GI-', (string) $n);
+    // Engro Corporation Ltd -> Engro, Nestle Pakistan (Pvt.) Ltd -> Nestle: drop company suffixes, keep it short.
+    $shortSupplier = function (?string $name) {
+        $short = trim(preg_replace('/\b(pvt\.?|private|ltd\.?|limited|corporation|corp\.?|company|co\.?|pakistan|foods?)\b|\(.*?\)/i', '', (string) $name));
+        $short = trim(preg_replace('/\s+/', ' ', $short), " .-,");
+
+        return \Illuminate\Support\Str::limit($short !== '' ? $short : (string) $name, 14, '…');
+    };
+    $qty = fn ($n) => rtrim(rtrim(number_format((float) $n, 3), '0'), '.');
+    $shortWarehouse = fn ($name) => str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], (string) $name);
     $rangeUrl = fn (string $from, string $to) => $withFilters(array_merge($filters, ['issue_date_from' => $from, 'issue_date_to' => $to]));
     $ranges = [
         'Today' => [$today, $today],
@@ -75,15 +83,14 @@
                 <p class="ak-sub">Stock loaded from the warehouse onto vans &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
-                @if ($goodsIssues->hasPages())
-                    <a href="{{ request()->fullUrlWithQuery(['per_page' => 'all', 'page' => null, 'print' => 1]) }}" class="ak-btn ak-btn-outline" title="Print all {{ number_format($goodsIssues->total()) }} issues, not only this page">Print</a>
-                @else
-                    <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
-                @endif
+                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('gl-toggle-filters')" aria-controls="gl-filter-panel" title="Show or hide the filters">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    Filters @if(count($chips))<span class="ak-count ak-count-dark">{{ count($chips) }}</span>@endif
+                </button>
+                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh" aria-label="Refresh">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356M2.985 19.644v-4.992h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" /></svg>
+                </a>
                 <a href="{{ request()->fullUrlWithQuery(['export' => 'xlsx', 'page' => null]) }}" class="ak-btn ak-btn-outline" title="Download the filtered list as Excel">Export Excel</a>
-                @can('report-sales-goods-issue')
-                    <a href="{{ route('reports.goods-issue.index', ['filter' => ['start_date' => $dateFrom, 'end_date' => $dateTo]]) }}" class="ak-btn ak-btn-outline">Goods issue report</a>
-                @endcan
                 @can('goods-issue-create')
                     <a href="{{ route('goods-issues.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New goods issue</a>
                 @endcan
@@ -106,7 +113,39 @@
         @media (min-width: 900px) { .gl-filter-row { grid-template-columns: minmax(220px, 2fr) 160px 160px minmax(170px, 1.3fr) 90px auto; } }
         .gl-advanced { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 12px; }
         @media (min-width: 900px) { .gl-advanced { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-        .gl-table { min-width: 1060px; }
+        .gl-table { min-width: 1040px; }
+        .gl-prod { font-size: 13px; line-height: 1.35; min-width: 190px; }
+        #gl-filter-panel { overflow: hidden; }
+        .gl-ranges a.gl-clear { border-color: #fecaca; color: #b91c1c; background: #fff; }
+        .gl-ranges a.gl-clear:hover { background: #fef2f2; }
+        .gl-ranges-inline { margin-top: 0; }
+        .gl-nw { white-space: nowrap; }
+        .gl-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px #dcfce7; vertical-align: middle; margin-left: 4px; }
+        .gl-dot-text { display: none; }
+        @media screen and (max-width: 767px) { .gl-dot-text { display: inline; font-size: 13px; font-weight: 600; color: #15803d; margin-left: 8px; } }
+        @media print { .gl-dot { display: none; } .gl-dot-text { display: inline; } }
+        @media (min-width: 768px) {
+            .gl-table thead th:nth-last-child(-n+3), .gl-table tbody > tr:not(.gl-lines) > td:nth-last-child(-n+3) { width: 1%; white-space: nowrap; }
+            .gl-table thead th:nth-last-child(2), .gl-table tbody > tr:not(.gl-lines) > td:nth-last-child(2) { padding-left: 18px; padding-right: 18px; }
+            .gl-table thead th:nth-last-child(1), .gl-table tbody > tr:not(.gl-lines) > td:nth-last-child(1) { padding-left: 8px; }
+        }
+        .gl-act { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+        .gl-view { gap: 6px; }
+        .gl-more { width: 32px; height: 32px; }
+        .gl-more svg { width: 18px; height: 18px; }
+        .gl-menu { position: fixed; z-index: 70; min-width: 170px; padding: 4px; background: #fff; border: 1px solid var(--ak-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(15, 23, 42, .15); }
+        .gl-menu a, .gl-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ak-text); font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; }
+        .gl-menu a:hover, .gl-menu button:hover { background: var(--ak-soft); }
+        .gl-menu svg { width: 17px; height: 17px; flex: none; color: var(--ak-muted); }
+        .gl-menu hr { margin: 4px 0; border: 0; border-top: 1px solid #e5e7eb; }
+        .gl-menu .is-danger, .gl-menu .is-danger svg { color: #b91c1c; }
+        .gl-menu .is-danger:hover { background: #fef2f2; }
+        .gl-tab-warn:not(.is-active) .ak-count { background: #fef3c7; color: #b45309; }
+        section[aria-label="Goods issues"] > .ak-tabs { position: sticky; top: 0; z-index: 25; background: #fff; border-radius: var(--ak-radius) var(--ak-radius) 0 0; }
+        .ak-dt-scroll { max-height: calc(100vh - 190px); min-height: 18rem; }
+        .gl-draft > td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+        .gl-draft > td { background: #fffbeb; }
+        .gl-table > tbody > tr:not(.gl-lines):hover > td { background: #f1f5f9; }
         .gl-table tfoot td { position: sticky; bottom: 0; font-weight: 700; background: #f8fafc; border-top: 2px solid var(--ak-border); }
         .gl-settle a { color: inherit; text-decoration: none; }
         .gl-settle a:hover .ak-status { text-decoration: underline; }
@@ -119,19 +158,6 @@
         .ak-filters .select2-container--focus .select2-selection--single, .ak-filters .select2-container--open .select2-selection--single { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
         .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
         .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
-        .gl-salesmen { padding: 14px 16px 16px; }
-        .gl-salesmen-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .gl-salesmen-head h2 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ak-text); }
-        .gl-salesmen-head h2 .ak-muted { font-weight: 400; font-size: 12.5px; }
-        .gl-salesmen-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
-        .gl-salesman { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; border: 1px solid var(--ak-line); border-radius: 10px; color: var(--ak-text); text-decoration: none; font-size: 13px; background: #fff; }
-        .gl-salesman:hover { border-color: #a5b4fc; background: #f8faff; }
-        .gl-salesman.is-on { border-color: var(--ak-navy); box-shadow: 0 0 0 2px #c7d2fe; }
-        .gl-salesman-top { display: flex; justify-content: space-between; gap: 8px; }
-        .gl-salesman-top b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .gl-salesman-top span { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
-        .gl-bar { height: 5px; border-radius: 99px; background: #eef2ff; overflow: hidden; }
-        .gl-bar i { display: block; height: 100%; background: var(--ak-navy); border-radius: 99px; }
         .gl-table > tbody > tr:not(.gl-lines) > td { border-bottom: 1px solid #e5e7eb; }
         .gl-table > tbody:last-of-type > tr:last-child > td { border-bottom: 0; }
         .gl-toggle { border: 0; background: none; padding: 0 4px 0 0; color: var(--ak-muted); cursor: pointer; font-size: 11px; vertical-align: 1px; }
@@ -141,8 +167,7 @@
         .gl-lines th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); padding: 4px 8px; border-bottom: 1px solid var(--ak-line); background: transparent !important; position: static !important; }
         .gl-lines td td { padding: 3px 8px !important; border-bottom: 1px solid #eef2f7; background: transparent !important; }
         @media print {
-            .gl-salesmen, .gl-toggle, .gl-lines { display: none !important; }
-            .gl-ranges { display: none !important; }
+            .gl-ranges, .ak-filters, .ak-tabs { display: none !important; }
             .gl-table { min-width: 0 !important; }
             .gl-table tfoot td { position: static; }
         }
@@ -163,82 +188,10 @@
             <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        {{-- KPI cards (also filters) --}}
-        <section class="ak-kpis" aria-label="Goods issue summary">
-            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' && ! isset($filters['settlement']) ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.38a1.13 1.13 0 0 1-1.13-1.13V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.13c.62 0 1.13-.5 1.09-1.12a17.9 17.9 0 0 0-3.21-9.06 2.29 2.29 0 0 0-1.89-.95H14.25M16.5 18.75h-2.25m0-11.18v-.96c0-.57-.42-1.05-.98-1.12a48.6 48.6 0 0 0-10.04 0 1.13 1.13 0 0 0-.98 1.12v7.64m12 0v-6.68" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Issued to vans</span>
-                    <span class="ak-kpi-value">Rs {{ number_format($stats['issued_value']) }}</span>
-                    <span class="ak-kpi-hint">{{ number_format($stats['issued']) }} posted {{ \Illuminate\Support\Str::plural('issue', $stats['issued']) }} &middot; {{ number_format($stats['total']) }} in all</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('draft') }}" class="ak-kpi{{ $stats['draft'] ? ' ak-kpi-action' : '' }}{{ $tab === 'draft' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Drafts to post</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['draft']) }}</span>
-                    <span class="ak-kpi-hint">{{ $stats['draft'] ? 'Rs '.number_format($stats['draft_value']).' not on vans yet →' : 'nothing waiting' }}</span>
-                </span>
-            </a>
-            <a href="{{ $pendingUrl }}" class="ak-kpi{{ $stats['pending'] ? ' ak-kpi-action' : '' }}{{ ($filters['settlement'] ?? '') === 'pending' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Not settled yet</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['pending']) }}</span>
-                    <span class="ak-kpi-hint">{{ $stats['pending'] ? 'Rs '.number_format($stats['pending_value']).' still on vans →' : 'every van is settled' }}</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('cancelled') }}" class="ak-kpi{{ $tab === 'cancelled' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Reversed</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['cancelled']) }}</span>
-                    <span class="ak-kpi-hint">stock returned to warehouse</span>
-                </span>
-            </a>
-        </section>
-
-        @if ($bySalesman->isNotEmpty())
-            <section class="ak-card gl-salesmen" aria-label="By salesman" x-data="{ all: false }">
-                <div class="gl-salesmen-head">
-                    <h2>By salesman <span class="ak-muted">&middot; {{ $periodLabel }}, reversed left out</span></h2>
-                    @if ($bySalesman->count() > 6)
-                        <button type="button" class="ak-btn ak-btn-ghost ak-btn-sm" @click="all = !all" x-text="all ? 'Show top 6' : 'Show all {{ $bySalesman->count() }}'"></button>
-                    @endif
-                </div>
-                @php $maxValue = max((float) $bySalesman->max('value'), 1); @endphp
-                <div class="gl-salesmen-grid">
-                    @foreach ($bySalesman as $row)
-                        @php $on = (string) ($filters['employee_id'] ?? '') === (string) $row->employee_id; @endphp
-                        <a href="{{ $withFilters($on ? \Illuminate\Support\Arr::except($filters, 'employee_id') : array_merge($filters, ['employee_id' => $row->employee_id])) }}"
-                            class="gl-salesman{{ $on ? ' is-on' : '' }}" @if ($loop->index >= 6) x-show="all" x-cloak @endif
-                            title="{{ $on ? 'Remove this filter' : 'Show only '.$row->name }}">
-                            <span class="gl-salesman-top">
-                                <b>{{ $row->name }}</b>
-                                <span>Rs {{ number_format((float) $row->value) }}</span>
-                            </span>
-                            <span class="gl-bar"><i style="width: {{ round((float) $row->value / $maxValue * 100, 1) }}%"></i></span>
-                            <span class="ak-muted">{{ $row->issues }} {{ \Illuminate\Support\Str::plural('issue', (int) $row->issues) }}@if ($row->pending > 0) &middot; <span class="gl-late">{{ $row->pending }} not settled</span>@endif</span>
-                        </a>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        <section class="ak-card" aria-label="Goods issues">
-            <div class="ak-tabs" role="tablist">
-                @foreach (['' => ['All', $stats['total']], 'draft' => ['Draft', $stats['draft']], 'issued' => ['Issued', $stats['issued']], 'cancelled' => ['Reversed', $stats['cancelled']]] as $key => [$label, $count])
-                    <a href="{{ $tabUrl($key) }}" role="tab" aria-selected="{{ $tab === $key && ! isset($filters['settlement']) ? 'true' : 'false' }}" class="ak-tab {{ $tab === $key && ! isset($filters['settlement']) ? 'is-active' : '' }}">
-                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
-                    </a>
-                @endforeach
-            </div>
-
-            {{-- Filters --}}
+        <section id="gl-filter-panel" class="ak-card" aria-label="Filters" x-data="{ open: false }" @gl-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="display:none">
             <form method="GET" action="{{ route('goods-issues.index') }}" class="ak-filters"
                 x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
-                @if ($tab !== '') <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
+                <input type="hidden" name="filter[status]" value="{{ $tab !== '' ? $tab : 'all' }}">
                 @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
 
                 <div class="gl-filter-row">
@@ -329,8 +282,21 @@
                     @foreach ($ranges as $label => [$from, $to])
                         <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
                     @endforeach
+                    <a href="{{ route('goods-issues.index') }}" class="gl-clear" title="Remove every filter and go back to today">&times; Clear</a>
                 </nav>
             </form>
+        </section>
+
+        <section class="ak-card" aria-label="Goods issues">
+            <div class="ak-tabs" role="tablist">
+                @php $giTabs = [['', 'All', $stats['total'], $tab === '' && ! $onPending, $tabUrl('')], ['draft', 'Draft', $stats['draft'], $tab === 'draft' && ! $onPending, $tabUrl('draft')], ['issued', 'Issued', $stats['issued'], $tab === 'issued' && ! $onPending, $tabUrl('issued')], ['pending', 'Not settled', $stats['pending'], $onPending, $pendingUrl], ['cancelled', 'Reversed', $stats['cancelled'], $tab === 'cancelled' && ! $onPending, $tabUrl('cancelled')]]; @endphp
+                @foreach ($giTabs as [$key, $label, $count, $on, $url])
+                    <a href="{{ $url }}" role="tab" aria-selected="{{ $on ? 'true' : 'false' }}" class="ak-tab {{ $on ? 'is-active' : '' }}{{ $key === 'pending' && $count > 0 ? ' gl-tab-warn' : '' }}">
+                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
+                    </a>
+                @endforeach
+            </div>
+
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">
@@ -353,8 +319,15 @@
                         <p>
                             <b>{{ number_format($goodsIssues->total()) }}</b> {{ \Illuminate\Support\Str::plural('issue', $goodsIssues->total()) }}
                             &middot; Rs <b>{{ number_format($totalValue) }}</b>
-                            &middot; sorted by <b>{{ $sortNames[$sortField] ?? 'Issue date' }}</b> ({{ str_starts_with($sort, '-') ? 'newest / highest first' : 'oldest / lowest first' }})
                         </p>
+                        <nav class="gl-ranges gl-ranges-inline" aria-label="Quick dates">
+                            @php $matched = false; @endphp
+                            @foreach ($ranges as $label => [$from, $to])
+                                @php $on = $dateFrom === $from && $dateTo === $to; $matched = $matched || $on; @endphp
+                                <a href="{{ $rangeUrl($from, $to) }}" @if ($on) aria-current="true" @endif>{{ $label }}</a>
+                            @endforeach
+                            @unless ($matched)<a href="#" aria-current="true" onclick="return false" title="Custom period (change it in Filters)">{{ $periodLabel }}</a>@endunless
+                        </nav>
                         <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
                             <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
                             <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>
@@ -365,15 +338,16 @@
                             <caption class="sr-only">Goods issues, {{ $goodsIssues->total() }} results</caption>
                             <thead>
                                 <tr>
-                                    <th scope="col" class="ak-c" style="width:48px">#</th>
                                     <th scope="col" aria-sort="{{ $ariaSort('issue_number') }}"><a href="{{ $sortUrl('issue_number') }}">Issue <span aria-hidden="true">{{ $sortMark('issue_number') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('issue_date') }}"><a href="{{ $sortUrl('issue_date') }}">Date <span aria-hidden="true">{{ $sortMark('issue_date') }}</span></a></th>
                                     <th scope="col">Salesman &middot; vehicle</th>
-                                    <th scope="col" class="ak-num">Lines</th>
                                     <th scope="col" class="ak-num" aria-sort="{{ $ariaSort('total_value') }}"><a href="{{ $sortUrl('total_value') }}">Value (Rs) <span aria-hidden="true">{{ $sortMark('total_value') }}</span></a></th>
-                                    <th scope="col">Status</th>
                                     <th scope="col">Settlement</th>
-                                    <th scope="col" class="ak-c ak-sticky-end"><span class="sr-only">Actions</span></th>
+                                    <th scope="col">Products</th>
+                                    <th scope="col" class="ak-num" title="Total quantity issued (units)">Qty</th>
+                                    <th scope="col">Supplier</th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('issue_date') }}"><a href="{{ $sortUrl('issue_date') }}">Date <span aria-hidden="true">{{ $sortMark('issue_date') }}</span></a></th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" class="ak-sticky-end no-print" style="text-align:right">Actions</th>
                                 </tr>
                             </thead>
                             @foreach ($goodsIssues as $gi)
@@ -381,39 +355,29 @@
                                     $settlement = $gi->settlement->sortByDesc('id')->first();
                                     $daysOut = $gi->status === 'issued' && ! $settlement ? (int) abs($gi->issue_date?->startOfDay()->diffInDays(now()->startOfDay()) ?? 0) : null;
                                     $canPeek = $gi->relationLoaded('items') && $gi->items->isNotEmpty();
+                                    $canEdit = $gi->status === 'draft' && auth()->user()->can('goods-issue-edit');
+                                    $canDelete = $gi->status === 'draft' && auth()->user()->can('goods-issue-delete');
                                 @endphp
                                 <tbody x-data="{ open: false }">
-                                    <tr>
-                                        <td class="ak-c ak-muted">
+                                    <tr class="{{ $gi->status === 'draft' ? 'gl-draft' : '' }}">
+                                        <td data-label="Issue">
                                             @if ($canPeek)
                                                 <button type="button" class="gl-toggle" @click="open = !open" :aria-expanded="open" aria-label="Show lines of {{ $gi->issue_number }}" title="Show lines"><span x-text="open ? '▾' : '▸'">▸</span></button>
                                             @endif
-                                            {{ $goodsIssues->firstItem() + $loop->index }}
-                                        </td>
-                                        <td data-label="Issue">
-                                            <a href="{{ route('goods-issues.show', $gi) }}" class="ak-primary-link">{{ $gi->issue_number }}</a>
-                                            <div class="ak-muted ak-hide-compact">{{ $gi->supplier->supplier_name ?? '' }}{{ $gi->issuedBy ? ' · by '.$gi->issuedBy->name : '' }}</div>
-                                        </td>
-                                        <td class="ak-mono" data-label="Date">
-                                            {{ $gi->issue_date?->format('d M Y') }}
-                                            <div class="ak-muted ak-hide-compact">{{ $gi->posted_at ? 'posted '.$gi->posted_at->format('h:i A') : $gi->created_at?->diffForHumans() }}</div>
+                                            <a href="{{ route('goods-issues.show', $gi) }}" class="ak-primary-link" title="{{ $gi->issue_number }}">{{ $shortGi($gi->issue_number) }}</a>
+                                            <div class="ak-muted gl-nw" title="Issued by {{ $gi->issuedBy->name ?? '' }}">by {{ \Illuminate\Support\Str::limit($gi->issuedBy->name ?? '—', 14) }}</div>
                                         </td>
                                         <td data-label="Salesman · vehicle">
                                             <span class="ak-strong">{{ $gi->employee->name ?? '—' }}</span>
-                                            <div class="ak-muted">{{ $gi->vehicle->vehicle_number ?? '—' }}{{ $gi->warehouse ? ' · '.$gi->warehouse->warehouse_name : '' }}</div>
+                                            <div class="ak-muted" title="{{ $gi->warehouse->warehouse_name ?? '' }}">{{ $gi->vehicle->vehicle_number ?? '—' }}{{ $gi->warehouse ? ' · '.$shortWarehouse($gi->warehouse->warehouse_name) : '' }}</div>
                                         </td>
-                                        <td class="ak-num" data-label="Lines">{{ number_format($gi->items_count) }}</td>
-                                        <td class="ak-num ak-strong" data-label="Value (Rs)">{{ number_format((float) $gi->total_value, 2) }}</td>
-                                        <td data-label="Status">
-                                            <span class="ak-status {{ $statusTone[$gi->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $statusLabels[$gi->status] ?? \Illuminate\Support\Str::headline($gi->status) }}</span>
-                                        </td>
-                                        <td class="gl-settle" data-label="Settlement">
+                                        <td class="ak-num ak-strong" data-label="Value (Rs)" title="{{ number_format((float) $gi->total_value, 2) }}">{{ number_format((float) $gi->total_value) }}</td>
+                                        <td class="gl-settle gl-nw" data-label="Settlement">
                                             @if ($settlement)
                                                 @can('sales-settlement-list')
                                                     <a href="{{ route('sales-settlements.show', $settlement) }}" title="Open {{ $settlement->settlement_number }}">
                                                 @endcan
                                                 <span class="ak-status {{ $settlement->status === 'draft' ? 'ak-status-amber' : 'ak-status-green' }}"><i aria-hidden="true"></i>{{ \Illuminate\Support\Str::headline($settlement->status) }}</span>
-                                                <span class="gl-age ak-muted ak-hide-compact">{{ $settlement->settlement_number }}</span>
                                                 @can('sales-settlement-list')
                                                     </a>
                                                 @endcan
@@ -424,37 +388,69 @@
                                                 <span class="ak-muted">—</span>
                                             @endif
                                         </td>
-                                        <td class="ak-sticky-end" data-label="">
-                                            <div class="ak-actions">
-                                                <a href="{{ route('goods-issues.show', $gi) }}" class="ak-icon ak-icon-view" title="View" aria-label="View {{ $gi->issue_number }}">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                        <td class="gl-prod" data-label="Products">
+                                            @if ($gi->relationLoaded('items') && $gi->items->isNotEmpty())
+                                                @php $top = $gi->items->sortByDesc('total_value')->take(2); $more = $gi->items->count() - $top->count(); @endphp
+                                                @foreach ($top as $line)
+                                                    <div title="{{ $line->product->product_name ?? '' }}">{{ \Illuminate\Support\Str::limit($line->product->product_name ?? '—', 26) }} <span class="ak-muted">&times; {{ $qty($line->quantity_issued) }}</span></div>
+                                                @endforeach
+                                                @if ($more > 0)<div class="ak-muted">+ {{ $more }} more {{ \Illuminate\Support\Str::plural('product', $more) }}</div>@endif
+                                            @else
+                                                <span class="ak-muted">{{ number_format($gi->items_count) }} {{ \Illuminate\Support\Str::plural('line', $gi->items_count) }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="ak-num" data-label="Qty">{{ $gi->relationLoaded('items') ? $qty($gi->items->sum('quantity_issued')) : '—' }}</td>
+                                        <td class="gl-nw" data-label="Supplier" title="{{ $gi->supplier->supplier_name ?? '' }}">{{ $shortSupplier($gi->supplier->supplier_name ?? '') ?: '—' }}</td>
+                                        <td class="ak-mono gl-nw" data-label="Date">
+                                            {{ $gi->issue_date?->format('d M Y') }}
+                                            <div class="ak-muted" title="{{ $gi->posted_at ? 'Posted '.$gi->posted_at->format('d M Y h:i A') : 'Created '.$gi->created_at?->format('d M Y h:i A') }}">{{ $gi->posted_at ? 'Posted '.$gi->posted_at->format('h:i A') : 'Created '.$gi->created_at?->diffForHumans() }}</div>
+                                        </td>
+                                        <td data-label="Status">
+                                            @if ($gi->status === 'issued')
+                                                <span class="gl-dot" title="Issued{{ $gi->posted_at ? ' '.$gi->posted_at->format('d M Y h:i A') : '' }}" role="img" aria-label="Issued"></span><span class="gl-dot-text">Issued</span>
+                                            @else
+                                                <span class="ak-status {{ $statusTone[$gi->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $statusLabels[$gi->status] ?? \Illuminate\Support\Str::headline($gi->status) }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="ak-sticky-end no-print" data-label="">
+                                            <div class="gl-act" x-data="{ open: false, pos: '',
+                                                toggle(e) {
+                                                    const r = e.currentTarget.getBoundingClientRect();
+                                                    const flip = r.bottom + 130 > window.innerHeight;
+                                                    this.pos = 'right:' + (window.innerWidth - r.right) + 'px;' + (flip ? 'bottom:' + (window.innerHeight - r.top + 4) + 'px' : 'top:' + (r.bottom + 4) + 'px');
+                                                    this.open = ! this.open;
+                                                } }" @keydown.escape.window="open = false" @scroll.window="open = false" @resize.window="open = false">
+                                                <a href="{{ route('goods-issues.show', $gi) }}" class="ak-btn ak-btn-outline ak-btn-sm gl-view" title="Open {{ $gi->issue_number }}" aria-label="View {{ $gi->issue_number }}">
+                                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                                    View
                                                 </a>
-                                                <span class="ak-slot">
-                                                    @if ($gi->status === 'draft')
-                                                        @can('goods-issue-edit')
-                                                            <a href="{{ route('goods-issues.edit', $gi) }}" class="ak-icon" title="Edit draft" aria-label="Edit {{ $gi->issue_number }}">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg>
+                                                @if ($canEdit || $canDelete)
+                                                    <button type="button" class="ak-icon gl-more" @click="toggle($event)" :aria-expanded="open" aria-haspopup="menu" title="More actions" aria-label="More actions for {{ $gi->issue_number }}">
+                                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" /></svg>
+                                                    </button>
+                                                    <div class="gl-menu" role="menu" x-show="open" x-cloak style="display:none" :style="pos" @click.outside="open = false">
+                                                        @if ($canEdit)
+                                                            <a role="menuitem" href="{{ route('goods-issues.edit', $gi) }}">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg>
+                                                                Edit draft
                                                             </a>
-                                                        @endcan
-                                                    @endif
-                                                </span>
-                                                <span class="ak-slot">
-                                                    @if ($gi->status === 'draft')
-                                                        @can('goods-issue-delete')
-                                                            <button type="button" class="ak-icon ak-icon-danger" title="Delete draft" aria-label="Delete {{ $gi->issue_number }}"
-                                                                @click="confirm = { open: true, url: @js(route('goods-issues.destroy', $gi)), number: @js($gi->issue_number) }">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
+                                                        @endif
+                                                        @if ($canDelete)
+                                                            @if ($canEdit)<hr>@endif
+                                                            <button type="button" role="menuitem" class="is-danger"
+                                                                @click="open = false; confirm = { open: true, url: @js(route('goods-issues.destroy', $gi)), number: @js($gi->issue_number) }">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
+                                                                Delete draft
                                                             </button>
-                                                        @endcan
-                                                    @endif
-                                                </span>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
                                     @if ($canPeek)
                                         <tr class="gl-lines" x-show="open" x-cloak>
-                                            <td></td>
-                                            <td colspan="8">
+                                            <td colspan="10">
                                                 <table>
                                                     <thead><tr><th>#</th><th>Product</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Value (Rs)</th></tr></thead>
                                                     <tbody>
@@ -476,10 +472,11 @@
                             @endforeach
                             <tfoot>
                                 <tr>
-                                    <td colspan="4">Total &middot; {{ number_format($goodsIssues->total()) }} {{ \Illuminate\Support\Str::plural('issue', $goodsIssues->total()) }}{{ $goodsIssues->hasPages() ? ' (all pages)' : '' }}</td>
-                                    <td class="ak-num">{{ number_format($goodsIssues->getCollection()->sum('items_count')) }}{{ $goodsIssues->hasPages() ? '*' : '' }}</td>
-                                    <td class="ak-num">{{ number_format((float) $totalValue, 2) }}</td>
-                                    <td colspan="3" class="ak-muted" style="font-weight:400">{{ $goodsIssues->hasPages() ? '* lines on this page' : '' }}</td>
+                                    <td colspan="2">Total &middot; {{ number_format($goodsIssues->total()) }} {{ \Illuminate\Support\Str::plural('issue', $goodsIssues->total()) }}{{ $goodsIssues->hasPages() ? ' (all pages)' : '' }}</td>
+                                    <td class="ak-num" title="{{ number_format((float) $totalValue, 2) }}">{{ number_format((float) $totalValue) }}</td>
+                                    <td colspan="2"></td>
+                                    <td class="ak-num">{{ $goodsIssues->getCollection()->first()?->relationLoaded('items') ? $qty($goodsIssues->getCollection()->sum(fn ($g) => $g->items->sum('quantity_issued'))) : '' }}{{ $goodsIssues->hasPages() ? '*' : '' }}</td>
+                                    <td colspan="4" class="ak-muted" style="font-weight:400">{{ $goodsIssues->hasPages() ? '* quantity on this page' : '' }}</td>
                                 </tr>
                             </tfoot>
                         </table>

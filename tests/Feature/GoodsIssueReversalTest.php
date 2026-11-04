@@ -415,7 +415,7 @@ it('leaves the replacement draft with the original owner when an admin reverses 
         ->and($data['goodsIssue']->fresh()->reversed_by)->toBe($admin->id);
 
     actingAs($data['user']);
-    get(route('goods-issues.index'))->assertOk()->assertSee($replacement->issue_number);
+    get(route('goods-issues.index', ['filter' => ['status' => 'all']]))->assertOk()->assertSee($replacement->issue_number);
     get(route('goods-issues.show', $replacement))
         ->assertSee("Copied as draft from reversed {$data['goodsIssue']->issue_number} by {$admin->name}, owned by {$data['user']->name}");
 });

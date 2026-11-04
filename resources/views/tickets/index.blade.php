@@ -1,7 +1,7 @@
 {{--
-    Tickets list (/tickets). Same layout as Goods Issues: KPI cards that double as filters,
-    status tabs, one filter row with quick dates, removable filter chips, a sortable table
-    with comfortable / compact density and a pager. Query parameters: filter[...], sort, per_page.
+    Tickets list (/tickets). Same layout as Sales Settlements: hidden-by-default filters, sticky status tabs,
+    quick dates, removable chips, a compact sortable table (View + more-actions menu) and a pager.
+    Query parameters: filter[...], sort, per_page.
 --}}
 @php
     use Illuminate\Support\Arr;
@@ -10,7 +10,7 @@
     $authUser = auth()->user();
     $filters = array_filter((array) request('filter', []), fn ($v) => $v !== null && $v !== '');
     $sort = (string) request('sort', '-created_at');
-    $tab = $filters['status'] ?? '';
+    $tab = ($filters['status'] ?? '') === 'all' ? '' : ($filters['status'] ?? '');
     $today = now()->toDateString();
     $dateFrom = $filters['date_from'] ?? '';
     $dateTo = $filters['date_to'] ?? '';
@@ -18,9 +18,7 @@
     $withFilters = fn (array $f) => request()->fullUrlWithQuery(['filter' => $f ?: null, 'page' => null]);
     $tabUrl = function (string $status) use ($filters, $withFilters) {
         $f = Arr::except($filters, ['status']);
-        if ($status !== '') {
-            $f['status'] = $status;
-        }
+        $f['status'] = $status !== '' ? $status : 'all';
 
         return $withFilters($f);
     };
@@ -53,6 +51,8 @@
         ? ($dateFrom ? \Carbon\Carbon::parse($dateFrom)->format('d M Y') : 'start').' – '.($dateTo ? \Carbon\Carbon::parse($dateTo)->format('d M Y') : 'today')
         : 'all dates';
     $isAdmin = $authUser->isTicketAdmin();
+    // TKT-000012 -> TKT-12 (full number stays in the tooltip and in search)
+    $shortNumber = fn (?string $n) => preg_match('/^TKT-0*(\d+)$/', $n, $m) ? 'TKT-'.$m[1] : (string) $n;
 @endphp
 
 <x-app-layout>
@@ -66,8 +66,14 @@
                 <p class="ak-sub">Product change requests (price, new SKU, re-activation) waiting for admin approval &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
-                <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline" title="Urdu user manual">Help · مدد</a>
-                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('tk-toggle-filters')" aria-controls="tk-filter-panel" title="Show or hide the filters">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    Filters @if (count($chips))<span class="ak-count ak-count-dark">{{ count($chips) }}</span>@endif
+                </button>
+                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh" aria-label="Refresh">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356M2.985 19.644v-4.992h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" /></svg>
+                </a>
+                <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline" title="User manual">Help</a>
                 @can('report-audit-product-price-change-log')
                     <a href="{{ route('reports.product-price-change-log.index') }}" class="ak-btn ak-btn-outline">Price change log</a>
                 @endcan
@@ -82,7 +88,7 @@
     @include('tickets.partials.style')
     <style>
         .tk-filter-row { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; }
-        @media (min-width: 900px) { .tk-filter-row { grid-template-columns: minmax(220px, 2fr) 160px 160px minmax(170px, 1.3fr) 90px auto; } }
+        @media (min-width: 900px) { .tk-filter-row { grid-template-columns: minmax(220px, 2fr) 150px 150px minmax(170px, 1.3fr) 90px auto; } }
         .tk-filter-row .ak-field input, .tk-filter-row .ak-field select { height: 38px; box-sizing: border-box; }
         .tk-filter-row .ak-field input[type="date"] { padding: 0 10px; font-size: 14px; }
         .tk-filter-row .ak-filter-buttons { display: flex; gap: 8px; }
@@ -93,7 +99,41 @@
         .tk-ranges a { padding: 4px 10px; border: 1px solid var(--ak-border); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--ak-text); text-decoration: none; background: #fff; }
         .tk-ranges a:hover { background: var(--ak-soft); }
         .tk-ranges a[aria-current] { background: var(--ak-navy); border-color: var(--ak-navy); color: #fff; }
-        .tk-table { min-width: 980px; }
+        .tk-table { min-width: 900px; }
+        .tk-desc { min-width: 220px; max-width: 360px; color: #334155; font-size: 13px; line-height: 1.4; }
+        .tk-desc-col { min-width: 220px; }
+        #tk-filter-panel { overflow: hidden; }
+        .tk-ranges a.tk-clear { border-color: #fecaca; color: #b91c1c; }
+        .tk-ranges a.tk-clear:hover { background: #fef2f2; }
+        .tk-ranges-inline { margin-top: 0; }
+        .tk-nw { white-space: nowrap; }
+        .tk-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 3px #dcfce7; vertical-align: middle; margin-left: 4px; }
+        .tk-dot-text { display: none; }
+        @media screen and (max-width: 767px) { .tk-dot-text { display: inline; font-size: 13px; font-weight: 600; color: #15803d; margin-left: 8px; } }
+        @media print { .tk-dot { display: none; } .tk-dot-text { display: inline; } }
+        @media (min-width: 768px) {
+            .tk-table thead th:nth-last-child(-n+3), .tk-table tbody td:nth-last-child(-n+3) { width: 1%; white-space: nowrap; }
+            .tk-table thead th:nth-last-child(2), .tk-table tbody td:nth-last-child(2) { padding-left: 18px; padding-right: 18px; }
+            .tk-table thead th:nth-last-child(1), .tk-table tbody td:nth-last-child(1) { padding-left: 8px; }
+        }
+        .tk-act { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+        .tk-more { width: 32px; height: 32px; }
+        .tk-more svg { width: 18px; height: 18px; }
+        .tk-menu { position: fixed; z-index: 70; min-width: 170px; padding: 4px; background: #fff; border: 1px solid var(--ak-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(15, 23, 42, .15); }
+        .tk-menu a, .tk-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ak-text); font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; }
+        .tk-menu a:hover, .tk-menu button:hover { background: var(--ak-soft); }
+        .tk-menu svg { width: 17px; height: 17px; flex: none; color: var(--ak-muted); }
+        .tk-menu hr { margin: 4px 0; border: 0; border-top: 1px solid #e5e7eb; }
+        .tk-menu .is-danger, .tk-menu .is-danger svg { color: #b91c1c; }
+        .tk-menu .is-danger:hover { background: #fef2f2; }
+        .tk-tab-warn:not(.is-active) .ak-count { background: #fef3c7; color: #b45309; }
+        section[aria-label="Tickets"] > .ak-tabs { position: sticky; top: 0; z-index: 25; background: #fff; border-radius: var(--ak-radius) var(--ak-radius) 0 0; }
+        .ak-dt-scroll { max-height: calc(100vh - 190px); min-height: 18rem; }
+        .tk-table > tbody > tr > td { border-bottom: 1px solid #e5e7eb; }
+        .tk-table > tbody > tr:last-child > td { border-bottom: 0; }
+        .tk-table > tbody > tr:hover > td { background: #f1f5f9; }
+        .tk-pending > td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+        .tk-pending > td { background: #fffbeb; }
         /* Searchable dropdowns (Select2) sized like the other filter fields, same as Goods Issues */
         .ak-filters .select2-container { width: 100% !important; display: block; }
         .ak-filters .select2-container .select2-selection--single { height: 38px; margin-top: 0; padding: 0 30px 0 12px; display: flex; align-items: center; border: 1px solid var(--ak-border); border-radius: 8px; box-shadow: none; font-size: 14px; }
@@ -101,7 +141,7 @@
         .ak-filters .select2-container--focus .select2-selection--single, .ak-filters .select2-container--open .select2-selection--single { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
         .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
         .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
-        @media print { .tk-ranges { display: none !important; } .tk-table { min-width: 0 !important; } @page { margin: 10mm; } }
+        @media print { .tk-ranges, .ak-filters, .ak-tabs { display: none !important; } .tk-table { min-width: 0 !important; } @page { margin: 10mm; } }
     </style>
 
     <div class="ak-page" x-data="{ confirm: { open: false, url: '', number: '' }, deleting: false }">
@@ -116,55 +156,10 @@
             <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        {{-- KPI cards (also filters) --}}
-        <section class="ak-kpis" aria-label="Ticket summary">
-            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.38 5.25c-.62 0-1.13.5-1.13 1.13v3.03a3 3 0 0 1 0 5.2v3.03c0 .62.5 1.13 1.13 1.13h17.25c.62 0 1.13-.5 1.13-1.13v-3.03a3 3 0 0 1 0-5.2V6.38c0-.62-.5-1.13-1.13-1.13H3.38Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">All tickets</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['total']) }}</span>
-                    <span class="ak-kpi-hint">{{ $isAdmin ? 'from every company' : 'raised by your company' }}</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('pending') }}" class="ak-kpi{{ $stats['pending'] ? ' ak-kpi-action' : '' }}{{ $tab === 'pending' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Waiting for approval</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['pending']) }}</span>
-                    <span class="ak-kpi-hint">{{ $stats['pending'] ? ($isAdmin ? 'Review them →' : 'Admin has not decided yet →') : 'nothing waiting' }}</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('approved') }}" class="ak-kpi{{ $tab === 'approved' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Approved</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['approved']) }}</span>
-                    <span class="ak-kpi-hint">applied to live data</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('rejected') }}" class="ak-kpi{{ $tab === 'rejected' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Rejected</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['rejected']) }}</span>
-                    <span class="ak-kpi-hint">nothing was changed</span>
-                </span>
-            </a>
-        </section>
-
-        <section class="ak-card" aria-label="Tickets">
-            <div class="ak-tabs" role="tablist">
-                @foreach (['' => ['All', $stats['total']], 'pending' => ['Pending', $stats['pending']], 'approved' => ['Approved', $stats['approved']], 'rejected' => ['Rejected', $stats['rejected']]] as $key => [$label, $count])
-                    <a href="{{ $tabUrl($key) }}" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === $key ? 'is-active' : '' }}">
-                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
-                    </a>
-                @endforeach
-            </div>
-
-            {{-- Filters --}}
+        <section id="tk-filter-panel" class="ak-card" aria-label="Filters" x-data="{ open: {{ $chips ? 'true' : 'false' }} }" @tk-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $chips ? '' : 'display:none' }}">
             <form method="GET" action="{{ route('tickets.index') }}" class="ak-filters"
                 x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
-                @if ($tab !== '') <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
+                <input type="hidden" name="filter[status]" value="{{ $tab !== '' ? $tab : 'all' }}">
                 @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
 
                 <div class="tk-filter-row">
@@ -238,9 +233,19 @@
                     @foreach ($ranges as $label => [$from, $to])
                         <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
                     @endforeach
-                    <a href="{{ $withFilters(Arr::except($filters, ['date_from', 'date_to'])) }}" @if (! $dateFrom && ! $dateTo) aria-current="true" @endif>All</a>
+                    <a href="{{ route('tickets.index') }}" class="tk-clear" title="Remove every filter">&times; Clear</a>
                 </nav>
             </form>
+        </section>
+        <section class="ak-card" aria-label="Tickets">
+            <div class="ak-tabs" role="tablist">
+                @foreach (['' => ['All', $stats['total']], 'pending' => ['Pending', $stats['pending']], 'approved' => ['Approved', $stats['approved']], 'rejected' => ['Rejected', $stats['rejected']]] as $key => [$label, $count])
+                    <a href="{{ $tabUrl($key) }}" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === $key ? 'is-active' : '' }}{{ $key === 'pending' && $count > 0 ? ' tk-tab-warn' : '' }}">
+                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
+                    </a>
+                @endforeach
+            </div>
+
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">
@@ -264,7 +269,16 @@
                             <b>{{ number_format($tickets->total()) }}</b> {{ Str::plural('ticket', $tickets->total()) }}
                             &middot; sorted by <b>{{ $sortNames[$sortField] ?? 'Raised on' }}</b> ({{ str_starts_with($sort, '-') ? 'newest first' : 'oldest first' }})
                         </p>
-                        <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
+                        <nav class="tk-ranges tk-ranges-inline" aria-label="Quick dates">
+                        @php $matched = ! $dateFrom && ! $dateTo; @endphp
+                        @foreach ($ranges as $label => [$from, $to])
+                            @php $on = $dateFrom === $from && $dateTo === $to; $matched = $matched || $on; @endphp
+                            <a href="{{ $rangeUrl($from, $to) }}" @if ($on) aria-current="true" @endif>{{ $label }}</a>
+                        @endforeach
+                        <a href="{{ $withFilters(Arr::except($filters, ['date_from', 'date_to'])) }}" @if (! $dateFrom && ! $dateTo) aria-current="true" @endif>All</a>
+                        @unless ($matched)<a href="#" aria-current="true" onclick="return false" title="Custom period (change it in Filters)">{{ $periodLabel }}</a>@endunless
+                    </nav>
+                    <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
                             <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
                             <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>
                         </div>
@@ -274,68 +288,89 @@
                             <caption class="sr-only">Tickets, {{ $tickets->total() }} results</caption>
                             <thead>
                                 <tr>
-                                    <th scope="col" class="ak-c" style="width:48px">#</th>
                                     <th scope="col" aria-sort="{{ $ariaSort('ticket_number') }}"><a href="{{ $sortUrl('ticket_number') }}">Ticket <span aria-hidden="true">{{ $sortMark('ticket_number') }}</span></a></th>
                                     <th scope="col" aria-sort="{{ $ariaSort('title') }}"><a href="{{ $sortUrl('title') }}">Title &middot; type <span aria-hidden="true">{{ $sortMark('title') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('created_at') }}"><a href="{{ $sortUrl('created_at') }}">Raised <span aria-hidden="true">{{ $sortMark('created_at') }}</span></a></th>
+                                    <th scope="col" class="tk-desc-col">Description</th>
                                     <th scope="col" class="ak-num">Items</th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('created_at') }}"><a href="{{ $sortUrl('created_at') }}">Raised <span aria-hidden="true">{{ $sortMark('created_at') }}</span></a></th>
                                     <th scope="col" aria-sort="{{ $ariaSort('status') }}"><a href="{{ $sortUrl('status') }}">Status <span aria-hidden="true">{{ $sortMark('status') }}</span></a></th>
-                                    <th scope="col">Decision</th>
-                                    <th scope="col" class="ak-c ak-sticky-end"><span class="sr-only">Actions</span></th>
+                                    <th scope="col" class="ak-sticky-end no-print" style="text-align:right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($tickets as $ticket)
-                                    <tr>
-                                        <td class="ak-c ak-muted">{{ $tickets->firstItem() + $loop->index }}</td>
+                                    @php
+                                        $canChange = $ticket->isPending() && ($ticket->created_by === $authUser->id || $isAdmin);
+                                        $canEdit = $canChange && $authUser->can('ticket-edit');
+                                        $canDelete = $canChange && $authUser->can('ticket-delete');
+                                    @endphp
+                                    <tr class="{{ $ticket->isPending() ? 'tk-pending' : '' }}">
                                         <td data-label="Ticket">
-                                            <a href="{{ route('tickets.show', $ticket) }}" class="ak-primary-link">{{ $ticket->ticket_number }}</a>
-                                            <div class="ak-muted ak-hide-compact">{{ $ticket->supplier->supplier_name ?? 'No company' }}</div>
+                                            <a href="{{ route('tickets.show', $ticket) }}" class="ak-primary-link tk-nw" title="{{ $ticket->ticket_number }}">{{ $shortNumber($ticket->ticket_number) }}</a>
+                                            <div class="ak-muted tk-nw" title="{{ $ticket->supplier->supplier_name ?? 'No company' }}">{{ Str::limit($ticket->supplier->supplier_name ?? 'No company', 18) }}</div>
                                         </td>
                                         <td data-label="Title">
                                             <span class="ak-strong">{{ $ticket->title }}</span>
                                             <div class="ak-muted">{{ $ticket->type->label() }}</div>
                                         </td>
-                                        <td class="ak-mono" data-label="Raised">
-                                            {{ $ticket->created_at->format('d M Y') }}
-                                            <div class="ak-muted ak-hide-compact">{{ $ticket->creator->name ?? '—' }} &middot; {{ $ticket->created_at->format('h:i A') }}</div>
-                                        </td>
-                                        <td class="ak-num" data-label="Items">{{ number_format($ticket->items_count) }}</td>
-                                        <td data-label="Status">
-                                            <span class="ak-status {{ $statusTone[$ticket->status->value] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $ticket->status->label() }}</span>
-                                        </td>
-                                        <td data-label="Decision">
-                                            @if ($ticket->reviewer)
-                                                <span class="ak-strong">{{ $ticket->reviewer->name }}</span>
-                                                <div class="ak-muted ak-hide-compact">{{ $ticket->reviewed_at?->format('d M Y, h:i A') }}</div>
+                                        <td class="tk-desc" data-label="Description">
+                                            @if (filled($ticket->description))
+                                                <span title="{{ $ticket->description }}">{{ Str::limit(preg_replace('/\s+/', ' ', $ticket->description), 110) }}</span>
                                             @else
                                                 <span class="ak-muted">—</span>
                                             @endif
+                                            @if (filled($ticket->review_remarks))
+                                                <div class="ak-muted" title="{{ $ticket->review_remarks }}">Admin: {{ Str::limit(preg_replace('/\s+/', ' ', $ticket->review_remarks), 80) }}</div>
+                                            @endif
                                         </td>
-                                        <td class="ak-sticky-end" data-label="">
-                                            <div class="ak-actions">
-                                                <a href="{{ route('tickets.show', $ticket) }}" class="ak-icon ak-icon-view" title="View" aria-label="View {{ $ticket->ticket_number }}">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                        <td class="ak-num" data-label="Items">{{ number_format($ticket->items_count) }}</td>
+                                        <td class="ak-mono tk-nw" data-label="Raised">
+                                            {{ $ticket->created_at->format('d M Y') }}
+                                            <div class="ak-muted" title="{{ $ticket->created_at->format('d M Y h:i A') }}">{{ $ticket->creator->name ?? '—' }}</div>
+                                        </td>
+                                        <td data-label="Status">
+                                            @if ($ticket->status->value === 'approved')
+                                                <span class="tk-dot" title="Approved{{ $ticket->reviewed_at ? ' '.$ticket->reviewed_at->format('d M Y h:i A') : '' }}" role="img" aria-label="Approved"></span><span class="tk-dot-text">Approved</span>
+                                            @else
+                                                <span class="ak-status {{ $statusTone[$ticket->status->value] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $ticket->status->label() }}</span>
+                                            @endif
+                                            @if ($ticket->reviewer)
+                                                <div class="ak-muted tk-nw" title="{{ $ticket->reviewed_at?->format('d M Y, h:i A') }}">by {{ $ticket->reviewer->name }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="ak-sticky-end no-print" data-label="">
+                                            <div class="tk-act" x-data="{ open: false, pos: '',
+                                                toggle(e) {
+                                                    const r = e.currentTarget.getBoundingClientRect();
+                                                    const flip = r.bottom + 130 > window.innerHeight;
+                                                    this.pos = 'right:' + (window.innerWidth - r.right) + 'px;' + (flip ? 'bottom:' + (window.innerHeight - r.top + 4) + 'px' : 'top:' + (r.bottom + 4) + 'px');
+                                                    this.open = ! this.open;
+                                                } }" @keydown.escape.window="open = false" @scroll.window="open = false" @resize.window="open = false">
+                                                <a href="{{ route('tickets.show', $ticket) }}" class="ak-btn ak-btn-outline ak-btn-sm" style="gap:6px" title="Open {{ $ticket->ticket_number }}" aria-label="View {{ $ticket->ticket_number }}">
+                                                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                                    View
                                                 </a>
-                                                <span class="ak-slot">
-                                                    @if ($ticket->isPending() && ($ticket->created_by === $authUser->id || $isAdmin))
-                                                        @can('ticket-edit')
-                                                            <a href="{{ route('tickets.edit', $ticket) }}" class="ak-icon" title="Edit" aria-label="Edit {{ $ticket->ticket_number }}">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg>
+                                                @if ($canEdit || $canDelete)
+                                                    <button type="button" class="ak-icon tk-more" @click="toggle($event)" :aria-expanded="open" aria-haspopup="menu" title="More actions" aria-label="More actions for {{ $ticket->ticket_number }}">
+                                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" /></svg>
+                                                    </button>
+                                                    <div class="tk-menu" role="menu" x-show="open" x-cloak style="display:none" :style="pos" @click.outside="open = false">
+                                                        @if ($canEdit)
+                                                            <a role="menuitem" href="{{ route('tickets.edit', $ticket) }}">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg>
+                                                                Edit ticket
                                                             </a>
-                                                        @endcan
-                                                    @endif
-                                                </span>
-                                                <span class="ak-slot">
-                                                    @if ($ticket->isPending() && ($ticket->created_by === $authUser->id || $isAdmin))
-                                                        @can('ticket-delete')
-                                                            <button type="button" class="ak-icon ak-icon-danger" title="Delete" aria-label="Delete {{ $ticket->ticket_number }}"
-                                                                @click="confirm = { open: true, url: @js(route('tickets.destroy', $ticket)), number: @js($ticket->ticket_number) }">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
+                                                        @endif
+                                                        @if ($canDelete)
+                                                            @if ($canEdit)<hr>@endif
+                                                            <button type="button" role="menuitem" class="is-danger"
+                                                                @click="open = false; confirm = { open: true, url: @js(route('tickets.destroy', $ticket)), number: @js($ticket->ticket_number) }">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17m-1.02-.17L18.16 19.67A2.25 2.25 0 0 1 15.92 21.75H8.08a2.25 2.25 0 0 1-2.24-2.08L4.77 5.79m14.46 0a48.1 48.1 0 0 0-3.48-.4m-12 .57c.34-.06.68-.12 1.02-.17m0 0a48.1 48.1 0 0 1 3.48-.4m7.5 0v-.92c0-1.18-.91-2.16-2.09-2.2a51.96 51.96 0 0 0-3.32 0c-1.18.04-2.09 1.02-2.09 2.2v.92m7.5 0a48.67 48.67 0 0 0-7.5 0" /></svg>
+                                                                Delete ticket
                                                             </button>
-                                                        @endcan
-                                                    @endif
-                                                </span>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

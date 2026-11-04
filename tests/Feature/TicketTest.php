@@ -681,3 +681,14 @@ it('serves the short Urdu help page (RTL, printable) to ticket users only and li
     $noAccess = User::factory()->create();
     $this->actingAs($noAccess)->get(route('tickets.help'))->assertForbidden();
 });
+
+it('opens the ticket list on Pending and shows everything on the All tab', function () {
+    $mine = ['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id];
+    Ticket::factory()->create($mine + ['title' => 'Waiting one']);
+    Ticket::factory()->create($mine + ['title' => 'Done one', 'status' => TicketStatus::Approved]);
+
+    $this->actingAs($this->companyUser);
+
+    $this->get(route('tickets.index'))->assertOk()->assertSee('Waiting one')->assertDontSee('Done one');
+    $this->get(route('tickets.index', ['filter' => ['status' => 'all']]))->assertOk()->assertSee('Waiting one')->assertSee('Done one');
+});

@@ -25,7 +25,7 @@ it('counts drafts, issued, reversed and unsettled issues for the selected dates'
     GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now()->subMonth(), 'total_value' => 9000]);
     SalesSettlement::factory()->create(['goods_issue_id' => $settled->id, 'status' => 'posted']);
 
-    $response = $this->actingAs($this->user)->get(route('goods-issues.index'));
+    $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['status' => 'all']]));
 
     $response->assertSuccessful();
     expect($response->viewData('stats'))->toMatchArray([
@@ -55,7 +55,7 @@ it('searches by issue number, vehicle and salesman name', function () {
     $other = GoodsIssue::factory()->create(['issue_date' => now()]);
 
     foreach (['ris-2196', 'ahtasham', $mine->issue_number] as $term) {
-        $ids = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['search' => $term]]))->viewData('goodsIssues')->pluck('id');
+        $ids = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['search' => $term, 'status' => 'all']]))->viewData('goodsIssues')->pluck('id');
         expect($ids->all())->toBe([$mine->id]);
     }
     expect($other->id)->not->toBe($mine->id);
@@ -64,33 +64,17 @@ it('searches by issue number, vehicle and salesman name', function () {
 it('shows every row when all rows per page is chosen', function () {
     GoodsIssue::factory()->count(25)->create(['issue_date' => now()]);
 
-    $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['per_page' => 'all']));
+    $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['per_page' => 'all', 'filter' => ['status' => 'all']]));
 
     expect($response->viewData('goodsIssues')->count())->toBe(25)
         ->and($response->viewData('perPage'))->toBe('all');
-});
-
-it('summarises issues by salesman and still filters by supplier', function () {
-    $supplier = Supplier::factory()->create();
-    $ali = Employee::factory()->create(['name' => 'Ali', 'supplier_id' => $supplier->id]);
-    GoodsIssue::factory()->create(['employee_id' => $ali->id, 'supplier_id' => $supplier->id, 'status' => 'issued', 'issue_date' => now(), 'total_value' => 700]);
-    GoodsIssue::factory()->create(['employee_id' => $ali->id, 'supplier_id' => $supplier->id, 'status' => 'cancelled', 'issue_date' => now(), 'total_value' => 999]);
-    GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now(), 'total_value' => 100]);
-
-    $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['supplier_id' => $supplier->id, 'status' => 'issued']]));
-
-    $response->assertSuccessful();
-    $row = $response->viewData('bySalesman')->firstWhere('employee_id', $ali->id);
-    expect($response->viewData('bySalesman'))->toHaveCount(1)
-        ->and((float) $row->value)->toBe(700.0)
-        ->and((int) $row->pending)->toBe(1);
 });
 
 it('downloads the filtered list as an Excel file', function () {
     Excel::fake();
     GoodsIssue::factory()->create(['issue_date' => now()]);
 
-    $this->actingAs($this->user)->get(route('goods-issues.index', ['export' => 'xlsx']))->assertSuccessful();
+    $this->actingAs($this->user)->get(route('goods-issues.index', ['export' => 'xlsx', 'filter' => ['status' => 'all']]))->assertSuccessful();
 
     Excel::assertDownloaded('goods-issues-'.now()->toDateString().'_to_'.now()->toDateString().'.xlsx',
         fn (GoodsIssueExport $export) => $export->query()->count() === 1);
@@ -102,7 +86,7 @@ it('sorts by value in both directions', function () {
     $low = GoodsIssue::factory()->create(['issue_date' => now(), 'total_value' => 100]);
 
     foreach (['total_value' => [$low->id, $middle->id, $high->id], '-total_value' => [$high->id, $middle->id, $low->id]] as $sort => $expected) {
-        $ids = $this->actingAs($this->user)->get(route('goods-issues.index', ['sort' => $sort]))->viewData('goodsIssues')->pluck('id');
+        $ids = $this->actingAs($this->user)->get(route('goods-issues.index', ['sort' => $sort, 'filter' => ['status' => 'all']]))->viewData('goodsIssues')->pluck('id');
         expect($ids->all())->toBe($expected);
     }
 });
@@ -114,7 +98,7 @@ it('writes names as text in the Excel file so they cannot run as formulas', func
         'employee_id' => Employee::factory()->create(['name' => '=HYPERLINK("http://example.com","x")'])->id,
     ]);
 
-    $file = $this->actingAs($this->user)->get(route('goods-issues.index', ['export' => 'xlsx']))->baseResponse->getFile();
+    $file = $this->actingAs($this->user)->get(route('goods-issues.index', ['export' => 'xlsx', 'filter' => ['status' => 'all']]))->baseResponse->getFile();
     // The export's binder is set globally while writing; read the file back with the stock one.
     Cell::setValueBinder(new DefaultValueBinder);
     $sheet = IOFactory::load($file->getPathname())->getActiveSheet();
@@ -124,18 +108,13 @@ it('writes names as text in the Excel file so they cannot run as formulas', func
         ->and($sheet->getCell('J2')->getDataType())->toBe(DataType::TYPE_NUMERIC);
 });
 
-it('prints every matching issue, not only the current page', function () {
-    GoodsIssue::factory()->count(21)->create(['issue_date' => now()]);
+it('opens the goods issue list on Issued and shows everything on the All tab', function () {
+    $issued = GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now()->toDateString()]);
+    $draft = GoodsIssue::factory()->create(['status' => 'draft', 'issue_date' => now()->toDateString()]);
 
-    $response = $this->actingAs($this->user)->get(route('goods-issues.index'));
+    $default = $this->actingAs($this->user)->get(route('goods-issues.index'))->viewData('goodsIssues')->pluck('id')->all();
+    expect($default)->toContain($issued->id)->not->toContain($draft->id);
 
-    $response->assertSee('per_page=all', false)->assertSee('print=1', false);
-});
-
-it('keeps the salesman summary when one salesman matches, so the filter can be removed there', function () {
-    $ali = Employee::factory()->create(['name' => 'Ali']);
-    GoodsIssue::factory()->create(['employee_id' => $ali->id, 'status' => 'issued', 'issue_date' => now()]);
-
-    $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['employee_id' => $ali->id]]))
-        ->assertSee('Remove this filter');
+    $all = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['status' => 'all']]))->viewData('goodsIssues')->pluck('id')->all();
+    expect($all)->toContain($issued->id)->toContain($draft->id);
 });

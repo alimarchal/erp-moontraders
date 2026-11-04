@@ -68,6 +68,11 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ]);
         }
 
+        // The list opens on issued stock; the "All" tab sends filter[status]=all and "Not settled" uses filter[settlement].
+        if (! $request->filled('filter.status') && ! $request->filled('filter.settlement')) {
+            $request->merge(['filter' => array_merge($request->input('filter', []), ['status' => 'issued'])]);
+        }
+
         $this->authorizeGoodsIssueFilterAccess($request, $userSupplierId);
 
         $perPage = (string) $request->input('per_page', '20');
@@ -86,7 +91,11 @@ class GoodsIssueController extends Controller implements HasMiddleware
             AllowedFilter::exact('vehicle_id'),
             AllowedFilter::exact('employee_id'),
             AllowedFilter::exact('supplier_id'),
-            AllowedFilter::exact('status'),
+            AllowedFilter::callback('status', function ($query, $value) {
+                if ($value !== 'all') {
+                    $query->where('goods_issues.status', $value);
+                }
+            }),
             AllowedFilter::scope('issue_date_from'),
             AllowedFilter::scope('issue_date_to'),
             AllowedFilter::exact('issue_date'),
@@ -155,19 +164,6 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'pending_value' => (float) ($pending->value ?? 0),
         ];
 
-        // Salesman-wise summary of what the filters show (reversed issues left out).
-        $bySalesman = QueryBuilder::for($visible())
-            ->allowedFilters($allowedFilters)
-            ->getEloquentBuilder()
-            ->reorder()
-            ->where('goods_issues.status', '!=', 'cancelled')
-            ->join('employees', 'employees.id', '=', 'goods_issues.employee_id')
-            ->groupBy('goods_issues.employee_id', 'employees.name')
-            ->selectRaw('goods_issues.employee_id, employees.name, COUNT(*) as issues, COALESCE(SUM(goods_issues.total_value), 0) as value')
-            ->selectRaw("SUM(CASE WHEN goods_issues.status = 'issued' AND NOT EXISTS (SELECT 1 FROM sales_settlements ss WHERE ss.goods_issue_id = goods_issues.id AND ss.status IN ('verified', 'posted') AND ss.deleted_at IS NULL) THEN 1 ELSE 0 END) as pending")
-            ->orderByDesc('value')
-            ->get();
-
         $totalValue = QueryBuilder::for($visible())
             ->allowedFilters($allowedFilters)
             ->getEloquentBuilder()
@@ -178,7 +174,6 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'totalValue' => $totalValue,
             'goodsIssues' => $goodsIssues,
             'stats' => $stats,
-            'bySalesman' => $bySalesman,
             'perPage' => $perPage,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),

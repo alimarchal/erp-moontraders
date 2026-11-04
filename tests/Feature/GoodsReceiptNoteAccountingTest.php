@@ -20,7 +20,6 @@ use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Services\AccountingService;
 use App\Services\InventoryService;
 use App\Services\LedgerRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -1126,7 +1125,7 @@ function ensureLedgerPostingAccounts(object $test): void
     }
 }
 
-it('blocks reversing a GRN whose ledger invoice row is posted, in the service, the button and the controller', function () {
+it('reverses the posted ledger invoice row together with the GRN', function () {
     ensureLedgerPostingAccounts($this);
     grnReversalPermission($this);
     $grn = postedGrnForReversal($this);
@@ -1134,20 +1133,16 @@ it('blocks reversing a GRN whose ledger invoice row is posted, in the service, t
 
     $row = LedgerRegister::where('goods_receipt_note_id', $grn->id)->first();
     expect(app(LedgerRegisterService::class)->postEntry($row)['success'])->toBeTrue();
+    $invoiceEntryId = (int) $row->fresh()->journal_entry_id;
 
-    $refusal = app(InventoryService::class)->grnReversalRefusal($grn->fresh());
-    expect($refusal)->toContain('already posted in the supplier Ledger Register');
+    expect(app(InventoryService::class)->grnReversalRefusal($grn->fresh()))->toBeNull();
 
-    $this->get(route('goods-receipt-notes.show', $grn))->assertSuccessful()->assertSee('already posted in the supplier Ledger Register');
+    $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'password'])->assertSessionHas('success');
 
-    $this->post(route('goods-receipt-notes.reverse', $grn), ['password' => 'password'])->assertSessionHas('error');
-    expect($grn->fresh()->status)->toBe('posted')
-        ->and(app(InventoryService::class)->reverseGrnInventory($grn->fresh())['success'])->toBeFalse();
-
-    // Once the ledger entry's own journal is reversed the GRN can go.
-    app(AccountingService::class)->reverseJournalEntry((int) $row->fresh()->journal_entry_id, 'Ledger entry reversed');
-    expect(app(InventoryService::class)->grnReversalRefusal($grn->fresh()))->toBeNull()
-        ->and(app(InventoryService::class)->reverseGrnInventory($grn->fresh())['success'])->toBeTrue();
+    expect($grn->fresh()->status)->toBe('reversed')
+        ->and(LedgerRegister::where('goods_receipt_note_id', $grn->id)->count())->toBe(0)
+        ->and(JournalEntry::where('reverses_entry_id', $invoiceEntryId)->where('status', 'posted')->exists())->toBeTrue()
+        ->and(JournalEntry::where('reverses_entry_id', $grn->journal_entry_id)->where('status', 'posted')->exists())->toBeTrue();
 });
 
 it('blocks reversing a GRN whose invoice was posted by hand under the same invoice number', function () {

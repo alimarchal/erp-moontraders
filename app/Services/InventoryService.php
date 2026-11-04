@@ -803,6 +803,7 @@ class InventoryService
 
             // The draft invoice row raised in the supplier Ledger Register goes with the GRN
             app(LedgerRegisterService::class)->discardDraftForGrn($grn);
+            app(LedgerRegisterService::class)->reversePostedInvoiceForGrn($grn);
 
             // Create reversing journal entry for GL
             $this->createGrnReversingJournalEntry($grn);
@@ -858,28 +859,27 @@ class InventoryService
     }
 
     /**
-     * A GRN whose invoice is already posted in the supplier Ledger Register cannot be reversed:
-     * the supplier is owed that amount and may already have been paid against it. The row
-     * counts whether it was raised from this GRN or entered by hand under the same invoice
-     * number, and stops counting once its journal entry has itself been reversed.
+     * A GRN whose invoice was entered by hand in the supplier Ledger Register, under the GRN's
+     * own invoice number, cannot be reversed: the supplier is owed that amount and may already
+     * have been paid against it. The row stops counting once its journal entry has itself been
+     * reversed. The invoice row the GRN raised itself is not a block: reversing the GRN
+     * reverses it too (LedgerRegisterService::reversePostedInvoiceForGrn).
      */
     protected function grnLedgerRefusal(GoodsReceiptNote $grn): ?string
     {
         $invoiceNumber = trim((string) $grn->supplier_invoice_number);
 
+        if ($invoiceNumber === '') {
+            return null;
+        }
+
         $row = LedgerRegister::query()
             ->whereNotNull('posted_at')
             ->whereNotNull('journal_entry_id')
-            ->where(function ($query) use ($grn, $invoiceNumber) {
-                $query->where('goods_receipt_note_id', $grn->id);
-
-                if ($invoiceNumber !== '') {
-                    $query->orWhere(fn ($match) => $match
-                        ->where('supplier_id', $grn->supplier_id)
-                        ->where('document_type', DocumentType::Dr->value)
-                        ->where('document_number', $invoiceNumber));
-                }
-            })
+            ->where('supplier_id', $grn->supplier_id)
+            ->where('document_type', DocumentType::Dr->value)
+            ->where('document_number', $invoiceNumber)
+            ->where(fn ($query) => $query->whereNull('goods_receipt_note_id')->orWhere('goods_receipt_note_id', '!=', $grn->id))
             ->get()
             ->first(fn (LedgerRegister $entry) => ! JournalEntry::where('reverses_entry_id', $entry->journal_entry_id)
                 ->where('status', 'posted')

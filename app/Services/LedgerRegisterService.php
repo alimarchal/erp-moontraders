@@ -150,6 +150,45 @@ class LedgerRegisterService
     }
 
     /**
+     * Take back the invoice row a GRN raised when that row was already posted, as part of
+     * reversing the GRN: reverse its journal entry (Dr 2142 / Cr 2111) and remove the row, so
+     * the supplier statement no longer shows an invoice for goods that were sent back.
+     *
+     * Only the row raised from this GRN is touched; an invoice entered by hand under the same
+     * number is left alone (see InventoryService::grnLedgerRefusal).
+     *
+     * @throws \RuntimeException when the row's journal entry cannot be reversed
+     */
+    public function reversePostedInvoiceForGrn(GoodsReceiptNote $grn): void
+    {
+        $entries = LedgerRegister::where('goods_receipt_note_id', $grn->id)
+            ->whereNotNull('posted_at')
+            ->get();
+
+        foreach ($entries as $entry) {
+            $alreadyReversed = $entry->journal_entry_id
+                && JournalEntry::where('reverses_entry_id', $entry->journal_entry_id)->where('status', 'posted')->exists();
+
+            if ($entry->journal_entry_id && ! $alreadyReversed) {
+                $result = $this->accountingService->reverseJournalEntry(
+                    (int) $entry->journal_entry_id,
+                    "REVERSAL: supplier invoice {$entry->document_number} of GRN {$grn->grn_number} reversed with the GRN"
+                );
+
+                if (! $result['success']) {
+                    throw new \RuntimeException($result['message']);
+                }
+            }
+
+            $entry->delete();
+        }
+
+        if ($entries->isNotEmpty()) {
+            LedgerRegister::recalculateBalances($grn->supplier_id);
+        }
+    }
+
+    /**
      * Post a ledger register entry to the GL.
      *
      * Double-entry per column:

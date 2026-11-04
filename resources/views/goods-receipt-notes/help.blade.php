@@ -259,7 +259,7 @@
                             </tbody>
                         </table>
                         <div class="gh-tip">Suppliers are paid through the Ledger Register (online amount). The separate Supplier Payments screen no longer exists, so there is only one place where Creditors are paid down.</div>
-                        <p style="margin-top:8px">Reversing a GRN removes its ledger row while the row is still a draft. Once the invoice row is <b>posted</b>, the GRN <b>cannot be reversed</b>: the supplier is owed that amount and may already have been paid. Reverse the ledger entry's journal entry first, then reverse the GRN.</p>
+                        <p style="margin-top:8px">Reversing a GRN removes its ledger row. If that invoice row was already <b>posted</b>, its journal entry is reversed together with the GRN. An invoice you entered <b>by hand</b> under the same invoice number is not touched and blocks the reversal: reverse that ledger entry's journal entry first, then reverse the GRN.</p>
                     </div>
                 </section>
 

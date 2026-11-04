@@ -20,7 +20,7 @@
     <div class="space-y-3">
         {{-- 1. Credit sales --}}
         <div class="overflow-x-auto">
-            <h4 class="font-bold text-sm border-x border-t border-black text-center bg-gray-100 py-0.5">1 - Credit Sales Breakdown
+            <h4 class="px-2 font-bold text-sm border-x border-t border-black text-left bg-gray-100 py-0.5">1 - Credit Sales Breakdown
                 <span class="font-normal text-xs">{{ $settlement->creditSales->count() }} customers &middot; Rs {{ $money($settlement->creditSales->sum('sale_amount')) }}</span></h4>
             <table class="report-table w-full">
                 <thead>
@@ -54,7 +54,7 @@
 
         {{-- 2. Recoveries --}}
         <div class="overflow-x-auto">
-            <h4 class="font-bold text-sm border-x border-t border-black text-center bg-gray-100 py-0.5">2 - Recoveries Breakdown (Cash + Online Bank Transfer From Customer)
+            <h4 class="px-2 font-bold text-sm border-x border-t border-black text-left bg-gray-100 py-0.5">2 - Recoveries Breakdown (Cash + Online Bank Transfer From Customer)
                 <span class="font-normal text-xs">{{ $settlement->recoveries->count() }} &middot; Rs {{ $money($settlement->recoveries->sum('amount')) }}</span></h4>
             <table class="report-table w-full">
                 <thead>
@@ -89,7 +89,7 @@
 
         {{-- 3. Cheques --}}
         <div class="overflow-x-auto">
-            <h4 class="font-bold text-sm border-x border-t border-black text-center bg-gray-100 py-0.5">3 - Cheque Payments
+            <h4 class="px-2 font-bold text-sm border-x border-t border-black text-left bg-gray-100 py-0.5">3 - Cheque Payments
                 <span class="font-normal text-xs">{{ $settlement->cheques->count() }} &middot; Rs {{ $money($settlement->cheques->sum('amount')) }}</span></h4>
             <table class="report-table w-full">
                 <thead>
@@ -124,7 +124,7 @@
 
         {{-- 4. Bank transfers --}}
         <div class="overflow-x-auto">
-            <h4 class="font-bold text-sm border-x border-t border-black text-center bg-gray-100 py-0.5">4 - Bank Transfers / Online From Customer
+            <h4 class="px-2 font-bold text-sm border-x border-t border-black text-left bg-gray-100 py-0.5">4 - Bank Transfers / Online From Customer
                 <span class="font-normal text-xs">{{ $settlement->bankTransfers->count() }} &middot; Rs {{ $money($settlement->bankTransfers->sum('amount')) }}</span></h4>
             <table class="report-table w-full">
                 <thead>

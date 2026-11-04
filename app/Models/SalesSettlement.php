@@ -304,4 +304,22 @@ class SalesSettlement extends Model
         // Net Profit = Gross Profit - Expenses
         return $grossProfit - $this->calculated_total_expenses;
     }
+
+    /**
+     * Largest amount (Rs) by which credit sales and bank transfers may exceed the goods sold and still be
+     * posted: the difference is booked to Round Off (5271) instead of blocking the settlement.
+     */
+    public const ROUNDING_TOLERANCE = 5.00;
+
+    /**
+     * Rounding difference in a settlement: payments above the goods sold, after the advance tax income that
+     * legitimately rides on the invoices, as long as it is within the tolerance. Zero otherwise (a larger excess
+     * is an entry error and blocks posting). The page, the forms and the posting use this same rule.
+     */
+    public static function paymentRounding(float $cashSalesAmount, float $advanceTaxIncomeTotal = 0.0): float
+    {
+        $excess = round(abs(min($cashSalesAmount, 0.0)) - $advanceTaxIncomeTotal, 2);
+
+        return $excess > 0 && $excess <= self::ROUNDING_TOLERANCE ? $excess : 0.0;
+    }
 }

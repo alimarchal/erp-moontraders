@@ -1259,6 +1259,24 @@ class DistributionService
                 );
             }
 
+            // 5b. Rounding difference: the customer paid a little more than the goods sold (up to the
+            // tolerance). The bank/credit line above is booked at what was really received, 5a took the
+            // excess back out of Sales, and it now lands in Round Off, so the bank statement matches the
+            // GL and Salesman Clearing still nets to zero.
+            $roundingAdvanceTaxIncome = $settlement->supplier?->is_advance_tax_income
+                ? (float) $settlement->advanceTaxIncomes->sum('tax_amount')
+                : 0.0;
+            $paymentRounding = SalesSettlement::paymentRounding($cashSalesAmount, $roundingAdvanceTaxIncome);
+            if ($paymentRounding > 0) {
+                if (! $accounts['round_off']) {
+                    throw new \RuntimeException('Round Off account (5271) not found.');
+                }
+
+                $roundingDescription = "Rounding difference: payment above goods sold - {$employeeLabel} - {$settlementReference}";
+                $addLine($accounts['salesman_clearing']->id, $paymentRounding, 0, $roundingDescription);
+                $addLine($accounts['round_off']->id, 0, $paymentRounding, $roundingDescription);
+            }
+
             // 6. Expense Detail
             // Expenses paid from cash (using salesman_clearing)
             // We skip Advance Tax here because it's handled separately below via advanceTaxes relationship
@@ -1333,7 +1351,7 @@ class DistributionService
             $advanceTaxIncomeTotal = $settlement->supplier?->is_advance_tax_income
                 ? (float) $settlement->advanceTaxIncomes->sum('tax_amount')
                 : 0.0;
-            $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries + $advanceTaxIncomeTotal - $settlement->expenses->sum('amount');
+            $expectedClearingBalance = $cashSalesAmount + $paymentRounding + $totalCashRecoveries + $advanceTaxIncomeTotal - $settlement->expenses->sum('amount');
             $actualPhysicalCash = (float) $settlement->cash_collected;
             $bankSlipsTotal = $settlement->bankSlips->sum('amount');
 
@@ -1673,7 +1691,10 @@ class DistributionService
             : (float) $settlement->cash_collected;
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
-        $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries + $advanceTaxIncomeTotal - $totalExpenses;
+        // A small payment excess over the goods sold is a rounding difference booked to Round Off, so it is
+        // not part of the cash the salesman is expected to hand over.
+        $paymentRounding = SalesSettlement::paymentRounding($cashSalesAmount, $advanceTaxIncomeTotal);
+        $expectedClearingBalance = $cashSalesAmount + $paymentRounding + $totalCashRecoveries + $advanceTaxIncomeTotal - $totalExpenses;
         // Cheques are cash-equivalents submitted by the salesman, included on the submission side
         $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal + $chequeAmount;
         $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);
@@ -1682,9 +1703,13 @@ class DistributionService
         // cash-sales amount is only legitimate when it is the advance tax income carried on the
         // invoices of a flagged supplier; anything else leaves Salesman Clearing (1123) with a balance.
         $cashSalesExcess = round(abs(min($cashSalesAmount, 0.0)) - $advanceTaxIncomeTotal, 2);
-        if ($cashSalesAmount < 0 && $cashSalesExcess > 0.01) {
+        if ($paymentRounding > 0 && ! ChartOfAccount::where('account_code', '5271')->exists()) {
+            throw new \RuntimeException('Cannot post: the Round Off account (5271) is missing, so the rounding difference of '.number_format($paymentRounding, 2).' cannot be booked.');
+        }
+        if ($cashSalesAmount < 0 && $cashSalesExcess > SalesSettlement::ROUNDING_TOLERANCE) {
             throw new \RuntimeException(
                 'Cannot post: credit sales and bank transfers exceed the value of the goods sold by '.number_format($cashSalesExcess, 2).
+                ' (more than the Rs '.number_format(SalesSettlement::ROUNDING_TOLERANCE, 2).' rounding allowance)'.
                 ' (total sales '.number_format($totalSalesAmount, 2).', credit sales '.number_format($creditSalesAmount, 2).
                 ', bank transfers '.number_format($bankTransferAmount, 2).'). Correct the invoice amounts before posting.'
             );

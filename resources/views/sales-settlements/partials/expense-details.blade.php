@@ -16,7 +16,7 @@
             $cols = ['amr' => 6, 'tax' => 7, 'pct' => 5][$table['type']];
         @endphp
         <div class="overflow-x-auto">
-            <h4 class="font-bold text-sm border-x border-t border-black text-center bg-gray-100 py-0.5">{{ $table['title'] }}
+            <h4 class="px-2 font-bold text-sm border-x border-t border-black text-left bg-gray-100 py-0.5">{{ $table['title'] }}
                 <span class="font-normal text-xs">{{ $table['rows']->count() }} {{ $table['type'] === 'amr' ? 'items' : 'customers' }} &middot; Rs {{ $money($table['rows']->sum($amountField)) }}</span></h4>
             <table class="report-table w-full">
                 <thead>

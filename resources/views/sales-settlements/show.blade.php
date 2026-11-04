@@ -297,10 +297,12 @@
         $netSaleItems = (float) $settlement->items->sum('total_sales_value');
         $chequesTotal = (float) $settlement->cheques->sum('amount');
         $theoreticalCashSales = $netSaleItems - $creditSalesAmount - $bankSalesAmount;
-        $isPaymentBreakdownExceeded = $theoreticalCashSales < 0;
+        // A small payment excess (within the tolerance) is a rounding difference booked to Round Off, not cash.
+        $paymentRounding = \App\Models\SalesSettlement::paymentRounding($theoreticalCashSales, $advanceTaxIncomeTotal);
+        $isPaymentBreakdownExceeded = $theoreticalCashSales < 0 && $paymentRounding <= 0;
         $paymentBreakdownExcess = $isPaymentBreakdownExceeded ? abs($theoreticalCashSales) : 0.0;
         $expectedCashGross = $theoreticalCashSales + $recoveryCash + $advanceTaxIncomeTotal;
-        $expectedCashNet = $expectedCashGross - $totalDeductions;
+        $expectedCashNet = $expectedCashGross + $paymentRounding - $totalDeductions;
 
         // Actual Physical Cash Collected
         $actualPhysicalCash = $cashDenominationTotal > 0 ? $cashDenominationTotal : (float) $settlement->cash_collected;
@@ -375,14 +377,26 @@
     @include('settings.partials.ui-style')
     <style>
         .ss-summary { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
-        .ss-strip { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-        .ss-chip { padding: 10px 12px; border: 1px solid var(--ak-border); border-radius: 10px; background: #fff; box-shadow: var(--ak-shadow); font-size: 12.5px; color: var(--ak-muted); }
-        .ss-chip b { display: block; font-size: 15px; color: var(--ak-text); font-variant-numeric: tabular-nums; }
+        .ss-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ss-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 11px; border: 1px solid var(--ak-border); border-radius: 999px; background: #fff; font-size: 12px; color: var(--ak-muted); }
+        .ss-chip b { font-size: 13px; color: var(--ak-text); font-variant-numeric: tabular-nums; }
+        .ss-chip em { font-style: normal; font-size: 11px; padding: 0 6px; border-radius: 999px; background: #f1f5f9; color: var(--ak-muted); }
         .ss-chip.is-bad b { color: #b91c1c; }
         .ss-links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
         .ss-links span { color: var(--ak-muted); font-weight: 600; margin-right: 2px; }
         .ss-links a { padding: 5px 10px; border: 1px solid var(--ak-border); border-radius: 999px; color: var(--ak-navy); text-decoration: none; background: #fff; font-weight: 600; }
         .ss-links a:hover { background: var(--ak-soft); }
+        /* Top summary: four key tiles, then one line of supporting figures */
+        .ss-tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+        .ss-tile { display: flex; flex-direction: column; gap: 1px; padding: 8px 12px; border: 1px solid var(--ak-border); border-left: 3px solid var(--ak-navy); border-radius: 10px; background: #fff; box-shadow: var(--ak-shadow); min-width: 0; }
+        .ss-tile.is-ok { border-left-color: #16a34a; }
+        .ss-tile.is-excess { border-left-color: #16a34a; }
+        .ss-tile.is-short { border-left-color: #dc2626; background: #fef2f2; }
+        .ss-tile-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ak-muted); }
+        .ss-tile-value { font-size: 18px; line-height: 1.25; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ak-text); white-space: nowrap; }
+        .ss-tile.is-short .ss-tile-value { color: #b91c1c; }
+        .ss-tile.is-excess .ss-tile-value, .ss-tile.is-ok .ss-tile-value { color: #047857; }
+        .ss-tile-sub { font-size: 11.5px; color: var(--ak-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ss-short { color: #b91c1c !important; }
         .ss-excess { color: #047857 !important; }
         @media print { .ss-summary { display: none !important; } }
@@ -408,49 +422,41 @@
                 ]);
             @endphp
             <div class="ss-summary no-print">
-                <section class="ak-kpis" aria-label="Settlement summary">
-                    <div class="ak-kpi" title="Rs {{ number_format($netSale, 2) }}">
-                        <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.31 4.31a11.95 11.95 0 0 1 5.81-5.52l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.94" /></svg></span>
-                        <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Net sale (sold value)</span>
-                            <span class="ak-kpi-value">Rs {{ number_format($netSale) }}</span>
-                            <span class="ak-kpi-hint">cash {{ number_format($theoreticalCashSales) }} &middot; credit {{ number_format($creditSalesAmount) }} &middot; bank {{ number_format($bankSalesAmount) }}{{ $chequesTotal > 0 ? ' · cheques '.number_format($chequesTotal) : '' }}</span>
-                        </span>
+                @php
+                    $roundedShortExcess = round($shortExcess, 2);
+                    $cashState = $roundedShortExcess < 0 ? 'is-short' : ($roundedShortExcess > 0 ? 'is-excess' : 'is-ok');
+                @endphp
+                {{-- Most important first: cash check, sale, profit, expenses; then the supporting figures --}}
+                <section class="ss-tiles" aria-label="Settlement summary">
+                    <div class="ss-tile {{ $cashState }}" title="Expected Rs {{ number_format($expectedCashNet, 2) }} | submitted Rs {{ number_format($submittedTotal, 2) }} = cash {{ number_format($actualPhysicalCash) }}{{ $chequesTotal > 0 ? ' + cheques '.number_format($chequesTotal) : '' }}{{ $bankSlipsTotal > 0 ? ' + slips '.number_format($bankSlipsTotal) : '' }}">
+                        <span class="ss-tile-label">Cash check</span>
+                        <span class="ss-tile-value">{{ $roundedShortExcess == 0 ? 'Balanced' : ($roundedShortExcess < 0 ? 'Short Rs '.number_format(abs($roundedShortExcess), 2) : 'Excess Rs '.number_format($roundedShortExcess, 2)) }}</span>
+                        <span class="ss-tile-sub">expected {{ number_format($expectedCashNet) }} &middot; submitted {{ number_format($submittedTotal) }}</span>
                     </div>
-                    <div class="ak-kpi" title="Rs {{ number_format($recoveryTotal, 2) }}">
-                        <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                        <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Credit recovered</span>
-                            <span class="ak-kpi-value">Rs {{ number_format($recoveryTotal) }}</span>
-                            <span class="ak-kpi-hint">{{ $settlement->recoveries->count() }} {{ \Illuminate\Support\Str::plural('recovery', $settlement->recoveries->count()) }} &middot; cash {{ number_format($recoveryCash) }} &middot; bank {{ number_format($recoveryBank) }}</span>
-                        </span>
+                    <div class="ss-tile" title="Rs {{ number_format($netSale, 2) }} | cash {{ number_format($theoreticalCashSales) }} &middot; credit {{ number_format($creditSalesAmount) }} &middot; bank {{ number_format($bankSalesAmount) }}{{ $chequesTotal > 0 ? ' · cheques '.number_format($chequesTotal) : '' }}">
+                        <span class="ss-tile-label">Net sale</span>
+                        <span class="ss-tile-value">Rs {{ number_format($netSale) }}</span>
+                        <span class="ss-tile-sub">cash {{ number_format($theoreticalCashSales) }} &middot; credit {{ number_format($creditSalesAmount) }}</span>
                     </div>
-                    <div class="ak-kpi">
-                        <span class="ak-kpi-icon {{ round($shortExcess, 2) < 0 ? 'ak-tone-amber' : 'ak-tone-green' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.8 2.1c.73.2 1.45-.34 1.45-1.1V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.38c0-.62.5-1.12 1.13-1.12H20.25M2.25 6v9m18-10.5v.75c0 .41.34.75.75.75h.75m-1.5-1.5h.38c.62 0 1.12.5 1.12 1.13v9.75c0 .62-.5 1.12-1.12 1.12h-.38m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.38a1.13 1.13 0 0 1-1.12-1.12V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg></span>
-                        <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Cash check</span>
-                            @php $roundedShortExcess = round($shortExcess, 2); @endphp
-                            <span class="ak-kpi-value {{ $roundedShortExcess < 0 ? 'ss-short' : ($roundedShortExcess > 0 ? 'ss-excess' : '') }}">{{ $roundedShortExcess == 0 ? 'Balanced' : ($roundedShortExcess < 0 ? 'Short Rs '.number_format(abs($roundedShortExcess), 2) : 'Excess Rs '.number_format($roundedShortExcess, 2)) }}</span>
-                            <span class="ak-kpi-hint">expected Rs {{ number_format($expectedCashNet) }} &middot; submitted Rs {{ number_format($submittedTotal) }} (cash {{ number_format($actualPhysicalCash) }}{{ $chequesTotal > 0 ? ' + cheques '.number_format($chequesTotal) : '' }}{{ $bankSlipsTotal > 0 ? ' + slips '.number_format($bankSlipsTotal) : '' }})</span>
-                        </span>
+                    <div class="ss-tile" title="Net profit Rs {{ number_format($netProfit, 2) }} | gross profit Rs {{ number_format($grossProfit, 2) }}">
+                        <span class="ss-tile-label">Net profit</span>
+                        <span class="ss-tile-value {{ $netProfit < 0 ? 'ss-short' : '' }}">Rs {{ number_format($netProfit) }}</span>
+                        <span class="ss-tile-sub">gross {{ number_format($grossProfit) }} ({{ number_format($grossMargin, 1) }}%) &middot; net {{ number_format($netMargin, 1) }}%</span>
                     </div>
-                    <div class="ak-kpi">
-                        <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.13C3 12.5 3.5 12 4.13 12h2.25c.62 0 1.12.5 1.12 1.13v6.75C7.5 20.5 7 21 6.38 21H4.13A1.13 1.13 0 0 1 3 19.88v-6.75ZM9.75 8.63c0-.63.5-1.13 1.13-1.13h2.25c.62 0 1.12.5 1.12 1.13v11.25c0 .62-.5 1.12-1.12 1.12h-2.25a1.13 1.13 0 0 1-1.13-1.12V8.63ZM16.5 4.13c0-.63.5-1.13 1.13-1.13h2.25C20.5 3 21 3.5 21 4.13v15.75c0 .62-.5 1.12-1.12 1.12h-2.25a1.13 1.13 0 0 1-1.13-1.12V4.13Z" /></svg></span>
-                        <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">Gross profit</span>
-                            <span class="ak-kpi-value">Rs {{ number_format($grossProfit) }}</span>
-                            <span class="ak-kpi-hint">{{ number_format($grossMargin, 1) }}% margin &middot; after expenses Rs {{ number_format($netProfit) }} ({{ number_format($netMargin, 1) }}%)</span>
-                        </span>
+                    <div class="ss-tile" title="Rs {{ number_format($totalExpenses, 2) }}">
+                        <span class="ss-tile-label">Expenses</span>
+                        <span class="ss-tile-value">Rs {{ number_format($totalExpenses) }}</span>
+                        <span class="ss-tile-sub">{{ $settlement->expenses->count() }} {{ \Illuminate\Support\Str::plural('entry', $settlement->expenses->count()) }}</span>
                     </div>
                 </section>
 
-                <div class="ss-strip" aria-label="Stock on this settlement">
-                    <div class="ss-chip">Issued<b>{{ number_format($valueTotals['issued_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['issued_value']) }}</div>
-                    <div class="ss-chip">Sold<b>{{ number_format($valueTotals['sold_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['sold_value']) }}</div>
-                    <div class="ss-chip">Returned<b>{{ number_format($valueTotals['returned_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['returned_value']) }}</div>
-                    <div class="ss-chip{{ $valueTotals['shortage_qty'] > 0 ? ' is-bad' : '' }}">Shortage<b>{{ number_format($valueTotals['shortage_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['shortage_value']) }}</div>
-                    <div class="ss-chip">Expenses<b>Rs {{ number_format($totalExpenses) }}</b>{{ $settlement->expenses->count() }} {{ \Illuminate\Support\Str::plural('entry', $settlement->expenses->count()) }}</div>
-                    <div class="ss-chip">Credit given<b>Rs {{ number_format($creditSalesAmount) }}</b>{{ $settlement->creditSales->count() }} {{ \Illuminate\Support\Str::plural('customer', $settlement->creditSales->count()) }}</div>
+                <div class="ss-strip" aria-label="Supporting figures">
+                    <div class="ss-chip" title="Cash {{ number_format($recoveryCash) }} &middot; bank {{ number_format($recoveryBank) }}"><span>Recovered</span><b>Rs {{ number_format($recoveryTotal) }}</b><em>{{ $settlement->recoveries->count() }}</em></div>
+                    <div class="ss-chip"><span>Credit given</span><b>Rs {{ number_format($creditSalesAmount) }}</b><em>{{ $settlement->creditSales->count() }}</em></div>
+                    <div class="ss-chip" title="Rs {{ number_format($valueTotals['issued_value']) }}"><span>Issued</span><b>{{ number_format($valueTotals['issued_qty'], 0) }} pcs</b></div>
+                    <div class="ss-chip" title="Rs {{ number_format($valueTotals['sold_value']) }}"><span>Sold</span><b>{{ number_format($valueTotals['sold_qty'], 0) }} pcs</b></div>
+                    <div class="ss-chip" title="Rs {{ number_format($valueTotals['returned_value']) }}"><span>Returned</span><b>{{ number_format($valueTotals['returned_qty'], 0) }} pcs</b></div>
+                    <div class="ss-chip{{ $valueTotals['shortage_qty'] > 0 ? ' is-bad' : '' }}" title="Rs {{ number_format($valueTotals['shortage_value']) }}"><span>Shortage</span><b>{{ number_format($valueTotals['shortage_qty'], 0) }} pcs</b></div>
                 </div>
 
                 @if ($ssLinks)
@@ -463,6 +469,15 @@
                 @endif
             </div>
 
+            @if ($paymentRounding > 0)
+                <div class="mb-4 rounded-lg border border-sky-300 bg-sky-50 px-4 py-3 text-sky-900 shadow-sm">
+                    <p class="text-sm font-semibold">Rounding difference</p>
+                    <p class="text-sm">
+                        Payments are <strong>Rs {{ number_format($paymentRounding, 2) }}</strong> above the sold items value. It is within the
+                        Rs {{ number_format(\App\Models\SalesSettlement::ROUNDING_TOLERANCE, 2) }} allowance and will be booked to Round Off when the settlement is posted.
+                    </p>
+                </div>
+            @endif
             @if ($isPaymentBreakdownExceeded)
                 <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
                     <p class="text-sm font-semibold">Warning</p>
@@ -634,7 +649,7 @@
 
                     {{-- Expense Details Group --}}
                     <div class="border-2 border-black rounded-lg px-2 pb-2 mt-2">
-                        <h3 class="font-bold text-md text-center text-black  pb-1">Expense Details</h3>
+                        <h3 class="font-bold text-md text-left text-black  pb-1">Expense Details</h3>
 
                         @include('sales-settlements.partials.expense-details')
 

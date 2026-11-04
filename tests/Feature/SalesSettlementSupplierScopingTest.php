@@ -51,7 +51,7 @@ it('non-admin user sees only their assigned supplier settlements in listing', fu
     $settlement2 = SalesSettlement::factory()->create(['supplier_id' => $supplier2->id, 'created_by' => $otherUser->id]);
 
     $this->actingAs($user1)
-        ->get(route('sales-settlements.index'))
+        ->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($settlement1->settlement_number)
         ->assertDontSee($settlement2->settlement_number);
@@ -68,7 +68,7 @@ it('admin sees all supplier settlements in listing', function () {
     $settlement2 = SalesSettlement::factory()->create(['supplier_id' => $supplier2->id]);
 
     $this->actingAs($admin)
-        ->get(route('sales-settlements.index'))
+        ->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($settlement1->settlement_number)
         ->assertSee($settlement2->settlement_number);
@@ -84,7 +84,7 @@ it('super-admin sees all supplier settlements in listing', function () {
     $settlement2 = SalesSettlement::factory()->create(['supplier_id' => $supplier2->id]);
 
     $this->actingAs($superAdmin)
-        ->get(route('sales-settlements.index'))
+        ->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($settlement1->settlement_number)
         ->assertSee($settlement2->settlement_number);
@@ -260,7 +260,7 @@ it('user with no supplier assigned sees all settlements', function () {
     $settlement2 = SalesSettlement::factory()->create(['supplier_id' => $supplier2->id, 'created_by' => $user->id]);
 
     $this->actingAs($user)
-        ->get(route('sales-settlements.index'))
+        ->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($settlement1->settlement_number)
         ->assertSee($settlement2->settlement_number);

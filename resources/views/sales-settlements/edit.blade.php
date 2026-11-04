@@ -1880,7 +1880,10 @@
 
                 const expectedCashGross = theoreticalCashSales + recoveryCash + advanceTaxIncome;
                 const totalDeductions = expenses;
-                const expectedCashNet = expectedCashGross - totalDeductions;
+                // Payments a little above Net Sale (within Rs 5) are a rounding difference booked to Round Off, not cash.
+                const roundingExcess = Math.round((Math.abs(Math.min(theoreticalCashSales, 0)) - advanceTaxIncome) * 100) / 100;
+                const paymentRounding = (roundingExcess > 0 && roundingExcess <= 5) ? roundingExcess : 0;
+                const expectedCashNet = expectedCashGross + paymentRounding - totalDeductions;
 
                 // Display total collections: net sale plus all recoveries
                 const totalSale = netSale + recovery;
@@ -1972,7 +1975,10 @@
                 // Show/hide payment breakdown warning
                 const paymentWarning = document.getElementById('payment_breakdown_warning');
                 if (paymentWarning) {
-                    if (theoreticalCashSales < 0) {
+                    if (paymentRounding > 0) {
+                        paymentWarning.textContent = 'Payments are Rs ' + paymentRounding.toFixed(2) + ' above Net Sale (rounding). It is within the Rs 5.00 allowance and will be booked to Round Off when posted.';
+                        paymentWarning.style.display = 'block';
+                    } else if (theoreticalCashSales < 0) {
                         const excess = Math.abs(theoreticalCashSales).toFixed(2);
                         paymentWarning.textContent = 'Credit sales and bank transfers exceed Net Sale (Sold Items Value) by Rs ' + excess + '. Please correct the payment entries.';
                         paymentWarning.style.display = 'block';

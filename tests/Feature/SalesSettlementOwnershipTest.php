@@ -47,7 +47,7 @@ it('regular user sees only their own settlements on index', function () {
 
     auth()->login($user);
 
-    $this->get(route('sales-settlements.index'))
+    $this->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($ownSettlement->settlement_number)
         ->assertDontSee($otherSettlement->settlement_number);
@@ -67,7 +67,7 @@ it('admin user sees all settlements on index', function () {
     $settlement2 = SalesSettlement::factory()->create();
 
     $this->actingAs($admin)
-        ->get(route('sales-settlements.index'))
+        ->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($settlement1->settlement_number)
         ->assertSee($settlement2->settlement_number);
@@ -86,7 +86,7 @@ it('super admin sees all settlements on index', function () {
     $settlement2 = SalesSettlement::factory()->create();
 
     $this->actingAs($superAdmin)
-        ->get(route('sales-settlements.index'))
+        ->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]))
         ->assertSuccessful()
         ->assertSee($settlement1->settlement_number)
         ->assertSee($settlement2->settlement_number);

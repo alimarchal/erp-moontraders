@@ -47,6 +47,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Sorts\NetProfitSort;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -109,6 +110,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
     {
         $today = now()->toDateString();
 
+        // A plain visit (no filters except the dates) opens on the Posted tab; filter[status]=all shows every status.
+        $givenFilters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        if (! array_key_exists('status', $givenFilters) && ! array_diff_key($givenFilters, array_flip(['settlement_date_from', 'settlement_date_to']))) {
+            $request->merge(['filter' => array_merge($request->input('filter', []), ['status' => 'posted'])]);
+        }
+
         if (! $request->has('filter.settlement_date_from') && ! $request->has('filter.settlement_date_to')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
@@ -135,7 +142,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             AllowedFilter::exact('employee_id'),
             AllowedFilter::exact('vehicle_id'),
             AllowedFilter::exact('warehouse_id'),
-            AllowedFilter::exact('status'),
+            AllowedFilter::callback('status', function ($query, $value) {
+                if ($value !== 'all') {
+                    $query->whereIn('sales_settlements.status', (array) $value);
+                }
+            }),
             AllowedFilter::exact('created_by'),
             AllowedFilter::exact('supplier_id'),
             AllowedFilter::scope('settlement_date_from'),
@@ -163,6 +174,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'settlement_number',
                 'created_at',
                 AllowedSort::field('total_sales', 'items_sum_total_sales_value'),
+                AllowedSort::custom('net_profit', new NetProfitSort),
             ])
             ->defaultSort('-settlement_date', '-id')
             ->withSum('items', 'total_sales_value') // For total sales
@@ -658,7 +670,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             if ($totals['cash_sales_amount'] < 0) {
                 $excess = number_format(abs($totals['cash_sales_amount']), 2);
-                $paymentBreakdownWarning = "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
+                $paymentBreakdownWarning = abs($totals['cash_sales_amount']) <= SalesSettlement::ROUNDING_TOLERANCE
+                    ? "Payments are {$excess} above Net Sale (Sold Items Value). Within the rounding allowance, so it will be booked to Round Off when posted."
+                    : "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
             }
 
             $settlementNumber = $this->generateSettlementNumber();
@@ -1157,7 +1171,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         if ($totals['cash_sales_amount'] < 0) {
             $excess = number_format(abs($totals['cash_sales_amount']), 2);
-            $paymentBreakdownWarning = "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
+            $paymentBreakdownWarning = abs($totals['cash_sales_amount']) <= SalesSettlement::ROUNDING_TOLERANCE
+                ? "Payments are {$excess} above Net Sale (Sold Items Value). Within the rounding allowance, so it will be booked to Round Off when posted."
+                : "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
         }
 
         $salesSettlement->update([

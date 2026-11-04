@@ -28,9 +28,10 @@
 
     $chequesTotal = (float) $settlement->cheques->sum('amount');
     $theoreticalCashSales = $netSale - $creditSalesAmount - $bankSalesAmount;
-    $isPaymentBreakdownExceeded = $theoreticalCashSales < 0;
+    $paymentRounding = \App\Models\SalesSettlement::paymentRounding($theoreticalCashSales, $advanceTaxIncomeTotal);
+    $isPaymentBreakdownExceeded = $theoreticalCashSales < 0 && $paymentRounding <= 0;
     $expectedCashGross = $theoreticalCashSales + $recoveryCash + $advanceTaxIncomeTotal;
-    $expectedCashNet = $expectedCashGross - $totalExpenses;
+    $expectedCashNet = $expectedCashGross + $paymentRounding - $totalExpenses;
 
     $actualPhysicalCash = $cashDenominationTotal > 0 ? $cashDenominationTotal : (float) $settlement->cash_collected;
     $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
@@ -315,6 +316,9 @@
             </tr>
         </table>
 
+        @if ($paymentRounding > 0)
+            <p class="p2-warn">Rounding: payments are Rs {{ $money($paymentRounding) }} above Net Sale; booked to Round Off on posting.</p>
+        @endif
         @if ($isPaymentBreakdownExceeded)
             <p class="p2-warn">Warning: payment breakdown exceeds Net Sale by Rs {{ $money(abs($theoreticalCashSales)) }}.</p>
         @endif

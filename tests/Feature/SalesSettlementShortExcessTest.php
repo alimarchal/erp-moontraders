@@ -167,7 +167,7 @@ it('does not double-count advance tax in short/excess calculation', function () 
     $response->assertDontSee('2,000.88');
 
     // The screen summary above the sheet gives the same result.
-    $response->assertSeeInOrder(['Cash check', 'Excess Rs 0.88', 'expected Rs 49,999', 'submitted Rs 50,000']);
+    $response->assertSeeInOrder(['Cash check', 'Excess Rs 0.88', 'expected 49,999', 'submitted 50,000']);
     $response->assertSee(route('sales-settlements.show', [$settlement, 'layout' => 'print2']), false);
     $response->assertSee(e(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => 'portrait'])), false);
     $response->assertSee(e(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => 'landscape'])), false);

@@ -51,12 +51,8 @@
                 @endif
                 @if ($settlement->status === 'posted')
                     @can('sales-settlement-revert')
-                        <form id="revertSettlementForm" action="{{ route('sales-settlements.revert', $settlement->id) }}"
-                            method="POST" onsubmit="return confirmRevertSettlement();" class="inline-block">
-                            @csrf
-                            <input type="hidden" id="revert_password" name="password" value="">
-                            <button type="submit" class="ak-btn ak-btn-danger-outline" title="Reverse this settlement back to draft">Reverse Settlement</button>
-                        </form>
+                        <button type="button" class="ak-btn ak-btn-danger-outline" title="Reverse this settlement back to draft"
+                            onclick="window.showPasswordModal('revertSettlementModal')">Reverse Settlement</button>
                     @endcan
                     @role('super-admin')
                         <a href="{{ route('sales-settlements.edit-special', $settlement->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">Special Edit</a>
@@ -1353,21 +1349,17 @@
 
         @if ($settlement->status === 'posted')
             @can('sales-settlement-revert')
-                <x-password-confirm-modal id="revertSettlementModal" title="Confirm Settlement Revert"
-                    message="WARNING: This will reverse ALL stock movements, inventory ledger entries, customer balances, and GL entries for this settlement and reset it to DRAFT."
-                    warningClass="text-red-600" confirmButtonText="Confirm Revert"
+                <x-password-confirm-modal id="revertSettlementModal" title="Confirm Settlement Reversal"
+                    message="WARNING: This will reverse ALL stock movements, inventory ledger entries, customer balances, and GL entries for settlement {{ $settlement->settlement_number }} and reset it to DRAFT."
+                    errorKey="password" warningClass="text-red-600" confirmButtonText="Confirm Reverse"
                     confirmButtonClass="bg-red-600 hover:bg-red-700" />
 
+                <form id="revertSettlementForm" action="{{ route('sales-settlements.revert', $settlement->id) }}" method="POST" class="hidden">
+                    @csrf
+                    <input type="hidden" id="revert_password" name="password">
+                </form>
+
                 <script>
-                    function confirmRevertSettlement() {
-                        if (!confirm('Are you sure you want to REVERT this Sales Settlement?\n\nAll inventory, ledger, and GL entries will be reversed. This action cannot be undone.')) {
-                            return false;
-                        }
-
-                        window.showPasswordModal('revertSettlementModal');
-                        return false;
-                    }
-
                     document.addEventListener('passwordConfirmed', function (event) {
                         const { modalId, password } = event.detail;
 

@@ -63,3 +63,23 @@ it('rejects an unknown quantity entry mode', function () {
 it('shows the help catalog', function () {
     $this->actingAs($this->admin)->get(route('suppliers.help'))->assertSuccessful()->assertSee('How suppliers work');
 });
+
+it('deactivates and reactivates a supplier instead of deleting it', function () {
+    $supplier = Supplier::factory()->create(['disabled' => false]);
+
+    $this->actingAs($this->admin)->post(route('suppliers.toggle-active', $supplier))->assertRedirect();
+    expect($supplier->fresh()->disabled)->toBeTrue();
+
+    $this->actingAs($this->admin)->post(route('suppliers.toggle-active', $supplier))->assertRedirect();
+    expect($supplier->fresh()->disabled)->toBeFalse();
+
+    $this->assertDatabaseHas('suppliers', ['id' => $supplier->id, 'deleted_at' => null]);
+    $this->actingAs($this->admin)->delete('/settings/suppliers/'.$supplier->id)->assertStatus(405);
+});
+
+it('does not let a user without supplier-edit deactivate a supplier', function () {
+    $supplier = Supplier::factory()->create();
+
+    $this->actingAs(User::factory()->create())->post(route('suppliers.toggle-active', $supplier))->assertForbidden();
+    expect($supplier->fresh()->disabled)->toBeFalse();
+});

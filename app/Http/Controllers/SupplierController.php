@@ -25,8 +25,7 @@ class SupplierController extends Controller implements HasMiddleware
         return [
             new Middleware('can:supplier-list', only: ['index', 'show', 'help']),
             new Middleware('can:supplier-create', only: ['create', 'store']),
-            new Middleware('can:supplier-edit', only: ['edit', 'update']),
-            new Middleware('can:supplier-delete', only: ['destroy']),
+            new Middleware('can:supplier-edit', only: ['edit', 'update', 'toggleActive']),
         ];
     }
 
@@ -245,25 +244,27 @@ class SupplierController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Suppliers are never deleted: they are deactivated and can be activated again.
+     * Products, GRNs and ledgers always stay.
      */
-    public function destroy(Supplier $supplier)
+    public function toggleActive(Supplier $supplier)
     {
-        try {
-            $name = $supplier->supplier_name;
-            $supplier->delete();
+        $deactivate = ! $supplier->disabled;
 
-            return redirect()
-                ->route('suppliers.index')
-                ->with('success', "Supplier '{$name}' deleted successfully.");
+        try {
+            $supplier->update(['disabled' => $deactivate]);
+
+            return back()->with('success', $deactivate
+                ? "Supplier '{$supplier->supplier_name}' deactivated. Its history is kept."
+                : "Supplier '{$supplier->supplier_name}' activated.");
         } catch (\Throwable $e) {
-            Log::error('Error deleting supplier', [
+            Log::error('Error changing supplier status', [
                 'supplier_id' => $supplier->id,
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->with('error', 'Failed to delete supplier. Please try again.');
+            return back()->with('error', 'Failed to change supplier status. Please try again.');
         }
     }
 

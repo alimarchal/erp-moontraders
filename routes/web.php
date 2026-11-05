@@ -678,7 +678,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         /* Partners */
         Route::get('suppliers/help', [SupplierController::class, 'help'])->name('suppliers.help');
-        Route::resource('suppliers', SupplierController::class);
+        Route::post('suppliers/{supplier}/toggle-active', [SupplierController::class, 'toggleActive'])->name('suppliers.toggle-active');
+        Route::resource('suppliers', SupplierController::class)->except('destroy');
         Route::get('employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::post('employees/bulk-update', [EmployeeController::class, 'bulkUpdate'])->name('employees.bulk-update');
         Route::resource('employees', EmployeeController::class)->except('destroy');

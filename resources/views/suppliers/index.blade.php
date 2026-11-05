@@ -79,7 +79,7 @@
         @media print { .ak-filters, .ak-tabs, .ak-pager { display: none !important; } .sp-table { min-width: 0 !important; } }
     </style>
 
-    <div class="ak-page">
+    <div class="ak-page" x-data="supplierList()">
         <div class="ak-print-head">
             <div class="ak-print-bank">{{ config('app.name') }}</div>
             <div class="ak-print-title">Suppliers</div>
@@ -238,14 +238,20 @@
                                                     @endcan
                                                 </span>
                                                 <span class="ak-slot">
-                                                    @role('super-admin')
-                                                        <form method="POST" action="{{ route('suppliers.destroy', $supplier) }}" onsubmit="return confirm('Delete this supplier?');" style="display:inline">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit" class="ak-icon" title="Delete" aria-label="Delete {{ $supplier->supplier_name }}" style="color:#b91c1c">
-                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                                                            </button>
+                                                    @can('supplier-edit')
+                                                        <form method="POST" action="{{ route('suppliers.toggle-active', $supplier) }}" @submit.prevent="askToggle($el, @js($supplier->supplier_name), {{ $supplier->disabled ? 'false' : 'true' }})">
+                                                            @csrf
+                                                            @if ($supplier->disabled)
+                                                                <button type="submit" class="ak-icon" style="color:#15803d" title="Activate supplier" aria-label="Activate {{ $supplier->supplier_name }}">
+                                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                                                                </button>
+                                                            @else
+                                                                <button type="submit" class="ak-icon ak-icon-danger" title="Deactivate supplier" aria-label="Deactivate {{ $supplier->supplier_name }}">
+                                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 3v9" /></svg>
+                                                                </button>
+                                                            @endif
                                                         </form>
-                                                    @endrole
+                                                    @endcan
                                                 </span>
                                             </div>
                                         </td>
@@ -270,10 +276,40 @@
                 </div>
             @endif
         </section>
+
+        <div class="uf-modal" x-show="confirm.open" x-cloak style="display:none" @keydown.escape.window="confirm.open = false" role="dialog" aria-modal="true" aria-labelledby="sp-confirm-title">
+            <div class="uf-modal-bg" x-show="confirm.open" x-transition.opacity @click="confirm.open = false"></div>
+            <div class="uf-modal-box" x-show="confirm.open" x-transition>
+                <div class="uf-modal-body">
+                    <span class="uf-modal-icon ak-pill-red" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.01" /></svg>
+                    </span>
+                    <div>
+                        <h3 id="sp-confirm-title" x-text="confirm.title"></h3>
+                        <p style="margin:8px 0 0; font-size:14px; color:#334155" x-text="confirm.active ? 'The supplier will be marked Disabled and hidden from new GRNs and dropdowns. It can be activated again from this list. Nothing is deleted.' : 'The supplier will be marked Active again.'"></p>
+                    </div>
+                </div>
+                <div class="uf-modal-foot">
+                    <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
+                    <button type="button" class="ak-btn ak-btn-danger-outline" @click="runConfirm()" :disabled="confirm.busy" x-text="confirm.busy ? 'Working…' : (confirm.active ? 'Deactivate supplier' : 'Activate supplier')"></button>
+                </div>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
         <script>
+            function supplierList() {
+                return {
+                    confirm: { open: false, title: '', busy: false, form: null, active: true },
+                    askToggle(form, name, isActive) { this.confirm = { open: true, title: (isActive ? 'Deactivate ' : 'Activate ') + name + '?', busy: false, form, active: isActive }; },
+                    runConfirm() {
+                        if (this.confirm.busy || !this.confirm.form) return;
+                        this.confirm.busy = true;
+                        this.confirm.form.submit();
+                    },
+                };
+            }
             $(function () {
                 $('.sp-select').each(function () {
                     $(this).select2({ width: '100%', placeholder: $(this).find('option[value=""]').text() || 'Select', allowClear: true });

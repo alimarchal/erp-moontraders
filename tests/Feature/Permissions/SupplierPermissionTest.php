@@ -50,7 +50,7 @@ it('denies update without supplier-edit permission', function () {
     $this->put(route('suppliers.update', $supplier), [])->assertForbidden();
 });
 
-it('denies destroy without supplier-delete permission', function () {
+it('denies deactivating a supplier without supplier-edit permission', function () {
     $supplier = Supplier::factory()->create();
-    $this->delete(route('suppliers.destroy', $supplier))->assertForbidden();
+    $this->post(route('suppliers.toggle-active', $supplier))->assertForbidden();
 });

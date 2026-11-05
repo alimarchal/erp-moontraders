@@ -51,21 +51,12 @@
                 @endif
                 @if ($settlement->status === 'posted')
                     @can('sales-settlement-revert')
-                        {{-- Currently Do Not Needed Hide It
                         <form id="revertSettlementForm" action="{{ route('sales-settlements.revert', $settlement->id) }}"
                             method="POST" onsubmit="return confirmRevertSettlement();" class="inline-block">
                             @csrf
                             <input type="hidden" id="revert_password" name="password" value="">
-                            <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                title="Revert Settlement">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                    stroke="currentColor" class="size-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
-                                </svg>
-                            </button>
-                        </form> --}}
+                            <button type="submit" class="ak-btn ak-btn-danger-outline" title="Reverse this settlement back to draft">Reverse Settlement</button>
+                        </form>
                     @endcan
                     @role('super-admin')
                         <a href="{{ route('sales-settlements.edit-special', $settlement->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">Special Edit</a>

@@ -353,12 +353,14 @@ class TicketController extends Controller implements HasMiddleware
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'uoms' => Uom::orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'suppliers' => Supplier::query()
+                ->where('disabled', false)
                 ->when(! $user->isTicketAdmin() && $user->supplier_id, fn ($q) => $q->where('id', $user->supplier_id))
                 ->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'valuationMethods' => Product::VALUATION_METHODS,
             'warehouses' => Warehouse::query()->where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'adjustmentTypes' => TicketRequest::ADJUSTMENT_TYPES,
             'entryFields' => TicketEntryForms::fields($type, Supplier::query()
+                ->where('disabled', false)
                 ->when(! $user->isTicketAdmin() && $user->supplier_id, fn ($q) => $q->where('id', $user->supplier_id))
                 ->orderBy('supplier_name')->pluck('supplier_name', 'id')->all()),
         ];

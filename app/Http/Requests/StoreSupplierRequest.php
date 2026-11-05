@@ -59,6 +59,7 @@ class StoreSupplierRequest extends FormRequest
             'is_internal_supplier' => ['boolean'],
             'is_fmr_allowed' => ['boolean'],
             'is_advance_tax_income' => ['boolean'],
+            'qty_entry_mode' => ['nullable', Rule::in(['pieces', 'carton'])],
             'disabled' => ['boolean'],
             'default_currency_id' => ['nullable', 'exists:currencies,id'],
             'default_bank_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
@@ -86,6 +87,7 @@ class StoreSupplierRequest extends FormRequest
         $validated['is_internal_supplier'] = (bool) ($validated['is_internal_supplier'] ?? false);
         $validated['is_fmr_allowed'] = (bool) ($validated['is_fmr_allowed'] ?? false);
         $validated['is_advance_tax_income'] = (bool) ($validated['is_advance_tax_income'] ?? false);
+        $validated['qty_entry_mode'] = $validated['qty_entry_mode'] ?? 'pieces';
         $validated['disabled'] = (bool) ($validated['disabled'] ?? false);
 
         return $validated;

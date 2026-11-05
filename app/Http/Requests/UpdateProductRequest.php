@@ -53,6 +53,8 @@ class UpdateProductRequest extends FormRequest
             'uom_id' => ['required', 'exists:uoms,id'],
             'sales_uom_id' => ['nullable', 'exists:uoms,id'],
             'uom_conversion_factor' => ['nullable', 'numeric', 'min:0.001', 'max:999999'],
+            'pieces_per_carton' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'units_per_piece' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'pack_size' => ['nullable', 'string', 'max:120'],
             'barcode' => ['nullable', 'string', 'max:191', Rule::unique('products', 'barcode')->ignore($productId)],

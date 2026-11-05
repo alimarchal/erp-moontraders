@@ -671,11 +671,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import.form');
         Route::get('products/import/template', [ProductController::class, 'importTemplate'])->name('products.import.template');
         Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
+        Route::get('products/help', [ProductController::class, 'help'])->name('products.help');
         Route::resource('products', ProductController::class);
         Route::resource('categories', CategoryController::class);
         Route::resource('uoms', UomController::class);
 
         /* Partners */
+        Route::get('suppliers/help', [SupplierController::class, 'help'])->name('suppliers.help');
         Route::resource('suppliers', SupplierController::class);
         Route::get('employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::post('employees/bulk-update', [EmployeeController::class, 'bulkUpdate'])->name('employees.bulk-update');

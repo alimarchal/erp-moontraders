@@ -34,7 +34,7 @@ class ProductController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:product-list', only: ['index', 'show', 'exportExcel']),
+            new Middleware('can:product-list', only: ['index', 'show', 'exportExcel', 'help']),
             new Middleware('can:product-create', only: ['create', 'store', 'importForm', 'import', 'importTemplate']),
             new Middleware('can:product-edit', only: ['edit', 'update']),
             new Middleware('can:product-delete', only: ['destroy']),
@@ -72,6 +72,14 @@ class ProductController extends Controller implements HasMiddleware
             'perPage' => $perPage,
             'stats' => $this->listStats($request),
         ]);
+    }
+
+    /**
+     * The guide, English and Urdu side by side.
+     */
+    public function help()
+    {
+        return view('products.help');
     }
 
     /**

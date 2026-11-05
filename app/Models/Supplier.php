@@ -24,6 +24,7 @@ class Supplier extends Model
         'is_internal_supplier',
         'is_fmr_allowed',
         'is_advance_tax_income',
+        'qty_entry_mode',
         'disabled',
         'default_currency_id',
         'default_bank_account_id',
@@ -49,6 +50,11 @@ class Supplier extends Model
         'ledger_opening_balance' => 'decimal:2',
         'ledger_opening_balance_date' => 'date',
     ];
+
+    public function usesCartonEntry(): bool
+    {
+        return $this->qty_entry_mode === 'carton';
+    }
 
     /**
      * Get the default currency for the supplier

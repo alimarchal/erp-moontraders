@@ -20,6 +20,7 @@ use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\CartonConversionService;
 use App\Services\InventoryService;
 use App\Services\LedgerRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -1245,4 +1246,60 @@ it('keeps the GRN posted and untouched when a step of reversing fails', function
         ->and($grn->fresh()->status)->toBe('posted')
         ->and($grn->fresh()->reversed_at)->toBeNull()
         ->and($counts())->toBe($before);
+});
+
+it('posts a carton-mode GRN with one correct inventory ledger entry per line and never duplicates it', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'carton']);
+    $icybr = Product::factory()->create(['supplier_id' => $supplier->id, 'pieces_per_carton' => 120, 'units_per_piece' => 15]);
+    $wiwat = Product::factory()->create(['supplier_id' => $supplier->id, 'pieces_per_carton' => 120, 'units_per_piece' => 20]);
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    $converter = app(CartonConversionService::class);
+
+    foreach ([[$icybr, 2, 10163.58], [$wiwat, 3, 10561.70]] as $line => [$product, $cartons, $rate]) {
+        $result = $converter->convert($product, $cartons, 0, $rate);
+
+        $grn->items()->create([
+            'line_no' => $line + 1,
+            'product_id' => $product->id,
+            'stock_uom_id' => $this->uom->id,
+            'purchase_uom_id' => $this->uom->id,
+            'qty_in_purchase_uom' => $cartons,
+            'uom_conversion_factor' => 120,
+            'qty_in_stock_uom' => $result['pieces'],
+            'entered_cartons' => $cartons,
+            'entered_loose_pieces' => 0,
+            'rate_per_th' => $rate,
+            'extended_value' => $result['total'],
+            'quantity_received' => $result['pieces'],
+            'quantity_accepted' => $result['pieces'],
+            'unit_cost' => $result['unit_cost'],
+            'total_cost' => round($result['pieces'] * $result['unit_cost'], 4),
+        ]);
+    }
+
+    app(InventoryService::class)->postGrnToInventory($grn->fresh());
+
+    $entries = InventoryLedgerEntry::where('goods_receipt_note_id', $grn->id)->orderBy('product_id')->get();
+
+    expect($entries)->toHaveCount(2)
+        ->and((float) $entries[0]->debit_qty)->toBe(240.0)
+        ->and((float) $entries[0]->running_balance)->toBe(240.0)
+        ->and((float) $entries[0]->total_value)->toBe(36588.89)
+        ->and((float) $entries[1]->debit_qty)->toBe(360.0)
+        ->and((float) $entries[1]->running_balance)->toBe(360.0)
+        ->and((float) CurrentStock::where('product_id', $icybr->id)->sum('quantity_on_hand'))->toBe(240.0);
+
+    try {
+        app(InventoryService::class)->postGrnToInventory($grn->fresh());
+    } catch (Throwable) {
+    }
+
+    expect(InventoryLedgerEntry::where('goods_receipt_note_id', $grn->id)->count())->toBe(2);
 });

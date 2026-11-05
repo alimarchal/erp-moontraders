@@ -27,6 +27,8 @@ class Product extends Model
         'uom_id',
         'sales_uom_id',
         'uom_conversion_factor',
+        'pieces_per_carton',
+        'units_per_piece',
         'weight',
         'pack_size',
         'barcode',
@@ -43,12 +45,29 @@ class Product extends Model
     protected $casts = [
         'weight' => 'decimal:3',
         'uom_conversion_factor' => 'decimal:3',
+        'pieces_per_carton' => 'integer',
+        'units_per_piece' => 'integer',
         'reorder_level' => 'decimal:2',
         'unit_sell_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
         'is_powder' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Display-only carton hint for a piece quantity, e.g. "1 ctn + 19 pcs".
+     * Returns null when the product has no pieces-per-carton configured.
+     */
+    public function formatCartons(float|int $pieces): ?string
+    {
+        if (! $this->pieces_per_carton) {
+            return null;
+        }
+
+        $pieces = (int) round($pieces);
+
+        return intdiv($pieces, $this->pieces_per_carton).' ctn + '.($pieces % $this->pieces_per_carton).' pcs';
+    }
 
     /**
      * Get the category that owns the product.

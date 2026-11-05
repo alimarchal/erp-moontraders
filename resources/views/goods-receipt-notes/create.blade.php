@@ -105,6 +105,7 @@
                         <x-form-table title="Line Items" :sticky-header="true" :headers="[
         ['label' => '#', 'align' => 'text-center', 'width' => '50px'],
         ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
+        ['label' => 'Carton Entry<br>Ctn / Loose / Rate per TH', 'align' => 'text-center', 'width' => '260px', 'x_show' => 'isCartonMode'],
         ['label' => 'Purchase<br>UOM', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Qty<br>Purchase UOM', 'align' => 'text-center', 'width' => '100px'],
         ['label' => 'Conversion<br>Factor', 'align' => 'text-center', 'width' => '100px'],
@@ -137,6 +138,24 @@
                                                 <option value="">Select Product</option>
                                             </select>
                                         </td>
+                                        <td class="px-2 py-2" x-show="isCartonMode">
+                                            <div class="flex gap-1">
+                                                <input type="number" :name="`items[${index}][entered_cartons]`"
+                                                    x-model="item.entered_cartons" @input="calculateFromCarton(index)"
+                                                    step="0.001" min="0" placeholder="Ctn"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-1/3">
+                                                <input type="number" :name="`items[${index}][entered_loose_pieces]`"
+                                                    x-model="item.entered_loose_pieces" @input="calculateFromCarton(index)"
+                                                    step="1" min="0" placeholder="Loose"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-1/3">
+                                                <input type="number" :name="`items[${index}][rate_per_th]`"
+                                                    x-model="item.rate_per_th" @input="calculateFromCarton(index)"
+                                                    step="0.0001" min="0" placeholder="Rate/TH"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-1/3">
+                                            </div>
+                                            <div class="mt-1 text-xs text-gray-600 text-center"
+                                                x-text="cartonSummary(item)"></div>
+                                        </td>
                                         <td class="px-2 py-2">
                                             <select :name="`items[${index}][purchase_uom_id]`"
                                                 x-model="item.purchase_uom_id" @change="updateConversionFactor(index)"
@@ -150,14 +169,14 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][qty_in_purchase_uom]`"
                                                 x-model="item.qty_in_purchase_uom"
-                                                @input="calculateFromPurchaseQty(index)" step="0.0001" min="0"
+                                                @input="calculateFromPurchaseQty(index)" :readonly="isCartonMode" step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="Qty">
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][uom_conversion_factor]`"
                                                 x-model="item.uom_conversion_factor"
-                                                @input="calculateFromPurchaseQty(index)" step="0.0001" min="0"
+                                                @input="calculateFromPurchaseQty(index)" :readonly="isCartonMode" step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="Factor">
                                         </td>
@@ -172,7 +191,7 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][unit_price_per_case]`"
                                                 x-model="item.unit_price_per_case"
-                                                @input="calculateFromPurchaseQty(index)" step="0.0001" min="0"
+                                                @input="calculateFromPurchaseQty(index)" :readonly="isCartonMode" step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="Price">
                                         </td>
@@ -324,6 +343,7 @@
                                 <tr class="font-semibold bg-gray-100">
                                     <td class="px-2 py-2"></td>
                                     <td class="px-2 py-2 text-right">Totals:</td>
+                                    <td class="px-2 py-2" x-show="isCartonMode"></td>
                                     <td class="px-2 py-2"></td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.qty_in_purchase_uom) || 0), 0))">
@@ -603,6 +623,7 @@
                     withholdingTaxRate: parseFloat(withholdingTaxRate) || 0,
                     isUnileverPakistan: false,
                     isFmrAllowed: false,
+                    isCartonMode: false,
 
                     items: oldItems.length > 0 ? oldItems.map(item => ({
                         product_id: item.product_id || '',
@@ -611,6 +632,9 @@
                         qty_in_purchase_uom: parseFloat(item.qty_in_purchase_uom) || 0,
                         uom_conversion_factor: parseFloat(item.uom_conversion_factor) || 1,
                         qty_in_stock_uom: parseFloat(item.qty_in_stock_uom) || 0,
+                        entered_cartons: item.entered_cartons ?? '',
+                        entered_loose_pieces: item.entered_loose_pieces ?? '',
+                        rate_per_th: item.rate_per_th ?? '',
                         unit_price_per_case: parseFloat(item.unit_price_per_case) || 0,
                         extended_value: parseFloat(item.extended_value) || (parseFloat(item.qty_in_purchase_uom) || 0) * (parseFloat(item.unit_price_per_case) || 0),
                         discount_value: parseFloat(item.discount_value) || 0,
@@ -648,6 +672,9 @@
                         qty_in_purchase_uom: 0,
                         uom_conversion_factor: 1,
                         qty_in_stock_uom: 0,
+                        entered_cartons: '',
+                        entered_loose_pieces: '',
+                        rate_per_th: '',
                         unit_price_per_case: 0,
                         extended_value: 0,
                         discount_value: 0,
@@ -698,6 +725,9 @@
                             qty_in_purchase_uom: 0,
                             uom_conversion_factor: 1,
                             qty_in_stock_uom: 0,
+                            entered_cartons: '',
+                            entered_loose_pieces: '',
+                            rate_per_th: '',
                             unit_price_per_case: 0,
                             extended_value: 0,
                             discount_value: 0,
@@ -799,6 +829,45 @@
                         this.calculateTaxes(index);
                     },
 
+                    calculateFromCarton(index) {
+                        const item = this.items[index];
+                        const product = allProducts.find(p => p.id == item.product_id);
+                        const perCarton = product ? parseInt(product.pieces_per_carton) || 0 : 0;
+                        const perPiece = product ? parseInt(product.units_per_piece) || 0 : 0;
+                        if (!perCarton || !perPiece) {
+                            item.qty_in_stock_uom = 0;
+                            item.quantity_received = 0;
+                            item.quantity_accepted = 0;
+                            item.extended_value = 0;
+                            item.unit_cost = 0;
+                            this.calculateTaxes(index);
+                            return;
+                        }
+                        const cartons = parseFloat(item.entered_cartons) || 0;
+                        const loose = parseInt(item.entered_loose_pieces) || 0;
+                        const rate = parseFloat(item.rate_per_th) || 0;
+                        const pieces = Math.round(cartons * perCarton) + loose;
+                        item.qty_in_purchase_uom = cartons;
+                        item.uom_conversion_factor = perCarton;
+                        item.qty_in_stock_uom = pieces;
+                        item.quantity_received = pieces;
+                        item.quantity_accepted = pieces;
+                        item.extended_value = parseFloat((pieces * perPiece / 1000 * rate).toFixed(2));
+                        item.unit_price_per_case = cartons > 0 ? parseFloat((item.extended_value / cartons).toFixed(6)) : 0;
+                        this.calculateTaxes(index);
+                    },
+
+                    cartonSummary(item) {
+                        const product = allProducts.find(p => p.id == item.product_id);
+                        if (!product) return '';
+                        if (!product.pieces_per_carton || !product.units_per_piece) {
+                            return 'Set pieces per carton / pouches per piece on the product';
+                        }
+                        const pieces = parseFloat(item.qty_in_stock_uom) || 0;
+                        const th = (pieces * product.units_per_piece / 1000).toFixed(3);
+                        return `${pieces} pcs | ${th} TH | ${this.formatNumber(item.extended_value)}`;
+                    },
+
                     calculateFromCases(index) {
                         // Alias for backward compatibility
                         this.calculateFromPurchaseQty(index);
@@ -819,7 +888,7 @@
 
                         // Auto-calculate Sales Tax Value based on supplier's tax rate
                         // Only auto-calculate if sales_tax_value is 0 or not manually edited
-                        if (item.discounted_value_before_tax > 0 && !item.sales_tax_manually_edited) {
+                        if (item.discounted_value_before_tax > 0 && !item.sales_tax_manually_edited && !this.isCartonMode) {
                             salesTaxValue = parseFloat(((item.discounted_value_before_tax * this.supplierSalesTaxRate) / 100).toFixed(2));
                             item.sales_tax_value = salesTaxValue;
                         }
@@ -844,7 +913,9 @@
                         const fmrForUnitCost = this.isFmrAllowed ? 0 : fmrAllowance;
                         const qtyReceived = parseFloat(item.quantity_received) || 0;
                         if (qtyReceived > 0) {
-                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
+                            item.unit_cost = this.isCartonMode
+                                ? parseFloat((extendedValue / qtyReceived).toFixed(6))
+                                : parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
                         }
 
                         // total_cost = qty_accepted × unit_cost (4 decimal precision)
@@ -884,6 +955,11 @@
 
                             // Set conversion factor from product
                             this.items[index].uom_conversion_factor = parseFloat(product.uom_conversion_factor) || 1;
+
+                            if (this.isCartonMode) {
+                                this.calculateFromCarton(index);
+                                return;
+                            }
 
                             // If qty_in_purchase_uom is already entered, recalculate
                             if (this.items[index].qty_in_purchase_uom > 0) {
@@ -1117,6 +1193,7 @@
                                 grnFormData.supplierSalesTaxRate = parseFloat(supplier.sales_tax) || 18.00;
                                 grnFormData.isUnileverPakistan = supplier.supplier_name === 'Unilever Pakistan';
                                 grnFormData.isFmrAllowed = supplier.is_fmr_allowed === true || supplier.is_fmr_allowed === 1;
+                                grnFormData.isCartonMode = supplier.qty_entry_mode === 'carton';
 
                                 // Reset manually edited WHT flags when supplier changes
                                 grnFormData.items.forEach((item) => {

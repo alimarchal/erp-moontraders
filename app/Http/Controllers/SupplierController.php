@@ -6,6 +6,7 @@ use App\Http\Requests\StoreSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
+use App\Models\GoodsReceiptNote;
 use App\Models\Supplier;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -13,8 +14,6 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class SupplierController extends Controller implements HasMiddleware
 {
@@ -24,38 +23,75 @@ class SupplierController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:supplier-list', only: ['index', 'show']),
+            new Middleware('can:supplier-list', only: ['index', 'show', 'help']),
             new Middleware('can:supplier-create', only: ['create', 'store']),
-            new Middleware('can:supplier-edit', only: ['edit', 'update']),
-            new Middleware('can:supplier-delete', only: ['destroy']),
+            new Middleware('can:supplier-edit', only: ['edit', 'update', 'toggleActive']),
         ];
     }
+
+    public const PER_PAGE = ['15', '25', '50', '100', 'all'];
+
+    public const SORTS = [
+        'supplier_name' => 'supplier_name',
+        'supplier_group' => 'supplier_group',
+        'country' => 'country',
+        'created_at' => 'created_at',
+    ];
 
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $suppliers = QueryBuilder::for(
-            Supplier::query()->with(['defaultCurrency', 'defaultBankAccount'])
-        )
-            ->allowedFilters([
-                AllowedFilter::partial('supplier_name'),
-                AllowedFilter::partial('short_name'),
-                AllowedFilter::partial('country'),
-                AllowedFilter::partial('supplier_group'),
-                AllowedFilter::partial('supplier_type'),
-                AllowedFilter::callback('is_transporter', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_transporter', $value)),
-                AllowedFilter::callback('is_internal_supplier', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_internal_supplier', $value)),
-                AllowedFilter::callback('disabled', fn ($query, $value) => $this->applyBooleanFilter($query, 'disabled', $value)),
-            ])
-            ->orderBy('supplier_name')
-            ->paginate(15)
-            ->withQueryString();
+        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
+        $sort = (string) $request->input('sort', 'supplier_name');
+        $sortField = self::SORTS[ltrim($sort, '-')] ?? 'supplier_name';
+        $sortDirection = str_starts_with($sort, '-') ? 'desc' : 'asc';
+        $perPage = in_array((string) $request->input('per_page', '25'), self::PER_PAGE, true) ? (string) $request->input('per_page', '25') : '25';
+
+        $scoped = Supplier::query()
+            ->when($filters['search'] ?? null, fn ($query, $term) => $query->where(fn ($q) => $q
+                ->where('supplier_name', 'like', "%{$term}%")
+                ->orWhere('short_name', 'like', "%{$term}%")
+                ->orWhere('supplier_group', 'like', "%{$term}%")
+                ->orWhere('supplier_type', 'like', "%{$term}%")
+                ->orWhere('country', 'like', "%{$term}%")))
+            ->when($filters['supplier_group'] ?? null, fn ($query, $group) => $query->where('supplier_group', $group))
+            ->when($filters['qty_entry_mode'] ?? null, fn ($query, $mode) => $query->where('qty_entry_mode', $mode))
+            ->when(isset($filters['is_transporter']), fn ($query) => $this->applyBooleanFilter($query, 'is_transporter', $filters['is_transporter']))
+            ->when(isset($filters['is_internal_supplier']), fn ($query) => $this->applyBooleanFilter($query, 'is_internal_supplier', $filters['is_internal_supplier']));
+
+        $statusCounts = [
+            'active' => (clone $scoped)->where('disabled', false)->count(),
+            'disabled' => (clone $scoped)->where('disabled', true)->count(),
+        ];
+
+        $query = (clone $scoped)
+            ->with(['defaultCurrency', 'defaultBankAccount'])
+            ->withCount('products')
+            ->when(($filters['status'] ?? null) === 'active', fn ($q) => $q->where('disabled', false))
+            ->when(($filters['status'] ?? null) === 'disabled', fn ($q) => $q->where('disabled', true))
+            ->orderBy($sortField, $sortDirection)
+            ->orderBy('id');
+
+        $suppliers = $query->paginate($perPage === 'all' ? max((clone $query)->count(), 1) : (int) $perPage)->withQueryString();
 
         return view('suppliers.index', [
             'suppliers' => $suppliers,
+            'filters' => $filters,
+            'sort' => $sort,
+            'perPage' => $perPage,
+            'statusCounts' => $statusCounts,
+            'groups' => Supplier::query()->whereNotNull('supplier_group')->distinct()->orderBy('supplier_group')->pluck('supplier_group'),
         ]);
+    }
+
+    /**
+     * The guide, English and Urdu side by side.
+     */
+    public function help()
+    {
+        return view('suppliers.help');
     }
 
     /**
@@ -128,6 +164,8 @@ class SupplierController extends Controller implements HasMiddleware
 
         return view('suppliers.show', [
             'supplier' => $supplier,
+            'productCount' => $supplier->products()->count(),
+            'grnCount' => GoodsReceiptNote::where('supplier_id', $supplier->id)->count(),
         ]);
     }
 
@@ -206,25 +244,27 @@ class SupplierController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Suppliers are never deleted: they are deactivated and can be activated again.
+     * Products, GRNs and ledgers always stay.
      */
-    public function destroy(Supplier $supplier)
+    public function toggleActive(Supplier $supplier)
     {
-        try {
-            $name = $supplier->supplier_name;
-            $supplier->delete();
+        $deactivate = ! $supplier->disabled;
 
-            return redirect()
-                ->route('suppliers.index')
-                ->with('success', "Supplier '{$name}' deleted successfully.");
+        try {
+            $supplier->update(['disabled' => $deactivate]);
+
+            return back()->with('success', $deactivate
+                ? "Supplier '{$supplier->supplier_name}' deactivated. Its history is kept."
+                : "Supplier '{$supplier->supplier_name}' activated.");
         } catch (\Throwable $e) {
-            Log::error('Error deleting supplier', [
+            Log::error('Error changing supplier status', [
                 'supplier_id' => $supplier->id,
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);
 
-            return back()->with('error', 'Failed to delete supplier. Please try again.');
+            return back()->with('error', 'Failed to change supplier status. Please try again.');
         }
     }
 

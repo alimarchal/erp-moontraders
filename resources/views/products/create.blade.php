@@ -12,6 +12,7 @@
             </div>
             <div class="ak-head-actions">
                 <a href="{{ route('products.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <a href="{{ route('products.help') }}" class="ak-btn ak-btn-outline" title="How products and carton packaging work">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <a href="{{ route('products.import.form') }}" class="ak-btn ak-btn-outline">Import Excel</a>
             </div>
         </div>

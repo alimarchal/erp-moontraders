@@ -16,6 +16,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\BatchRecostService;
+use App\Services\CartonConversionService;
 use App\Services\GrnCostDriftService;
 use App\Services\InventoryGlAdjustmentService;
 use App\Services\InventoryService;
@@ -128,8 +129,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $userSupplierId = $this->getUserSupplierScope();
 
         $suppliers = $userSupplierId
-            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed'])
-            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']);
+            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode'])
+            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode']);
 
         return view('goods-receipt-notes.create', [
             'suppliers' => $suppliers,
@@ -154,7 +155,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $products = Product::where('is_active', true)
             ->where('supplier_id', $supplierId)
             ->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id', 'uom_conversion_factor']);
+            ->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id', 'uom_conversion_factor', 'pieces_per_carton', 'units_per_piece']);
 
         return response()->json($products);
     }
@@ -179,6 +180,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.stock_uom_id' => 'required|exists:uoms,id',
+            'items.*.entered_cartons' => 'nullable|numeric|min:0',
+            'items.*.entered_loose_pieces' => 'nullable|integer|min:0',
+            'items.*.rate_per_th' => 'nullable|numeric|min:0',
             'items.*.purchase_uom_id' => 'required|exists:uoms,id',
             'items.*.qty_in_purchase_uom' => 'nullable|numeric|min:0',
             'items.*.uom_conversion_factor' => 'required|numeric|min:0.0001',
@@ -210,6 +214,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'items.*.expiry_date' => 'nullable|date',
             'items.*.notes' => 'nullable|string',
         ]);
+
+        $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         DB::beginTransaction();
 
@@ -290,6 +296,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'qty_in_purchase_uom' => $item['qty_in_purchase_uom'] ?? null,
                     'uom_conversion_factor' => $item['uom_conversion_factor'],
                     'qty_in_stock_uom' => $item['qty_in_stock_uom'],
+                    'entered_cartons' => $item['entered_cartons'] ?? null,
+                    'entered_loose_pieces' => $item['entered_loose_pieces'] ?? null,
+                    'rate_per_th' => $item['rate_per_th'] ?? null,
                     'unit_price_per_case' => $item['unit_price_per_case'] ?? null,
                     'extended_value' => $item['extended_value'] ?? 0,
                     'discount_value' => $item['discount_value'] ?? 0,
@@ -376,8 +385,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $goodsReceiptNote->load('items');
 
         $suppliers = $userSupplierId
-            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed'])
-            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']);
+            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode'])
+            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode']);
 
         return view('goods-receipt-notes.edit', [
             'grn' => $goodsReceiptNote,
@@ -415,6 +424,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.stock_uom_id' => 'required|exists:uoms,id',
+            'items.*.entered_cartons' => 'nullable|numeric|min:0',
+            'items.*.entered_loose_pieces' => 'nullable|integer|min:0',
+            'items.*.rate_per_th' => 'nullable|numeric|min:0',
             'items.*.purchase_uom_id' => 'nullable|exists:uoms,id',
             'items.*.qty_in_purchase_uom' => 'nullable|numeric|min:0',
             'items.*.uom_conversion_factor' => 'nullable|numeric|min:0',
@@ -450,6 +462,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'items.*.quality_status' => 'nullable|string',
             'items.*.notes' => 'nullable|string',
         ]);
+
+        $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         DB::beginTransaction();
 
@@ -526,6 +540,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'qty_in_purchase_uom' => $item['qty_in_purchase_uom'] ?? null,
                     'uom_conversion_factor' => $item['uom_conversion_factor'] ?? 1,
                     'qty_in_stock_uom' => $item['qty_in_stock_uom'] ?? $item['quantity_received'],
+                    'entered_cartons' => $item['entered_cartons'] ?? null,
+                    'entered_loose_pieces' => $item['entered_loose_pieces'] ?? null,
+                    'rate_per_th' => $item['rate_per_th'] ?? null,
                     'unit_price_per_case' => $item['unit_price_per_case'] ?? null,
                     'extended_value' => $item['extended_value'] ?? 0,
                     'discount_value' => $item['discount_value'] ?? 0,
@@ -615,6 +632,71 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     /**
      * Generate unique GRN number
      */
+    /**
+     * For carton-mode suppliers, derive pieces and cost server-side from cartons,
+     * loose pieces and rate per TH. Pieces-mode suppliers are returned untouched.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function applyCartonEntry(int $supplierId, array $items): array
+    {
+        $supplier = Supplier::find($supplierId);
+
+        if (! $supplier || ! $supplier->usesCartonEntry()) {
+            foreach ($items as $index => $item) {
+                $items[$index]['entered_cartons'] = null;
+                $items[$index]['entered_loose_pieces'] = null;
+                $items[$index]['rate_per_th'] = null;
+            }
+
+            return $items;
+        }
+
+        $service = app(CartonConversionService::class);
+
+        foreach ($items as $index => $item) {
+            $product = Product::find($item['product_id']);
+            $cartons = (float) ($item['entered_cartons'] ?? 0);
+            $loose = (int) ($item['entered_loose_pieces'] ?? 0);
+            $rate = (float) ($item['rate_per_th'] ?? 0);
+
+            try {
+                $result = $service->convert($product, $cartons, $loose, $rate);
+            } catch (\DomainException $e) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["items.$index.entered_cartons" => $e->getMessage()]);
+            }
+
+            $discount = (float) ($item['discount_value'] ?? 0);
+            $fmr = (float) ($item['fmr_allowance'] ?? 0);
+            $beforeTax = round($result['total'] - $discount - $fmr, 2);
+            $payable = round($beforeTax
+                + (float) ($item['excise_duty'] ?? 0)
+                + (float) ($item['sales_tax_value'] ?? 0)
+                + (float) ($item['advance_income_tax'] ?? 0)
+                + (float) ($item['other_charges'] ?? 0)
+                + (float) ($item['withholding_tax'] ?? 0), 2);
+
+            $items[$index] = array_merge($item, [
+                'entered_cartons' => $cartons,
+                'entered_loose_pieces' => $loose,
+                'rate_per_th' => $rate,
+                'qty_in_purchase_uom' => $cartons,
+                'uom_conversion_factor' => $product->pieces_per_carton,
+                'qty_in_stock_uom' => $result['pieces'],
+                'quantity_received' => $result['pieces'],
+                'quantity_accepted' => $result['pieces'],
+                'extended_value' => $result['total'],
+                'unit_price_per_case' => $cartons > 0 ? round($result['total'] / $cartons, 6) : null,
+                'discounted_value_before_tax' => $beforeTax,
+                'total_value_with_taxes' => $payable,
+                'unit_cost' => $result['unit_cost'],
+            ]);
+        }
+
+        return $items;
+    }
+
     private function generateGRNNumber(): string
     {
         $year = now()->year;

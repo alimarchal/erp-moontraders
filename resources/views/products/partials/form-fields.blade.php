@@ -16,6 +16,15 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
     .pf-4 { display: grid; gap: 16px; grid-template-columns: 1fr; }
     @media (min-width: 768px) { .pf-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 1024px) { .pf-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .pf-carton { margin-top: 18px; padding: 14px 16px; border: 1px dashed var(--ak-border-strong); border-radius: 10px; background: var(--ak-soft); }
+    .pf-carton-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; font-size: 14px; color: var(--ak-text); }
+    .pf-carton-head span { font-size: 12.5px; color: var(--ak-muted); }
+    .pf-carton-grid { display: grid; gap: 16px; grid-template-columns: 1fr; align-items: end; }
+    @media (min-width: 768px) { .pf-carton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { .pf-carton-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .pf-carton-check { grid-column: span 2; } }
+    .pf-carton-check { margin: 0; padding: 9px 12px; border-radius: 8px; background: #fff; border: 1px solid var(--ak-border); font-size: 13px; color: var(--ak-muted); min-height: 40px; display: flex; align-items: center; }
+    .pf-carton-check.is-ok { color: #166534; border-color: #bbf7d0; background: #f0fdf4; }
+    .pf-carton-check.is-warn { color: #92400e; border-color: #fde68a; background: #fffbeb; }
     .pf-wide { grid-column: 1 / -1; }
     .uf-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--ak-border-strong); border-radius: 8px; background: #fff; color: var(--ak-text); font-size: 14px; }
     .uf-field textarea:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
@@ -130,7 +139,7 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
                 <div class="uf-field">
                     <label for="uom_conversion_factor">Conversion factor</label>
                     <input id="uom_conversion_factor" type="number" name="uom_conversion_factor" step="0.001" min="1" value="{{ $val('uom_conversion_factor', 1) }}" placeholder="1">
-                    <p class="pf-hint">Base units in 1 sales unit (24 PCS = 1 Case → 24)</p>
+                    <p class="pf-hint">Base units in 1 sales unit (24 PCS = 1 Case → 24). Not used for carton entry.</p>
                     @error('uom_conversion_factor') <p class="uf-error">{{ $message }}</p> @enderror
                 </div>
                 <div class="uf-field">
@@ -151,6 +160,25 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
                     <label for="weight">Weight (kg)</label>
                     <input id="weight" type="number" name="weight" step="0.001" min="0" value="{{ $val('weight') }}" placeholder="0.500">
                     @error('weight') <p class="uf-error">{{ $message }}</p> @enderror
+                </div>
+            </div>
+            <div class="pf-carton">
+                <div class="pf-carton-head">
+                    <b>Carton entry <span lang="ur" dir="rtl" class="ev-ur" style="font-size:15px">کارٹن اندراج</span></b>
+                    <span>Only for suppliers set to “Carton” quantity entry (e.g. Pakistan Tobacco Company). Leave empty otherwise.</span>
+                </div>
+                <div class="pf-carton-grid">
+                    <div class="uf-field">
+                        <label for="pieces_per_carton">Pieces per carton</label>
+                        <input id="pieces_per_carton" type="number" name="pieces_per_carton" step="1" min="1" value="{{ $val('pieces_per_carton') }}" placeholder="e.g. 120">
+                        @error('pieces_per_carton') <p class="uf-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="uf-field">
+                        <label for="units_per_piece">Pouches per piece (can)</label>
+                        <input id="units_per_piece" type="number" name="units_per_piece" step="1" min="1" value="{{ $val('units_per_piece') }}" placeholder="e.g. 15 or 20">
+                        @error('units_per_piece') <p class="uf-error">{{ $message }}</p> @enderror
+                    </div>
+                    <p class="pf-carton-check" id="pf-carton-check" aria-live="polite"></p>
                 </div>
             </div>
         </div>
@@ -221,3 +249,21 @@ $val = fn (string $field, $default = null) => old($field, optional($product)->{$
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        const ppc = document.getElementById('pieces_per_carton');
+        const upp = document.getElementById('units_per_piece');
+        const out = document.getElementById('pf-carton-check');
+        if (! ppc || ! upp || ! out) { return; }
+        function refresh() {
+            const a = parseInt(ppc.value, 10), b = parseInt(upp.value, 10);
+            out.className = 'pf-carton-check';
+            if (! a && ! b) { out.textContent = 'Not set: this product cannot be entered by carton.'; return; }
+            if (! a || ! b) { out.textContent = 'Fill both fields, otherwise a carton-mode GRN is blocked.'; out.classList.add('is-warn'); return; }
+            out.textContent = '1 ctn = ' + a + ' pcs = ' + ((a * b) / 1000).toFixed(3) + ' TH (1 pc = ' + b + ' pouches)';
+            out.classList.add('is-ok');
+        }
+        ppc.addEventListener('input', refresh); upp.addEventListener('input', refresh); refresh();
+    })();
+</script>

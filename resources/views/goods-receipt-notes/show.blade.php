@@ -295,6 +295,9 @@
                                     @endif
                                     <td class="ak-num">
                                         {{ number_format($item->quantity_received, 2) }}
+                                        @if ($hint = $item->product?->formatCartons($item->quantity_received))
+                                            <span class="gr-sub">({{ $hint }})</span>
+                                        @endif
                                         @if ($item->quantity_rejected > 0)
                                             <span class="gr-sub" style="color:#b91c1c">(Rej: {{ number_format($item->quantity_rejected, 2) }})</span>
                                         @endif

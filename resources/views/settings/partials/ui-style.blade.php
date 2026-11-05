@@ -293,7 +293,8 @@
     .uf-field input, .uf-field select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--ak-border-strong); border-radius: 8px; background: #fff; color: var(--ak-text); font-size: 14px; }
     .uf-field input:focus, .uf-field select:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
     /* Searchable dropdowns (Select2) sized like the plain fields */
-    .ak-field .select2-container, .uf-field .select2-container { width: 100% !important; display: block; }
+    .ak-field select.select2-hidden-accessible, .uf-field select.select2-hidden-accessible { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; border: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0 0 0 0) !important; white-space: nowrap !important; }
+    .ak-field .select2-container, .uf-field .select2-container { position: relative !important; width: 100% !important; display: block; }
     .ak-field .select2-container .select2-selection--single { height: 38px; padding: 0 30px 0 12px; border: 1px solid var(--ak-border); border-radius: 8px; box-shadow: none; }
     .uf-field .select2-container .select2-selection--single { height: 40px; padding: 0 30px 0 12px; border: 1px solid var(--ak-border-strong); border-radius: 8px; box-shadow: none; }
     .ak-field .select2-container .select2-selection--single, .uf-field .select2-container .select2-selection--single { display: flex; align-items: center; margin-top: 0; font-size: 14px; }

@@ -179,6 +179,9 @@
                                                 :class="(parseFloat(item.available_qty) <= 0 && !item.stock_short) ? 'bg-gray-200 cursor-not-allowed' : (item.stock_short ? 'bg-red-50 border-red-400' : 'bg-white')"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 @if($canEnterCartons) readonly title="Auto-calculated from Carton + Pieces" @endif>
+                                            <div x-show="item.pieces_per_carton > 0 && parseFloat(item.quantity_issued) > 0"
+                                                class="text-xs text-gray-500 mt-1 text-center"
+                                                x-text="formatCartonsHint(item.quantity_issued, item.pieces_per_carton)"></div>
                                         </td>
                                         <td class="px-2 py-2 align-middle">
                                             <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
@@ -353,6 +356,7 @@
                     carton_qty: 0,
                     pieces_qty: 0,
                     conversion_factor: 1,
+                    pieces_per_carton: null,
                     in_other_drafts: 0,
                     other_drafts: [],
                     stock_short: false,
@@ -378,6 +382,15 @@
             function productLabel(productId) {
                 const product = allProducts.find(p => String(p.id) === String(productId));
                 return product ? `${product.product_code} - ${product.product_name}` : `Product #${productId}`;
+            }
+
+            function formatCartonsHint(quantity, perCarton) {
+                const pieces = Math.round(parseFloat(quantity) || 0);
+                const size = parseInt(perCarton) || 0;
+                if (!size) {
+                    return '';
+                }
+                return `${Math.floor(pieces / size)} ctn + ${pieces % size} pcs`;
             }
 
             function formatStockQty(quantity, factor) {
@@ -1008,6 +1021,7 @@
                     item.uom_id = data.stock_uom_id || '';
                     item.other_drafts = data.other_drafts || [];
                     item.in_other_drafts = parseFloat(data.in_other_drafts || 0);
+                    item.pieces_per_carton = data.pieces_per_carton || null;
 
                     if (canEnterCartons) {
                         const factor = parseFloat(data.conversion_factor) || 1;

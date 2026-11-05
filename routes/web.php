@@ -671,12 +671,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('products/import', [ProductController::class, 'importForm'])->name('products.import.form');
         Route::get('products/import/template', [ProductController::class, 'importTemplate'])->name('products.import.template');
         Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
+        Route::get('products/help', [ProductController::class, 'help'])->name('products.help');
         Route::resource('products', ProductController::class);
         Route::resource('categories', CategoryController::class);
         Route::resource('uoms', UomController::class);
 
         /* Partners */
-        Route::resource('suppliers', SupplierController::class);
+        Route::get('suppliers/help', [SupplierController::class, 'help'])->name('suppliers.help');
+        Route::post('suppliers/{supplier}/toggle-active', [SupplierController::class, 'toggleActive'])->name('suppliers.toggle-active');
+        Route::resource('suppliers', SupplierController::class)->except('destroy');
         Route::get('employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::post('employees/bulk-update', [EmployeeController::class, 'bulkUpdate'])->name('employees.bulk-update');
         Route::resource('employees', EmployeeController::class)->except('destroy');

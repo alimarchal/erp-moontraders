@@ -305,6 +305,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'sales_uom_id' => $product->sales_uom_id ?? null,
             'sales_uom_name' => $product->salesUom->uom_name ?? null,
             'conversion_factor' => (float) ($product->uom_conversion_factor ?? 1),
+            'pieces_per_carton' => $product->pieces_per_carton,
             'batches' => $batches,
             'has_multiple_prices' => $stockLayers->pluck('selling_price')->unique()->count() > 1,
             // Drafts do not hold stock, so the form shows what other drafts are counting on too.

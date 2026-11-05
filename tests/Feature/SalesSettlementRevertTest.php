@@ -5,6 +5,7 @@ use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
+use App\Models\GoodsIssueItem;
 use App\Models\InventoryLedgerEntry;
 use App\Models\JournalEntry;
 use App\Models\Product;
@@ -15,12 +16,14 @@ use App\Models\StockMovement;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\VanStockBalance;
+use App\Models\VanStockBatch;
 use App\Services\AccountingService;
 use App\Services\InventoryLedgerService;
 use App\Services\InventoryService;
 use App\Services\SalesSettlementRevertService;
 use App\Services\StockValuationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
@@ -612,4 +615,114 @@ it('tags inventory ledger reversal entries with the settlement id', function () 
     expect($reversal)->not->toBeNull()
         ->and((float) $reversal->debit_qty)->toBe(10.0)
         ->and((float) $reversal->credit_qty)->toBe(0.0);
+});
+
+it('nets the inventory ledger reversal against earlier ones when a settlement is reverted twice', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $product = Product::factory()->create();
+
+    // A sale, its earlier reversal, and the sale written again on re-posting.
+    foreach ([[0, 10], [10, 0], [0, 10]] as [$debit, $credit]) {
+        InventoryLedgerEntry::create([
+            'date' => now()->toDateString(),
+            'transaction_type' => $debit > 0 ? 'adjustment' : 'sale',
+            'product_id' => $product->id,
+            'vehicle_id' => $settlement->vehicle_id,
+            'sales_settlement_id' => $settlement->id,
+            'debit_qty' => $debit,
+            'credit_qty' => $credit,
+            'unit_cost' => 100,
+            'running_balance' => 0,
+        ]);
+    }
+
+    $this->actingAs($user);
+
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')->once()->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    $result = (new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class)))->revert($settlement);
+
+    expect($result['success'])->toBeTrue($result['message'] ?? '');
+
+    $entries = InventoryLedgerEntry::where('sales_settlement_id', $settlement->id);
+
+    expect((float) $entries->sum('debit_qty') - (float) $entries->sum('credit_qty'))->toBe(0.0)
+        ->and($entries->count())->toBe(4);
+});
+
+it('removes the excess-cash rows when a settlement is reverted', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $settlement->excessAmounts()->create(['amount' => 500, 'description' => 'Cash Excess']);
+
+    $this->actingAs($user);
+
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')->once()->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    (new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class)))->revert($settlement);
+
+    expect($settlement->excessAmounts()->count())->toBe(0);
+});
+
+it('restores van batch quantity onto the row of the goods issue item it was issued on', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $product = Product::factory()->create();
+
+    $uom = Uom::factory()->create();
+    $issuedItem = GoodsIssueItem::factory()->create(['goods_issue_id' => $settlement->goods_issue_id, 'product_id' => $product->id, 'uom_id' => $uom->id]);
+    $otherItem = GoodsIssueItem::factory()->create(['goods_issue_id' => $settlement->goods_issue_id, 'product_id' => $product->id, 'uom_id' => $uom->id]);
+
+    SalesSettlementItem::create([
+        'sales_settlement_id' => $settlement->id,
+        'product_id' => $product->id,
+        'goods_issue_item_id' => $issuedItem->id,
+        'quantity_issued' => 12,
+        'quantity_sold' => 10,
+        'quantity_returned' => 2,
+        'quantity_shortage' => 0,
+        'unit_selling_price' => 150,
+        'total_sales_value' => 1500,
+        'unit_cost' => 100,
+        'total_cogs' => 1000,
+    ]);
+
+    VanStockBalance::create(['vehicle_id' => $settlement->vehicle_id, 'product_id' => $product->id, 'quantity_on_hand' => 0, 'average_cost' => 100]);
+
+    // The newer row is the one a "newest first" restore would wrongly pick.
+    $ownRow = VanStockBatch::create(['vehicle_id' => $settlement->vehicle_id, 'product_id' => $product->id, 'goods_issue_item_id' => $issuedItem->id, 'goods_issue_number' => 'GI-A', 'quantity_on_hand' => 0, 'unit_cost' => 100, 'selling_price' => 150, 'created_at' => now()->subDay()]);
+    $newerRow = VanStockBatch::create(['vehicle_id' => $settlement->vehicle_id, 'product_id' => $product->id, 'goods_issue_item_id' => $otherItem->id, 'goods_issue_number' => 'GI-B', 'quantity_on_hand' => 0, 'unit_cost' => 100, 'selling_price' => 150, 'created_at' => now()]);
+
+    $this->actingAs($user);
+
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')->once()->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    (new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class)))->revert($settlement);
+
+    expect((float) $ownRow->fresh()->quantity_on_hand)->toBe(12.0)
+        ->and((float) $newerRow->fresh()->quantity_on_hand)->toBe(0.0);
+});
+
+it('shows the Reverse Settlement button only to users holding the revert permission', function () {
+    $settlement = makePostedSettlement();
+
+    $permitted = User::factory()->create(['is_super_admin' => 'No']);
+    foreach (['sales-settlement-list', 'sales-settlement-view-all', 'sales-settlement-revert'] as $name) {
+        $permitted->givePermissionTo(Permission::findOrCreate($name, 'web'));
+    }
+
+    $without = User::factory()->create(['is_super_admin' => 'No']);
+    foreach (['sales-settlement-list', 'sales-settlement-view-all'] as $name) {
+        $without->givePermissionTo(Permission::findOrCreate($name, 'web'));
+    }
+
+    $this->actingAs($permitted)->get(route('sales-settlements.show', $settlement))
+        ->assertOk()->assertSee('Reverse Settlement');
+
+    $this->actingAs($without)->get(route('sales-settlements.show', $settlement))
+        ->assertOk()->assertDontSee('Reverse Settlement');
 });

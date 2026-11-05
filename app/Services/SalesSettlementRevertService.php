@@ -135,22 +135,36 @@ class SalesSettlementRevertService
 
     /**
      * Create offsetting inventory ledger entries (swap debit_qty ↔ credit_qty).
+     *
+     * Rows are netted per product / location / batch / cost rather than copied one by
+     * one, so a settlement that was posted and reverted before reverses only what is
+     * currently standing; copying every row would reverse the earlier reversals too.
      */
     private function reverseInventoryLedgerEntries(SalesSettlement $settlement): void
     {
-        $entries = InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)->get();
+        $standing = InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)
+            ->selectRaw('product_id, warehouse_id, vehicle_id, stock_batch_id, unit_cost,
+                SUM(debit_qty) - SUM(credit_qty) as net_qty')
+            ->groupBy('product_id', 'warehouse_id', 'vehicle_id', 'stock_batch_id', 'unit_cost')
+            ->get();
 
-        foreach ($entries as $entry) {
+        foreach ($standing as $group) {
+            $netQty = round((float) $group->net_qty, 4);
+
+            if (abs($netQty) <= 0.0001) {
+                continue;
+            }
+
             $this->inventoryLedgerService->recordAdjustment(
-                productId: $entry->product_id,
-                warehouseId: $entry->warehouse_id,
-                vehicleId: $entry->vehicle_id,
-                debitQty: (float) $entry->credit_qty,
-                creditQty: (float) $entry->debit_qty,
-                unitCost: (float) $entry->unit_cost,
+                productId: $group->product_id,
+                warehouseId: $group->warehouse_id,
+                vehicleId: $group->vehicle_id,
+                debitQty: $netQty < 0 ? abs($netQty) : 0.0,
+                creditQty: $netQty > 0 ? $netQty : 0.0,
+                unitCost: (float) $group->unit_cost,
                 date: now()->toDateString(),
-                notes: 'Reversal: '.($entry->notes ?? "SS {$settlement->settlement_number}"),
-                batchId: $entry->stock_batch_id,
+                notes: "Reversal: SS {$settlement->settlement_number}",
+                batchId: $group->stock_batch_id,
                 salesSettlementId: $settlement->id,
             );
         }
@@ -178,7 +192,11 @@ class SalesSettlementRevertService
     }
 
     /**
-     * Restore van stock batches in LIFO order (reverse of the FIFO used during posting).
+     * Put the quantities back on the van batch rows they came off.
+     *
+     * Each settlement item belongs to a goods issue item, and that item's van batch row
+     * is where its stock was issued to the van, so it is restored there. Only when that
+     * row no longer exists does the quantity go to the van's newest batch for the product.
      */
     private function restoreVanStockBatches(SalesSettlement $settlement): void
     {
@@ -191,23 +209,19 @@ class SalesSettlementRevertService
                 continue;
             }
 
-            // Restore in reverse-FIFO (newest first) to mirror the FIFO deduction done during posting
-            $vanStockBatches = VanStockBatch::where('vehicle_id', $settlement->vehicle_id)
+            $vanStockBatch = VanStockBatch::where('vehicle_id', $settlement->vehicle_id)
                 ->where('product_id', $item->product_id)
-                ->orderByDesc('created_at')
+                ->where('goods_issue_item_id', $item->goods_issue_item_id)
                 ->lockForUpdate()
-                ->get();
+                ->first()
+                ?? VanStockBatch::where('vehicle_id', $settlement->vehicle_id)
+                    ->where('product_id', $item->product_id)
+                    ->orderByDesc('created_at')
+                    ->lockForUpdate()
+                    ->first();
 
-            $qtyToRestore = $totalToRestore;
-
-            foreach ($vanStockBatches as $vsBatch) {
-                if ($qtyToRestore <= 0) {
-                    break;
-                }
-
-                $vsBatch->quantity_on_hand += $qtyToRestore;
-                $vsBatch->save();
-                $qtyToRestore = 0;
+            if ($vanStockBatch) {
+                $vanStockBatch->increment('quantity_on_hand', $totalToRestore);
             }
         }
     }
@@ -363,6 +377,10 @@ class SalesSettlementRevertService
      */
     private function resetSettlementToDraft(SalesSettlement $settlement): void
     {
+        // Excess-cash rows are written by the posting itself (and feed the ROI report),
+        // so they go with it; re-posting writes the current figure again.
+        $settlement->excessAmounts()->delete();
+
         $settlement->update([
             'status' => 'draft',
             'posted_at' => null,

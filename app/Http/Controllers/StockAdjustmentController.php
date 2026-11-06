@@ -222,8 +222,9 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         return view('stock-adjustments.edit', [
             'adjustment' => $stockAdjustment,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(),
-            'products' => Product::where('is_active', true)->with('uom:id,uom_name')->orderBy('product_name')->get(),
-            'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(),
+            'suppliers' => Supplier::query()
+                ->when($this->getUserSupplierScope() !== null, fn ($query) => $query->where('id', $this->getUserSupplierScope()))
+                ->orderBy('supplier_name')->get(['id', 'supplier_name']),
         ]);
     }
 

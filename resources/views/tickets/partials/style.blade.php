@@ -78,7 +78,7 @@
     .tk-grid-table thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); padding: 8px 10px; background: #f8fafc; border-bottom: 1px solid var(--ak-line); white-space: nowrap; }
     .tk-grid-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
     .tk-grid-table tbody:last-child td { border-bottom: 0; }
-    .tk-cell input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--ak-border-strong); border-radius: 8px; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .tk-cell input { width: 100%; min-width: 84px; font-variant-numeric: tabular-nums; height: 36px; padding: 0 10px; border: 1px solid var(--ak-border-strong); border-radius: 8px; font-size: 14px; font-variant-numeric: tabular-nums; }
     .tk-cell input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
     .tk-cell input:disabled { background: #f8fafc; }
     .tk-cell small { display: block; margin-top: 3px; color: var(--ak-muted); font-size: 11.5px; white-space: nowrap; }

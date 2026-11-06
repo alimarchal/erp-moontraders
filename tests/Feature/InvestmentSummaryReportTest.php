@@ -39,6 +39,17 @@ it('loads the investment summary report page', function () {
     $response->assertOk();
 });
 
+it('titles the investment table with the selected supplier instead of a fixed name', function () {
+    $response = $this->get(route('reports.investment-summary.index', ['supplier_id' => $this->supplier->id]));
+
+    $response->assertOk()
+        ->assertSee('NESTLÉ PAKISTAN INVESTMENT', false)
+        ->assertDontSee('SHAHZAIN TRADERS INVESTMENT');
+
+    $this->user->forceFill(['supplier_id' => null, 'is_super_admin' => 'Yes'])->save();
+    $this->get(route('reports.investment-summary.index'))->assertOk()->assertDontSee('SHAHZAIN TRADERS INVESTMENT');
+});
+
 it('does not default to nestle for users who can view all suppliers', function () {
     $this->user->forceFill([
         'supplier_id' => null,

@@ -270,14 +270,14 @@
 
                     {{-- Part 2: Investment Summary & Expenses --}}
                     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {{-- SHAHZAIN TRADERS INVESTMENT Table --}}
+                        {{-- Investment table, titled with the selected supplier --}}
                         <div>
                             <table class="report-table tabular-nums w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-10 px-1 py-0.5">#</th>
                                         <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
-                                            SHAHZAIN TRADERS INVESTMENT
+                                            {{ $selectedSupplier ? mb_strtoupper($selectedSupplier->supplier_name).' INVESTMENT' : 'INVESTMENT' }}
                                         </th>
                                     </tr>
                                 </thead>

@@ -695,3 +695,11 @@ it('opens the ticket list on Pending and shows everything on the All tab', funct
     $this->get(route('tickets.index'))->assertOk()->assertSee('Waiting one')->assertDontSee('Done one');
     $this->get(route('tickets.index', ['filter' => ['status' => 'all']]))->assertOk()->assertSee('Waiting one')->assertSee('Done one');
 });
+
+it('hides deactivated suppliers from the new ticket supplier dropdown', function () {
+    $this->otherSupplier->update(['disabled' => true]);
+
+    $suppliers = $this->actingAs($this->admin)->get(route('tickets.create'))->assertOk()->viewData('suppliers');
+
+    expect($suppliers->pluck('id')->all())->toContain($this->supplier->id)->not->toContain($this->otherSupplier->id);
+});

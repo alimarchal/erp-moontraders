@@ -79,6 +79,26 @@ class ProductPricingService
     }
 
     /**
+     * Change the selling cost of one batch, or of every batch of the product that holds stock
+     * (which also sets the product's own selling price for new receipts), and log it.
+     * Used by the stock adjustment posting, whichever screen the adjustment came from.
+     */
+    public function applyBatchSellingCost(Product $product, int $stockBatchId, float|string $newPrice, string $scope, ?int $userId): void
+    {
+        $oldPrice = DB::table('stock_batches')->where('id', $stockBatchId)->value('selling_price');
+
+        if ($scope === 'all') {
+            $product->update(['unit_sell_price' => $newPrice]);
+            $batchIds = $this->cascadeSellingPrice($product, $newPrice);
+        } else {
+            $batchIds = collect([$stockBatchId]);
+            $this->cascadeSellingPrice($product, $newPrice, $batchIds);
+        }
+
+        $this->logChange($product, 'selling_price', $oldPrice, $newPrice, $userId, $batchIds);
+    }
+
+    /**
      * @param  Collection<int, int>|null  $impactedBatchIds
      */
     public function logChange(Product $product, string $priceType, mixed $oldPrice, mixed $newPrice, ?int $userId, ?Collection $impactedBatchIds = null): void

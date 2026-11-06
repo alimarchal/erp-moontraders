@@ -85,6 +85,7 @@ class StockAdjustmentService
                 }
 
                 $this->guardAgainstRemovingMoreThanOnHand($adjustment, $item);
+                $this->applySellingCost($item);
                 $revaluationValue += $this->processAdjustmentItem($adjustment, $item);
             }
 
@@ -113,6 +114,31 @@ class StockAdjustmentService
                 'message' => 'Failed to post stock adjustment: '.$e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * A line that carries a selling cost changes what the batch (or every batch of the product) is sold at.
+     * Nothing is stocked or valued differently, so no ledger or journal row is written for it.
+     */
+    protected function applySellingCost($item): void
+    {
+        if ($item->selling_price === null) {
+            return;
+        }
+
+        $current = (float) StockBatch::whereKey($item->stock_batch_id)->value('selling_price');
+
+        if (abs((float) $item->selling_price - $current) <= 0.004 && ($item->selling_scope ?? 'batch') !== 'all') {
+            return;
+        }
+
+        app(ProductPricingService::class)->applyBatchSellingCost(
+            $item->product,
+            (int) $item->stock_batch_id,
+            $item->selling_price,
+            $item->selling_scope ?? 'batch',
+            auth()->id()
+        );
     }
 
     /**

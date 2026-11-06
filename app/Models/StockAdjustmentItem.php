@@ -19,6 +19,8 @@ class StockAdjustmentItem extends Model
         'actual_quantity',
         'adjustment_quantity',
         'unit_cost',
+        'selling_price',
+        'selling_scope',
         'adjustment_value',
         'uom_id',
         'notes',
@@ -31,6 +33,7 @@ class StockAdjustmentItem extends Model
             'actual_quantity' => 'decimal:3',
             'adjustment_quantity' => 'decimal:3',
             'unit_cost' => 'decimal:2',
+            'selling_price' => 'decimal:2',
             'adjustment_value' => 'decimal:2',
         ];
     }

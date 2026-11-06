@@ -437,18 +437,13 @@ class TicketService
 
         // Selling cost changes go to the batch, its current-stock rows and live GRN lines, with a price log.
         foreach ($allLines->where('selling_changed', true) as $line) {
-            $product = Product::query()->findOrFail($line['product_id']);
-
-            if (($line['selling_scope'] ?? 'batch') === 'all') {
-                // Every batch of the product that holds stock, and the product's own selling price for new receipts.
-                $product->update(['unit_sell_price' => $line['selling_price']]);
-                $batchIds = $this->pricing->cascadeSellingPrice($product, $line['selling_price']);
-            } else {
-                $batchIds = collect([(int) $line['stock_batch_id']]);
-                $this->pricing->cascadeSellingPrice($product, $line['selling_price'], $batchIds);
-            }
-
-            $this->pricing->logChange($product, 'selling_price', $line['old_selling_price'], $line['selling_price'], auth()->id(), $batchIds);
+            $this->pricing->applyBatchSellingCost(
+                Product::query()->findOrFail($line['product_id']),
+                (int) $line['stock_batch_id'],
+                $line['selling_price'],
+                $line['selling_scope'] ?? 'batch',
+                auth()->id()
+            );
         }
 
         $lines = $allLines

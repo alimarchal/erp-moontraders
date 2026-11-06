@@ -8,6 +8,7 @@
     $savedRows = $isEdit ? $adjustment->items->map(fn ($item) => [
         'product_id' => (string) $item->product_id, 'stock_batch_id' => (string) $item->stock_batch_id, 'uom_id' => (string) $item->uom_id,
         'system_quantity' => (float) $item->system_quantity, 'actual_quantity' => (float) $item->actual_quantity, 'unit_cost' => (float) $item->unit_cost,
+        'selling_price' => $item->selling_price !== null ? (float) $item->selling_price : '', 'selling_scope' => $item->selling_scope ?? 'batch',
         'batch_code' => $item->stockBatch->batch_code ?? '',
     ])->values()->all() : [];
     $rows = old('items', $savedRows);
@@ -64,7 +65,7 @@
         <header class="uf-card-head">
             <div>
                 <h2 class="uf-card-title" id="sa-lines"><span class="uf-step">2</span> Lines</h2>
-                <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. To correct only the unit cost, keep the counted quantity and type the new unit cost.</p>
+                <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. To correct only a cost, keep the counted quantity and type the new value. Selling cost is the price you sell at; unit cost is what it was bought at (changing it needs the tick below).</p>
             </div>
             <span class="ak-pill" x-text="lineCount() + ' line(s) · value ' + signed(total())"></span>
         </header>
@@ -73,7 +74,7 @@
                 <thead><tr>
                     <th style="width:36px">#</th><th style="min-width:210px">Product</th><th style="min-width:190px">Batch</th>
                     <th style="min-width:105px">System qty</th><th style="min-width:115px">Counted qty</th><th style="min-width:100px">Difference</th>
-                    <th style="min-width:170px">Unit cost</th><th style="min-width:130px">Value</th><th style="width:40px"></th>
+                    <th style="min-width:170px">Selling cost</th><th style="min-width:170px">Unit cost</th><th style="min-width:130px">Value</th><th style="width:40px"></th>
                 </tr></thead>
                 <template x-for="(row, index) in rows" :key="row.uid">
                     <tbody>
@@ -94,11 +95,17 @@
                                         <option :value="batch.id" :selected="String(batch.id) === String(row.stock_batch_id)" x-text="`${batch.batch_code} (qty ${fmt(batch.quantity, 3)})`"></option>
                                     </template>
                                 </select>
+                                <label x-show="row.stock_batch_id" x-cloak style="display:flex; gap:6px; align-items:flex-start; margin-top:6px; font-size:12px; line-height:1.35; cursor:pointer" title="Apply the selling cost to every batch of this product that holds stock, not only this one">
+                                    <input type="checkbox" style="margin-top:2px" :checked="row.selling_scope === 'all'" @change="row.selling_scope = $event.target.checked ? 'all' : 'batch'">
+                                    <span>Selling cost for <b>all batches</b> of this product</span>
+                                </label>
+                                <input type="hidden" :name="`items[${index}][selling_scope]`" :value="row.selling_scope">
                             </td>
                             <td class="tk-cell"><input type="number" step="0.001" readonly tabindex="-1" :name="`items[${index}][system_quantity]`" :value="row.system_quantity" style="background:#f8fafc"></td>
                             <td class="tk-cell"><input type="number" step="0.001" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][actual_quantity]`" x-model="row.actual_quantity" placeholder="count"></td>
                             <td><span x-show="diff(row) !== null" class="tk-delta" :class="diff(row) > 0 ? 'tk-delta-up' : (diff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(diff(row), 3)"></span> <small x-show="costOnly(row)" class="ak-muted">cost only</small></td>
-                            <td class="tk-cell"><input type="number" step="0.01" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost" :style="costChanged(row) ? 'background:#fef2f2;border-color:#dc2626' : ''" title="Purchase cost of this batch. Changing it revalues the batch."></td>
+                            <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][selling_price]`" x-model="row.selling_price" :style="sellingChanged(row) ? 'background:#fffbeb;border-color:#f59e0b' : ''" title="Price this batch is sold at. Changing it updates the selling price (no stock or journal effect)."></td>
+                            <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost" :style="costChanged(row) ? 'background:#fef2f2;border-color:#dc2626' : ''" title="Purchase cost of this batch. Changing it revalues the batch."></td>
                             <td><span x-show="value(row) !== null" class="ak-strong" x-text="signed(value(row))"></span>
                                 <small x-show="costChanged(row)" class="ak-muted" style="display:block">+ revaluation on posting</small></td>
                             <td><button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></td>
@@ -137,7 +144,7 @@
     <script>
         window.saForm = function (cfg) {
             let uid = 0;
-            const blank = () => ({ uid: ++uid, product_id: '', uom_id: '', stock_batch_id: '', batches: [], loading: false, system_quantity: '', actual_quantity: '', unit_cost: '', batch_cost: undefined, batch_code: '' });
+            const blank = () => ({ uid: ++uid, product_id: '', uom_id: '', stock_batch_id: '', batches: [], loading: false, system_quantity: '', actual_quantity: '', unit_cost: '', selling_price: '', selling_scope: 'batch', batch_cost: undefined, batch_selling: undefined, batch_code: '' });
             const pickers = [];
 
             return {
@@ -155,7 +162,7 @@
                 },
                 setWarehouse(id) {
                     this.warehouseId = id;
-                    this.rows.forEach((row) => { row.stock_batch_id = ''; row.system_quantity = ''; row.actual_quantity = ''; row.unit_cost = ''; row.batch_cost = undefined; this.loadBatches(row); });
+                    this.rows.forEach((row) => { row.stock_batch_id = ''; row.system_quantity = ''; row.actual_quantity = ''; row.unit_cost = ''; row.selling_price = ''; row.batch_cost = undefined; row.batch_selling = undefined; this.loadBatches(row); });
                 },
                 async loadProducts() {
                     this.products = [];
@@ -183,7 +190,7 @@
                 },
                 rebuildPickers() { pickers.forEach((p) => this.buildPicker(p.el, p.row)); },
                 pickProduct(row, id) {
-                    row.product_id = id; row.stock_batch_id = ''; row.system_quantity = ''; row.actual_quantity = ''; row.unit_cost = ''; row.batch_cost = undefined;
+                    row.product_id = id; row.stock_batch_id = ''; row.system_quantity = ''; row.actual_quantity = ''; row.unit_cost = ''; row.selling_price = ''; row.batch_cost = undefined; row.batch_selling = undefined;
                     const p = this.products.find((x) => String(x.id) === String(id));
                     row.uom_id = p ? String(p.uom_id) : '';
                     this.loadBatches(row);
@@ -196,11 +203,11 @@
                         const response = await fetch(cfg.batchesUrl.replace('__P__', row.product_id).replace('__W__', this.warehouseId), { headers: { Accept: 'application/json' } });
                         const list = response.ok ? await response.json() : [];
                         row.batches = list.map((b) => ({
-                            id: b.id, batch_code: b.batch_code, unit_cost: parseFloat(b.unit_cost) || 0,
+                            id: b.id, batch_code: b.batch_code, unit_cost: parseFloat(b.unit_cost) || 0, selling_price: b.selling_price === null ? '' : parseFloat(b.selling_price),
                             quantity: (b.current_stock_by_batch || []).reduce((sum, s) => sum + parseFloat(s.quantity_on_hand || 0), 0),
                         }));
                         const saved = row.batches.find((b) => String(b.id) === String(row.stock_batch_id));
-                        if (saved) { row.batch_cost = saved.unit_cost; }
+                        if (saved) { row.batch_cost = saved.unit_cost; row.batch_selling = saved.selling_price; if (row.selling_price === '' || row.selling_price === null) { row.selling_price = saved.selling_price; } }
                     } finally { row.loading = false; }
                 },
                 pickBatch(row, id) {
@@ -209,6 +216,8 @@
                     row.system_quantity = batch ? batch.quantity : '';
                     row.unit_cost = batch ? batch.unit_cost : '';
                     row.batch_cost = batch ? batch.unit_cost : undefined;
+                    row.selling_price = batch ? batch.selling_price : '';
+                    row.batch_selling = batch ? batch.selling_price : undefined;
                     // Counted quantity starts at the system quantity, so changing only the unit cost needs no quantity.
                     row.actual_quantity = batch ? batch.quantity : '';
                 },
@@ -216,6 +225,7 @@
                 removeRow(index) { this.rows.splice(index, 1); },
 
                 costChanged(row) { return row.unit_cost !== '' && row.batch_cost !== undefined && Math.abs(parseFloat(row.unit_cost) - parseFloat(row.batch_cost)) > 0.01; },
+                sellingChanged(row) { return row.selling_price !== '' && row.batch_selling !== undefined && row.batch_selling !== '' && Math.abs(parseFloat(row.selling_price) - parseFloat(row.batch_selling)) > 0.004; },
                 costChangedLines() { return this.rows.filter((r) => r.stock_batch_id && this.costChanged(r)); },
                 diff(row) { return row.actual_quantity === '' || row.system_quantity === '' ? null : parseFloat(row.actual_quantity) - parseFloat(row.system_quantity); },
                 costOnly(row) { return this.diff(row) === 0 && this.costChanged(row); },

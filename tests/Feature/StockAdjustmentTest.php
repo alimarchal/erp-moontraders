@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Models\CurrentStockByBatch;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
+use App\Models\ProductPriceChangeLog;
 use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentItem;
 use App\Models\StockBatch;
@@ -1055,4 +1056,50 @@ test('the draft edit page renders the shared form with the saved lines', functio
         ->assertSee('id="sa-form"', false)
         ->assertSee('Rack collapsed')
         ->assertSee($batch->batch_code);
+});
+
+test('a selling cost on a line is kept only when it changes the price, and is applied to the batch on posting', function () {
+    $batch = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active', 'is_active' => true, 'selling_price' => 80, 'unit_cost' => 50]);
+    layerFor($batch, 100);
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id, 'warehouse_id' => $this->warehouse->id, 'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 100, 'unit_cost' => 50, 'selling_price' => 80, 'total_value' => 5000, 'status' => 'active',
+    ]);
+    $adjustment = StockAdjustment::factory()->create(['warehouse_id' => $this->warehouse->id, 'adjustment_type' => 'damage', 'status' => 'draft']);
+    $line = fn (array $extra) => ['product_id' => $this->product->id, 'stock_batch_id' => $batch->id, 'system_quantity' => 100, 'actual_quantity' => 98, 'unit_cost' => 50, 'uom_id' => $this->uom->id] + $extra;
+    $payload = fn (array $item) => ['adjustment_date' => now()->format('Y-m-d'), 'warehouse_id' => $this->warehouse->id, 'adjustment_type' => 'damage', 'reason' => 'x', 'items' => [$item]];
+
+    // Same as the current price: nothing is kept, so posting later can never put an old price back.
+    $this->put(route('stock-adjustments.update', $adjustment), $payload($line(['selling_price' => 80])))->assertRedirect();
+    expect($adjustment->items()->sole()->selling_price)->toBeNull();
+
+    $this->put(route('stock-adjustments.update', $adjustment), $payload($line(['selling_price' => 95])))->assertRedirect();
+    expect((float) $adjustment->items()->sole()->selling_price)->toBe(95.0);
+
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment->fresh());
+
+    expect($result['success'])->toBeTrue()
+        ->and((float) $batch->fresh()->selling_price)->toBe(95.0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $batch->id)->value('selling_price'))->toBe(95.0)
+        ->and(ProductPriceChangeLog::where('product_id', $this->product->id)->where('price_type', 'selling_price')->count())->toBe(1);
+});
+
+test('the all-batches tick sets the selling cost on every batch of the product when posted', function () {
+    $batch = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active', 'is_active' => true, 'selling_price' => 80, 'unit_cost' => 50]);
+    $other = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active', 'is_active' => true, 'selling_price' => 70, 'unit_cost' => 50]);
+    layerFor($batch, 100);
+    foreach ([[$batch, 100, 80], [$other, 10, 70]] as [$b, $qty, $price]) {
+        CurrentStockByBatch::create(['product_id' => $this->product->id, 'warehouse_id' => $this->warehouse->id, 'stock_batch_id' => $b->id, 'quantity_on_hand' => $qty, 'unit_cost' => 50, 'selling_price' => $price, 'total_value' => $qty * 50, 'status' => 'active']);
+    }
+    $adjustment = StockAdjustment::factory()->create(['warehouse_id' => $this->warehouse->id, 'adjustment_type' => 'damage', 'status' => 'draft']);
+
+    $this->put(route('stock-adjustments.update', $adjustment), [
+        'adjustment_date' => now()->format('Y-m-d'), 'warehouse_id' => $this->warehouse->id, 'adjustment_type' => 'damage', 'reason' => 'x',
+        'items' => [['product_id' => $this->product->id, 'stock_batch_id' => $batch->id, 'system_quantity' => 100, 'actual_quantity' => 98, 'unit_cost' => 50, 'selling_price' => 99, 'selling_scope' => 'all', 'uom_id' => $this->uom->id]],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(app(StockAdjustmentService::class)->postAdjustment($adjustment->fresh())['success'])->toBeTrue()
+        ->and((float) $other->fresh()->selling_price)->toBe(99.0)
+        ->and((float) $batch->fresh()->selling_price)->toBe(99.0)
+        ->and((float) $this->product->fresh()->unit_sell_price)->toBe(99.0);
 });

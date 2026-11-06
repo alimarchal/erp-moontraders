@@ -134,6 +134,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             'items.*.system_quantity' => 'required|numeric|min:0',
             'items.*.actual_quantity' => 'required|numeric|min:0',
             'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.selling_price' => 'nullable|numeric|min:0',
+            'items.*.selling_scope' => 'nullable|in:batch,all',
             'items.*.uom_id' => 'required|exists:uoms,id',
         ]);
 
@@ -143,6 +145,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         if ($error = $this->unconfirmedRevaluationError($request, $validated['items'])) {
             return redirect()->back()->with('error', $error)->withInput();
         }
+
+        $validated['items'] = $this->normalizeSellingCosts($validated['items']);
 
         foreach ($validated['items'] as &$item) {
             $item['adjustment_quantity'] = $item['actual_quantity'] - $item['system_quantity'];
@@ -205,7 +209,21 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             }
         }
 
-        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges, 'sellingPrices' => $sellingPrices, 'sellingChanges' => $sellingChanges]);
+        // A draft has not changed anything yet: show what posting will change.
+        $pending = [];
+        if ($stockAdjustment->status === 'draft') {
+            $batchCosts = StockBatch::query()->whereIn('id', $stockAdjustment->items->pluck('stock_batch_id'))->pluck('unit_cost', 'id');
+            foreach ($stockAdjustment->items as $item) {
+                $pending[$item->id] = [
+                    'selling' => $item->selling_price !== null && abs((float) $item->selling_price - (float) ($sellingPrices[$item->stock_batch_id] ?? 0)) > 0.004
+                        ? ['old' => (float) ($sellingPrices[$item->stock_batch_id] ?? 0), 'new' => (float) $item->selling_price, 'all' => $item->selling_scope === 'all'] : null,
+                    'cost' => abs((float) $item->unit_cost - (float) ($batchCosts[$item->stock_batch_id] ?? $item->unit_cost)) > 0.01
+                        ? ['old' => (float) $batchCosts[$item->stock_batch_id], 'new' => (float) $item->unit_cost] : null,
+                ];
+            }
+        }
+
+        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges, 'sellingPrices' => $sellingPrices, 'sellingChanges' => $sellingChanges, 'pending' => $pending]);
     }
 
     public function edit(StockAdjustment $stockAdjustment)
@@ -249,8 +267,12 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             'items.*.system_quantity' => 'required|numeric|min:0',
             'items.*.actual_quantity' => 'required|numeric|min:0',
             'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.selling_price' => 'nullable|numeric|min:0',
+            'items.*.selling_scope' => 'nullable|in:batch,all',
             'items.*.uom_id' => 'required|exists:uoms,id',
         ]);
+
+        $validated['items'] = $this->normalizeSellingCosts($validated['items']);
 
         foreach ($validated['items'] as &$item) {
             $item['adjustment_quantity'] = $item['actual_quantity'] - $item['system_quantity'];
@@ -326,6 +348,30 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             ->values();
 
         return response()->json($batches);
+    }
+
+    /**
+     * A selling cost is kept on a line only when it changes the batch's selling price (or is meant for all
+     * batches), so a draft never puts back an old price when it is posted later.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeSellingCosts(array $items): array
+    {
+        foreach ($items as &$item) {
+            $price = $item['selling_price'] ?? null;
+            $scope = ($item['selling_scope'] ?? 'batch') === 'all' ? 'all' : 'batch';
+            $filled = $price !== null && $price !== '';
+            $current = (float) StockBatch::whereKey($item['stock_batch_id'])->value('selling_price');
+            $keep = $filled && ($scope === 'all' || abs((float) $price - $current) > 0.004);
+
+            $item['selling_price'] = $keep ? $price : null;
+            $item['selling_scope'] = $keep ? $scope : 'batch';
+        }
+        unset($item);
+
+        return $items;
     }
 
     private function getUserSupplierScope(): ?int

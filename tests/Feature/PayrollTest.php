@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeeAdvance;
 use App\Models\EmployeeSalary;
@@ -240,4 +241,47 @@ it('has a recorded line source for every automatic slip line', function () {
         ->and(PayrollSlip::count())->toBe(1)
         ->and(Carbon::parse($run->period_month)->isSameMonth($this->month))->toBeTrue()
         ->and(PayrollRun::count())->toBe(1);
+});
+
+it('pays every employee of Moon Traders in one run whichever supplier they work for, shown supplier by supplier', function () {
+    $other = Supplier::factory()->create(['supplier_name' => 'Dalda Distribution']);
+    $colleague = Employee::factory()->create(['supplier_id' => $other->id, 'is_active' => true, 'name' => 'Zafar Driver']);
+    EmployeeSalary::create(['employee_id' => $colleague->id, 'salary_type' => 'fixed', 'basic_salary' => 25000, 'pay_method' => 'cash']);
+    $headOffice = Employee::factory()->create(['supplier_id' => null, 'is_active' => true, 'name' => 'Head Office Accountant']);
+    EmployeeSalary::create(['employee_id' => $headOffice->id, 'salary_type' => 'fixed', 'basic_salary' => 40000, 'pay_method' => 'bank']);
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin);
+
+    $run = app(PayrollService::class)->createRun(null, Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT'])->id, $this->month, $admin);
+
+    expect($run->slips)->toHaveCount(3)
+        ->and($run->supplier_id)->toBeNull()
+        ->and($run->ownerLabel())->toContain('(all employees)')
+        ->and((float) $run->total_net)->toBe((float) ($this->days * 1000 + 6000 + 25000 + 40000));
+
+    $this->get(route('payroll.show', $run))->assertOk()->assertSeeInOrder([$this->supplier->supplier_name, 'Imran Salesman'])->assertSee('Dalda Distribution')->assertSee('Moon Traders (head office)')->assertSee('Zafar Driver');
+});
+
+it('never lets one employee be paid twice for a month, between a run for all employees and a run for one supplier', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin);
+    $service = app(PayrollService::class);
+    $company = Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT']);
+
+    $service->createRun($this->supplier->id, null, $this->month, $admin);
+    expect(fn () => $service->createRun(null, $company->id, $this->month, $admin))->toThrow(RuntimeException::class, 'already been started');
+
+    PayrollRun::query()->delete();
+    $service->createRun(null, $company->id, $this->month, $admin);
+    expect(fn () => $service->createRun($this->supplier->id, null, $this->month, $admin))->toThrow(RuntimeException::class, 'or for all employees');
+    expect(fn () => $service->createRun(null, $company->id, $this->month, $admin))->toThrow(RuntimeException::class, 'already been started');
+});
+
+it('shows the all-employees payroll only to admins and holders of the all permission, not to a supplier\'s own users', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin);
+    $run = app(PayrollService::class)->createRun(null, Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT'])->id, $this->month, $admin);
+
+    $this->actingAs($this->checker)->get(route('payroll.show', $run))->assertNotFound();
+    $this->actingAs($admin)->get(route('payroll.show', $run))->assertOk();
 });

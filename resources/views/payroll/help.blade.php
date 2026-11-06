@@ -48,13 +48,13 @@
                     <div class="ev-cols" style="margin-top:12px">
                         <div class="ev-en" lang="en"><ol>
                             <li><b>Employee salaries</b>: for each employee set the salary type, the monthly amount and the allowances once.</li>
-                            <li><b>Run payroll</b>: choose the month and company. Every active employee with a salary gets a slip. Basic pay, allowances, the absent-day cut and the advance instalment are worked out for you.</li>
+                            <li><b>Run payroll</b>: choose the month. Leave the company on <b>Moon Traders (all employees)</b> to pay everyone in one payroll, shown supplier by supplier with a subtotal each, or choose one supplier to pay only its staff. Every active employee with a salary gets a slip. One employee can never be in two payrolls of the same month. Basic pay, allowances, the absent-day cut and the advance instalment are worked out for you.</li>
                             <li>Open an employee to <b>adjust</b>: enter absent days, or add overtime, incentive, bonus, a fine or tax for this month only.</li>
                             <li><b>Send for approval</b>. A different user approves; that posts the ledger entry. Then <b>Mark salaries as paid</b> by cash or bank.</li>
                         </ol></div>
                         <div class="ev-ur-col gh-rtl" dir="rtl" lang="ur"><ol>
                             <li><b>Employee salaries</b>: ہر ملازم کی تنخواہ کی قسم، ماہانہ رقم اور الاؤنسز ایک بار طے کریں۔</li>
-                            <li><b>Run payroll</b>: مہینہ اور کمپنی چنیں۔ تنخواہ والے ہر فعال ملازم کی سلپ بن جاتی ہے۔ بنیادی تنخواہ، الاؤنس، غیر حاضری کی کٹوتی اور ایڈوانس کی قسط خود حساب ہو جاتی ہے۔</li>
+                            <li><b>Run payroll</b>: مہینہ چنیں۔ کمپنی <b>"Moon Traders (all employees)"</b> پر رہنے دیں تو سب ملازمین کی تنخواہ ایک ہی payroll میں بنتی ہے (سپلائر کے حساب سے الگ الگ اور ہر ایک کا ذیلی کل)، یا ایک سپلائر چنیں تو صرف اسی کا عملہ۔ تنخواہ والے ہر فعال ملازم کی سلپ بن جاتی ہے۔ ایک ملازم ایک مہینے میں دو payroll میں نہیں آ سکتا۔ بنیادی تنخواہ، الاؤنس، غیر حاضری کی کٹوتی اور ایڈوانس کی قسط خود حساب ہو جاتی ہے۔</li>
                             <li>ملازم کھول کر <b>تبدیلی</b> کریں: غیر حاضر دن لکھیں، یا اس مہینے کے لیے اوور ٹائم، انسینٹو، بونس، جرمانہ یا ٹیکس شامل کریں۔</li>
                             <li><b>منظوری کے لیے بھیجیں</b>۔ کوئی دوسرا صارف منظور کرتا ہے تو لیجر میں اندراج ہو جاتا ہے۔ پھر نقد یا بینک سے <b>"تنخواہیں ادا"</b> کا نشان لگائیں۔</li>
                         </ol></div>

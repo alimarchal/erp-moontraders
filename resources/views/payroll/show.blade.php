@@ -5,6 +5,8 @@
     $step = ['draft' => 1, 'rejected' => 1, 'pending' => 2, 'approved' => 3, 'paid' => 4][$run->status] ?? 1;
     $editable = $run->isEditable() && $isMaker;
     $slips = $run->slips->sortBy(fn ($slip) => $slip->employee?->name);
+    // A payroll for all of Moon Traders is shown supplier by supplier (where each employee works), with a subtotal for each.
+    $groups = $run->supplier_id ? collect(['' => $slips]) : $slips->groupBy(fn ($slip) => $slip->employee?->supplier?->supplier_name ?? 'Moon Traders (head office)')->sortKeys();
     $fmt = fn ($value) => number_format((float) $value, 2);
 @endphp
 <x-app-layout>
@@ -29,6 +31,7 @@
         .pr-steps .dot { width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:2px solid var(--ak-border); background:#fff; font-size:12px; } .pr-steps li.is-done { color:#15803d; } .pr-steps li.is-done .dot { background:#16a34a; border-color:#16a34a; color:#fff; } .pr-steps li.is-now { color:var(--ak-navy); } .pr-steps li.is-now .dot { border-color:var(--ak-navy); color:var(--ak-navy); }
         .pr-kpis { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); } .pr-kpi { padding:14px 18px; } .pr-kpi small { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ak-muted); } .pr-kpi b { display:block; margin-top:3px; font-size:22px; font-variant-numeric:tabular-nums; }
         .pr-t { width:100%; border-collapse:collapse; font-size:13.5px; } .pr-t th { text-align:left; background:#f8fafc; padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ak-muted); border-bottom:1px solid var(--ak-border); } .pr-t td { padding:9px 12px; border-bottom:1px solid var(--ak-line); vertical-align:top; } .pr-t .n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+        .pr-group td { background:#eef2ff; color:#312e81; padding:8px 12px; border-top:2px solid #c7d2fe; }
         .pr-t .earn { color:#166534; } .pr-t .ded { color:#b91c1c; } .pr-t tfoot td { font-weight:800; background:#f8fafc; border-top:2px solid var(--ak-border); } .pr-detail td { background:#f8fafc; padding:14px 18px; }
         .pr-cols { display:grid; gap:18px; grid-template-columns:1fr; } @media (min-width:900px){ .pr-cols { grid-template-columns:1fr 1fr; } }
         .pr-col h4 { margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.04em; } .pr-col ul { margin:0; padding:0; list-style:none; } .pr-col li { display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px dashed var(--ak-border); font-size:13.5px; }
@@ -73,7 +76,11 @@
             <table class="pr-t" style="min-width:760px">
                 <thead><tr><th>Employee</th><th class="n">Absent</th><th class="n">Earnings</th><th class="n">Deductions</th><th class="n">Net pay</th><th></th></tr></thead>
                 <tbody>
-                    @foreach($slips as $slip)
+                    @foreach($groups as $groupName => $groupSlips)
+                    @if($groupName !== '')
+                        <tr class="pr-group"><td colspan="6"><b>{{ $groupName }}</b> <span class="ak-muted">· {{ $groupSlips->count() }} {{ \Illuminate\Support\Str::plural('employee', $groupSlips->count()) }} · earnings {{ $fmt($groupSlips->sum('total_earnings')) }} · deductions {{ $fmt($groupSlips->sum('total_deductions')) }} · net <b>{{ $fmt($groupSlips->sum('net_pay')) }}</b></span></td></tr>
+                    @endif
+                    @foreach($groupSlips as $slip)
                         <tr>
                             <td><b>{{ $slip->employee?->name }}</b><div class="ak-muted">{{ $slip->employee?->employee_code }}{{ $slip->employee?->designation ? ' · '.$slip->employee->designation : '' }}</div></td>
                             <td class="n">{{ (float) $slip->absent_days > 0 ? rtrim(rtrim(number_format((float) $slip->absent_days, 2), '0'), '.') : '—' }}</td>
@@ -117,6 +124,7 @@
                                 <div style="margin-top:10px"><a href="{{ route('payroll.slips.show', [$run, $slip]) }}" target="_blank" class="ak-primary-link">Open printable slip →</a></div>
                             </td>
                         </tr>
+                    @endforeach
                     @endforeach
                 </tbody>
                 <tfoot><tr><td colspan="2">Total</td><td class="n">{{ $fmt($run->total_earnings) }}</td><td class="n">{{ $fmt($run->total_deductions) }}</td><td class="n">{{ $fmt($run->total_net) }}</td><td></td></tr></tfoot>

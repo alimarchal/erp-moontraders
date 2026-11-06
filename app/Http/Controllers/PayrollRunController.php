@@ -78,7 +78,7 @@ class PayrollRunController extends Controller implements HasMiddleware
         $this->authorizeVisible($request, $payroll);
 
         return view('payroll.show', [
-            'run' => $payroll->load(['supplier', 'company', 'creator', 'checker', 'slips.employee', 'slips.lines', 'journalEntry', 'paymentJournalEntry', 'paidBankAccount']),
+            'run' => $payroll->load(['supplier', 'company', 'creator', 'checker', 'slips.employee.supplier', 'slips.lines', 'journalEntry', 'paymentJournalEntry', 'paidBankAccount']),
             'components' => SalaryComponent::active()->where('calculation', SalaryComponent::CALC_INPUT)->get(),
             'bankAccounts' => BankAccount::query()->where('is_active', true)->whereNotNull('chart_of_account_id')->orderBy('bank_name')->get(['id', 'bank_name', 'account_name', 'account_number']),
             'withoutSalary' => $this->service->employeesWithoutSalary($payroll->supplier_id),

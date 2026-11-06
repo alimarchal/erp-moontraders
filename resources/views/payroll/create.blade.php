@@ -21,8 +21,8 @@
                 <div class="ak-field"><label for="month">Month to pay</label><input id="month" type="month" name="month" required max="{{ now()->format('Y-m') }}" value="{{ old('month', $month) }}"></div>
                 <div class="ak-field ev-span-2">
                     <label for="owner">Company</label>
-                    <select id="owner" class="ev-select" name="owner" @if($isAdmin) data-clearable="1" data-placeholder="{{ $companies->first()?->company_name }} (own staff)" @else required @endif>
-                        @if($isAdmin)<option value=""></option>@foreach($companies as $company)<option value="company:{{ $company->id }}" @selected(old('owner') === 'company:'.$company->id)>{{ $company->company_name }} (own staff)</option>@endforeach @endif
+                    <select id="owner" class="ev-select" name="owner" @if($isAdmin) data-clearable="1" data-placeholder="{{ $companies->first()?->company_name }} (all employees)" @else required @endif>
+                        @if($isAdmin)<option value=""></option>@foreach($companies as $company)<option value="company:{{ $company->id }}" @selected(old('owner') === 'company:'.$company->id)>{{ $company->company_name }} (all employees)</option>@endforeach @endif
                         @foreach($suppliers as $supplier)<option value="supplier:{{ $supplier->id }}" @selected(old('owner') === 'supplier:'.$supplier->id || (! $isAdmin && $suppliers->count() === 1))>{{ $supplier->supplier_name }}</option>@endforeach
                     </select>
                 </div>

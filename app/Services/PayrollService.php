@@ -35,7 +35,8 @@ class PayrollService
     public function __construct(private AccountingService $accounting, private DocumentNumberService $numbers) {}
 
     /**
-     * Employees of the company who are active and have a salary set.
+     * Employees who are active and have a salary set. All of them work for Moon Traders: with no supplier given, every one
+     * of them is included (the whole payroll of Moon Traders in one run); with a supplier, only that supplier's staff.
      *
      * @return Collection<int, Employee>
      */
@@ -44,21 +45,21 @@ class PayrollService
         return Employee::query()
             ->where('is_active', true)
             ->whereHas('salary', fn ($query) => $query->where('basic_salary', '>', 0))
-            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId), fn ($query) => $query->whereNull('supplier_id'))
-            ->with(['salary', 'salaryComponents.component'])
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->with(['salary', 'salaryComponents.component', 'supplier:id,supplier_name,short_name'])
             ->orderBy('name')
             ->get();
     }
 
     /**
-     * @return Collection<int, Employee> active employees of the company that have no salary yet
+     * @return Collection<int, Employee> active employees without a salary yet (of one supplier, or everyone when none is given)
      */
     public function employeesWithoutSalary(?int $supplierId): Collection
     {
         return Employee::query()
             ->where('is_active', true)
             ->doesntHave('salary')
-            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId), fn ($query) => $query->whereNull('supplier_id'))
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
             ->orderBy('name')
             ->get(['id', 'name', 'employee_code', 'designation']);
     }
@@ -67,19 +68,22 @@ class PayrollService
     {
         $month = $month->copy()->startOfMonth();
 
-        $exists = PayrollRun::query()
-            ->whereDate('period_month', $month->toDateString())
-            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId), fn ($query) => $query->whereNull('supplier_id')->where('company_id', $companyId))
-            ->exists();
+        // One employee must never be paid twice for a month: a run for all employees (Moon Traders) excludes every other run
+        // of that month, and a run for one supplier's staff excludes a run for all employees and a second run of the same supplier.
+        $sameMonth = PayrollRun::query()->whereDate('period_month', $month->toDateString());
 
-        if ($exists) {
-            throw new RuntimeException('Salary for '.$month->format('F Y').' has already been started for this company.');
+        if ($supplierId === null && (clone $sameMonth)->exists()) {
+            throw new RuntimeException('Salary for '.$month->format('F Y').' has already been started, so it cannot be started again for all employees.');
+        }
+
+        if ($supplierId !== null && (clone $sameMonth)->where(fn ($query) => $query->where('supplier_id', $supplierId)->orWhereNull('supplier_id'))->exists()) {
+            throw new RuntimeException('Salary for '.$month->format('F Y').' has already been started for this supplier or for all employees.');
         }
 
         $employees = $this->payableEmployees($supplierId, $companyId);
 
         if ($employees->isEmpty()) {
-            throw new RuntimeException('No active employee of this company has a salary set up yet.');
+            throw new RuntimeException('No active employee has a salary set up yet.');
         }
 
         return DB::transaction(function () use ($supplierId, $companyId, $month, $employees) {

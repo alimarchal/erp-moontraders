@@ -1038,3 +1038,21 @@ test('a unit cost equal to the batch cost needs no confirmation', function () {
         ],
     ])->assertRedirect(route('stock-adjustments.show', $adjustment));
 });
+
+test('the draft edit page renders the shared form with the saved lines', function () {
+    $batch = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active']);
+    $adjustment = StockAdjustment::create([
+        'adjustment_number' => 'SA-EDIT-1', 'adjustment_date' => now(), 'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'damage', 'reason' => 'Rack collapsed', 'status' => 'draft', 'created_by' => $this->user->id,
+    ]);
+    $adjustment->items()->create([
+        'product_id' => $this->product->id, 'stock_batch_id' => $batch->id, 'system_quantity' => 10, 'actual_quantity' => 8,
+        'adjustment_quantity' => -2, 'unit_cost' => 50, 'adjustment_value' => -100, 'uom_id' => $this->uom->id,
+    ]);
+
+    $this->get(route('stock-adjustments.edit', $adjustment))
+        ->assertSuccessful()
+        ->assertSee('id="sa-form"', false)
+        ->assertSee('Rack collapsed')
+        ->assertSee($batch->batch_code);
+});

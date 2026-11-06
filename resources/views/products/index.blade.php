@@ -37,6 +37,7 @@
     $advancedCount = collect(['brand', 'valuation_method', 'is_powder'])->filter(fn ($k) => isset($filters[$k]))->count();
     $sortNames = ['product_name' => 'Name', 'product_code' => 'Code', 'brand' => 'Brand', 'unit_sell_price' => 'Selling price', 'cost_price' => 'Cost price'];
     $sortField = ltrim($sort, '-');
+    $activeFilterCount = count($chips);
     $authUser = auth()->user();
     $canDeactivate = $authUser->can('product-delete');
 @endphp
@@ -52,7 +53,13 @@
                 <p class="ak-sub">SKUs you buy, stock and sell.</p>
             </div>
             <div class="ak-head-actions">
-                <a href="{{ route('settings.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('pl-toggle-filters')" aria-controls="pl-filter-panel" title="Show or hide the filters">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+                </button>
+                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh" aria-label="Refresh">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356M2.985 19.644v-4.992h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" /></svg>
+                </a>
                 <a href="{{ route('products.help') }}" class="ak-btn ak-btn-outline" title="How products and carton packaging work">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <a href="{{ route('products.export.excel', request()->query()) }}" class="ak-btn ak-btn-outline">Export Excel</a>
                 @can('product-create')
@@ -65,38 +72,34 @@
 
     @include('settings.partials.ui-style')
     @include('settings.partials.select2-init')
+    <style>
+        #pl-filter-panel { overflow: hidden; }
+        .pl-table { min-width: 760px; }
+        .pl-table > tbody > tr > td { border-bottom: 1px solid #e5e7eb; }
+        .pl-table > tbody > tr:last-child > td { border-bottom: 0; }
+        .pl-table > tbody > tr:hover > td { background: #f1f5f9; }
+        .pl-table .ak-primary-link, .pl-table td.ak-mono { white-space: nowrap; }
+        .pl-table .ak-actions { grid-template-columns: repeat(3, 32px); }
+        .pl-inactive > td:first-child { box-shadow: inset 3px 0 0 #94a3b8; }
+        .pl-inactive > td { background: #f8fafc; color: #64748b; }
+        @media (min-width: 768px) { .pl-table th.ak-num, .pl-table td.ak-num { min-width: 104px; padding-left: 26px; } }
+        .ak-dt-scroll { max-height: calc(100vh - 190px); min-height: 18rem; }
+        section[aria-label="Products"] > .ak-tabs { position: sticky; top: 0; z-index: 25; background: #fff; border-radius: var(--ak-radius) var(--ak-radius) 0 0; }
+        .ak-kpis { gap: 10px; }
+        .ak-kpis .ak-kpi { padding: 10px 14px; gap: 10px; align-items: center; }
+        .ak-kpis .ak-kpi-icon { width: 34px; height: 34px; }
+        .ak-kpis .ak-kpi-icon svg { width: 18px; height: 18px; }
+        .ak-kpis .ak-kpi-value { font-size: 19px; }
+        .ak-kpis .ak-kpi-label { font-size: 12px; }
+        .ak-kpis .ak-kpi-hint { font-size: 11.5px; }
+        .ak-filters .select2-container { width: 100% !important; display: block; }
+        @media print { .ak-filters, .ak-tabs { display: none !important; } .pl-table { min-width: 0 !important; } }
+    </style>
 
     <div class="ak-page" x-data="productList()">
         <x-status-message />
 
-        <section class="ak-kpis" aria-label="Product summary" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
-            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.35M3.75 21V9.35m0 0a3 3 0 0 0 3.75-.62A3 3 0 0 0 12 9.35a3 3 0 0 0 4.5-.62 3 3 0 0 0 3.75.62M3.75 9.35 5.25 3h13.5l1.5 6.35" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Products</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['total']) }}</span>
-                    <span class="ak-kpi-hint">{{ $chips ? 'matching the filters' : 'all SKUs' }}</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('1') }}" class="ak-kpi{{ $tab === '1' ? ' is-active' : '' }}">
-                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Active</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['active']) }}</span>
-                    <span class="ak-kpi-hint">{{ number_format($stats['inactive']) }} inactive</span>
-                </span>
-            </a>
-        </section>
-
-        <section class="ak-card" aria-label="Products">
-            <div class="ak-tabs" role="tablist">
-                @foreach (['' => ['All', $stats['total']], '1' => ['Active', $stats['active']], '0' => ['Inactive', $stats['inactive']]] as $key => [$label, $count])
-                    <a href="{{ $tabUrl((string) $key) }}" role="tab" aria-selected="{{ $tab === (string) $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === (string) $key ? 'is-active' : '' }}">
-                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
-                    </a>
-                @endforeach
-            </div>
-
+        <section id="pl-filter-panel" class="ak-card" aria-label="Filters" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @pl-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
             <form method="GET" action="{{ route('products.index') }}" class="ak-filters"
                 x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
                 @if ($tab !== '') <input type="hidden" name="filter[is_active]" value="{{ $tab }}"> @endif
@@ -109,6 +112,7 @@
                             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
                             <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
                                 placeholder="Name, code, brand or barcode" x-ref="search"
+                                @keydown.window.f="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $dispatch('pl-toggle-filters'); }"
                                 @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $refs.search.focus(); }">
                             <kbd aria-hidden="true">/</kbd>
                         </div>
@@ -173,6 +177,36 @@
                     </div>
                 </div>
             </form>
+        </section>
+
+        <section class="ak-kpis" aria-label="Product summary" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+            <a href="{{ $tabUrl('') }}" class="ak-kpi{{ $tab === '' ? ' is-active' : '' }}">
+                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.35M3.75 21V9.35m0 0a3 3 0 0 0 3.75-.62A3 3 0 0 0 12 9.35a3 3 0 0 0 4.5-.62 3 3 0 0 0 3.75.62M3.75 9.35 5.25 3h13.5l1.5 6.35" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Products</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['total']) }}</span>
+                    <span class="ak-kpi-hint">{{ $chips ? 'matching the filters' : 'all SKUs' }}</span>
+                </span>
+            </a>
+            <a href="{{ $tabUrl('1') }}" class="ak-kpi{{ $tab === '1' ? ' is-active' : '' }}">
+                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
+                <span class="ak-kpi-body">
+                    <span class="ak-kpi-label">Active</span>
+                    <span class="ak-kpi-value">{{ number_format($stats['active']) }}</span>
+                    <span class="ak-kpi-hint">{{ number_format($stats['inactive']) }} inactive</span>
+                </span>
+            </a>
+        </section>
+
+        <section class="ak-card" aria-label="Products">
+            <div class="ak-tabs" role="tablist">
+                @foreach (['' => ['All', $stats['total']], '1' => ['Active', $stats['active']], '0' => ['Inactive', $stats['inactive']]] as $key => [$label, $count])
+                    <a href="{{ $tabUrl((string) $key) }}" role="tab" aria-selected="{{ $tab === (string) $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === (string) $key ? 'is-active' : '' }}">
+                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
+                    </a>
+                @endforeach
+            </div>
+
 
             @if ($chips)
                 <div class="ak-chips" aria-label="Active filters">
@@ -187,30 +221,37 @@
             @endif
 
             @if ($products->count() > 0)
-                <div class="ak-table-wrap">
+                <div class="ak-table-wrap" x-data="{
+                        compact: (() => { try { return localStorage.getItem('pl-density') !== 'comfortable'; } catch (e) { return true; } })(),
+                        setDensity(v) { this.compact = v; try { localStorage.setItem('pl-density', v ? 'compact' : 'comfortable'); } catch (e) {} }
+                    }">
                     <div class="ak-dt-toolbar">
                         <p>
                             <b>{{ number_format($products->total()) }}</b> {{ \Illuminate\Support\Str::plural('product', $products->total()) }}
                             &middot; sorted by <b>{{ $sortNames[$sortField] ?? 'Name' }}</b> ({{ str_starts_with($sort, '-') ? 'Z–A / high first' : 'A–Z / low first' }})
                         </p>
+                        <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
+                            <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
+                            <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>
+                        </div>
                     </div>
-                    <div class="ak-dt-scroll" tabindex="0" aria-label="Products table">
-                        <table class="ak-dt">
+                    <div class="ak-dt-scroll" :class="compact && 'is-compact'" tabindex="0" aria-label="Products table">
+                        <table class="ak-dt pl-table">
                             <caption class="sr-only">Products, {{ $products->total() }} results</caption>
                             <thead>
                                 <tr>
                                     <th scope="col" class="ak-c">#</th>
                                     <th scope="col" aria-sort="{{ $ariaSort('product_name') }}"><a href="{{ $sortUrl('product_name') }}">Product <span aria-hidden="true">{{ $sortMark('product_name') }}</span></a></th>
                                     <th scope="col">Supplier &amp; UOM</th>
-                                    <th scope="col" class="ak-c" aria-sort="{{ $ariaSort('cost_price') }}"><a href="{{ $sortUrl('cost_price') }}">Cost <span aria-hidden="true">{{ $sortMark('cost_price') }}</span></a></th>
-                                    <th scope="col" class="ak-c" aria-sort="{{ $ariaSort('unit_sell_price') }}"><a href="{{ $sortUrl('unit_sell_price') }}">Selling <span aria-hidden="true">{{ $sortMark('unit_sell_price') }}</span></a></th>
+                                    <th scope="col" class="ak-num" aria-sort="{{ $ariaSort('cost_price') }}"><a href="{{ $sortUrl('cost_price') }}">Cost <span aria-hidden="true">{{ $sortMark('cost_price') }}</span></a></th>
+                                    <th scope="col" class="ak-num" aria-sort="{{ $ariaSort('unit_sell_price') }}"><a href="{{ $sortUrl('unit_sell_price') }}">Selling <span aria-hidden="true">{{ $sortMark('unit_sell_price') }}</span></a></th>
                                     <th scope="col">Status</th>
-                                    <th scope="col" class="ak-c"><span class="sr-only">Actions</span></th>
+                                    <th scope="col" class="ak-sticky-end no-print" style="text-align:right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($products as $product)
-                                    <tr>
+                                    <tr class="{{ $product->is_active ? '' : 'pl-inactive' }}">
                                         <td class="ak-c" data-label=""><span class="ak-muted">{{ $products->firstItem() + $loop->index }}</span></td>
                                         <td data-label="Product">
                                             <a href="{{ route('products.show', $product) }}" class="ak-primary-link">{{ $product->product_name }}</a>
@@ -220,8 +261,8 @@
                                             <div>{{ $product->supplier?->supplier_name ?? '—' }}</div>
                                             <div class="ak-muted">{{ $product->uom?->uom_name ?? '—' }}@if ($product->salesUom) → {{ $product->salesUom->uom_name }}@endif</div>
                                         </td>
-                                        <td class="ak-c ak-mono" data-label="Cost">{{ number_format((float) $product->cost_price, 2) }}</td>
-                                        <td class="ak-c ak-mono ak-strong" data-label="Selling">{{ number_format((float) $product->unit_sell_price, 2) }}</td>
+                                        <td class="ak-num" data-label="Cost">{{ number_format((float) $product->cost_price, 2) }}</td>
+                                        <td class="ak-num ak-strong" data-label="Selling">{{ number_format((float) $product->unit_sell_price, 2) }}</td>
                                         <td data-label="Status">
                                             @if ($product->is_active)
                                                 <span class="ak-status ak-status-green"><i aria-hidden="true"></i>Active</span>
@@ -230,7 +271,7 @@
                                             @endif
                                             @if ($product->is_powder) <span class="ak-pill">Powder</span> @endif
                                         </td>
-                                        <td data-label="">
+                                        <td class="ak-sticky-end no-print" data-label="">
                                             <div class="ak-actions">
                                                 <a href="{{ route('products.show', $product) }}" class="ak-icon ak-icon-view" title="View product" aria-label="View {{ $product->product_name }}">
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>

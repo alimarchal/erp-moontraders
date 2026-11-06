@@ -257,9 +257,9 @@ class TicketController extends Controller implements HasMiddleware
             ->where('csb.warehouse_id', $warehouse->id)
             ->where('csb.quantity_on_hand', '>', 0)
             ->where('sb.status', 'active')
-            ->groupBy('sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.unit_cost')
+            ->groupBy('sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.unit_cost', 'sb.selling_price')
             ->orderBy('sb.expiry_date')
-            ->get(['sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.unit_cost', DB::raw('SUM(csb.quantity_on_hand) as quantity')]);
+            ->get(['sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.unit_cost', 'sb.selling_price', DB::raw('SUM(csb.quantity_on_hand) as quantity')]);
 
         return response()->json($batches);
     }

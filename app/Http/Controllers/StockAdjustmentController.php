@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Models\StockBatch;
@@ -133,7 +134,27 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         $this->authorizeAdjustmentAccess($stockAdjustment);
         $stockAdjustment->load(['warehouse', 'items.product', 'items.stockBatch', 'items.uom', 'journalEntry', 'createdBy', 'postedBy']);
 
-        return view('stock-adjustments.show', compact('stockAdjustment'));
+        // A posted line whose unit cost changed has a zero-quantity inventory ledger row carrying the
+        // revaluation, so the cost the batch was carried at before is: new cost - revaluation / quantity.
+        $costChanges = [];
+        if ($stockAdjustment->status === 'posted') {
+            $revaluations = InventoryLedgerEntry::query()
+                ->where('stock_adjustment_id', $stockAdjustment->id)
+                ->where('debit_qty', 0)->where('credit_qty', 0)
+                ->get(['stock_batch_id', 'total_value'])
+                ->groupBy('stock_batch_id');
+
+            foreach ($stockAdjustment->items as $item) {
+                $revaluation = (float) ($revaluations[$item->stock_batch_id]->sum('total_value') ?? 0);
+                $quantity = (float) $item->system_quantity;
+
+                if (abs($revaluation) > 0.004 && $quantity > 0) {
+                    $costChanges[$item->id] = ['old' => (float) $item->unit_cost - $revaluation / $quantity, 'new' => (float) $item->unit_cost, 'value' => $revaluation];
+                }
+            }
+        }
+
+        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges]);
     }
 
     public function edit(StockAdjustment $stockAdjustment)

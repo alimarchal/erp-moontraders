@@ -160,12 +160,16 @@
         .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
         .gl-table > tbody > tr:not(.gl-lines) > td { border-bottom: 1px solid #e5e7eb; }
         .gl-table > tbody:last-of-type > tr:last-child > td { border-bottom: 0; }
-        .gl-toggle { border: 0; background: none; padding: 0 4px 0 0; color: var(--ak-muted); cursor: pointer; font-size: 11px; vertical-align: 1px; }
-        .gl-toggle:hover { color: var(--ak-navy); }
-        .gl-lines td { background: #f8fafc !important; padding-top: 4px !important; padding-bottom: 10px !important; }
-        .gl-lines table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-        .gl-lines th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); padding: 4px 8px; border-bottom: 1px solid var(--ak-line); background: transparent !important; position: static !important; }
-        .gl-lines td td { padding: 3px 8px !important; border-bottom: 1px solid #eef2f7; background: transparent !important; }
+.gl-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin-right: 8px; height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid #94a3b8; border-radius: 6px; background: #fff; color: var(--ak-navy); font-size: 12px; font-weight: 600; cursor: pointer; vertical-align: middle; }
+        .gl-toggle:hover, .gl-toggle[aria-expanded="true"] { background: var(--ak-navy); border-color: var(--ak-navy); color: #fff; }
+        .gl-toggle svg { width: 14px; height: 14px; transition: transform .15s; }
+        .gl-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+        .gl-lines > td { background: #f1f5f9 !important; padding: 0 !important; border-bottom: 1px solid #cbd5e1; }
+        .gl-lines-panel { margin: 10px 16px 14px 56px; padding: 12px 16px; background: #fff; border: 1px solid #cbd5e1; border-left: 4px solid var(--ak-navy); border-radius: 8px; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+        .gl-lines-title { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--ak-navy); }
+        .gl-lines table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .gl-lines th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); padding: 6px 10px; border-bottom: 2px solid var(--ak-line); background: transparent !important; position: static !important; }
+        .gl-lines td td { padding: 6px 10px !important; border-bottom: 1px solid #eef2f7; background: transparent !important; }
         @media print {
             .gl-ranges, .ak-filters, .ak-tabs { display: none !important; }
             .gl-table { min-width: 0 !important; }
@@ -362,7 +366,7 @@
                                     <tr class="{{ $gi->status === 'draft' ? 'gl-draft' : '' }}">
                                         <td data-label="Issue">
                                             @if ($canPeek)
-                                                <button type="button" class="gl-toggle" @click="open = !open" :aria-expanded="open" aria-label="Show lines of {{ $gi->issue_number }}" title="Show lines"><span x-text="open ? '▾' : '▸'">▸</span></button>
+                                                <button type="button" class="gl-toggle" @click="open = !open" :aria-expanded="open" aria-label="Show lines of {{ $gi->issue_number }}" title="Show or hide the products on this issue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg><span>{{ $gi->items->count() }}</span></button>
                                             @endif
                                             <a href="{{ route('goods-issues.show', $gi) }}" class="ak-primary-link" title="{{ $gi->issue_number }}">{{ $shortGi($gi->issue_number) }}</a>
                                             <div class="ak-muted gl-nw" title="Issued by {{ $gi->issuedBy->name ?? '' }}">by {{ \Illuminate\Support\Str::limit($gi->issuedBy->name ?? '—', 14) }}</div>
@@ -451,6 +455,8 @@
                                     @if ($canPeek)
                                         <tr class="gl-lines" x-show="open" x-cloak>
                                             <td colspan="10">
+                                                <div class="gl-lines-panel">
+                                                <p class="gl-lines-title">Products on {{ $gi->issue_number }}</p>
                                                 <table>
                                                     <thead><tr><th>#</th><th>Product</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Value (Rs)</th></tr></thead>
                                                     <tbody>
@@ -465,6 +471,7 @@
                                                         @endforeach
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endif

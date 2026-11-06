@@ -288,7 +288,7 @@ function withUnitCost(array $payload, float $unitCost): array
 {
     $payload['items'][0]['unit_cost'] = $unitCost;
 
-    return $payload;
+    return $payload + ['confirm_cost_change' => 1, 'password' => 'password'];
 }
 
 it('accepts a unit-cost-only line (counted equals system) and rejects one that changes nothing', function () {
@@ -350,5 +350,35 @@ it('approving a unit-cost-only ticket revalues the batch exactly like the Stock 
 
 it('shows the cost-only hint on the stock adjustment form', function () {
     $this->actingAs($this->companyUser)->get(route('tickets.create', ['type' => 'stock_adjustment']))
-        ->assertOk()->assertSee('To change only the unit cost', false);
+        ->assertOk()->assertSee('To change only the selling cost or the unit cost', false);
+});
+
+it('refuses a changed unit cost without the tick and the user\'s own password', function () {
+    $stock = adjustableStock($this);
+    $this->actingAs($this->companyUser);
+    $payload = ['type' => 'stock_adjustment', 'title' => 'cost'] + adjustmentPayload($this, $stock, 100);
+    $payload['items'][0]['unit_cost'] = 60;
+
+    $this->post(route('tickets.store'), $payload)->assertSessionHasErrors(['confirm_cost_change', 'password']);
+    $this->post(route('tickets.store'), $payload + ['confirm_cost_change' => 1, 'password' => 'wrong'])->assertSessionHasErrors('password')->assertSessionDoesntHaveErrors('confirm_cost_change');
+    expect(Ticket::count())->toBe(0);
+});
+
+it('updates only the batch selling price when just the selling cost changes, with no password needed', function () {
+    $stock = adjustableStock($this);
+    $stock['batch']->update(['selling_price' => 80]);
+    CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['selling_price' => 80]);
+
+    $payload = ['type' => 'stock_adjustment', 'title' => 'selling'] + adjustmentPayload($this, $stock, 100);
+    $payload['items'][0]['selling_price'] = 95;
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)->assertSessionHasNoErrors()->assertRedirect();
+    $ticket = Ticket::firstWhere('title', 'selling');
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertRedirect();
+
+    expect((float) $stock['batch']->fresh()->selling_price)->toBe(95.0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('selling_price'))->toBe(95.0)
+        ->and(StockAdjustment::count())->toBe(0)
+        ->and($ticket->fresh()->status)->toBe(TicketStatus::Approved);
 });

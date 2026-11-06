@@ -116,7 +116,7 @@
                             </div>
                             <div class="ak-dt-scroll">
                                 <table class="ak-dt" style="min-width:0">
-                                    <thead><tr><th>Product</th><th>Batch</th><th class="ak-num">System</th><th class="ak-num">Counted</th><th class="ak-num">Difference</th><th class="ak-num">Unit cost</th><th class="ak-num">Value</th></tr></thead>
+                                    <thead><tr><th>Product</th><th>Batch</th><th class="ak-num">System</th><th class="ak-num">Counted</th><th class="ak-num">Difference</th><th class="ak-num">Selling cost</th><th class="ak-num">Unit cost</th><th class="ak-num">Value</th></tr></thead>
                                     <tbody>
                                         @foreach ($lines as $line)
                                             <tr>
@@ -125,13 +125,14 @@
                                                 <td class="ak-num ak-muted">{{ number_format((float) $line['system_quantity'], 3) }}</td>
                                                 <td class="ak-num">{{ number_format((float) $line['actual_quantity'], 3) }}</td>
                                                 <td class="ak-num {{ $line['adjustment_quantity'] > 0 ? 'tk-up' : ($line['adjustment_quantity'] < 0 ? 'tk-down' : 'tk-flat') }}">{{ $signed($line['adjustment_quantity']) }}</td>
+                                                <td class="ak-num">{{ isset($line['selling_price']) && $line['selling_price'] !== '' && $line['selling_price'] !== null ? $money($line['selling_price']) : '—' }}</td>
                                                 <td class="ak-num">{{ $money($line['unit_cost']) }}</td>
                                                 @php $lineValue = $line['adjustment_value'] + ($line['revaluation_value'] ?? 0); @endphp
                                                 <td class="ak-num ak-strong {{ $lineValue < 0 ? 'tk-down' : 'tk-up' }}">{{ $signed($lineValue) }}@if (abs($line['adjustment_quantity']) < 0.0005 && ! empty($line['revaluation_value'])) <small class="ak-muted">cost only</small>@endif</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
-                                    <tfoot><tr><td colspan="6" class="ak-strong">Total value</td><td class="ak-num ak-strong">{{ $signed($lines->sum('adjustment_value') + $lines->sum('revaluation_value')) }}</td></tr></tfoot>
+                                    <tfoot><tr><td colspan="7" class="ak-strong">Total value</td><td class="ak-num ak-strong">{{ $signed($lines->sum('adjustment_value') + $lines->sum('revaluation_value')) }}</td></tr></tfoot>
                                 </table>
                             </div>
                             @if ($ticket->isPending())

@@ -109,7 +109,7 @@ class TicketService
                     TicketType::PriceUpdate => $this->applyPriceUpdate($item, $admin),
                     TicketType::NewSku => $this->applyNewSku($item),
                     TicketType::ReactivateSku => $this->applyStatusChange($item),
-                    TicketType::StockAdjustment => $postedAdjustment = $this->applyStockAdjustment($item),
+                    TicketType::StockAdjustment => $postedAdjustment = $this->applyStockAdjustment($item) ?? '',
                     TicketType::LedgerEntry => $created = $this->applyLedgerEntry($item),
                     TicketType::ClaimEntry => $created = $this->applyClaimEntry($item),
                     TicketType::NewCustomer => $created = $this->applyNewCustomer($item),
@@ -121,7 +121,7 @@ class TicketService
             }
 
             if (isset($postedAdjustment)) {
-                $remarks = trim(($remarks ? $remarks.' — ' : '')."Stock adjustment {$postedAdjustment} created and posted.");
+                $remarks = trim(($remarks ? $remarks.' — ' : '').($postedAdjustment === '' ? 'Selling costs updated.' : "Stock adjustment {$postedAdjustment} created and posted."));
             }
 
             $this->close($ticket, $admin, TicketStatus::Approved, $remarks);
@@ -381,6 +381,20 @@ class TicketService
     }
 
     /**
+     * Whether a line's selling cost differs from the batch's current selling price (blank = leave unchanged).
+     */
+    public static function sellingPriceChanged(int $stockBatchId, mixed $sellingPrice): bool
+    {
+        if ($sellingPrice === null || $sellingPrice === '') {
+            return false;
+        }
+
+        $current = (float) DB::table('stock_batches')->where('id', $stockBatchId)->value('selling_price');
+
+        return abs((float) $sellingPrice - $current) > 0.004;
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $lines
      * @return Collection<int, array<string, mixed>>
      */
@@ -399,6 +413,10 @@ class TicketService
                 $line['revaluation_value'] = 0.0;
             }
 
+            $line['old_unit_cost'] = self::batchCost((int) $line['stock_batch_id'], $warehouseId);
+            $line['old_selling_price'] = (float) DB::table('stock_batches')->where('id', $line['stock_batch_id'])->value('selling_price');
+            $line['selling_changed'] = self::sellingPriceChanged((int) $line['stock_batch_id'], $line['selling_price'] ?? null);
+
             return $line;
         })->values();
     }
@@ -408,17 +426,33 @@ class TicketService
      * Stock Adjustments screen uses (stock movements, valuation layers, current stock, journal entry).
      * System quantities are refreshed first, so a count taken against old stock cannot post a wrong difference.
      *
-     * @return string the posted adjustment number
+     * @return string|null the posted adjustment number (null when only selling costs changed)
      */
-    private function applyStockAdjustment(TicketItem $item): string
+    private function applyStockAdjustment(TicketItem $item): ?string
     {
         $payload = $item->payload;
         $service = app(StockAdjustmentService::class);
 
-        $lines = $this->adjustmentLines((int) $payload['warehouse_id'], $payload['items'])
+        $allLines = $this->adjustmentLines((int) $payload['warehouse_id'], $payload['items']);
+
+        // Selling cost changes go to the batch, its current-stock rows and live GRN lines, with a price log.
+        foreach ($allLines->where('selling_changed', true) as $line) {
+            $product = Product::query()->findOrFail($line['product_id']);
+            $batchIds = collect([(int) $line['stock_batch_id']]);
+            $this->pricing->cascadeSellingPrice($product, $line['selling_price'], $batchIds);
+            $this->pricing->logChange($product, 'selling_price', $line['old_selling_price'], $line['selling_price'], auth()->id(), $batchIds);
+        }
+
+        $lines = $allLines
             ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005 && $line['revaluation_value'] == 0.0)
-            ->map(fn (array $line) => Arr::except($line, 'revaluation_value'))
+            ->map(fn (array $line) => Arr::except($line, ['revaluation_value', 'selling_price', 'old_selling_price', 'old_unit_cost', 'selling_changed']))
             ->values();
+
+        if ($lines->isEmpty() && $allLines->contains('selling_changed', true)) {
+            $item->update(['payload' => $payload + ['stock_adjustment_id' => null, 'stock_adjustment_number' => null]]);
+
+            return null;
+        }
 
         if ($lines->isEmpty()) {
             throw ValidationException::withMessages(['ticket' => 'Stock has moved since the count: the counted quantities and unit costs now match the system, so there is nothing left to adjust.']);

@@ -36,6 +36,7 @@ use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\SalesSettlementRevertService;
 use App\Services\SettlementAttachmentService;
+use App\Sorts\NetProfitSort;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,7 +48,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\Sorts\NetProfitSort;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -149,8 +149,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }),
             AllowedFilter::exact('created_by'),
             AllowedFilter::exact('supplier_id'),
-            AllowedFilter::scope('settlement_date_from'),
-            AllowedFilter::scope('settlement_date_to'),
+            // Unposted drafts ignore the date range so a back-dated draft is never hidden from its owner.
+            AllowedFilter::callback('settlement_date_from', fn ($query, $value) => $query->where(fn ($q) => $q
+                ->where('sales_settlements.settlement_date', '>=', $value)
+                ->orWhere('sales_settlements.status', 'draft'))),
+            AllowedFilter::callback('settlement_date_to', fn ($query, $value) => $query->where(fn ($q) => $q
+                ->where('sales_settlements.settlement_date', '<=', $value)
+                ->orWhere('sales_settlements.status', 'draft'))),
             AllowedFilter::callback('product_id', function ($query, $value) {
                 $query->whereHas('items', function ($q) use ($value) {
                     $q->where('product_id', $value);
@@ -253,6 +258,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'draft_sales' => $draftSales,
         ];
 
+        // Every unposted draft this user can see, whatever the date or filters, for the red alert.
+        $draftAlert = $visible()->where('sales_settlements.status', 'draft')
+            ->selectRaw('COUNT(*) as drafts, MIN(settlement_date) as oldest')
+            ->first();
+
         // Vans loaded but not settled yet (any date), for the "waiting" card.
         $waitingVans = GoodsIssue::query()
             ->where('status', 'issued')
@@ -299,6 +309,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'settlements' => $settlements,
             'totals' => $totals,
             'stats' => $stats,
+            'draftAlert' => $draftAlert,
             'waitingVans' => $waitingVans,
             'bySalesman' => $bySalesman,
             'perPage' => $perPage,

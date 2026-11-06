@@ -35,7 +35,7 @@ class StoreCompanyTargetRequest extends FormRequest
         $supplierId = (int) $this->input('supplier_id');
 
         return [
-            'supplier_id' => ['required', 'integer', Rule::exists('suppliers', 'id')->where('disabled', false)],
+            'supplier_id' => ['required', 'integer', Rule::exists('suppliers', 'id')->using(fn ($query) => $query->where('disabled', false))],
             'period_start' => ['required', 'date'],
             'period_end' => ['required', 'date', 'after_or_equal:period_start'],
             'notes' => ['nullable', 'string', 'max:2000'],

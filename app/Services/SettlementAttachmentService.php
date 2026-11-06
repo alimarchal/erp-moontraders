@@ -91,6 +91,8 @@ class SettlementAttachmentService
      */
     public function store(UploadedFile $file, string $settlementNumber, string $section): string
     {
+        $file = app(AttachmentImageOptimizer::class)->optimize($file);
+
         $folder = config('settlement_attachments.root_folder').'/'.$settlementNumber.'/'.self::SECTIONS[$section];
         $name = hash('sha256', Str::uuid()->toString().$file->getClientOriginalName()).'.'.strtolower($file->getClientOriginalExtension());
 

@@ -1,9 +1,16 @@
 @if (session('success'))
-<div {{ $attributes->merge(['class' => 'bg-green-100 border-l-4 border-green-500 text-green-700 p-4 max-w-7xl mx-auto
-    sm:px-6 lg:px-8 mb-2 shadow-xl']) }}
+@php
+    // One look for every page: delete / deactivate = red, edit / update = orange, everything else = green.
+    $statusTone = match (true) {
+        (bool) preg_match('/delet|deactivat|inactiv|remov|cancel/i', (string) session('success')) => ['bg-red-100 border-red-500 text-red-700', 'Done'],
+        (bool) preg_match('/updat|edit|chang|saved/i', (string) session('success')) => ['bg-orange-100 border-orange-500 text-orange-700', 'Updated'],
+        default => ['bg-green-100 border-green-500 text-green-700', 'Success'],
+    };
+@endphp
+<div {{ $attributes->merge(['class' => $statusTone[0].' border-l-4 p-4 w-full max-w-7xl mx-auto mb-4 shadow-md']) }}
     data-status-sound="success"
     role="alert">
-    <p class="font-bold">Success</p>
+    <p class="font-bold">{{ $statusTone[1] }}</p>
     <p>{{ session('success') }}</p>
 </div>
 @endif

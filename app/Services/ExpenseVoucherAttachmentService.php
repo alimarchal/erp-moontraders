@@ -63,7 +63,10 @@ class ExpenseVoucherAttachmentService
         $stored = [];
 
         try {
-            foreach ($files as $file) {
+            $optimizer = app(AttachmentImageOptimizer::class);
+
+            foreach ($files as $original) {
+                $file = $optimizer->optimize($original);
                 $path = $this->store($file, $voucher->voucher_date);
                 $stored[] = $path;
 

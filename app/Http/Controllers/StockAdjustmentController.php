@@ -209,7 +209,21 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             }
         }
 
-        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges, 'sellingPrices' => $sellingPrices, 'sellingChanges' => $sellingChanges]);
+        // A draft has not changed anything yet: show what posting will change.
+        $pending = [];
+        if ($stockAdjustment->status === 'draft') {
+            $batchCosts = StockBatch::query()->whereIn('id', $stockAdjustment->items->pluck('stock_batch_id'))->pluck('unit_cost', 'id');
+            foreach ($stockAdjustment->items as $item) {
+                $pending[$item->id] = [
+                    'selling' => $item->selling_price !== null && abs((float) $item->selling_price - (float) ($sellingPrices[$item->stock_batch_id] ?? 0)) > 0.004
+                        ? ['old' => (float) ($sellingPrices[$item->stock_batch_id] ?? 0), 'new' => (float) $item->selling_price, 'all' => $item->selling_scope === 'all'] : null,
+                    'cost' => abs((float) $item->unit_cost - (float) ($batchCosts[$item->stock_batch_id] ?? $item->unit_cost)) > 0.01
+                        ? ['old' => (float) $batchCosts[$item->stock_batch_id], 'new' => (float) $item->unit_cost] : null,
+                ];
+            }
+        }
+
+        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges, 'sellingPrices' => $sellingPrices, 'sellingChanges' => $sellingChanges, 'pending' => $pending]);
     }
 
     public function edit(StockAdjustment $stockAdjustment)

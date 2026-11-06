@@ -117,19 +117,21 @@
         <div class="uf-body" style="padding-top:12px"><button type="button" class="tk-add" @click="addRow()" :disabled="!supplierId">＋ Add another line</button></div>
     </section>
 
-    <section class="uf-card" x-show="costChangedLines().length" x-cloak :style="needTick ? 'border-color:#dc2626' : ''" style="margin-top:16px">
+    <section class="uf-card" x-show="costChangedLines().length" x-cloak :style="needTick && !confirmTick ? 'border-color:#dc2626' : ''" style="margin-top:16px">
         <div class="uf-body">
             <p style="margin:0 0 8px; font-weight:700; color:#b91c1c">You changed a unit cost</p>
             <template x-for="row in costChangedLines()" :key="row.uid">
                 <p class="ak-muted" style="margin:0 0 4px; font-size:13px" x-text="productLabel(row) + ' — ' + fmt(row.batch_cost) + ' → ' + fmt(row.unit_cost)"></p>
             </template>
             <label style="display:flex; gap:10px; align-items:flex-start; margin-top:8px; font-size:14px; cursor:pointer">
-                <input type="checkbox" name="confirm_revaluation" value="1" x-model="confirmTick" style="margin-top:3px; width:18px; height:18px">
+                <input type="checkbox" x-model="confirmTick" style="margin-top:3px; width:18px; height:18px">
                 <span>I changed a unit cost on purpose: carry the batch at that cost (revaluation). Leave this unticked so a mistyped cost is caught instead of revaluing the batch.</span>
             </label>
-            <p x-show="needTick" x-cloak style="margin:8px 0 0; color:#b91c1c; font-size:13px">Tick the box above to confirm the unit cost change.</p>
+            <p x-show="needTick && !confirmTick" x-cloak style="margin:8px 0 0; color:#b91c1c; font-size:13px">Tick the box above to confirm the unit cost change.</p>
         </div>
     </section>
+
+    <input type="hidden" name="confirm_revaluation" :value="confirmTick ? 1 : 0">
 
     <div class="tk-footer" style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 18px; background:#fff; border:1px solid var(--ak-border); border-radius:12px">
         <span class="ak-muted" style="font-size:13px" x-text="lineCount() + ' line(s) · nothing moves until you post'"></span>

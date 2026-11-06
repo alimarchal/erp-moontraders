@@ -75,8 +75,11 @@
                                         <td class="num">{{ number_format((float) $item->actual_quantity, 3) }}</td>
                                         <td class="num {{ $item->adjustment_quantity > 0 ? 'sa-up' : ($item->adjustment_quantity < 0 ? 'sa-down' : '') }}">{{ $signed($item->adjustment_quantity) }}</td>
                                         <td class="num">
-                                            @php $sellChange = $sellingChanges[$item->id] ?? null; @endphp
-                                            @if ($sellChange)
+                                            @php $sellChange = $sellingChanges[$item->id] ?? null; $pend = $pending[$item->id] ?? null; @endphp
+                                            @if ($pend && $pend['selling'])
+                                                <span class="sa-cost" title="Applied when this adjustment is posted"><s>{{ $money($pend['selling']['old']) }}</s> → {{ $money($pend['selling']['new']) }}</span>
+                                                <span class="sa-hint">on posting{{ $pend['selling']['all'] ? ' · all batches' : '' }}</span>
+                                            @elseif ($sellChange)
                                                 <span class="sa-cost" title="Selling cost changed with this adjustment"><s>{{ $money($sellChange['old']) }}</s> → {{ $money($sellChange['new']) }}</span>
                                                 <span class="sa-hint">selling cost changed</span>
                                             @else
@@ -85,7 +88,10 @@
                                             @endif
                                         </td>
                                         <td class="num">
-                                            @if ($change)
+                                            @if (($pending[$item->id]['cost'] ?? null))
+                                                <span class="sa-cost" title="Applied when this adjustment is posted"><s>{{ $money($pending[$item->id]['cost']['old']) }}</s> → {{ $money($pending[$item->id]['cost']['new']) }}</span>
+                                                <span class="sa-hint">on posting</span>
+                                            @elseif ($change)
                                                 <span class="sa-cost" title="Unit cost changed by this adjustment"><s>{{ $money($change['old']) }}</s> → {{ $money($change['new']) }}</span>
                                                 <span class="sa-hint">cost changed</span>
                                             @else

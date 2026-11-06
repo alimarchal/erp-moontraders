@@ -345,8 +345,8 @@
 
     /* Review modal (same pattern as the Approve modal) */
     .uf-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .uf-modal-bg { position: absolute; inset: 0; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
-    .uf-modal-box { position: relative; width: 100%; max-width: 560px; max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 14px; box-shadow: 0 25px 50px rgba(0,0,0,.25); }
+    .uf-modal-bg { position: absolute; inset: 0; background: rgba(17,24,39,.4); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .uf-modal-box { position: relative; width: 100%; max-width: 560px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto; background: #fff; border-radius: 14px; box-shadow: 0 25px 50px rgba(0,0,0,.25); }
     .uf-modal-body { display: flex; gap: 16px; padding: 22px 22px 16px; }
     .uf-modal-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; }
     .uf-modal-icon svg { width: 22px; height: 22px; }

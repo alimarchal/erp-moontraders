@@ -340,7 +340,8 @@
                                                         status: '{{ $cheque->status }}',
                                                         clearedDate: '{{ $cheque->cleared_date?->format('Y-m-d') }}',
                                                         amount: '{{ $cheque->amount }}',
-                                                        clearedAmount: '{{ $cheque->cleared_amount }}'
+                                                        clearedAmount: '{{ $cheque->cleared_amount }}',
+                                                        denom: {{ Js::from(collect(\App\Models\SalesSettlementCheque::CLEARED_NOTES)->mapWithKeys(fn ($note) => [$note => $cheque->{'cleared_denom_'.$note}])->filter()->put('coins', $cheque->cleared_denom_coins)->filter()->all()) }}
                                                     })"
                                             class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold transition {{ $statusConfig['class'] }}">
                                             @if($statusConfig['tick'])
@@ -395,7 +396,7 @@
                 <div x-show="show" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-150"
                     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                    class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="close()">
+                    class="fixed inset-0 bg-slate-900/50 backdrop-blur-md transition-all" @click="close()">
                 </div>
 
                 {{-- Panel --}}
@@ -406,44 +407,77 @@
                         x-transition:leave="ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave-end="opacity-0 translate-y-4 sm:scale-95"
-                        class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-md"
+                        class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl ring-1 ring-black/5"
                         @click.outside="close()">
 
-                        <div class="bg-gray-800 text-white px-6 py-3 rounded-t-xl flex justify-between items-center">
-                            <h3 class="text-base font-bold">Update Cheque Status</h3>
-                            <button type="button" @click="close()" class="text-gray-300 hover:text-white">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-start gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">Update cheque status</h3>
+                                <p class="text-sm text-gray-500 mt-0.5">Cheque amount: <span class="font-semibold text-gray-800">Rs <span x-text="Number(form.amount || 0).toLocaleString()"></span></span></p>
+                            </div>
+                            <button type="button" @click="close()" class="text-gray-400 hover:text-gray-700 rounded-full p-1" aria-label="Close">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
 
-                        <form :action="formAction" method="POST" class="p-6 space-y-4">
+                        <form :action="formAction" method="POST" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
                             @csrf
 
                             <div>
                                 <x-label value="Status" />
-                                <select name="status" x-model="form.status"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="pending">Pending</option>
-                                    <option value="cleared">Cleared</option>
-                                    <option value="bounced">Bounced</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
+                                <div class="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <template x-for="option in [['pending','Pending','yellow'],['cleared','Cleared','green'],['bounced','Bounced','red'],['cancelled','Cancelled','gray']]" :key="option[0]">
+                                        <label class="cursor-pointer rounded-lg border px-3 py-2 text-center text-sm font-semibold transition"
+                                            :class="form.status === option[0] ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' : 'border-gray-300 text-gray-700 hover:bg-gray-50'">
+                                            <input type="radio" name="status" :value="option[0]" x-model="form.status" class="sr-only">
+                                            <span x-text="option[1]"></span>
+                                        </label>
+                                    </template>
+                                </div>
                             </div>
 
-                            <div x-show="form.status === 'cleared'" class="space-y-4">
-                                <div>
-                                    <x-label value="Cleared Date" />
-                                    <x-input type="date" name="cleared_date" x-model="form.cleared_date"
-                                        x-bind:required="form.status === 'cleared'" class="mt-1 block w-full" />
+                            <div x-show="form.status === 'cleared'" class="space-y-5">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <x-label value="Cleared date" />
+                                        <x-input type="date" name="cleared_date" x-model="form.cleared_date"
+                                            x-bind:required="form.status === 'cleared'" class="mt-1 block w-full" />
+                                    </div>
+                                    <div>
+                                        <x-label value="Amount cleared (cash brought back)" />
+                                        <x-input type="number" step="0.01" min="0" name="cleared_amount" x-model="form.cleared_amount" class="mt-1 block w-full" />
+                                        <p class="mt-1 text-xs text-gray-500">Change it only if the bank cleared a different amount.</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <x-label value="Amount Cleared (cash the salesman brings back)" />
-                                    <x-input type="number" step="0.01" min="0" name="cleared_amount" x-model="form.cleared_amount"
-                                        class="mt-1 block w-full" />
-                                    <p class="mt-1 text-xs text-gray-500">Cheque amount: Rs <span x-text="form.amount"></span>. Change it only if the bank cleared a different amount.</p>
+
+                                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                    <div class="flex items-center justify-between gap-3 mb-3">
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-800">Cash notes (optional)</p>
+                                            <p class="text-xs text-gray-500">Count the notes brought back. They are added to the note count of the Cash Collection report.</p>
+                                        </div>
+                                        <button type="button" class="text-xs font-semibold text-indigo-600 hover:underline" @click="clearNotes()">Clear</button>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        <template x-for="note in notes" :key="note">
+                                            <div>
+                                                <label class="block text-xs font-semibold text-gray-600" x-text="Number(note).toLocaleString() + ' × notes'"></label>
+                                                <input type="number" min="0" step="1" :name="'denom[' + note + ']'" x-model.number="form.denom[note]" placeholder="0"
+                                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right">
+                                                <p class="mt-0.5 text-[11px] text-gray-500 text-right" x-text="'= ' + Number((form.denom[note] || 0) * note).toLocaleString()"></p>
+                                            </div>
+                                        </template>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-600">Coins (Rs)</label>
+                                            <input type="number" min="0" step="0.01" name="denom[coins]" x-model.number="form.denom.coins" placeholder="0"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right">
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm" x-show="counted() > 0">
+                                        <span class="font-semibold text-gray-800">Counted: Rs <span x-text="counted().toLocaleString()"></span></span>
+                                        <span :class="Math.abs(counted() - Number(form.cleared_amount || 0)) < 0.01 ? 'text-green-700' : 'text-red-600'" class="font-semibold"
+                                            x-text="Math.abs(counted() - Number(form.cleared_amount || 0)) < 0.01 ? 'Matches the cleared amount' : 'Difference: Rs ' + (counted() - Number(form.cleared_amount || 0)).toLocaleString()"></span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -452,15 +486,11 @@
                                 <x-input type="text" name="notes" maxlength="500" x-model="form.notes" class="mt-1 block w-full" />
                             </div>
 
-                            <div class="flex justify-end gap-3 pt-2">
+                            <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
                                 <button type="button" @click="close()"
-                                    class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100">
-                                    Cancel
-                                </button>
+                                    class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100">Cancel</button>
                                 <button type="submit"
-                                    class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm">
-                                    Update
-                                </button>
+                                    class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm">Update status</button>
                             </div>
                         </form>
                     </div>
@@ -480,6 +510,16 @@
                             cleared_amount: '',
                             amount: '',
                             notes: '',
+                            denom: {},
+                        },
+                        notes: [5000, 1000, 500, 100, 50, 20, 10],
+
+                        counted() {
+                            return this.notes.reduce((sum, note) => sum + (Number(this.form.denom[note]) || 0) * note, 0) + (Number(this.form.denom.coins) || 0);
+                        },
+
+                        clearNotes() {
+                            this.form.denom = {};
                         },
 
                         open(detail) {
@@ -489,6 +529,7 @@
                             this.form.amount = detail.amount || '';
                             this.form.cleared_amount = detail.clearedAmount || detail.amount || '';
                             this.form.notes = '';
+                            this.form.denom = detail.denom || {};
                             this.show = true;
                         },
 

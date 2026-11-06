@@ -175,7 +175,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         ];
         $overall = array_sum($totals);
 
-        $denominations = $this->denominations($settlements, $totals['clearing']);
+        $denominations = $this->denominations($settlements, $totals['clearing'], $clearings->when($supplierId, fn (Collection $rows) => $rows->where('company_id', $supplierId)));
 
         $money = fn ($value) => $value > 0 ? number_format((float) $value, 2) : '-';
         $total = fn ($value) => number_format((float) $value, 2);
@@ -286,9 +286,10 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
 
     /**
      * @param  Collection<int, SalesSettlement>  $settlements
+     * @param  Collection<int, SalesSettlementCheque>  $clearedCheques  cheques cleared that day, some with their notes counted
      * @return array{rows: array<int, array<int, string|int>>, total: float}
      */
-    private function denominations(Collection $settlements, float $clearingCash): array
+    private function denominations(Collection $settlements, float $clearingCash, Collection $clearedCheques): array
     {
         $count = array_fill_keys([5000, 1000, 500, 100, 50, 20, 10], 0);
         $coins = 0.0;
@@ -304,6 +305,19 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             $coins += (float) $denomination->denom_coins;
         }
 
+        // Notes counted when a cheque was cleared join the settlement notes; the rest of the clearing cash stays one amount.
+        $countedFromCheques = 0.0;
+        foreach ($clearedCheques as $cheque) {
+            foreach (SalesSettlementCheque::CLEARED_NOTES as $note) {
+                $qty = (int) $cheque->{'cleared_denom_'.$note};
+                $count[$note] += $qty;
+                $countedFromCheques += $qty * $note;
+            }
+            $coins += (float) $cheque->cleared_denom_coins;
+            $countedFromCheques += (float) $cheque->cleared_denom_coins;
+        }
+        $clearingCash = max(0.0, $clearingCash - $countedFromCheques);
+
         $rows = [];
         $total = $coins;
         $i = 0;
@@ -313,7 +327,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         }
         $rows[] = [++$i, 'Coins', '-', $coins > 0 ? number_format($coins, 2) : '-'];
         // The cash a salesman brings back for cleared cheques is counted with the notes but is not in a settlement.
-        $rows[] = [++$i, 'Cheque clearing', '-', $clearingCash > 0 ? number_format($clearingCash, 2) : '-'];
+        $rows[] = [++$i, 'Cheque clearing (notes not counted)', '-', $clearingCash > 0 ? number_format($clearingCash, 2) : '-'];
 
         return ['rows' => $rows, 'total' => $total + $clearingCash];
     }

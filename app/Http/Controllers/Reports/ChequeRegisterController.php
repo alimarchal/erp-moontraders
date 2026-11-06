@@ -164,15 +164,24 @@ class ChequeRegisterController extends Controller implements HasMiddleware
             'cleared_date' => ['required_if:status,cleared', 'nullable', 'date'],
             'cleared_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'denom' => ['nullable', 'array'],
+            'denom.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
         ]);
 
         $isCleared = $validated['status'] === 'cleared';
         $clearedAmount = $isCleared ? (float) ($validated['cleared_amount'] ?? $cheque->amount) : null;
 
-        DB::transaction(function () use ($cheque, $validated, $isCleared, $clearedAmount) {
+        $denominations = $this->clearedDenominations($isCleared ? (array) ($validated['denom'] ?? []) : []);
+        $counted = $denominations['total'];
+
+        if ($counted > 0 && abs($counted - $clearedAmount) > 0.009) {
+            return back()->withInput()->with('error', 'The notes you counted add up to Rs '.number_format($counted, 2).' but the cleared amount is Rs '.number_format($clearedAmount, 2).'. Make them equal, or leave the notes empty.');
+        }
+
+        DB::transaction(function () use ($cheque, $validated, $isCleared, $clearedAmount, $denominations) {
             $fromStatus = $cheque->status;
 
-            $cheque->update([
+            $cheque->update($denominations['columns'] + [
                 'status' => $validated['status'],
                 'cleared_date' => $isCleared ? $validated['cleared_date'] : null,
                 'cleared_amount' => $clearedAmount,
@@ -190,6 +199,27 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         });
 
         return redirect()->back()->with('success', 'Cheque status updated successfully.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $entered  note value => number of notes, plus "coins" as an amount
+     * @return array{columns: array<string, int|float|null>, total: float}
+     */
+    private function clearedDenominations(array $entered): array
+    {
+        $columns = [];
+        $total = 0.0;
+
+        foreach (SalesSettlementCheque::CLEARED_NOTES as $note) {
+            $qty = (int) ($entered[$note] ?? 0);
+            $columns['cleared_denom_'.$note] = $qty > 0 ? $qty : null;
+            $total += $qty * $note;
+        }
+
+        $coins = (float) ($entered['coins'] ?? 0);
+        $columns['cleared_denom_coins'] = $coins > 0 ? $coins : null;
+
+        return ['columns' => $columns, 'total' => $total + $coins];
     }
 
     /**

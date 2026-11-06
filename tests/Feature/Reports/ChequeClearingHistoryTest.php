@@ -83,3 +83,35 @@ it('feeds the distributor report with the cleared amount on the cleared date', f
 
     expect($tables['cash']['rows'][0][3])->toBe('9,500.00');
 });
+
+it('counts the notes brought back for a cleared cheque in the cash denominations of the distributor report', function () {
+    Permission::findOrCreate('report-audit-cash-collection-distributor');
+    Permission::findOrCreate('report-audit-cash-collection-distributor-all-companies');
+    $this->user->givePermissionTo(['report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies']);
+
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), [
+        'status' => 'cleared', 'cleared_date' => '2026-10-28', 'cleared_amount' => 9500, 'denom' => ['5000' => 1, '1000' => 4, '500' => 1],
+    ])->assertSessionHasNoErrors();
+
+    $cheque = $this->cheque->fresh();
+    expect($cheque->cleared_denom_5000)->toBe(1)->and($cheque->cleared_denom_1000)->toBe(4)->and($cheque->cleared_denom_100)->toBeNull();
+
+    $rows = collect($this->actingAs($this->user)
+        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'date' => '2026-10-28']))
+        ->viewData('tables')['denominations']['rows']);
+
+    expect($rows->firstWhere(1, '5,000')[2])->toBe(1)->and($rows->firstWhere(1, '1,000')[2])->toBe(4)
+        ->and($rows->firstWhere(1, 'Cheque clearing (notes not counted)')[3])->toBe('-');
+});
+
+it('refuses notes that do not add up to the cleared amount, and drops them when the cheque goes back', function () {
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), [
+        'status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 1],
+    ])->assertSessionHas('error');
+    expect($this->cheque->fresh()->status)->toBe('pending');
+
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]])->assertSessionHasNoErrors();
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'bounced']);
+
+    expect($this->cheque->fresh()->cleared_denom_5000)->toBeNull();
+});

@@ -60,7 +60,7 @@ it('clears the cleared date and amount when a cheque goes back, but keeps the hi
 });
 
 it('returns the status history as json for users who can view the register', function () {
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28']);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]]);
 
     $this->actingAs($this->user)->getJson(route('reports.cheque-register.history', $this->cheque))
         ->assertOk()

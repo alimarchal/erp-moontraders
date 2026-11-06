@@ -103,7 +103,7 @@
                         placeholder="Additional details..." @keydown.enter.prevent="addEntry()" />
                 </div>
 
-                <div><x-settlement-attachment-field /></div>
+                <div><x-settlement-attachment-field section="bank_slips" /></div>
 
                 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm mt-4">
                     <table class="min-w-full text-sm">

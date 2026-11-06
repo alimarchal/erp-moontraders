@@ -711,6 +711,11 @@ class DistributionService
                 throw new \Exception('Sales Settlement is already posted');
             }
 
+            // An attachment can be made compulsory per section in .env (SS_*_ATTACHMENT=true).
+            if ($missing = SettlementAttachmentService::missingRequired($settlement)) {
+                throw new \Exception('This settlement cannot be posted until the required attachments are added. '.implode('. ', $missing).'.');
+            }
+
             // Hold the goods issue, as Add More Items and a reversal do, so neither can change
             // what is on the van while these settlement lines are being posted against it.
             GoodsIssue::whereKey($settlement->goods_issue_id)->lockForUpdate()->first();

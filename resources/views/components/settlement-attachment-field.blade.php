@@ -1,7 +1,9 @@
-{{-- Optional file input for the modal's "add entry" form. Needs `pendingAttachment` in the Alpine scope. --}}
+{{-- File input for the modal's "add entry" form. Needs `pendingAttachment` in the Alpine scope. --}}
+@props(['section' => null])
+@php $mustAttach = $section && \App\Services\SettlementAttachmentService::isRequired($section); @endphp
 @if (\App\Services\SettlementAttachmentService::enabled())
     <div x-data>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Attachment (Optional)
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Attachment @if($mustAttach)<span class="text-red-600">(Required before posting)</span>@else(Optional)@endif
             <span class="font-normal text-gray-400">PDF, JPG, PNG, WEBP up to {{ round(config('settlement_attachments.max_kb') / 1024) }} MB</span>
         </label>
         <div class="flex flex-wrap items-center gap-2">

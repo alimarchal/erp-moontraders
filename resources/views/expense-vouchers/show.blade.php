@@ -77,7 +77,21 @@
                 <dl class="ev-dl">
                     <div><dt>Date <span class="ev-ur" lang="ur" dir="rtl">تاریخ</span></dt><dd>{{ $voucher->voucher_date->format('d M Y') }}</dd></div>
                     <div><dt>Company <span class="ev-ur" lang="ur" dir="rtl">کمپنی</span></dt><dd>{{ $voucher->supplier?->supplier_name ?? (($voucher->company?->company_name ?? 'Moon Traders').' (general)') }}</dd></div>
-                    <div><dt>Party name <span class="ev-ur" lang="ur" dir="rtl">پارٹی کا نام</span></dt><dd>{{ $voucher->party_name }}</dd></div>
+                    <div><dt>Party name <span class="ev-ur" lang="ur" dir="rtl">پارٹی کا نام</span></dt><dd>
+                        @if($voucher->expenseVendor)<a class="ak-primary-link" href="{{ route('expense-vendors.show', $voucher->expenseVendor) }}">{{ $voucher->party_name }}</a>@else{{ $voucher->party_name }}@endif
+                        @if($voucher->employee)<br><span class="ak-muted" style="font-weight:400">Employee {{ $voucher->employee->employee_code }}</span>@endif
+                    </dd></div>
+                    <div><dt>Payment <span class="ev-ur" lang="ur" dir="rtl">ادائیگی</span></dt><dd>
+                        {{ \App\Models\ExpenseVoucher::paymentTypeLabels()[$voucher->payment_type] ?? $voucher->payment_type }}
+                        @if($voucher->isApproved() && $voucher->isCredit())
+                            <br><span class="ak-status {{ ['paid' => 'ak-status-green', 'partial' => 'ak-status-amber', 'unpaid' => 'ak-status-red'][$voucher->payment_status] ?? '' }}"><i aria-hidden="true"></i>{{ ucfirst($voucher->payment_status) }}</span>
+                            <span class="ak-muted" style="font-weight:400">paid Rs {{ number_format($voucher->paid_amount, 2) }}, owes Rs {{ number_format($voucher->outstanding(), 2) }}</span>
+                        @endif
+                    </dd></div>
+                    @if($voucher->vendor_bill_no)<div><dt>Shop bill no.</dt><dd>{{ $voucher->vendor_bill_no }}</dd></div>@endif
+                    @if($voucher->vehicle)<div><dt>Vehicle <span class="ev-ur" lang="ur" dir="rtl">گاڑی</span></dt><dd>{{ $voucher->vehicle->vehicle_number }}</dd></div>@endif
+                    @if($voucher->isAdvance() && $voucher->advance_installment)<div><dt>Monthly instalment</dt><dd>Rs {{ number_format($voucher->advance_installment, 2) }}</dd></div>@endif
+                    @if($voucher->category)<div><dt>Category <span class="ev-ur" lang="ur" dir="rtl">قسم</span></dt><dd>{{ $voucher->category->name }}</dd></div>@endif
                     <div><dt>Expense account <span class="ev-ur" lang="ur" dir="rtl">اخراجات کا کھاتہ</span></dt><dd>{{ $voucher->expenseAccount?->account_code }} - {{ $voucher->expenseAccount?->account_name }}</dd></div>
                     <div style="grid-column: 1 / -1"><dt>Narration <span class="ev-ur" lang="ur" dir="rtl">تفصیل</span></dt><dd>{{ $voucher->narration ?: '—' }}</dd></div>
                     <div><dt>Made <span class="ev-ur" lang="ur" dir="rtl">تیار کنندہ</span></dt><dd>{{ $voucher->creator?->name }}<br><span class="ak-muted" style="font-weight:400">{{ $voucher->created_at?->format('d M Y h:i A') }}</span></dd></div>
@@ -99,22 +113,26 @@
                                 <tr><td>{{ $line->account?->account_code }} {{ $line->account?->account_name }}</td><td class="n">{{ (float) $line->debit > 0 ? number_format($line->debit, 2) : '' }}</td><td class="n">{{ (float) $line->credit > 0 ? number_format($line->credit, 2) : '' }}</td></tr>
                             @endforeach
                         @else
-                            <tr><td>{{ $voucher->expenseAccount?->account_code }} {{ $voucher->expenseAccount?->account_name }}</td><td class="n">{{ number_format($voucher->amount, 2) }}</td><td class="n"></td></tr>
-                            <tr><td>1121 Cash</td><td class="n"></td><td class="n">{{ number_format($voucher->amount, 2) }}</td></tr>
+                            <tr><td>{{ $voucher->isAdvance() ? '1131 Employee Advances' : $voucher->expenseAccount?->account_code.' '.$voucher->expenseAccount?->account_name }}</td><td class="n">{{ number_format($voucher->amount, 2) }}</td><td class="n"></td></tr>
+                            <tr><td>{{ $voucher->isCredit() ? '2113 Expense Payables' : '1121 Cash' }}</td><td class="n"></td><td class="n">{{ number_format($voucher->amount, 2) }}</td></tr>
                         @endif
                     </tbody>
                 </table>
             </section>
         </div>
 
-        @if($voucher->attachment_url)
-            @php $attExt = strtolower(pathinfo($voucher->attachment, PATHINFO_EXTENSION)); @endphp
-            <section class="ak-card ev-pad" aria-label="Attachment" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap">
-                <h2 style="margin:0; font-size:15px; font-weight:700">Attachment <span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویز</span></h2>
-                <button type="button" class="ak-btn ak-btn-outline" onclick="evPreview(@js($voucher->attachment_url), @js($attExt), @js($voucher->voucher_number.' - attachment'))">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
-                    View {{ strtoupper($attExt) }}
-                </button>
+        @if($voucher->attachments->isNotEmpty())
+            <section class="ak-card ev-pad" aria-label="Attachments">
+                <h2 style="margin:0 0 10px; font-size:15px; font-weight:700">Attachments ({{ $voucher->attachments->count() }}) <span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویزات</span></h2>
+                <div style="display:flex; flex-wrap:wrap; gap:10px">
+                    @foreach($voucher->attachments as $file)
+                        @php $attExt = strtolower(pathinfo($file->file_name, PATHINFO_EXTENSION) ?: pathinfo($file->file_path, PATHINFO_EXTENSION)); @endphp
+                        <button type="button" class="ak-btn ak-btn-outline" onclick="evPreview(@js($voucher->attachmentUrl($file)), @js($attExt), @js($voucher->voucher_number.' - '.$file->file_name))">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" /></svg>
+                            {{ \Illuminate\Support\Str::limit($file->file_name, 28) }}
+                        </button>
+                    @endforeach
+                </div>
             </section>
         @endif
 
@@ -150,7 +168,7 @@
         {{-- Confirmation dialogs: blurred background like the delete dialogs elsewhere --}}
         @php
             $dialogs = [
-                'approve' => ['Approve and post this voucher?', 'The voucher is approved and a journal entry is posted: debit '.$voucher->expenseAccount?->account_name.', credit Cash, Rs '.number_format($voucher->amount, 2).'. A posted entry cannot be changed afterwards.', route('expense-vouchers.approve', $voucher), 'Approve and post', 'ak-btn-success', 'ak-pill-green'],
+                'approve' => ['Approve and post this voucher?', 'The voucher is approved and a journal entry is posted: debit '.($voucher->isAdvance() ? 'Employee Advances' : $voucher->expenseAccount?->account_name).', credit '.($voucher->isCredit() ? 'Expense Payables (the shop is paid later)' : 'Cash').', Rs '.number_format($voucher->amount, 2).'.'.($voucher->isAdvance() ? ' The advance is then recovered from the next salary.' : '').' A posted entry cannot be changed afterwards.', route('expense-vouchers.approve', $voucher), 'Approve and post', 'ak-btn-success', 'ak-pill-green'],
                 'reject' => ['Reject this voucher?', 'It goes back to '.($voucher->creator?->name ?? 'the maker').' with your reason, who can correct it and submit it again. Nothing is posted.', route('expense-vouchers.reject', $voucher), 'Reject voucher', 'ak-btn-danger-outline', 'ak-pill-red'],
                 'delete' => ['Delete this voucher?', $voucher->voucher_number.' is removed. This cannot be undone.', route('expense-vouchers.destroy', $voucher), 'Delete voucher', 'ak-btn-danger-outline', 'ak-pill-red'],
             ];

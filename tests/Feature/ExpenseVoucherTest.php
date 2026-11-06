@@ -4,6 +4,7 @@ use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\Company;
 use App\Models\Currency;
+use App\Models\ExpenseCategory;
 use App\Models\ExpenseVoucher;
 use App\Models\JournalEntry;
 use App\Models\Supplier;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    foreach (['list', 'create', 'edit', 'delete', 'approve', 'print'] as $action) {
+    foreach (['list', 'create', 'edit', 'delete', 'approve', 'print', 'view-all', 'view-company'] as $action) {
         Permission::findOrCreate('expense-voucher-'.$action);
     }
 
@@ -30,9 +31,13 @@ beforeEach(function () {
     $this->maker = User::factory()->create(['supplier_id' => $this->supplier->id]);
     $this->maker->givePermissionTo(['expense-voucher-list', 'expense-voucher-create', 'expense-voucher-edit', 'expense-voucher-delete', 'expense-voucher-approve', 'expense-voucher-print']);
     $this->checker = User::factory()->create(['supplier_id' => $this->supplier->id]);
-    $this->checker->givePermissionTo(['expense-voucher-list', 'expense-voucher-approve', 'expense-voucher-print']);
+    $this->checker->givePermissionTo(['expense-voucher-list', 'expense-voucher-approve', 'expense-voucher-print', 'expense-voucher-view-company']);
+
+    $this->category = ExpenseCategory::factory()->create(['name' => 'Test Toner']);
 
     $this->payload = [
+        'payee_type' => 'other',
+        'expense_category_id' => $this->category->id,
         'voucher_date' => now()->format('Y-m-d'),
         'owner' => 'supplier:'.$this->supplier->id,
         'party_name' => 'Ali Tea Stall',
@@ -129,7 +134,7 @@ it('shows approved vouchers by party on the distributor report, general ones onl
         ->and(collect($all['expenses']['rows'])->pluck(1)->all())->toBe(['Paint Material', 'Ali Tea Stall'])
         ->and($all['expenses']['rows'][0][2])->toBe('Moon Traders')
         ->and($all['expenses']['total']['cells'][0])->toBe('15,000.00')
-        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (vouchers)', '15,000.00']);
+        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (cash and advance vouchers)', '15,000.00']);
 });
 
 it('lets an admin raise a general expense with no company, but not a company-bound user', function () {
@@ -153,7 +158,7 @@ it('lists vouchers with filters and opens the guide', function () {
     expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall', 'Other Co Party'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['owner' => 'supplier:'.$this->supplier->id]]))))->toBe(['Ali Tea Stall'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'other co', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
-        ->and($parties($this->actingAs($this->maker)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
+        ->and($parties($this->actingAs($this->maker->givePermissionTo('expense-voucher-view-company'))->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
 
     $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('اخراجاتی واؤچر کیسے کام کرتا ہے')->assertSee('What each step writes to the database');
 });
@@ -194,37 +199,33 @@ it('lets anyone who works with vouchers open the guide, and a clearable company 
     expect(ExpenseVoucher::first())->supplier_id->toBeNull()->company_id->toBe($this->moonTraders->id);
 });
 
-it('stores an attachment under Vouchers/dd-mm-yyyy on a private disk, replaces and removes it', function () {
+it('stores several attachments under Vouchers/dd-mm-yyyy on a private disk and removes one', function () {
     Storage::fake(ExpenseVoucherAttachmentService::disk());
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
-        'action' => 'draft', 'voucher_date' => '2026-10-28', 'attachment' => UploadedFile::fake()->image('bill.jpg'),
+        'action' => 'draft', 'voucher_date' => '2026-10-28',
+        'attachments' => [UploadedFile::fake()->image('bill.jpg'), UploadedFile::fake()->create('slip.pdf', 100, 'application/pdf')],
     ] + $this->payload)->assertRedirect();
 
     $voucher = ExpenseVoucher::first();
-    expect($voucher->attachment)->toStartWith('Vouchers/28-10-2026/')->and($voucher->attachment)->toEndWith('.jpg');
-    Storage::disk(ExpenseVoucherAttachmentService::disk())->assertExists($voucher->attachment);
-    $first = $voucher->attachment;
+    expect($voucher->attachments)->toHaveCount(2)
+        ->and($voucher->attachments->first()->file_path)->toStartWith('Vouchers/28-10-2026/')->toEndWith('.jpg');
+    [$first, $second] = $voucher->attachments->all();
+    Storage::disk(ExpenseVoucherAttachmentService::disk())->assertExists([$first->file_path, $second->file_path]);
 
-    $this->actingAs($this->maker)->get(route('expense-vouchers.attachment', $voucher))->assertOk();
-    $this->actingAs(User::factory()->create(['supplier_id' => Supplier::factory()->create()->id])->givePermissionTo('expense-voucher-list'))
-        ->get(route('expense-vouchers.attachment', $voucher))->assertNotFound();
+    $this->actingAs($this->maker)->get(route('expense-vouchers.attachment', [$voucher, $first]))->assertOk();
+    $this->actingAs(User::factory()->create(['supplier_id' => Supplier::factory()->create()->id])->givePermissionTo(['expense-voucher-list', 'expense-voucher-view-company']))
+        ->get(route('expense-vouchers.attachment', [$voucher, $first]))->assertNotFound();
 
-    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), [
-        'action' => 'draft', 'voucher_date' => '2026-10-28', 'attachment' => UploadedFile::fake()->create('slip.pdf', 100, 'application/pdf'),
-    ] + $this->payload)->assertRedirect();
-    $voucher->refresh();
-    expect($voucher->attachment)->toEndWith('.pdf');
-    Storage::disk(ExpenseVoucherAttachmentService::disk())->assertMissing($first)->assertExists($voucher->attachment);
-
-    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'draft', 'voucher_date' => '2026-10-28', 'remove_attachment' => 1] + $this->payload)->assertRedirect();
-    expect($voucher->fresh()->attachment)->toBeNull();
+    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'draft', 'voucher_date' => '2026-10-28', 'remove_attachments' => [$first->id]] + $this->payload)->assertRedirect();
+    expect($voucher->fresh()->attachments)->toHaveCount(1);
+    Storage::disk(ExpenseVoucherAttachmentService::disk())->assertMissing($first->file_path)->assertExists($second->file_path);
 });
 
 it('rejects an attachment of a type that is not allowed', function () {
     Storage::fake(ExpenseVoucherAttachmentService::disk());
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['attachment' => UploadedFile::fake()->create('run.exe', 10)] + $this->payload)->assertSessionHasErrors('attachment');
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['attachments' => [UploadedFile::fake()->create('run.exe', 10)]] + $this->payload)->assertSessionHasErrors('attachments.0');
 });
 
 it('uses a uuid in the links and keeps voucher numbers unique and running per year', function () {
@@ -250,7 +251,7 @@ it('lets only the maker edit, delete or submit a voucher, so the checker can alw
     $voucher = ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id]);
 
     $other = User::factory()->create(['supplier_id' => $this->supplier->id]);
-    $other->givePermissionTo(['expense-voucher-list', 'expense-voucher-create', 'expense-voucher-edit', 'expense-voucher-delete', 'expense-voucher-approve']);
+    $other->givePermissionTo(['expense-voucher-list', 'expense-voucher-create', 'expense-voucher-edit', 'expense-voucher-delete', 'expense-voucher-approve', 'expense-voucher-view-company']);
 
     $this->actingAs($other)->post(route('expense-vouchers.submit', $voucher))->assertForbidden();
     $this->actingAs($other)->get(route('expense-vouchers.edit', $voucher))->assertForbidden();
@@ -278,4 +279,17 @@ it('blocks only the user who made the voucher from checking it, even when someon
 
     $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
     expect($voucher->fresh()->status)->toBe('approved');
+});
+
+it('stores voucher attachments on Amazon S3 when VOUCHER_ATTACHMENTS_DISK is s3', function () {
+    config(['voucher_attachments.disk' => 's3']);
+    Storage::fake('s3');
+
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
+        'action' => 'draft', 'voucher_date' => '2026-10-28', 'attachments' => [UploadedFile::fake()->image('bill.jpg')],
+    ] + $this->payload)->assertRedirect();
+
+    $file = ExpenseVoucher::first()->attachments->first();
+    Storage::disk('s3')->assertExists($file->file_path);
+    $this->actingAs($this->maker)->get(route('expense-vouchers.attachment', [ExpenseVoucher::first(), $file]))->assertOk();
 });

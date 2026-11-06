@@ -135,7 +135,7 @@
                     </div>
                 </div>
 
-                <div x-show="form.payment_method === 'bank_transfer'" class="mt-4"><x-settlement-attachment-field /></div>
+                <div x-show="form.payment_method === 'bank_transfer'" class="mt-4"><x-settlement-attachment-field section="recoveries" /></div>
 
                 <div class="mt-6">
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">

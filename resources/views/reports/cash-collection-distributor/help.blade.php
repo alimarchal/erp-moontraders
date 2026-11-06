@@ -82,7 +82,7 @@
                             <tr><td><b>4 - Cheques</b></td><td>Per company: cheques received in the settlements of the day.</td><td>Settlements</td></tr>
                             <tr><td><b>5 - Bank Slip Details</b></td><td>One row per distribution and salesman, one column per bank account (bank name and account number). A salesman who used two accounts has an amount under each.</td><td>Settlement bank slips</td></tr>
                             <tr><td><b>6 - Expenses</b></td><td>Approved expense vouchers of the day by party. A single company shows its own vouchers; All Companies also shows the general (Moon Traders) ones that belong to no company.</td><td>Expense vouchers</td></tr>
-                            <tr><td><b>7 - Cash Summary</b></td><td>Notes and coins + cheque clearing = cash received; less expenses paid = cash in hand; then bank slips, transfers and cheques; and the grand total of the day.</td><td>All of the above</td></tr>
+                            <tr><td><b>7 - Cash Summary</b></td><td>Notes and coins + cheque clearing = cash received; less cash paid out (cash and advance vouchers, cash vendor payments, cash salaries; credit vouchers are not deducted until paid) = cash in hand; then bank slips, transfers and cheques; and the grand total of the day.</td><td>All of the above</td></tr>
                             <tr><td><b>8 - Salesman-wise Detail</b></td><td>Single company only: cash, slips, transfers and cheques for each salesman.</td><td>Settlements</td></tr>
                         </tbody>
                     </table>

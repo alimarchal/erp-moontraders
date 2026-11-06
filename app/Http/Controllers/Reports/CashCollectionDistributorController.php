@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\ExpenseVendorPayment;
 use App\Models\ExpenseVoucher;
+use App\Models\PayrollRun;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementCheque;
 use App\Models\Supplier;
@@ -210,14 +212,19 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             'slips' => $this->slipTable($settlements, $companies, $money, $total),
         ];
 
-        $expenses = $this->expenseRows($supplierId, $date);
+        // Only money that really left the cash box today: cash and advance vouchers, cash payments to shops
+        // for credit vouchers, and cash salaries. A credit voucher is a cost but no cash goes out until it is paid.
+        $vouchers = $this->expenseRows($supplierId, $date);
+        $vendorPayments = $this->vendorPaymentRows($supplierId, $date);
+        $salaries = $this->salaryRows($supplierId, $date);
+        $expenses = $vouchers->concat($vendorPayments)->concat($salaries)->values();
         $expenseTotal = (float) $expenses->sum('amount');
         $tables['expenses'] = [
-            'no' => 6, 'title' => 'Expenses', 'explain' => 'approved expense vouchers of the day',
+            'no' => 6, 'title' => 'Expenses', 'explain' => 'cash paid out today: vouchers, vendor payments and salaries',
             'cols' => [['#', 'c', 8], ['Party Name', '', 46], ['Distribution', '', 24], ['Amount', 'n', 22]],
             'rows' => $expenses->map(fn ($row, $i) => [$i + 1, $row['party'], $row['company'], $money($row['amount'])])->all(),
             'total' => ['label' => 'Total expenses', 'span' => 3, 'cells' => [$total($expenseTotal)]],
-            'bold' => [3], 'empty' => 'No approved expense vouchers for this day.',
+            'bold' => [3], 'empty' => 'No cash expenses for this day.',
         ];
 
         $cashReceived = $totals['cash'] + $totals['clearing'];
@@ -228,7 +235,9 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 ['Notes and coins handed in (settlements)', $total($totals['cash'])],
                 ['Cheque clearing cash', $total($totals['clearing'])],
                 ['Cash received', $total($cashReceived)],
-                ['Less: expenses paid (vouchers)', $total($expenseTotal)],
+                ['Less: expenses paid (cash and advance vouchers)', $total($vouchers->sum('amount'))],
+                ['Less: vendor payments (cash)', $total($vendorPayments->sum('amount'))],
+                ['Less: salaries paid (cash)', $total($salaries->sum('amount'))],
                 ['Cash in hand', $total($cashReceived - $expenseTotal)],
                 ['Bank slips', $total($totals['slips'])],
                 ['Bank transfers / online from customer', $total($totals['transfers'])],
@@ -365,16 +374,61 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         return ExpenseVoucher::query()
             ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr'])
             ->where('status', ExpenseVoucher::STATUS_APPROVED)
+            ->whereIn('payment_type', [ExpenseVoucher::TYPE_CASH, ExpenseVoucher::TYPE_ADVANCE])
             ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
             ->whereDate('voucher_date', $date)
             ->get()
-            ->groupBy(fn (ExpenseVoucher $voucher) => $voucher->party_name."\0".$voucher->supplier_id."\0".$voucher->company_id)
+            ->groupBy(fn (ExpenseVoucher $voucher) => $voucher->party_name."\0".$voucher->payment_type."\0".$voucher->supplier_id."\0".$voucher->company_id)
             ->map(fn (Collection $own) => [
-                'party' => $own->first()->party_name,
+                'party' => $own->first()->party_name.($own->first()->isAdvance() ? ' (advance salary)' : ''),
                 'company' => (string) ($own->first()->supplier?->short_name ?? $own->first()->supplier?->supplier_name ?? $own->first()->company?->company_name ?? 'Moon Traders'),
                 'amount' => (float) $own->sum('amount'),
             ])
             ->sortByDesc('amount')
+            ->values();
+    }
+
+    /**
+     * Approved payments to shops, made in cash on the day.
+     *
+     * @return Collection<int, array{party: string, company: string, amount: float}>
+     */
+    private function vendorPaymentRows(?int $supplierId, string $date): Collection
+    {
+        return ExpenseVendorPayment::query()
+            ->with(['vendor:id,name', 'supplier:id,supplier_name,short_name', 'company:id,company_name,abbr'])
+            ->where('status', ExpenseVendorPayment::STATUS_APPROVED)
+            ->where('method', 'cash')
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->whereDate('payment_date', $date)
+            ->get()
+            ->map(fn (ExpenseVendorPayment $payment) => [
+                'party' => 'Vendor payment - '.$payment->vendor?->name,
+                'company' => (string) ($payment->supplier?->short_name ?? $payment->supplier?->supplier_name ?? $payment->company?->company_name ?? 'Moon Traders'),
+                'amount' => (float) $payment->amount,
+            ])
+            ->values();
+    }
+
+    /**
+     * Salaries paid in cash on the day.
+     *
+     * @return Collection<int, array{party: string, company: string, amount: float}>
+     */
+    private function salaryRows(?int $supplierId, string $date): Collection
+    {
+        return PayrollRun::query()
+            ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr'])
+            ->where('status', PayrollRun::STATUS_PAID)
+            ->where('paid_method', 'cash')
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->whereDate('paid_on', $date)
+            ->get()
+            ->map(fn (PayrollRun $run) => [
+                'party' => 'Salaries - '.$run->period_month->format('M Y'),
+                'company' => (string) ($run->supplier?->short_name ?? $run->supplier?->supplier_name ?? $run->company?->company_name ?? 'Moon Traders'),
+                'amount' => (float) $run->total_net,
+            ])
             ->values();
     }
 

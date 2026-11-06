@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ChartOfAccount;
 use App\Models\Company;
+use App\Models\EmployeeAdvance;
 use App\Models\ExpenseVoucher;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,12 @@ use RuntimeException;
  */
 class ExpenseVoucherService
 {
+    public const CASH_ACCOUNT = '1121';
+
+    public const PAYABLES_ACCOUNT = '2113';
+
+    public const ADVANCES_ACCOUNT = '1131';
+
     public function __construct(private AccountingService $accounting) {}
 
     /**
@@ -59,18 +66,17 @@ class ExpenseVoucherService
     }
 
     /**
-     * The checker must not be the user who made the voucher.
+     * The checker must not be the user who made the voucher. What is posted depends on how it was paid:
+     * cash is Dr expense / Cr Cash, credit is Dr expense / Cr Expense Payables (2113, paid later by a vendor
+     * payment) and an advance is Dr Employee Advances (1131) / Cr Cash, with an advance record for payroll.
      */
     public function approve(ExpenseVoucher $voucher, User $checker): ExpenseVoucher
     {
         $this->ensurePendingFor($voucher, $checker);
 
         return DB::transaction(function () use ($voucher, $checker) {
-            $cashAccountId = ChartOfAccount::where('account_code', '1121')->value('id');
-
-            if (! $cashAccountId) {
-                throw new RuntimeException('The Cash account (1121) is missing; the voucher cannot be posted.');
-            }
+            $creditSide = $this->accountId($voucher->isCredit() ? self::PAYABLES_ACCOUNT : self::CASH_ACCOUNT, $voucher->isCredit() ? 'Expense Payables (2113)' : 'Cash (1121)');
+            $debitSide = $voucher->isAdvance() ? $this->accountId(self::ADVANCES_ACCOUNT, 'Employee Advances (1131)') : (int) $voucher->expense_account_id;
 
             $description = 'Expense voucher '.$voucher->voucher_number.' - '.$voucher->party_name;
             $result = $this->accounting->createJournalEntry([
@@ -80,8 +86,8 @@ class ExpenseVoucherService
                 'reference_type' => ExpenseVoucher::class,
                 'reference_id' => $voucher->id,
                 'lines' => [
-                    ['account_id' => $voucher->expense_account_id, 'debit' => (float) $voucher->amount, 'credit' => 0, 'description' => $description, 'cost_center_id' => 1],
-                    ['account_id' => $cashAccountId, 'debit' => 0, 'credit' => (float) $voucher->amount, 'description' => $description, 'cost_center_id' => 1],
+                    ['account_id' => $debitSide, 'debit' => (float) $voucher->amount, 'credit' => 0, 'description' => $description, 'cost_center_id' => 1],
+                    ['account_id' => $creditSide, 'debit' => 0, 'credit' => (float) $voucher->amount, 'description' => $description, 'cost_center_id' => 1],
                 ],
                 'auto_post' => true,
             ]);
@@ -96,10 +102,46 @@ class ExpenseVoucherService
                 'checked_at' => now(),
                 'journal_entry_id' => $result['data']->id,
                 'rejection_reason' => null,
+                'payment_status' => $voucher->isCredit() ? ExpenseVoucher::UNPAID : ExpenseVoucher::PAID,
+                'paid_amount' => $voucher->isCredit() ? 0 : $voucher->amount,
             ]);
+
+            if ($voucher->isAdvance()) {
+                $this->openAdvance($voucher);
+            }
 
             return $voucher->fresh();
         });
+    }
+
+    /**
+     * The balance payroll will recover from the employee's salary.
+     */
+    private function openAdvance(ExpenseVoucher $voucher): void
+    {
+        EmployeeAdvance::create([
+            'employee_id' => $voucher->employee_id,
+            'expense_voucher_id' => $voucher->id,
+            'supplier_id' => $voucher->supplier_id,
+            'company_id' => $voucher->company_id,
+            'advance_date' => $voucher->voucher_date,
+            'amount' => $voucher->amount,
+            'installment_amount' => $voucher->advance_installment,
+            'recovered_amount' => 0,
+            'status' => EmployeeAdvance::STATUS_OPEN,
+            'notes' => $voucher->narration,
+        ]);
+    }
+
+    private function accountId(string $code, string $label): int
+    {
+        $id = ChartOfAccount::where('account_code', $code)->value('id');
+
+        if (! $id) {
+            throw new RuntimeException('The '.$label.' account is missing; the voucher cannot be posted.');
+        }
+
+        return (int) $id;
     }
 
     public function reject(ExpenseVoucher $voucher, User $checker, string $reason): ExpenseVoucher

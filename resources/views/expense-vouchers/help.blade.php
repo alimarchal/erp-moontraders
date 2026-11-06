@@ -188,6 +188,107 @@
                     </div>
                 </div>
             </section>
+
+            <section class="uf-card gh-card" aria-labelledby="ev-types">
+                <header class="uf-card-head ev-bihead"><h2 class="uf-card-title" id="ev-types">5. Shops, credit and advance salary</h2><h2 class="uf-card-title gh-rtl" dir="rtl" lang="ur">۵۔ دکانیں، ادھار اور ایڈوانس تنخواہ</h2></header>
+                <div class="uf-body">
+                    <div class="gh-scroll ev-chart">
+                        <svg viewBox="0 0 900 520" width="100%" role="img" aria-label="Expense voucher payment types" style="min-width:760px">
+                            <defs><marker id="fc-arrow-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#475569" /></marker></defs>
+                            <rect class="fc-box-slate" x="20" y="16" width="200" height="56" rx="10" /><text class="fc-text fc-bold" x="120" y="40" text-anchor="middle">Draft</text><text class="fc-small" x="120" y="58" text-anchor="middle">maker fills the voucher</text>
+                            <rect class="fc-box-slate" x="260" y="16" width="200" height="56" rx="10" /><text class="fc-text fc-bold" x="360" y="40" text-anchor="middle">Pending</text><text class="fc-small" x="360" y="58" text-anchor="middle">waits for a checker</text>
+                            <rect class="fc-box-green" x="500" y="16" width="200" height="56" rx="10" /><text class="fc-text fc-bold" x="600" y="40" text-anchor="middle">Approved</text><text class="fc-small" x="600" y="58" text-anchor="middle">posted to the ledger</text>
+                            <path class="fc-line" d="M220 44 H258" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M460 44 H498" marker-end="url(#fc-arrow-t)" />
+                            <path class="fc-line" d="M600 72 V100 H130 V124" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M600 72 V100 H450 V124" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M600 72 V124" marker-end="url(#fc-arrow-t)" />
+                            <rect class="fc-box" x="20" y="126" width="220" height="64" rx="10" /><text class="fc-text fc-bold" x="130" y="150" text-anchor="middle">Cash</text><text class="fc-small" x="130" y="168" text-anchor="middle">Dr expense / Cr Cash 1121</text>
+                            <rect class="fc-box" x="340" y="126" width="220" height="64" rx="10" /><text class="fc-text fc-bold" x="450" y="150" text-anchor="middle">Credit (pay later)</text><text class="fc-small" x="450" y="168" text-anchor="middle">Dr expense / Cr Payables 2113</text>
+                            <rect class="fc-box" x="660" y="126" width="220" height="64" rx="10" /><text class="fc-text fc-bold" x="770" y="150" text-anchor="middle">Advance salary</text><text class="fc-small" x="770" y="168" text-anchor="middle">Dr Advances 1131 / Cr Cash</text>
+                            <path class="fc-line" d="M130 190 V236" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M450 190 V236" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M770 190 V236" marker-end="url(#fc-arrow-t)" />
+                            <rect class="fc-box-green" x="20" y="238" width="220" height="56" rx="10" /><text class="fc-text fc-bold" x="130" y="262" text-anchor="middle">Paid, closed</text><text class="fc-small" x="130" y="280" text-anchor="middle">cash leaves the day's cash</text>
+                            <rect class="fc-box-amber" x="340" y="238" width="220" height="56" rx="10" /><text class="fc-text fc-bold" x="450" y="262" text-anchor="middle">Unpaid by shop</text><text class="fc-small" x="450" y="280" text-anchor="middle">shop's balance grows daily</text>
+                            <rect class="fc-box-amber" x="660" y="238" width="220" height="56" rx="10" /><text class="fc-text fc-bold" x="770" y="262" text-anchor="middle">Open advance</text><text class="fc-small" x="770" y="280" text-anchor="middle">balance per employee</text>
+                            <path class="fc-line" d="M450 294 V340" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M770 294 V340" marker-end="url(#fc-arrow-t)" />
+                            <rect class="fc-box" x="340" y="342" width="220" height="64" rx="10" /><text class="fc-text fc-bold" x="450" y="366" text-anchor="middle">Vendor payment (month end)</text><text class="fc-small" x="450" y="384" text-anchor="middle">Dr Payables 2113 / Cr Cash or Bank</text>
+                            <rect class="fc-box" x="660" y="342" width="220" height="64" rx="10" /><text class="fc-text fc-bold" x="770" y="366" text-anchor="middle">Payroll deduction</text><text class="fc-small" x="770" y="384" text-anchor="middle">taken from salary by itself</text>
+                            <path class="fc-line" d="M450 406 V450" marker-end="url(#fc-arrow-t)" /><path class="fc-line" d="M770 406 V450" marker-end="url(#fc-arrow-t)" />
+                            <rect class="fc-box-green" x="340" y="452" width="220" height="50" rx="10" /><text class="fc-text fc-bold" x="450" y="482" text-anchor="middle">Paid, closed</text>
+                            <rect class="fc-box-green" x="660" y="452" width="220" height="50" rx="10" /><text class="fc-text fc-bold" x="770" y="482" text-anchor="middle">Advance recovered</text>
+                        </svg>
+                    </div>
+                    <div class="ev-cols">
+                        <div class="ev-en gh-scroll" lang="en">
+                            <h3>Shops</h3>
+                            <ul>
+                                <li>Every shop, workshop or party is kept once in <b>Shops</b>. While making a voucher choose <b>Shop / party</b>, type a few letters, and pick it: the list loads as you type, so it stays fast.</li>
+                                <li>Shop not there? Press <b>＋ New shop</b> on the voucher, fill the name (the rest is optional) and save. It is selected for you. If the same name already exists in that city you are asked to use it or save anyway.</li>
+                                <li>A shop can have a <b>usual expense account</b>; it is filled in when the shop is picked.</li>
+                                <li>For a vehicle expense (maintenance, fuel, wash) pick the <b>vehicle</b>, so you can see what each vehicle costs.</li>
+                                <li>Several files (bill, receipt, photo) can be attached to one voucher.</li>
+                            </ul>
+                            <h3>Cash or credit</h3>
+                            <ul>
+                                <li><b>Paid in cash today</b>: approval posts Dr expense / Cr Cash, and the amount shows under "Less: expenses paid" in the day's Cash Collection report.</li>
+                                <li><b>On credit, pay later</b> (for example vehicle repairs paid at month end): approval posts Dr expense / Cr <b>Expense Payables (2113)</b>. The cost is in the books that day, but <b>no cash leaves</b>, so the cash report is not touched.</li>
+                                <li>At month end open <b>Vendor payments → New payment</b>, pick the shop, tick the vouchers (or part of one), choose cash or bank, and send it to a checker. Approval posts Dr Payables / Cr Cash or Bank and marks the vouchers paid or partly paid. A cash payment then appears in that day's cash report as "Less: vendor payments (cash)".</li>
+                                <li>One payment settles vouchers of one company; other companies' vouchers are greyed out.</li>
+                            </ul>
+                            <h3>Advance salary</h3>
+                            <ul>
+                                <li>Choose <b>Employee advance</b>, pick the employee and, if you want, a monthly instalment. Approval posts Dr <b>Employee Advances (1131)</b> / Cr Cash. An advance is not an expense: the employee owes it back.</li>
+                                <li>When payroll is built, each open advance is taken out of the salary automatically (the instalment, or everything left when there is none), and the recovery is recorded. Nobody types it in.</li>
+                            </ul>
+                        </div>
+                        <div class="ev-ur-col gh-rtl gh-scroll" dir="rtl" lang="ur">
+                            <h3>دکانیں</h3>
+                            <ul>
+                                <li>ہر دکان، ورکشاپ یا پارٹی <b>Shops</b> میں ایک بار محفوظ ہوتی ہے۔ واؤچر بناتے وقت <b>"دکان / پارٹی"</b> چنیں، چند حروف لکھیں اور دکان منتخب کریں۔ فہرست لکھتے ہی لوڈ ہوتی ہے، اس لیے سسٹم ہلکا رہتا ہے۔</li>
+                                <li>دکان فہرست میں نہ ہو تو واؤچر پر ہی <b>"＋ نئی دکان"</b> دبائیں، نام لکھ کر محفوظ کریں (باقی تفصیل اختیاری ہے)۔ دکان خود منتخب ہو جاتی ہے۔ اسی شہر میں وہی نام پہلے سے ہو تو پوچھا جاتا ہے کہ موجودہ استعمال کریں یا پھر بھی محفوظ کریں۔</li>
+                                <li>دکان کا <b>عام اخراجاتی کھاتہ</b> طے ہو سکتا ہے جو دکان منتخب ہوتے ہی خود بھر جاتا ہے۔</li>
+                                <li>گاڑی کے خرچ (مینٹیننس، ایندھن، دھلائی) پر <b>گاڑی</b> منتخب کریں تاکہ ہر گاڑی کا خرچ دیکھا جا سکے۔</li>
+                                <li>ایک واؤچر کے ساتھ کئی فائلیں (بل، رسید، تصویر) لگائی جا سکتی ہیں۔</li>
+                            </ul>
+                            <h3>نقد یا ادھار</h3>
+                            <ul>
+                                <li><b>آج نقد ادا</b>: منظوری پر خرچ کھاتے میں ڈیبٹ اور کیش میں کریڈٹ ہوتا ہے، اور رقم اس دن کی کیش کلیکشن رپورٹ میں "Less: expenses paid" میں آتی ہے۔</li>
+                                <li><b>ادھار، بعد میں ادائیگی</b> (مثلاً گاڑی کی مرمت جس کی ادائیگی مہینے کے آخر میں ہوتی ہے): منظوری پر خرچ ڈیبٹ اور <b>Expense Payables (2113)</b> میں کریڈٹ ہوتا ہے۔ خرچ اسی دن کے حساب میں آ جاتا ہے مگر <b>کیش نہیں نکلتا</b>، اس لیے کیش رپورٹ متاثر نہیں ہوتی۔</li>
+                                <li>مہینے کے آخر میں <b>Vendor payments ← New payment</b> کھولیں، دکان چنیں، واؤچر (یا واؤچر کی جزوی رقم) پر نشان لگائیں، نقد یا بینک چنیں اور چیکر کو بھیجیں۔ منظوری پر Payables ڈیبٹ اور کیش/بینک کریڈٹ ہوتا ہے اور واؤچر ادا یا جزوی ادا ہو جاتے ہیں۔ نقد ادائیگی اسی دن کی کیش رپورٹ میں "Less: vendor payments (cash)" کے طور پر آتی ہے۔</li>
+                                <li>ایک ادائیگی صرف ایک کمپنی کے واؤچرز کو کلیئر کرتی ہے؛ دوسری کمپنیوں کے واؤچر دھندلے ہو جاتے ہیں، ان کی الگ ادائیگی بنائیں۔</li>
+                            </ul>
+                            <h3>ایڈوانس تنخواہ</h3>
+                            <ul>
+                                <li><b>"ملازم کو ایڈوانس"</b> چنیں، ملازم منتخب کریں اور چاہیں تو ماہانہ قسط لکھیں۔ منظوری پر <b>Employee Advances (1131)</b> ڈیبٹ اور کیش کریڈٹ ہوتا ہے۔ ایڈوانس خرچ نہیں، ملازم کے ذمے واپسی کی رقم ہے۔</li>
+                                <li>جب payroll بنتا ہے تو ہر کھلا ایڈوانس تنخواہ میں سے خود کٹ جاتا ہے (قسط، یا قسط نہ ہو تو باقی پوری رقم) اور کٹوتی کا ریکارڈ خود بن جاتا ہے۔ کسی کو ہاتھ سے لکھنا نہیں پڑتا۔</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="uf-card gh-card" aria-labelledby="ev-see">
+                <header class="uf-card-head ev-bihead"><h2 class="uf-card-title" id="ev-see">6. Who sees which vouchers</h2><h2 class="uf-card-title gh-rtl" dir="rtl" lang="ur">۶۔ کون سے واؤچر کس کو نظر آتے ہیں</h2></header>
+                <div class="uf-body">
+                    <div class="ev-cols">
+                        <div class="ev-en" lang="en">
+                            <table class="gh-table"><thead><tr><th>Who</th><th>Sees</th></tr></thead><tbody>
+                                <tr><td>Admin and Super Admin</td><td>Every voucher, payment and payroll.</td></tr>
+                                <tr><td><span class="gh-code">expense-voucher-view-all</span></td><td>Every voucher of every company.</td></tr>
+                                <tr><td><span class="gh-code">expense-voucher-view-company</span></td><td>All vouchers of the user's own company (give this to checkers).</td></tr>
+                                <tr><td>Everyone else with the list permission</td><td>Only the vouchers they made themselves.</td></tr>
+                            </tbody></table>
+                            <div class="gh-note">Vendor payments use <span class="gh-code">expense-vendor-payment-view-all</span> / <span class="gh-code">-view-company</span> and payroll uses <span class="gh-code">payroll-view-all</span> / <span class="gh-code">-view-company</span> in the same way. A checker needs the company or all permission to see the vouchers waiting for approval.</div>
+                        </div>
+                        <div class="ev-ur-col gh-rtl" dir="rtl" lang="ur">
+                            <table class="gh-table"><thead><tr><th>کون</th><th>کیا دیکھتا ہے</th></tr></thead><tbody>
+                                <tr><td>ایڈمن اور سپر ایڈمن</td><td>ہر واؤچر، ادائیگی اور payroll۔</td></tr>
+                                <tr><td><bdi class="gh-code">expense-voucher-view-all</bdi></td><td>تمام کمپنیوں کے تمام واؤچر۔</td></tr>
+                                <tr><td><bdi class="gh-code">expense-voucher-view-company</bdi></td><td>اپنی کمپنی کے تمام واؤچر (چیکر کو یہ اجازت دیں)۔</td></tr>
+                                <tr><td>لسٹ کی اجازت والا باقی ہر صارف</td><td>صرف وہ واؤچر جو اس نے خود بنائے۔</td></tr>
+                            </tbody></table>
+                            <div class="gh-note">ادائیگیوں کے لیے <bdi class="gh-code">expense-vendor-payment-view-all / -view-company</bdi> اور payroll کے لیے <bdi class="gh-code">payroll-view-all / -view-company</bdi> اسی طرح کام کرتی ہیں۔ چیکر کو منظوری کے منتظر واؤچر دیکھنے کے لیے کمپنی یا سب والی اجازت درکار ہے۔</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 </x-app-layout>

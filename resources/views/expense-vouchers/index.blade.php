@@ -32,16 +32,19 @@
     $names = [
         'owner' => $suppliers->mapWithKeys(fn ($s) => ['supplier:'.$s->id => $s->supplier_name])->union($companies->mapWithKeys(fn ($c) => ['company:'.$c->id => $c->company_name.' (general)'])),
         'expense_account_id' => $accounts->mapWithKeys(fn ($a) => [$a->id => $a->account_code.' - '.$a->account_name]),
+        'category_id' => $categories->pluck('name', 'id'),
+        'payment_type' => collect(\App\Models\ExpenseVoucher::paymentTypeLabels()),
+        'payment_status' => collect(['unpaid' => 'Unpaid', 'partial' => 'Partly paid', 'paid' => 'Paid']),
         'created_by' => $people->pluck('name', 'id'),
         'checked_by' => $people->pluck('name', 'id'),
     ];
     $chipLabels = [
         'search' => 'Search', 'owner' => 'Company', 'expense_account_id' => 'Account', 'party_name' => 'Party', 'created_by' => 'Maker',
-        'checked_by' => 'Checker', 'amount_min' => 'Amount from', 'amount_max' => 'Amount to',
+        'checked_by' => 'Checker', 'category_id' => 'Category', 'payment_type' => 'Payment', 'payment_status' => 'Credit status', 'amount_min' => 'Amount from', 'amount_max' => 'Amount to',
     ];
     $chipValue = fn (string $key, $value) => isset($names[$key]) ? ($names[$key][$value] ?? $value) : $value;
     $chips = \Illuminate\Support\Arr::except($filters, ['status', 'date_from', 'date_to']);
-    $advancedKeys = ['expense_account_id', 'party_name', 'created_by', 'checked_by', 'amount_min', 'amount_max'];
+    $advancedKeys = ['expense_account_id', 'category_id', 'party_name', 'payment_type', 'payment_status', 'created_by', 'checked_by', 'amount_min', 'amount_max'];
     $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
     $activeFilterCount = count($chips) + (($filters['date_from'] ?? null) || ($filters['date_to'] ?? null) ? 1 : 0);
     $periodLabel = $dateFrom === $dateTo
@@ -66,6 +69,8 @@
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
                     Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
                 </button>
+                <a href="{{ route('expense-vouchers.summary') }}" class="ak-btn ak-btn-outline">Summary</a>
+                @can('expense-category-manage')<a href="{{ route('expense-categories.index') }}" class="ak-btn ak-btn-outline">Categories</a>@endcan
                 <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline" title="How the voucher flow works and what it posts">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print <span class="ev-ur" lang="ur" dir="rtl">پرنٹ</span></button>
                 @can('expense-voucher-create')
@@ -209,6 +214,33 @@
                     </datalist>
                 </div>
                 <div class="ak-field">
+                    <label for="f_cat">Category</label>
+                    <select id="f_cat" class="ev-select" name="filter[category_id]">
+                        <option value="">All categories</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
+                    <label for="f_ptype">Payment</label>
+                    <select id="f_ptype" class="ev-select" name="filter[payment_type]">
+                        <option value="">Any</option>
+                        @foreach (\App\Models\ExpenseVoucher::paymentTypeLabels() as $key => $label)
+                            <option value="{{ $key }}" @selected(($filters['payment_type'] ?? '') === $key)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
+                    <label for="f_pstatus">Credit status</label>
+                    <select id="f_pstatus" class="ev-select" name="filter[payment_status]">
+                        <option value="">Any</option>
+                        @foreach (['unpaid' => 'Unpaid', 'partial' => 'Partly paid', 'paid' => 'Paid'] as $key => $label)
+                            <option value="{{ $key }}" @selected(($filters['payment_status'] ?? '') === $key)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ak-field">
                     <label for="f_maker">Maker</label>
                     <select id="f_maker" class="ev-select" name="filter[created_by]">
                         <option value="">Anyone</option>
@@ -300,13 +332,16 @@
                                     <tr>
                                         <td class="ak-c ak-muted">{{ $vouchers->firstItem() + $loop->index }}</td>
                                         <td data-label="Voucher">
-                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>@if($voucher->attachment_url) <span title="Has an attachment" aria-label="Has an attachment">&#128206;</span>@endif
+                                            <a href="{{ route('expense-vouchers.show', $voucher) }}" class="ak-primary-link">{{ $voucher->voucher_number }}</a>@if($voucher->attachments->isNotEmpty()) <span title="Has an attachment" aria-label="Has an attachment">&#128206;</span>@endif
                                             <div class="ak-muted ak-hide-compact">{{ $voucher->created_at?->diffForHumans() }}</div>
                                         </td>
                                         <td class="ak-mono" data-label="Date">{{ $voucher->voucher_date->format('d M Y') }}</td>
                                         <td data-label="Party · company">
-                                            <span class="ak-strong">{{ $voucher->party_name }}</span>
+                                            <span class="ak-strong">{{ $voucher->party_name }}</span>@if($voucher->category)<div class="ak-muted">{{ $voucher->category->name }}</div>@endif
                                             <div class="ak-muted">{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? $voucher->company?->company_name ?? 'Moon Traders' }}</div>
+                                            @if($voucher->payment_type !== 'cash')
+                                                <span class="ak-status {{ $voucher->isAdvance() ? 'ak-status-amber' : ($voucher->payment_status === 'paid' ? 'ak-status-green' : 'ak-status-red') }}" style="margin-top:4px"><i aria-hidden="true"></i>{{ $voucher->isAdvance() ? 'Advance salary' : 'Credit · '.($voucher->isApproved() ? $voucher->payment_status : 'to be paid later') }}</span>
+                            @endif
                                         </td>
                                         <td data-label="Expense account">{{ $voucher->expenseAccount?->account_name }}<div class="ak-muted ak-hide-compact">{{ $voucher->expenseAccount?->account_code }}</div></td>
                                         <td class="ak-num ak-strong" data-label="Amount (Rs)">{{ number_format((float) $voucher->amount, 2) }}</td>

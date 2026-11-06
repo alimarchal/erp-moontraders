@@ -633,7 +633,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-expense-detail', 'expense-voucher-list', 'report-audit-percentage-expense', 'report-audit-profit-after-category', 'report-audit-revenue-detail', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-scheme-received', 'report-sales-summary-roi', 'report-sales-tts-summary'])
+                @canany(['report-audit-expense-detail', 'expense-voucher-list', 'expense-vendor-list', 'expense-category-manage', 'expense-vendor-payment-list', 'payroll-list', 'payroll-adjustment-manage', 'report-audit-percentage-expense', 'report-audit-profit-after-category', 'report-audit-revenue-detail', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-scheme-received', 'report-sales-summary-roi', 'report-sales-tts-summary'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Profitability &amp; Schemes</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -706,6 +706,41 @@
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
                                         </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('expense-category-manage')
+                                <x-settings-row data-settings-item data-search="expense categories toner grocery rent" x-bind:hidden="! matches($el)" href="{{ route('expense-categories.index') }}" label="Expense Categories" description="What expense vouchers are for" icon-bg="bg-rose-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('expense-vendor-list')
+                                <x-settings-row data-settings-item data-search="shops vendors parties expense catalogue owed" x-bind:hidden="! matches($el)" href="{{ route('expense-vendors.index') }}" label="Shops" description="Shops and parties paid for daily expenses, with what is owed to each" icon-bg="bg-rose-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('expense-vendor-payment-list')
+                                <x-settings-row data-settings-item data-search="vendor payments month end credit expense shops pay" x-bind:hidden="! matches($el)" href="{{ route('expense-vendor-payments.index') }}" label="Vendor Payments" description="Month-end payments that clear the credit vouchers of shops" icon-bg="bg-rose-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('payroll-adjustment-manage')
+                                <x-settings-row data-settings-item data-search="bonus commission incentive overtime payroll adjustments employee extra pay" x-bind:hidden="! matches($el)" href="{{ route('payroll.adjustments.index') }}" label="Bonus &amp; Commission" description="Extra pay for chosen employees and months" icon-bg="bg-emerald-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('payroll-list')
+                                <x-settings-row data-settings-item data-search="payroll salary slips advance allowances deductions employees" x-bind:hidden="! matches($el)" href="{{ route('payroll.index') }}" label="Payroll" description="Monthly salaries, salary slips and advance recovery" icon-bg="bg-emerald-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
                                     </x-slot>
                                 </x-settings-row>
                             @endcan

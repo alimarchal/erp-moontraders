@@ -28,7 +28,9 @@
         <tr><td class="l">Date</td><td>{{ $voucher->voucher_date->format('d-M-Y') }}</td></tr>
         <tr><td class="l">Company</td><td>{{ $voucher->supplier?->short_name ?? $voucher->supplier?->supplier_name ?? $voucher->company?->company_name ?? 'Moon Traders' }}</td></tr>
         <tr><td class="l">Paid to</td><td><b>{{ $voucher->party_name }}</b></td></tr>
-        <tr><td class="l">Account</td><td>{{ $voucher->expenseAccount?->account_name }}</td></tr>
+        <tr><td class="l">Account</td><td>{{ $voucher->isAdvance() ? 'Employee Advance' : $voucher->expenseAccount?->account_name }}</td></tr>
+        <tr><td class="l">Payment</td><td>{{ \App\Models\ExpenseVoucher::paymentTypeLabels()[$voucher->payment_type] ?? $voucher->payment_type }}</td></tr>
+        @if($voucher->vendor_bill_no)<tr><td class="l">Bill no.</td><td>{{ $voucher->vendor_bill_no }}</td></tr>@endif
         @if($voucher->narration)<tr><td class="l">Note</td><td>{{ $voucher->narration }}</td></tr>@endif
     </table>
     <div class="rule"></div>

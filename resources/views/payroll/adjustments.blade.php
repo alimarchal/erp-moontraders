@@ -15,6 +15,7 @@
         </div>
     </x-slot>
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
     @include('expense-vouchers._form-styles')
     <style>
         .pa-grid { display:grid; gap:14px; grid-template-columns:minmax(0,1fr); } @media (min-width:900px){ .pa-grid { grid-template-columns: 1fr 1fr 1fr; } .pa-span-3 { grid-column: span 3; } .pa-span-2 { grid-column: span 2; } }
@@ -49,8 +50,8 @@
 
         <form method="GET" class="ak-card" style="padding:14px 16px; display:flex; flex-wrap:wrap; gap:12px; align-items:end">
             <div class="ak-field"><label for="f_month">Month</label><input id="f_month" type="month" name="filter[month]" value="{{ $month }}" style="height:38px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"></div>
-            <div class="ak-field"><label for="f_comp">Kind</label><select id="f_comp" name="filter[component_id]" style="height:38px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"><option value="">All</option>@foreach($components as $component)<option value="{{ $component->id }}" @selected((string) ($filters['component_id'] ?? '') === (string) $component->id)>{{ $component->name }}</option>@endforeach</select></div>
-            <div class="ak-field"><label for="f_status">Status</label><select id="f_status" name="filter[status]" style="height:38px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"><option value="">Any</option><option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Waiting for payroll</option><option value="applied" @selected(($filters['status'] ?? '') === 'applied')>Paid out in payroll</option></select></div>
+            <div class="ak-field"><label for="f_comp">Kind</label><select class="js-select2" id="f_comp" name="filter[component_id]" style="height:38px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"><option value="">All</option>@foreach($components as $component)<option value="{{ $component->id }}" @selected((string) ($filters['component_id'] ?? '') === (string) $component->id)>{{ $component->name }}</option>@endforeach</select></div>
+            <div class="ak-field"><label for="f_status">Status</label><select class="js-select2" id="f_status" name="filter[status]" style="height:38px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"><option value="">Any</option><option value="pending" @selected(($filters['status'] ?? '') === 'pending')>Waiting for payroll</option><option value="applied" @selected(($filters['status'] ?? '') === 'applied')>Paid out in payroll</option></select></div>
             <div class="ak-field" style="flex:1; min-width:180px"><label for="f_search">Employee</label><input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" placeholder="Name or code" style="height:38px; width:100%; border:1px solid var(--ak-border); border-radius:8px; padding:0 12px"></div>
             <button class="ak-btn ak-btn-primary" style="height:38px">Apply</button>
         </form>

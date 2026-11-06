@@ -10,6 +10,7 @@
         </div>
     </x-slot>
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
     @include('expense-vouchers._form-styles')
     <div class="ak-page">
         <x-status-message />
@@ -27,7 +28,7 @@
                     <p class="ev-note" x-show="type === 'fixed'" x-cloak>Fixed: the full amount is paid every month whatever the attendance. Add a fine by hand if one is needed.</p>
                 </fieldset>
                 <div class="ak-field"><label for="basic_salary">Monthly <span x-text="type === 'fixed' ? 'fixed' : 'basic'"></span> salary (Rs)</label><input id="basic_salary" type="number" step="0.01" min="0" name="basic_salary" required value="{{ old('basic_salary', $salary->basic_salary) }}"></div>
-                <div class="ak-field"><label for="pay_method">Usually paid by</label><select id="pay_method" name="pay_method" style="height:40px; border:1px solid var(--ak-border); border-radius:8px; padding:0 12px"><option value="cash" @selected(old('pay_method', $salary->pay_method) === 'cash')>Cash</option><option value="bank" @selected(old('pay_method', $salary->pay_method) === 'bank')>Bank</option></select></div>
+                <div class="ak-field"><label for="pay_method">Usually paid by</label><select class="js-select2" id="pay_method" name="pay_method" style="height:40px; border:1px solid var(--ak-border); border-radius:8px; padding:0 12px"><option value="cash" @selected(old('pay_method', $salary->pay_method) === 'cash')>Cash</option><option value="bank" @selected(old('pay_method', $salary->pay_method) === 'bank')>Bank</option></select></div>
                 <div class="ak-field"><label for="notes">Notes</label><input id="notes" type="text" name="notes" maxlength="500" value="{{ old('notes', $salary->notes) }}"></div>
             </div>
             <h2 style="margin:22px 0 4px; font-size:15px; font-weight:700">Allowances and regular deductions</h2>

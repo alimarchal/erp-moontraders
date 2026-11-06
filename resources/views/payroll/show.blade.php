@@ -21,10 +21,14 @@
                 <a href="{{ route('payroll.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
                 <a href="{{ route('payroll.help') }}" class="ak-btn ak-btn-outline">How it works</a>
                 <a href="{{ route('payroll.print', $run) }}" target="_blank" class="ak-btn ak-btn-outline">Print all slips</a>
+                <a href="{{ route('payroll.export.pdf', $run) }}" class="ak-btn ak-btn-outline">Register PDF</a>
+                <a href="{{ route('payroll.export.excel', $run) }}" class="ak-btn ak-btn-outline">Excel</a>
+                <a href="{{ route('payroll.slips.pdf', $run) }}" class="ak-btn ak-btn-outline">Slips PDF</a>
             </div>
         </div>
     </x-slot>
     @include('settings.partials.ui-style')
+    @include('settings.partials.select2-init')
     @include('expense-vouchers._form-styles')
     <style>
         .pr-steps { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0; padding:0; list-style:none; } .pr-steps li { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--ak-muted); } .pr-steps li + li::before { content:''; width:28px; height:2px; background:var(--ak-border); }
@@ -114,14 +118,14 @@
                                             </form>
                                         @endif
                                         <form method="POST" action="{{ route('payroll.lines.store', [$run, $slip]) }}" class="pr-mini" style="margin:0">@csrf
-                                            <label style="font-size:12px">Add this month<br><select name="salary_component_id" required><option value="">Choose…</option>@foreach($components as $component)<option value="{{ $component->id }}">{{ $component->type === 'earning' ? '＋' : '－' }} {{ $component->name }}</option>@endforeach</select></label>
+                                            <label style="font-size:12px">Add this month<br><select class="js-select2" name="salary_component_id" required><option value="">Choose…</option>@foreach($components as $component)<option value="{{ $component->id }}">{{ $component->type === 'earning' ? '＋' : '－' }} {{ $component->name }}</option>@endforeach</select></label>
                                             <label style="font-size:12px">Amount<br><input type="number" step="0.01" min="0.01" name="amount" required style="width:120px"></label>
                                             <label style="font-size:12px">Note (optional)<br><input type="text" name="label" maxlength="160" style="width:180px"></label>
                                             <button class="ak-btn ak-btn-primary" style="height:36px">Add</button>
                                         </form>
                                     </div>
                                 @endif
-                                <div style="margin-top:10px"><a href="{{ route('payroll.slips.show', [$run, $slip]) }}" target="_blank" class="ak-primary-link">Open printable slip →</a></div>
+                                <div style="margin-top:10px"><a href="{{ route('payroll.slips.show', [$run, $slip]) }}" target="_blank" class="ak-primary-link">Open printable slip →</a> <span class="ak-muted">·</span> <a href="{{ route('payroll.slip.pdf', [$run, $slip]) }}" class="ak-primary-link">PDF</a></div>
                             </td>
                         </tr>
                     @endforeach
@@ -189,7 +193,7 @@
                 <form method="POST" action="{{ route('payroll.pay', $run) }}">@csrf
                     <div class="uf-modal-body" style="display:block"><h3>Pay the salaries</h3><p style="margin:8px 0 12px; font-size:14px; color:#334155">Rs {{ $fmt($run->total_net) }} is paid out of {{ $slips->count() }} employees' payable salary.</p>
                         <div class="ev-seg"><label :class="{ 'is-on': method === 'cash' }"><input type="radio" name="method" value="cash" x-model="method"> Cash</label><label :class="{ 'is-on': method === 'bank' }"><input type="radio" name="method" value="bank" x-model="method"> Bank</label></div>
-                        <div class="ak-field" style="margin-top:12px" x-show="method === 'bank'" x-cloak><label for="pay-bank" style="font-size:13px; font-weight:600">Bank account</label><select id="pay-bank" name="bank_account_id" :required="method === 'bank'" style="width:100%; height:40px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"><option value="">Select account</option>@foreach($bankAccounts as $bank)<option value="{{ $bank->id }}">{{ $bank->bank_name }} - {{ $bank->account_number }}</option>@endforeach</select></div>
+                        <div class="ak-field" style="margin-top:12px" x-show="method === 'bank'" x-cloak><label for="pay-bank" style="font-size:13px; font-weight:600">Bank account</label><select class="js-select2" id="pay-bank" name="bank_account_id" :required="method === 'bank'" style="width:100%; height:40px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"><option value="">Select account</option>@foreach($bankAccounts as $bank)<option value="{{ $bank->id }}">{{ $bank->bank_name }} - {{ $bank->account_number }}</option>@endforeach</select></div>
                         <div class="ak-field" style="margin-top:12px"><label for="pay-date" style="font-size:13px; font-weight:600">Paid on</label><input id="pay-date" type="date" name="paid_on" required max="{{ now()->toDateString() }}" value="{{ now()->toDateString() }}" style="width:100%; height:40px; border:1px solid var(--ak-border); border-radius:8px; padding:0 10px"></div>
                     </div>
                     <div class="uf-modal-foot"><button type="button" class="ak-btn ak-btn-outline" @click="dialog = null">Cancel</button><button class="ak-btn ak-btn-primary">Mark as paid</button></div>

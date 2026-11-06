@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PayrollRunExport;
+use App\Exports\PayrollRunsExport;
 use App\Models\BankAccount;
 use App\Models\Company;
 use App\Models\PayrollRun;
@@ -10,7 +12,9 @@ use App\Models\PayrollSlipLine;
 use App\Models\SalaryComponent;
 use App\Models\Supplier;
 use App\Services\PayrollService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -18,6 +22,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
 
 /**
@@ -30,7 +35,7 @@ class PayrollRunController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:payroll-list', only: ['index', 'show', 'slip', 'printAll', 'help']),
+            new Middleware('can:payroll-list', only: ['index', 'show', 'slip', 'printAll', 'help', 'exportPdf', 'exportExcel', 'slipsPdf', 'listPdf', 'listExcel']),
             new Middleware('can:payroll-create', only: ['create', 'store', 'updateSlip', 'addLine', 'removeLine', 'recalculate', 'addEmployees', 'submit', 'destroy']),
             new Middleware('can:payroll-approve', only: ['approve', 'reject']),
             new Middleware('can:payroll-pay', only: ['pay']),
@@ -41,17 +46,14 @@ class PayrollRunController extends Controller implements HasMiddleware
     {
         $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
 
-        $runs = PayrollRun::query()
-            ->visibleTo($request->user())
-            ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr', 'creator:id,name'])
-            ->withCount('slips')
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->when($filters['month'] ?? null, fn ($query, $month) => $query->whereDate('period_month', Carbon::parse($month.'-01')->toDateString()))
-            ->latest('period_month')->latest('id')
-            ->paginate(25)
-            ->withQueryString();
+        $runs = $this->filteredRuns($request, $filters)->paginate(25)->withQueryString();
 
-        return view('payroll.index', ['runs' => $runs, 'filters' => $filters, 'statuses' => PayrollRun::statusLabels()]);
+        $user = $request->user();
+
+        return view('payroll.index', [
+            'runs' => $runs, 'filters' => $filters, 'statuses' => PayrollRun::statusLabels(),
+            'suppliers' => $user->hasAllSupplierAccess() ? Supplier::query()->orderBy('supplier_name')->get(['id', 'supplier_name']) : collect(),
+        ]);
     }
 
     public function create(Request $request)
@@ -203,6 +205,85 @@ class PayrollRunController extends Controller implements HasMiddleware
         }
 
         return redirect()->route('payroll.index')->with('success', 'Payroll deleted.');
+    }
+
+    public function listPdf(Request $request)
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
+        $runs = $this->filteredRuns($request, $filters)->get();
+        $subtitle = collect([
+            isset($filters['month']) ? Carbon::parse($filters['month'].'-01')->format('F Y') : 'All months',
+            isset($filters['status']) ? (PayrollRun::statusLabels()[$filters['status']] ?? $filters['status']) : 'Any status',
+        ])->implode(' · ');
+
+        return Pdf::loadView('payroll.pdf.runs', ['runs' => $runs, 'subtitle' => $subtitle])->setPaper('a4', 'portrait')->download('payroll-register.pdf');
+    }
+
+    public function listExcel(Request $request)
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
+
+        return Excel::download(new PayrollRunsExport($this->filteredRuns($request, $filters)->get()), 'payroll-register.xlsx');
+    }
+
+    public function exportPdf(Request $request, PayrollRun $payroll)
+    {
+        $this->authorizeVisible($request, $payroll);
+
+        return $this->paged(Pdf::loadView('payroll.pdf.run', ['run' => $this->loadForExport($payroll)])->setPaper('a4', 'portrait'))->download($payroll->run_number.'.pdf');
+    }
+
+    public function exportExcel(Request $request, PayrollRun $payroll)
+    {
+        $this->authorizeVisible($request, $payroll);
+
+        return Excel::download(new PayrollRunExport($this->loadForExport($payroll)), $payroll->run_number.'.xlsx');
+    }
+
+    public function slipsPdf(Request $request, PayrollRun $payroll, ?PayrollSlip $slip = null)
+    {
+        $this->authorizeVisible($request, $payroll);
+        abort_if($slip && $slip->payroll_run_id !== $payroll->id, 404);
+        $this->loadForExport($payroll);
+        $slips = ($slip ? $payroll->slips->where('id', $slip->id) : $payroll->slips)->sortBy(fn ($s) => $s->employee?->name);
+
+        return $this->paged(Pdf::loadView('payroll.pdf.slips', ['run' => $payroll, 'slips' => $slips])->setPaper('a4', 'portrait'))
+            ->download($payroll->run_number.($slip ? '-'.($slip->employee?->employee_code ?? $slip->id) : '-slips').'.pdf');
+    }
+
+    private function loadForExport(PayrollRun $run): PayrollRun
+    {
+        return $run->load(['supplier', 'company', 'creator', 'checker', 'slips.employee.supplier', 'slips.lines']);
+    }
+
+    /** Adds "Page x of y" to every page of a PDF. */
+    private function paged(\Barryvdh\DomPDF\PDF $pdf): \Barryvdh\DomPDF\PDF
+    {
+        $pdf->render();
+        $dompdf = $pdf->getDomPDF();
+        $canvas = $dompdf->getCanvas();
+        $canvas->page_text($canvas->get_width() - 80, $canvas->get_height() - 25, 'Page {PAGE_NUM} of {PAGE_COUNT}', $dompdf->getFontMetrics()->getFont('Helvetica'), 7);
+
+        return $pdf;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<PayrollRun>
+     */
+    private function filteredRuns(Request $request, array $filters)
+    {
+        return PayrollRun::query()
+            ->visibleTo($request->user())
+            ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr', 'creator:id,name'])
+            ->withCount('slips')
+            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['month'] ?? null, fn ($query, $month) => $query->whereDate('period_month', Carbon::parse($month.'-01')->toDateString()))
+            ->when($filters['month_from'] ?? null, fn ($query, $month) => $query->whereDate('period_month', '>=', Carbon::parse($month.'-01')->toDateString()))
+            ->when($filters['month_to'] ?? null, fn ($query, $month) => $query->whereDate('period_month', '<=', Carbon::parse($month.'-01')->toDateString()))
+            ->when($filters['search'] ?? null, fn ($query, $term) => $query->whereLike('run_number', "%{$term}%"))
+            ->when($filters['owner'] ?? null, fn ($query, $owner) => $owner === 'company' ? $query->whereNull('supplier_id') : $query->where('supplier_id', (int) $owner))
+            ->latest('period_month')->latest('id');
     }
 
     public function help(): View

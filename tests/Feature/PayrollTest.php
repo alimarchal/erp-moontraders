@@ -285,3 +285,67 @@ it('shows the all-employees payroll only to admins and holders of the all permis
     $this->actingAs($this->checker)->get(route('payroll.show', $run))->assertNotFound();
     $this->actingAs($admin)->get(route('payroll.show', $run))->assertOk();
 });
+
+it('downloads the payroll as PDF and Excel, the slips as PDF, and the payroll list as PDF and Excel', function () {
+    $run = ($this->build)();
+    $this->actingAs($this->maker);
+
+    foreach ([route('payroll.export.pdf', $run), route('payroll.slips.pdf', $run), route('payroll.slip.pdf', [$run, $run->slips->first()]), route('payroll.list.pdf')] as $url) {
+        $response = $this->get($url)->assertOk();
+        expect($response->headers->get('content-type'))->toContain('application/pdf');
+    }
+
+    foreach ([route('payroll.export.excel', $run), route('payroll.list.excel')] as $url) {
+        expect($this->get($url)->assertOk()->headers->get('content-disposition'))->toContain('.xlsx');
+    }
+});
+
+it('keeps the payroll downloads to people who may see that payroll', function () {
+    $run = ($this->build)();
+    $stranger = User::factory()->create(['supplier_id' => Supplier::factory()->create()->id])->givePermissionTo('payroll-list');
+    $nobody = User::factory()->create();
+
+    $this->actingAs($stranger)->get(route('payroll.export.pdf', $run))->assertNotFound();
+    $this->actingAs($stranger)->get(route('payroll.slips.pdf', $run))->assertNotFound();
+    $this->actingAs($stranger)->get(route('payroll.export.excel', $run))->assertNotFound();
+    $this->actingAs($nobody)->get(route('payroll.list.pdf'))->assertForbidden();
+    $this->actingAs($nobody)->get(route('payroll.list.excel'))->assertForbidden();
+});
+
+it('sets the salary of many employees at once and keeps what is left empty', function () {
+    $second = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
+    $noSalary = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
+    $conveyance = SalaryComponent::where('code', 'conveyance')->firstOrFail();
+    EmployeeSalary::create(['employee_id' => $second->id, 'salary_type' => 'basic', 'basic_salary' => 30000, 'pay_method' => 'cash']);
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), [
+        'employee_ids' => [$this->employee->id, $second->id, $noSalary->id], 'pay_method' => 'bank', 'components' => [$conveyance->id => 1500, $this->houseRent->id => ''],
+    ])->assertRedirect(route('payroll.salaries.index'))->assertSessionHas('error');
+
+    expect($second->fresh()->salary->pay_method)->toBe('bank')->and((float) $second->fresh()->salary->basic_salary)->toBe(30000.0)
+        ->and((float) $second->salaryComponents()->where('salary_component_id', $conveyance->id)->value('value'))->toBe(1500.0)
+        ->and((float) $this->employee->salaryComponents()->where('salary_component_id', $this->houseRent->id)->value('value'))->toBe(6000.0)
+        ->and($noSalary->fresh()->salary)->toBeNull();
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), ['employee_ids' => [$noSalary->id], 'salary_type' => 'fixed', 'basic_salary' => 20000])->assertSessionDoesntHaveErrors();
+    expect($noSalary->fresh()->salary->salary_type)->toBe('fixed')->and((float) $noSalary->fresh()->salary->basic_salary)->toBe(20000.0);
+});
+
+it('does not let a bulk salary change reach another company\'s employees', function () {
+    $foreign = Employee::factory()->create(['supplier_id' => Supplier::factory()->create()->id, 'is_active' => true]);
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), ['employee_ids' => [$foreign->id], 'basic_salary' => 1])->assertRedirect();
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), [])->assertSessionHasErrors('employee_ids');
+
+    expect($foreign->fresh()->salary)->toBeNull();
+});
+
+it('filters the payroll list by payroll number, month range and status', function () {
+    $run = ($this->build)();
+    $this->actingAs($this->maker);
+
+    $this->get(route('payroll.index', ['filter' => ['search' => $run->run_number]]))->assertOk()->assertSee($run->run_number);
+    $this->get(route('payroll.index', ['filter' => ['month_from' => $this->month->copy()->addMonth()->format('Y-m')]]))->assertOk()->assertDontSee($run->run_number);
+    $this->get(route('payroll.index', ['filter' => ['month_from' => $this->month->format('Y-m'), 'month_to' => $this->month->format('Y-m'), 'status' => 'draft']]))->assertOk()->assertSee($run->run_number);
+    $this->get(route('payroll.index', ['filter' => ['status' => 'paid']]))->assertOk()->assertDontSee($run->run_number);
+});

@@ -566,6 +566,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('adjustments/employees', [PayrollAdjustmentController::class, 'employees'])->name('adjustments.employees');
         Route::delete('adjustments/{adjustment}', [PayrollAdjustmentController::class, 'destroy'])->name('adjustments.destroy');
         Route::get('salaries', [EmployeeSalaryController::class, 'index'])->name('salaries.index');
+        Route::post('salaries/bulk', [EmployeeSalaryController::class, 'bulkUpdate'])->name('salaries.bulk');
         Route::get('salaries/{employee}/edit', [EmployeeSalaryController::class, 'edit'])->name('salaries.edit');
         Route::put('salaries/{employee}', [EmployeeSalaryController::class, 'update'])->name('salaries.update');
         Route::get('components', [SalaryComponentController::class, 'index'])->name('components.index');
@@ -575,7 +576,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/', [PayrollRunController::class, 'index'])->name('index');
         Route::get('create', [PayrollRunController::class, 'create'])->name('create');
         Route::post('/', [PayrollRunController::class, 'store'])->name('store');
+        Route::get('export/pdf', [PayrollRunController::class, 'listPdf'])->name('list.pdf');
+        Route::get('export/excel', [PayrollRunController::class, 'listExcel'])->name('list.excel');
         Route::get('{payroll}', [PayrollRunController::class, 'show'])->name('show');
+        Route::get('{payroll}/export/pdf', [PayrollRunController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('{payroll}/export/excel', [PayrollRunController::class, 'exportExcel'])->name('export.excel');
+        Route::get('{payroll}/slips-pdf', [PayrollRunController::class, 'slipsPdf'])->name('slips.pdf');
+        Route::get('{payroll}/slips/{slip}/pdf', [PayrollRunController::class, 'slipsPdf'])->name('slip.pdf');
         Route::delete('{payroll}', [PayrollRunController::class, 'destroy'])->name('destroy');
         Route::get('{payroll}/print', [PayrollRunController::class, 'printAll'])->name('print');
         Route::get('{payroll}/slips/{slip}', [PayrollRunController::class, 'slip'])->name('slips.show');

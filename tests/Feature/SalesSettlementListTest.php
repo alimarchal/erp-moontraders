@@ -9,6 +9,7 @@ use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\User;
 use App\Models\Vehicle;
+use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
     $this->user = User::factory()->create(['is_super_admin' => 'Yes']);
@@ -124,4 +125,26 @@ it('sorts by net profit', function () {
 
     $asc = $this->actingAs($this->user)->get(route('sales-settlements.index', ['sort' => 'net_profit', 'filter' => ['status' => 'all']]));
     expect($asc->viewData('settlements')->pluck('id')->all())->toBe([$low->id, $high->id]);
+});
+
+it('always lists a back-dated draft whatever the date range, and keeps old posted settlements out', function () {
+    $oldDraft = SalesSettlement::factory()->create(['status' => 'draft', 'settlement_date' => now()->subDays(20)]);
+    $oldPosted = SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now()->subDays(20)]);
+
+    $response = $this->actingAs($this->user)->get(route('sales-settlements.index', ['filter' => ['status' => 'all']]));
+
+    $ids = $response->viewData('settlements')->pluck('id')->all();
+    expect($ids)->toContain($oldDraft->id)->not->toContain($oldPosted->id);
+    $response->assertSee('draft settlement not posted yet');
+    expect($response->viewData('draftAlert')->drafts)->toBe(1);
+});
+
+it('shows the red draft alert on the default Posted tab too, and only for drafts the user may see', function () {
+    SalesSettlement::factory()->create(['status' => 'draft', 'settlement_date' => now()->subDays(5)]);
+
+    $this->actingAs($this->user)->get(route('sales-settlements.index'))->assertSee('Review drafts');
+
+    $other = User::factory()->create();
+    $other->givePermissionTo(Permission::firstOrCreate(['name' => 'sales-settlement-list', 'guard_name' => 'web']));
+    $this->actingAs($other)->get(route('sales-settlements.index'))->assertDontSee('Review drafts');
 });

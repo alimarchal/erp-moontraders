@@ -11,6 +11,7 @@ use App\Services\TicketService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -169,6 +170,7 @@ class TicketRequest extends FormRequest
             'items.*.system_quantity' => ['required', 'numeric', 'min:0'],
             'items.*.actual_quantity' => ['required', 'numeric', 'min:0'],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
+            'items.*.selling_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.uom_id' => ['required', 'exists:uoms,id'],
         ];
     }
@@ -313,8 +315,25 @@ class TicketRequest extends FormRequest
 
             if ($onHand <= 0) {
                 $validator->errors()->add("items.$index.stock_batch_id", "Batch {$batch->batch_code} has no stock in the selected warehouse.");
-            } elseif (abs((float) $row['actual_quantity'] - $onHand) < 0.0005 && ! TicketService::costChanged($batch->id, $warehouseId, (float) $row['unit_cost'])) {
-                $validator->errors()->add("items.$index.actual_quantity", "Batch {$batch->batch_code}: the counted quantity and unit cost equal what the system holds, so there is nothing to adjust. Change the quantity, or enter a new unit cost.");
+            } elseif (abs((float) $row['actual_quantity'] - $onHand) < 0.0005
+                && ! TicketService::costChanged($batch->id, $warehouseId, (float) $row['unit_cost'])
+                && ! TicketService::sellingPriceChanged($batch->id, $row['selling_price'] ?? null)) {
+                $validator->errors()->add("items.$index.actual_quantity", "Batch {$batch->batch_code}: the counted quantity, unit cost and selling cost equal what the system holds, so there is nothing to adjust. Change the quantity, the unit cost or the selling cost.");
+            }
+
+            if (TicketService::costChanged($batch->id, $warehouseId, (float) $row['unit_cost'])) {
+                $costChanged = true;
+            }
+        }
+
+        // A changed unit cost revalues the batch, so it needs the deliberate tick and the user's own password.
+        if (($costChanged ?? false) && ! $validator->errors()->has('items')) {
+            if (! $this->boolean('confirm_cost_change')) {
+                $validator->errors()->add('confirm_cost_change', 'You changed a unit cost: tick the confirmation to say it is deliberate.');
+            }
+
+            if (! Hash::check((string) $this->input('password'), (string) $this->user()->password)) {
+                $validator->errors()->add('password', 'Unit cost was changed: enter your correct password to confirm.');
             }
         }
     }

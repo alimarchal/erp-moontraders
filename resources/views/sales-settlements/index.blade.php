@@ -139,7 +139,7 @@
         .gl-menu .is-danger, .gl-menu .is-danger svg { color: #b91c1c; }
         .gl-menu .is-danger:hover { background: #fef2f2; }
         .gl-ranges-inline { margin-top: 0; }
-        .gl-tab-warn:not(.is-active) .ak-count { background: #fef3c7; color: #b45309; }
+        .gl-tab-warn:not(.is-active) .ak-count { background: #fee2e2; color: #b91c1c; }
         /* Tabs stay in view while the page scrolls */
         section[aria-label="Sales settlements"] > .ak-tabs { position: sticky; top: 0; z-index: 25; background: #fff; border-radius: var(--ak-radius) var(--ak-radius) 0 0; }
         a.ak-kpi-action:hover .ak-kpi-hint { text-decoration: underline; text-underline-offset: 2px; }
@@ -161,8 +161,11 @@
         .ak-kpis .ak-kpi-value { font-size: 19px; }
         .ak-kpis .ak-kpi-label { font-size: 12px; }
         .ak-kpis .ak-kpi-hint { font-size: 11.5px; }
-        .gl-draft > td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
-        .gl-draft > td { background: #fffbeb; }
+        .gl-draft > td:first-child { box-shadow: inset 4px 0 0 #dc2626; }
+        .gl-draft > td { background: #fef2f2; }
+        .gl-draft-alert { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border: 1px solid #fca5a5; border-left: 5px solid #dc2626; border-radius: 10px; background: #fef2f2; color: #991b1b; font-size: 14px; }
+        .gl-draft-alert b { color: #7f1d1d; }
+        .gl-draft-alert a { margin-left: auto; padding: 6px 14px; border-radius: 8px; background: #dc2626; color: #fff; font-weight: 600; text-decoration: none; }
         .gl-table > tbody > tr:hover > td { background: #f1f5f9; }
         .gl-emp { color: inherit; text-decoration: none; }
         .gl-emp:hover { color: var(--ak-navy); text-decoration: underline; text-underline-offset: 3px; }
@@ -210,6 +213,13 @@
         <x-status-message />
         @if ($errors->any())
             <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
+        @endif
+
+        @if (($draftAlert->drafts ?? 0) > 0)
+            <div class="gl-draft-alert" role="alert">
+                <span><b>{{ number_format($draftAlert->drafts) }} draft {{ \Illuminate\Support\Str::plural('settlement', $draftAlert->drafts) }} not posted yet</b> &mdash; oldest is from {{ \Illuminate\Support\Carbon::parse($draftAlert->oldest)->format('d M Y') }}. Drafts always show here, whatever the date.</span>
+                <a href="{{ $tabUrl('draft') }}">Review drafts</a>
+            </div>
         @endif
 
         <section id="gl-filter-panel" class="ak-card" aria-label="Filters" x-data="{ open: false }" @gl-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="display:none">

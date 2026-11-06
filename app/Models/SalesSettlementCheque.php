@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesSettlementCheque extends Model
 {
+    public const CLEARED_NOTES = [5000, 1000, 500, 100, 50, 20, 10];
+
     use HasFactory, HasSettlementAttachment, UserTracking;
 
     protected $fillable = [
@@ -26,6 +28,7 @@ class SalesSettlementCheque extends Model
         'status',
         'cleared_date',
         'cleared_amount',
+        'cleared_denom_5000', 'cleared_denom_1000', 'cleared_denom_500', 'cleared_denom_100', 'cleared_denom_50', 'cleared_denom_20', 'cleared_denom_10', 'cleared_denom_coins',
         'notes',
         'created_by',
         'updated_by',

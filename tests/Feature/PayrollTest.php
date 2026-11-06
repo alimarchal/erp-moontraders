@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeeAdvance;
 use App\Models\EmployeeSalary;
@@ -240,4 +241,111 @@ it('has a recorded line source for every automatic slip line', function () {
         ->and(PayrollSlip::count())->toBe(1)
         ->and(Carbon::parse($run->period_month)->isSameMonth($this->month))->toBeTrue()
         ->and(PayrollRun::count())->toBe(1);
+});
+
+it('pays every employee of Moon Traders in one run whichever supplier they work for, shown supplier by supplier', function () {
+    $other = Supplier::factory()->create(['supplier_name' => 'Dalda Distribution']);
+    $colleague = Employee::factory()->create(['supplier_id' => $other->id, 'is_active' => true, 'name' => 'Zafar Driver']);
+    EmployeeSalary::create(['employee_id' => $colleague->id, 'salary_type' => 'fixed', 'basic_salary' => 25000, 'pay_method' => 'cash']);
+    $headOffice = Employee::factory()->create(['supplier_id' => null, 'is_active' => true, 'name' => 'Head Office Accountant']);
+    EmployeeSalary::create(['employee_id' => $headOffice->id, 'salary_type' => 'fixed', 'basic_salary' => 40000, 'pay_method' => 'bank']);
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin);
+
+    $run = app(PayrollService::class)->createRun(null, Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT'])->id, $this->month, $admin);
+
+    expect($run->slips)->toHaveCount(3)
+        ->and($run->supplier_id)->toBeNull()
+        ->and($run->ownerLabel())->toContain('(all employees)')
+        ->and((float) $run->total_net)->toBe((float) ($this->days * 1000 + 6000 + 25000 + 40000));
+
+    $this->get(route('payroll.show', $run))->assertOk()->assertSeeInOrder([$this->supplier->supplier_name, 'Imran Salesman'])->assertSee('Dalda Distribution')->assertSee('Moon Traders (head office)')->assertSee('Zafar Driver');
+});
+
+it('never lets one employee be paid twice for a month, between a run for all employees and a run for one supplier', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin);
+    $service = app(PayrollService::class);
+    $company = Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT']);
+
+    $service->createRun($this->supplier->id, null, $this->month, $admin);
+    expect(fn () => $service->createRun(null, $company->id, $this->month, $admin))->toThrow(RuntimeException::class, 'already been started');
+
+    PayrollRun::query()->delete();
+    $service->createRun(null, $company->id, $this->month, $admin);
+    expect(fn () => $service->createRun($this->supplier->id, null, $this->month, $admin))->toThrow(RuntimeException::class, 'or for all employees');
+    expect(fn () => $service->createRun(null, $company->id, $this->month, $admin))->toThrow(RuntimeException::class, 'already been started');
+});
+
+it('shows the all-employees payroll only to admins and holders of the all permission, not to a supplier\'s own users', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $this->actingAs($admin);
+    $run = app(PayrollService::class)->createRun(null, Company::factory()->create(['company_name' => 'Moon Traders', 'abbr' => 'MT'])->id, $this->month, $admin);
+
+    $this->actingAs($this->checker)->get(route('payroll.show', $run))->assertNotFound();
+    $this->actingAs($admin)->get(route('payroll.show', $run))->assertOk();
+});
+
+it('downloads the payroll as PDF and Excel, the slips as PDF, and the payroll list as PDF and Excel', function () {
+    $run = ($this->build)();
+    $this->actingAs($this->maker);
+
+    foreach ([route('payroll.export.pdf', $run), route('payroll.slips.pdf', $run), route('payroll.slip.pdf', [$run, $run->slips->first()]), route('payroll.list.pdf')] as $url) {
+        $response = $this->get($url)->assertOk();
+        expect($response->headers->get('content-type'))->toContain('application/pdf');
+    }
+
+    foreach ([route('payroll.export.excel', $run), route('payroll.list.excel')] as $url) {
+        expect($this->get($url)->assertOk()->headers->get('content-disposition'))->toContain('.xlsx');
+    }
+});
+
+it('keeps the payroll downloads to people who may see that payroll', function () {
+    $run = ($this->build)();
+    $stranger = User::factory()->create(['supplier_id' => Supplier::factory()->create()->id])->givePermissionTo('payroll-list');
+    $nobody = User::factory()->create();
+
+    $this->actingAs($stranger)->get(route('payroll.export.pdf', $run))->assertNotFound();
+    $this->actingAs($stranger)->get(route('payroll.slips.pdf', $run))->assertNotFound();
+    $this->actingAs($stranger)->get(route('payroll.export.excel', $run))->assertNotFound();
+    $this->actingAs($nobody)->get(route('payroll.list.pdf'))->assertForbidden();
+    $this->actingAs($nobody)->get(route('payroll.list.excel'))->assertForbidden();
+});
+
+it('sets the salary of many employees at once and keeps what is left empty', function () {
+    $second = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
+    $noSalary = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
+    $conveyance = SalaryComponent::where('code', 'conveyance')->firstOrFail();
+    EmployeeSalary::create(['employee_id' => $second->id, 'salary_type' => 'basic', 'basic_salary' => 30000, 'pay_method' => 'cash']);
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), [
+        'employee_ids' => [$this->employee->id, $second->id, $noSalary->id], 'pay_method' => 'bank', 'components' => [$conveyance->id => 1500, $this->houseRent->id => ''],
+    ])->assertRedirect(route('payroll.salaries.index'))->assertSessionHas('error');
+
+    expect($second->fresh()->salary->pay_method)->toBe('bank')->and((float) $second->fresh()->salary->basic_salary)->toBe(30000.0)
+        ->and((float) $second->salaryComponents()->where('salary_component_id', $conveyance->id)->value('value'))->toBe(1500.0)
+        ->and((float) $this->employee->salaryComponents()->where('salary_component_id', $this->houseRent->id)->value('value'))->toBe(6000.0)
+        ->and($noSalary->fresh()->salary)->toBeNull();
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), ['employee_ids' => [$noSalary->id], 'salary_type' => 'fixed', 'basic_salary' => 20000])->assertSessionDoesntHaveErrors();
+    expect($noSalary->fresh()->salary->salary_type)->toBe('fixed')->and((float) $noSalary->fresh()->salary->basic_salary)->toBe(20000.0);
+});
+
+it('does not let a bulk salary change reach another company\'s employees', function () {
+    $foreign = Employee::factory()->create(['supplier_id' => Supplier::factory()->create()->id, 'is_active' => true]);
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), ['employee_ids' => [$foreign->id], 'basic_salary' => 1])->assertRedirect();
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), [])->assertSessionHasErrors('employee_ids');
+
+    expect($foreign->fresh()->salary)->toBeNull();
+});
+
+it('filters the payroll list by payroll number, month range and status', function () {
+    $run = ($this->build)();
+    $this->actingAs($this->maker);
+
+    $this->get(route('payroll.index', ['filter' => ['search' => $run->run_number]]))->assertOk()->assertSee($run->run_number);
+    $this->get(route('payroll.index', ['filter' => ['month_from' => $this->month->copy()->addMonth()->format('Y-m')]]))->assertOk()->assertDontSee($run->run_number);
+    $this->get(route('payroll.index', ['filter' => ['month_from' => $this->month->format('Y-m'), 'month_to' => $this->month->format('Y-m'), 'status' => 'draft']]))->assertOk()->assertSee($run->run_number);
+    $this->get(route('payroll.index', ['filter' => ['status' => 'paid']]))->assertOk()->assertDontSee($run->run_number);
 });

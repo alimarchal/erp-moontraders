@@ -102,7 +102,7 @@ class PayrollRun extends Model
 
     public function ownerLabel(): string
     {
-        return (string) ($this->supplier?->supplier_name ?? $this->company?->company_name ?? 'Moon Traders');
+        return $this->supplier?->supplier_name ?? (($this->company?->company_name ?? 'Moon Traders').' (all employees)');
     }
 
     public function supplier(): BelongsTo

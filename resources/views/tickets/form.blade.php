@@ -25,7 +25,7 @@
     if ($type === TicketType::StockAdjustment) {
         $existingRows = collect($adj['items'] ?? [])->map(fn ($line) => [
             'product_id' => $line['product_id'], 'stock_batch_id' => $line['stock_batch_id'], 'system_quantity' => $line['system_quantity'] ?? '',
-            'actual_quantity' => $line['actual_quantity'], 'unit_cost' => $line['unit_cost'], 'selling_price' => $line['selling_price'] ?? '', 'uom_id' => $line['uom_id'],
+            'actual_quantity' => $line['actual_quantity'], 'unit_cost' => $line['unit_cost'], 'selling_price' => $line['selling_price'] ?? '', 'selling_scope' => $line['selling_scope'] ?? 'batch', 'uom_id' => $line['uom_id'],
         ])->all();
     }
     $entry = old('data', $isEdit && $type->isSimpleEntry() ? ($ticket->items->first()->payload ?? []) : []);
@@ -40,7 +40,7 @@
             uid: ++uid, product_id: '', batch_scope: 'all', batch_ids: [], batches: [], loading: false,
             unit_sell_price: '', cost_price: '', expiry_price: '', reorder_level: '',
             new_is_active: '1', remarks: '',
-            stock_batch_id: '', system_quantity: '', actual_quantity: '', unit_cost: '', selling_price: '', uom_id: '',
+            stock_batch_id: '', system_quantity: '', actual_quantity: '', unit_cost: '', selling_price: '', selling_scope: 'batch', uom_id: '',
         });
         const fields = [['unit_sell_price', 'Selling price'], ['cost_price', 'Cost price'], ['expiry_price', 'Expiry price'], ['reorder_level', 'Reorder level']];
 
@@ -379,11 +379,18 @@
                                             <option :value="batch.id" :selected="String(batch.id) === String(row.stock_batch_id)" x-text="`${batch.batch_code} (qty ${fmt(batch.quantity)})`"></option>
                                         </template>
                                     </select>
+                                    <label x-show="row.stock_batch_id" x-cloak style="display:flex; gap:6px; align-items:flex-start; margin-top:6px; font-size:12px; line-height:1.35; cursor:pointer" title="Apply the new selling cost to every batch of this product that holds stock, not only this one">
+                                        <input type="checkbox" style="margin-top:2px" :checked="row.selling_scope === 'all'" @change="row.selling_scope = $event.target.checked ? 'all' : 'batch'">
+                                        <span>Selling cost for <b>all batches</b> of this product</span>
+                                    </label>
+                                    <input type="hidden" :name="`items[${index}][selling_scope]`" :value="row.selling_scope">
                                 </td>
                                 <td class="tk-cell"><input type="number" step="0.001" readonly tabindex="-1" :name="`items[${index}][system_quantity]`" :value="row.system_quantity" style="background:#f8fafc"></td>
                                 <td class="tk-cell"><input type="number" step="0.001" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][actual_quantity]`" x-model="row.actual_quantity" placeholder="count"></td>
                                 <td><span x-show="adjDiff(row) !== null" class="tk-delta" :class="adjDiff(row) > 0 ? 'tk-delta-up' : (adjDiff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(adjDiff(row))"></span> <small x-show="costOnly(row)" class="ak-muted">cost only</small></td>
-                                <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][selling_price]`" x-model="row.selling_price" title="Selling cost of this batch (changing it updates the batch selling price)" :style="sellingChanged(row) ? 'background:#fffbeb;border-color:#f59e0b' : ''"></td>
+                                <td class="tk-cell">
+                                    <input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][selling_price]`" x-model="row.selling_price" title="Selling cost of this batch (changing it updates the batch selling price)" :style="sellingChanged(row) ? 'background:#fffbeb;border-color:#f59e0b' : ''">
+                                </td>
                                 <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost" title="Purchase cost of this batch (changing it needs your password)" :style="costChanged(row) ? 'background:#fef2f2;border-color:#dc2626' : ''"></td>
                                 <td><span x-show="adjValue(row) !== null" class="ak-strong" x-text="signed(adjValue(row))"></span></td>
                                 <td><button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></td>

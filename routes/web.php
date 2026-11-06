@@ -539,6 +539,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Posts to inventory ledger and creates GL journal entry.
     | Permissions: stock-adjustment-list, -create, -edit, -delete, -post
     */
+    Route::get('stock-adjustments/help', [StockAdjustmentController::class, 'help'])->name('stock-adjustments.help');
     Route::resource('stock-adjustments', StockAdjustmentController::class);
     Route::post('stock-adjustments/{stockAdjustment}/post', [StockAdjustmentController::class, 'post'])
         ->name('stock-adjustments.post');

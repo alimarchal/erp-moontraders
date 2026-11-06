@@ -171,6 +171,7 @@ class TicketRequest extends FormRequest
             'items.*.actual_quantity' => ['required', 'numeric', 'min:0'],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
             'items.*.selling_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.selling_scope' => ['nullable', Rule::in(['batch', 'all'])],
             'items.*.uom_id' => ['required', 'exists:uoms,id'],
         ];
     }

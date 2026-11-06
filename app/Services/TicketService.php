@@ -438,14 +438,22 @@ class TicketService
         // Selling cost changes go to the batch, its current-stock rows and live GRN lines, with a price log.
         foreach ($allLines->where('selling_changed', true) as $line) {
             $product = Product::query()->findOrFail($line['product_id']);
-            $batchIds = collect([(int) $line['stock_batch_id']]);
-            $this->pricing->cascadeSellingPrice($product, $line['selling_price'], $batchIds);
+
+            if (($line['selling_scope'] ?? 'batch') === 'all') {
+                // Every batch of the product that holds stock, and the product's own selling price for new receipts.
+                $product->update(['unit_sell_price' => $line['selling_price']]);
+                $batchIds = $this->pricing->cascadeSellingPrice($product, $line['selling_price']);
+            } else {
+                $batchIds = collect([(int) $line['stock_batch_id']]);
+                $this->pricing->cascadeSellingPrice($product, $line['selling_price'], $batchIds);
+            }
+
             $this->pricing->logChange($product, 'selling_price', $line['old_selling_price'], $line['selling_price'], auth()->id(), $batchIds);
         }
 
         $lines = $allLines
             ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005 && $line['revaluation_value'] == 0.0)
-            ->map(fn (array $line) => Arr::except($line, ['revaluation_value', 'selling_price', 'old_selling_price', 'old_unit_cost', 'selling_changed']))
+            ->map(fn (array $line) => Arr::except($line, ['revaluation_value', 'selling_price', 'selling_scope', 'old_selling_price', 'old_unit_cost', 'selling_changed']))
             ->values();
 
         if ($lines->isEmpty() && $allLines->contains('selling_changed', true)) {

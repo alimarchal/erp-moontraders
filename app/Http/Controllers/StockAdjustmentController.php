@@ -200,8 +200,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
                     ->where('product_id', $item->product_id)
                     ->where('price_type', 'selling_price')
                     ->whereBetween('changed_at', [$stockAdjustment->posted_at->copy()->subMinutes(2), $stockAdjustment->posted_at->copy()->addMinutes(2)])
-                    ->whereJsonContains('impacted_batch_ids', (int) $item->stock_batch_id)
-                    ->latest('id')->first();
+                    ->latest('id')->get()
+                    ->first(fn ($row) => in_array((int) $item->stock_batch_id, array_map('intval', (array) $row->impacted_batch_ids), true));
 
                 if ($log) {
                     $sellingChanges[$item->id] = ['old' => (float) $log->old_price, 'new' => (float) $log->new_price];

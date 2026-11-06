@@ -267,6 +267,10 @@
                     <input id="sku_barcode" name="sku[barcode]" type="text" value="{{ $sku['barcode'] ?? '' }}"></div>
                 <div><label class="tk-label" for="sku_weight">Weight (kg)</label>
                     <input id="sku_weight" name="sku[weight]" type="number" step="0.001" value="{{ $sku['weight'] ?? '' }}"></div>
+                <div><label class="tk-label" for="sku_pieces_per_carton">Pieces per carton</label>
+                    <input id="sku_pieces_per_carton" name="sku[pieces_per_carton]" type="number" step="1" min="1" placeholder="e.g. 120" value="{{ $sku['pieces_per_carton'] ?? '' }}"></div>
+                <div><label class="tk-label" for="sku_units_per_piece">Pouches per piece (can)</label>
+                    <input id="sku_units_per_piece" name="sku[units_per_piece]" type="number" step="1" min="1" placeholder="e.g. 15 or 20" value="{{ $sku['units_per_piece'] ?? '' }}"></div>
                 <div><label class="tk-label" for="sku_valuation_method">Valuation</label>
                     <select id="sku_valuation_method" name="sku[valuation_method]">
                         @foreach ($valuationMethods as $method)

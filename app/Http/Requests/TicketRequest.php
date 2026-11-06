@@ -198,6 +198,8 @@ class TicketRequest extends FormRequest
             'sku.sales_uom_id' => ['nullable', 'exists:uoms,id'],
             'sku.uom_conversion_factor' => ['nullable', 'numeric', 'min:0.001', 'max:999999'],
             'sku.weight' => ['nullable', 'numeric', 'min:0'],
+            'sku.pieces_per_carton' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'sku.units_per_piece' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'sku.pack_size' => ['nullable', 'string', 'max:120'],
             'sku.barcode' => ['nullable', 'string', 'max:191', Rule::unique('products', 'barcode')],
             'sku.brand' => ['nullable', 'string', 'max:120'],

@@ -60,7 +60,7 @@
                             <thead>
                                 <tr>
                                     <th>Product / batch</th><th class="num">System qty</th><th class="num">Actual qty</th><th class="num">Difference</th>
-                                    <th class="num">Unit cost</th><th class="num">Value</th>
+                                    <th class="num">Selling cost</th><th class="num">Unit cost</th><th class="num">Value</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -74,6 +74,16 @@
                                         <td class="num">{{ number_format((float) $item->system_quantity, 3) }}</td>
                                         <td class="num">{{ number_format((float) $item->actual_quantity, 3) }}</td>
                                         <td class="num {{ $item->adjustment_quantity > 0 ? 'sa-up' : ($item->adjustment_quantity < 0 ? 'sa-down' : '') }}">{{ $signed($item->adjustment_quantity) }}</td>
+                                        <td class="num">
+                                            @php $sellChange = $sellingChanges[$item->id] ?? null; @endphp
+                                            @if ($sellChange)
+                                                <span class="sa-cost" title="Selling cost changed with this adjustment"><s>{{ $money($sellChange['old']) }}</s> → {{ $money($sellChange['new']) }}</span>
+                                                <span class="sa-hint">selling cost changed</span>
+                                            @else
+                                                {{ $money($sellingPrices[$item->stock_batch_id] ?? 0) }}
+                                                <span class="sa-hint">current</span>
+                                            @endif
+                                        </td>
                                         <td class="num">
                                             @if ($change)
                                                 <span class="sa-cost" title="Unit cost changed by this adjustment"><s>{{ $money($change['old']) }}</s> → {{ $money($change['new']) }}</span>
@@ -89,7 +99,7 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr><td colspan="5" style="padding:10px 12px"><b>Total value</b></td><td class="num" style="padding:10px 12px"><b>{{ $signed($totalValue) }}</b></td></tr>
+                                <tr><td colspan="6" style="padding:10px 12px"><b>Total value</b></td><td class="num" style="padding:10px 12px"><b>{{ $signed($totalValue) }}</b></td></tr>
                             </tfoot>
                         </table>
                     </div>

@@ -71,9 +71,9 @@
         <div style="overflow-x:auto">
             <table class="tk-grid-table">
                 <thead><tr>
-                    <th style="width:36px">#</th><th style="min-width:260px">Product</th><th style="min-width:210px">Batch</th>
-                    <th style="width:110px">System qty</th><th style="width:120px">Counted qty</th><th style="width:110px">Difference</th>
-                    <th style="width:130px">Unit cost</th><th style="width:130px">Value</th><th style="width:40px"></th>
+                    <th style="width:36px">#</th><th style="min-width:210px">Product</th><th style="min-width:190px">Batch</th>
+                    <th style="min-width:105px">System qty</th><th style="min-width:115px">Counted qty</th><th style="min-width:100px">Difference</th>
+                    <th style="min-width:170px">Unit cost</th><th style="min-width:130px">Value</th><th style="width:40px"></th>
                 </tr></thead>
                 <template x-for="(row, index) in rows" :key="row.uid">
                     <tbody>

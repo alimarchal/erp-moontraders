@@ -30,7 +30,23 @@
                         canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
                         bitmap.close && bitmap.close();
 
-                        const type = file.type === 'image/png' ? 'image/png' : file.type;
+                        // A PNG (a screenshot, a scanned page) is usually 2 to 4 times smaller as a JPEG; see-through parts become white.
+                        if (file.type === 'image/png') {
+                            const flat = document.createElement('canvas');
+                            flat.width = canvas.width;
+                            flat.height = canvas.height;
+                            const flatContext = flat.getContext('2d');
+                            flatContext.fillStyle = '#fff';
+                            flatContext.fillRect(0, 0, flat.width, flat.height);
+                            flatContext.drawImage(canvas, 0, 0);
+                            const jpeg = await new Promise(resolve => flat.toBlob(resolve, 'image/jpeg', this.quality));
+
+                            if (jpeg && jpeg.size < file.size * 0.7) {
+                                return new File([jpeg], file.name.replace(/\.png$/i, '') + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+                            }
+                        }
+
+                        const type = file.type;
                         const blob = await new Promise(resolve => canvas.toBlob(resolve, type, this.quality));
 
                         if (!blob || blob.size >= file.size * 0.9) {

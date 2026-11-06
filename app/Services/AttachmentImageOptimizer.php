@@ -61,6 +61,19 @@ class AttachmentImageOptimizer
                 $image = $scaled === false ? $image : $scaled;
             }
 
+            // A PNG (a screenshot, a scanned page) is usually 2 to 4 times smaller as a JPEG. A receipt has no use for
+            // transparency, so see-through parts become white.
+            if ($extension === 'png') {
+                $jpeg = tempnam(sys_get_temp_dir(), 'att-img-');
+                $this->save($this->onWhite($image), 'jpg', $jpeg);
+
+                if (filesize($jpeg) < $file->getSize() * 0.7) {
+                    return new UploadedFile($jpeg, pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME).'.jpg', 'image/jpeg', null, true);
+                }
+
+                @unlink($jpeg);
+            }
+
             $temporary = tempnam(sys_get_temp_dir(), 'att-img-');
             $this->save($image, $extension, $temporary);
 
@@ -76,6 +89,19 @@ class AttachmentImageOptimizer
 
             return $file;
         }
+    }
+
+    /**
+     * @param  \GdImage  $image
+     * @return \GdImage
+     */
+    private function onWhite($image)
+    {
+        $flat = imagecreatetruecolor(imagesx($image), imagesy($image));
+        imagefill($flat, 0, 0, imagecolorallocate($flat, 255, 255, 255));
+        imagecopy($flat, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
+
+        return $flat;
     }
 
     private function fitsInMemory(int $width, int $height): bool

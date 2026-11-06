@@ -200,6 +200,7 @@ it('creates the product only when an admin approves a New SKU ticket', function 
             'uom_id' => $uom->id, 'category_id' => $category->id, 'valuation_method' => 'FIFO',
             'unit_sell_price' => '55', 'cost_price' => '40',
             'reorder_level' => null, 'expiry_price' => null, 'barcode' => null, 'weight' => null,
+            'pieces_per_carton' => '120', 'units_per_piece' => '15',
         ],
     ])->assertRedirect();
 
@@ -212,6 +213,8 @@ it('creates the product only when an admin approves a New SKU ticket', function 
     expect($product->product_name)->toBe('New Biscuit')
         ->and($product->supplier_id)->toBe($this->supplier->id)
         ->and($product->unit_sell_price)->toBe('55.00')
+        ->and($product->pieces_per_carton)->toBe(120)
+        ->and($product->units_per_piece)->toBe(15)
         ->and($product->is_active)->toBeTrue()
         ->and($ticket->items()->first()->product_id)->toBe($product->id);
 });

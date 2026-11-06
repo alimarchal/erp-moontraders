@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
+use App\Models\ProductPriceChangeLog;
 use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\Supplier;
@@ -176,7 +177,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
                 ->groupBy('stock_batch_id');
 
             foreach ($stockAdjustment->items as $item) {
-                $revaluation = (float) ($revaluations[$item->stock_batch_id]->sum('total_value') ?? 0);
+                $revaluation = (float) ($revaluations->get($item->stock_batch_id)?->sum('total_value') ?? 0);
                 $quantity = (float) $item->system_quantity;
 
                 if (abs($revaluation) > 0.004 && $quantity > 0) {
@@ -185,7 +186,26 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             }
         }
 
-        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges]);
+        // Selling cost: what the batch sells at now, and the change a ticket made to it when this was posted
+        // (the price log row is written in the same transaction, so it sits within moments of the posting).
+        $sellingPrices = StockBatch::query()->whereIn('id', $stockAdjustment->items->pluck('stock_batch_id'))->pluck('selling_price', 'id');
+        $sellingChanges = [];
+        if ($stockAdjustment->posted_at) {
+            foreach ($stockAdjustment->items as $item) {
+                $log = ProductPriceChangeLog::query()
+                    ->where('product_id', $item->product_id)
+                    ->where('price_type', 'selling_price')
+                    ->whereBetween('changed_at', [$stockAdjustment->posted_at->copy()->subMinutes(2), $stockAdjustment->posted_at->copy()->addMinutes(2)])
+                    ->whereJsonContains('impacted_batch_ids', (int) $item->stock_batch_id)
+                    ->latest('id')->first();
+
+                if ($log) {
+                    $sellingChanges[$item->id] = ['old' => (float) $log->old_price, 'new' => (float) $log->new_price];
+                }
+            }
+        }
+
+        return view('stock-adjustments.show', ['stockAdjustment' => $stockAdjustment, 'costChanges' => $costChanges, 'sellingPrices' => $sellingPrices, 'sellingChanges' => $sellingChanges]);
     }
 
     public function edit(StockAdjustment $stockAdjustment)

@@ -84,6 +84,8 @@
                                         'Pack size' => $data['pack_size'] ?? null,
                                         'Brand' => $data['brand'] ?? null,
                                         'Barcode' => $data['barcode'] ?? null,
+                                        'Pieces per carton' => $data['pieces_per_carton'] ?? null,
+                                        'Pouches per piece' => $data['units_per_piece'] ?? null,
                                         'Valuation' => $data['valuation_method'] ?? null,
                                         'Selling price' => isset($data['unit_sell_price']) ? $money($data['unit_sell_price']) : null,
                                         'Cost price' => isset($data['cost_price']) ? $money($data['cost_price']) : null,

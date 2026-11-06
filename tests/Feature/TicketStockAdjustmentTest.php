@@ -408,3 +408,16 @@ it('lists stock adjustments with tabs, filters and totals, and serves the help p
     $this->actingAs($this->admin)->get(route('stock-adjustments.index', ['filter' => ['status' => 'posted']]))->assertOk()->assertSee('How it works');
     $this->actingAs($this->admin)->get(route('stock-adjustments.help'))->assertOk()->assertSee('How stock adjustments work');
 });
+
+it('shows the selling cost and unit cost on the posted stock adjustment page', function () {
+    $stock = adjustableStock($this);
+    $stock['batch']->update(['selling_price' => 80]);
+    CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['selling_price' => 80]);
+    $payload = ['type' => 'stock_adjustment', 'title' => 'view'] + adjustmentPayload($this, $stock, 90);
+    $payload['items'][0]['selling_price'] = 95;
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstWhere('title', 'view')), ['password' => 'password'])->assertRedirect();
+
+    $this->actingAs($this->admin)->get(route('stock-adjustments.show', StockAdjustment::first()))
+        ->assertOk()->assertSee('Selling cost')->assertSee('Unit cost')->assertSee('80.00')->assertSee('95.00');
+});

@@ -26,7 +26,11 @@ use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\CurrentStockController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeSalaryController;
+use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ExpenseDetailController;
+use App\Http\Controllers\ExpenseVendorController;
+use App\Http\Controllers\ExpenseVendorPaymentController;
 use App\Http\Controllers\ExpenseVoucherController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
@@ -34,6 +38,8 @@ use App\Http\Controllers\InvestmentOpeningBalanceController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\OpeningCustomerBalanceController;
 use App\Http\Controllers\OpeningStockController;
+use App\Http\Controllers\PayrollAdjustmentController;
+use App\Http\Controllers\PayrollRunController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductRecallController;
@@ -88,6 +94,7 @@ use App\Http\Controllers\Reports\VanStockLedgerController;
 use App\Http\Controllers\Reports\VehicleReportController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalaryComponentController;
 use App\Http\Controllers\SalesSettlementController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StockAdjustmentController;
@@ -519,13 +526,57 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Fuel, Van Work) with double-entry GL posting.
     | Permissions: expense-detail-list, -create, -edit, -delete, -post
     */
-    Route::get('expense-vouchers/{expense_voucher}/attachment', [ExpenseVoucherController::class, 'attachment'])->name('expense-vouchers.attachment');
+    Route::get('expense-vouchers/{expense_voucher}/attachments/{attachment}', [ExpenseVoucherController::class, 'attachment'])->name('expense-vouchers.attachment');
+    Route::get('expense-vouchers/summary', [ExpenseVoucherController::class, 'summary'])->name('expense-vouchers.summary');
+    Route::get('expense-vouchers/employees/search', [ExpenseVoucherController::class, 'employeeSearch'])->name('expense-vouchers.employees.search');
     Route::get('expense-vouchers/help', [ExpenseVoucherController::class, 'help'])->name('expense-vouchers.help');
     Route::resource('expense-vouchers', ExpenseVoucherController::class);
     Route::post('expense-vouchers/{expense_voucher}/submit', [ExpenseVoucherController::class, 'submit'])->name('expense-vouchers.submit');
     Route::post('expense-vouchers/{expense_voucher}/approve', [ExpenseVoucherController::class, 'approve'])->name('expense-vouchers.approve');
     Route::post('expense-vouchers/{expense_voucher}/reject', [ExpenseVoucherController::class, 'reject'])->name('expense-vouchers.reject');
     Route::get('expense-vouchers/{expense_voucher}/print', [ExpenseVoucherController::class, 'print'])->name('expense-vouchers.print');
+
+    // Shops (daily-expense parties), month-end payments to them, and payroll with advance recovery.
+    Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
+    Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+    Route::put('expense-categories/{expense_category}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
+    Route::get('expense-vendors/search', [ExpenseVendorController::class, 'search'])->name('expense-vendors.search');
+    Route::resource('expense-vendors', ExpenseVendorController::class);
+    Route::get('expense-vendor-payments/vendors/{expense_vendor}/vouchers', [ExpenseVendorPaymentController::class, 'vouchers'])->name('expense-vendor-payments.vouchers');
+    Route::resource('expense-vendor-payments', ExpenseVendorPaymentController::class)->only(['index', 'create', 'store', 'show']);
+    Route::post('expense-vendor-payments/{expense_vendor_payment}/approve', [ExpenseVendorPaymentController::class, 'approve'])->name('expense-vendor-payments.approve');
+    Route::post('expense-vendor-payments/{expense_vendor_payment}/reject', [ExpenseVendorPaymentController::class, 'reject'])->name('expense-vendor-payments.reject');
+
+    Route::prefix('payroll')->name('payroll.')->group(function () {
+        Route::get('help', [PayrollRunController::class, 'help'])->name('help');
+        Route::get('adjustments', [PayrollAdjustmentController::class, 'index'])->name('adjustments.index');
+        Route::post('adjustments', [PayrollAdjustmentController::class, 'store'])->name('adjustments.store');
+        Route::get('adjustments/employees', [PayrollAdjustmentController::class, 'employees'])->name('adjustments.employees');
+        Route::delete('adjustments/{adjustment}', [PayrollAdjustmentController::class, 'destroy'])->name('adjustments.destroy');
+        Route::get('salaries', [EmployeeSalaryController::class, 'index'])->name('salaries.index');
+        Route::get('salaries/{employee}/edit', [EmployeeSalaryController::class, 'edit'])->name('salaries.edit');
+        Route::put('salaries/{employee}', [EmployeeSalaryController::class, 'update'])->name('salaries.update');
+        Route::get('components', [SalaryComponentController::class, 'index'])->name('components.index');
+        Route::post('components', [SalaryComponentController::class, 'store'])->name('components.store');
+        Route::put('components/{component}', [SalaryComponentController::class, 'update'])->name('components.update');
+
+        Route::get('/', [PayrollRunController::class, 'index'])->name('index');
+        Route::get('create', [PayrollRunController::class, 'create'])->name('create');
+        Route::post('/', [PayrollRunController::class, 'store'])->name('store');
+        Route::get('{payroll}', [PayrollRunController::class, 'show'])->name('show');
+        Route::delete('{payroll}', [PayrollRunController::class, 'destroy'])->name('destroy');
+        Route::get('{payroll}/print', [PayrollRunController::class, 'printAll'])->name('print');
+        Route::get('{payroll}/slips/{slip}', [PayrollRunController::class, 'slip'])->name('slips.show');
+        Route::put('{payroll}/slips/{slip}', [PayrollRunController::class, 'updateSlip'])->name('slips.update');
+        Route::post('{payroll}/slips/{slip}/lines', [PayrollRunController::class, 'addLine'])->name('lines.store');
+        Route::delete('{payroll}/lines/{line}', [PayrollRunController::class, 'removeLine'])->name('lines.destroy');
+        Route::post('{payroll}/add-employees', [PayrollRunController::class, 'addEmployees'])->name('add-employees');
+        Route::post('{payroll}/recalculate', [PayrollRunController::class, 'recalculate'])->name('recalculate');
+        Route::post('{payroll}/submit', [PayrollRunController::class, 'submit'])->name('submit');
+        Route::post('{payroll}/approve', [PayrollRunController::class, 'approve'])->name('approve');
+        Route::post('{payroll}/reject', [PayrollRunController::class, 'reject'])->name('reject');
+        Route::post('{payroll}/pay', [PayrollRunController::class, 'pay'])->name('pay');
+    });
 
     Route::resource('expense-details', ExpenseDetailController::class);
     Route::post('expense-details/{expenseDetail}/post', [ExpenseDetailController::class, 'post'])

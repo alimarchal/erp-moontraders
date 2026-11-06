@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\ExpenseVoucher;
+use App\Models\ExpenseVoucherAttachment;
 use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +38,56 @@ class ExpenseVoucherAttachmentService
     public static function rules(): array
     {
         return ['nullable', 'file', 'mimes:'.implode(',', config('voucher_attachments.extensions')), 'max:'.config('voucher_attachments.max_kb')];
+    }
+
+    /**
+     * Rules for the multi-file field (`attachments[]`).
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function manyRules(): array
+    {
+        return [
+            'attachments' => ['nullable', 'array', 'max:'.config('voucher_attachments.max_files', 10)],
+            'attachments.*' => ['file', 'mimes:'.implode(',', config('voucher_attachments.extensions')), 'max:'.config('voucher_attachments.max_kb')],
+        ];
+    }
+
+    /**
+     * Keep every uploaded file as an attachment of the voucher.
+     *
+     * @param  array<int, UploadedFile>  $files
+     */
+    public function attach(ExpenseVoucher $voucher, array $files): void
+    {
+        $stored = [];
+
+        try {
+            foreach ($files as $file) {
+                $path = $this->store($file, $voucher->voucher_date);
+                $stored[] = $path;
+
+                $voucher->attachments()->create([
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'file_path' => $path,
+                    'created_by' => auth()->id(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            foreach ($stored as $path) {
+                $this->delete($path);
+            }
+
+            throw $e;
+        }
+    }
+
+    public function remove(ExpenseVoucherAttachment $attachment): void
+    {
+        $this->delete($attachment->file_path);
+        $attachment->delete();
     }
 
     public function store(UploadedFile $file, CarbonInterface $voucherDate): string

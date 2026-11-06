@@ -392,6 +392,14 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md no-print" />
+            @php $attachmentGaps = $settlement->status === 'draft' ? \App\Services\SettlementAttachmentService::missingRequired($settlement) : []; @endphp
+            @if ($attachmentGaps)
+                <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 no-print" role="alert">
+                    <p class="font-semibold">Required attachments are missing, so this settlement cannot be posted yet.</p>
+                    <ul class="mt-1 list-disc pl-5">@foreach ($attachmentGaps as $gap)<li>{{ $gap }}</li>@endforeach</ul>
+                    <p class="mt-1 text-xs">Open Edit, add the files to those rows and save.</p>
+                </div>
+            @endif
 
             {{-- Screen summary (not printed): the key figures of the sheet below, and where to go next --}}
             @php

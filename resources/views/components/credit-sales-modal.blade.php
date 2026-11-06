@@ -128,7 +128,7 @@
                     </div>
                 </div>
 
-                <div><x-settlement-attachment-field /></div>
+                <div><x-settlement-attachment-field section="credit_sales" /></div>
 
                 <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
                     <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 border-b border-green-300">

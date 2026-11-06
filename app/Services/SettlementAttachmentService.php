@@ -24,6 +24,56 @@ class SettlementAttachmentService
         return (bool) config('settlement_attachments.enabled');
     }
 
+    /** Heading of each section as the user sees it in the settlement. */
+    public const SECTION_LABELS = [
+        'credit_sales' => 'Credit Sales Detail',
+        'recoveries' => 'Recoveries Detail',
+        'cheques' => 'Cheque Payments',
+        'bank_transfers' => 'Bank Transfers',
+        'bank_slips' => 'Bank Slips / Deposits',
+    ];
+
+    /**
+     * Whether a file is compulsory for every row of the section (SS_*_ATTACHMENT=true in .env).
+     */
+    public static function isRequired(string $section): bool
+    {
+        return self::enabled() && (bool) config('settlement_attachments.required.'.$section, false);
+    }
+
+    /**
+     * Rows that must carry a file but do not, by section. A settlement with any of them cannot be posted.
+     * Cash recoveries need no file: only a recovery paid by bank does.
+     *
+     * @return array<int, string> one sentence per section, naming the rows
+     */
+    public static function missingRequired(SalesSettlement $settlement): array
+    {
+        $sections = [
+            'credit_sales' => ['creditSales', 'customer', fn ($r) => 'invoice '.($r->invoice_number ?: '#'.$r->id), fn ($r) => true],
+            'recoveries' => ['recoveries', 'customer', fn ($r) => 'recovery '.($r->recovery_number ?: '#'.$r->id), fn ($r) => $r->payment_method !== 'cash'],
+            'cheques' => ['cheques', 'customer', fn ($r) => 'cheque '.($r->cheque_number ?: '#'.$r->id), fn ($r) => true],
+            'bank_transfers' => ['bankTransfers', 'customer', fn ($r) => 'transfer '.($r->reference_number ?: '#'.$r->id), fn ($r) => true],
+            'bank_slips' => ['bankSlips', 'bankAccount', fn ($r) => 'slip '.($r->reference_number ?: '#'.$r->id), fn ($r) => true],
+        ];
+
+        $messages = [];
+
+        foreach ($sections as $section => [$relation, $with, $name, $needsFile]) {
+            if (! self::isRequired($section)) {
+                continue;
+            }
+
+            $rows = $settlement->{$relation}()->with($with)->get()->filter(fn ($row) => $needsFile($row) && blank($row->attachment));
+
+            if ($rows->isNotEmpty()) {
+                $messages[] = self::SECTION_LABELS[$section].': attach a file to '.$rows->map(fn ($row) => $name($row))->take(5)->join(', ').($rows->count() > 5 ? ' and '.($rows->count() - 5).' more' : '');
+            }
+        }
+
+        return $messages;
+    }
+
     public static function disk(): string
     {
         return (string) config('settlement_attachments.disk');

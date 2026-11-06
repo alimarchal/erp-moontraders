@@ -8,7 +8,9 @@
     .ev-form-foot .ak-btn, .ak-title { display: inline-flex; align-items: center; gap: 10px; }
     .ak-title .ev-ur { margin: 0 !important; position: relative; top: 1px; }
     .ev-form { padding: 20px; }
-    .ev-form-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (max-width: 640px) { .ev-inline .select2-container { flex-basis: 100%; } .ev-form { padding: 14px; } .ev-seg label { flex: 1 1 100%; } .ev-form-foot { flex-wrap: wrap; } .ev-form-foot .ak-btn { flex: 1 1 100%; justify-content: center; } }
+    .ev-form-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+    .ev-form-grid > *, .ev-panel-grid > *, .ev-modal-grid > * { min-width: 0; }
     @media (min-width: 900px) { .ev-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ev-span-2 { grid-column: span 2; } .ev-span-3 { grid-column: span 3; } }
 
     /* Standard field size, with a clear focus ring */
@@ -34,4 +36,27 @@
     .ev-current-file a { color: #4338ca; font-weight: 600; text-decoration: underline; }
     .ev-remove { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     .ev-remove input { height: 16px; width: 16px; }
+    /* Payee choice, panels and the new-shop dialog */
+    .ev-form .ak-field .ev-seg label { display: inline-flex; align-items: center; gap: 8px; margin: 0; flex-direction: row; }
+    .ev-form .ak-field .ev-seg input[type=radio], .ev-form .ak-field input[type=checkbox], .ev-form .ev-seg input[type=radio] { width: 16px; height: 16px; padding: 0; box-shadow: none; flex: none; border-radius: 50%; }
+    .ev-form .ak-field input[type=checkbox] { border-radius: 4px; }
+    .ev-payee { border: 0; padding: 0; margin: 0; min-width: 0; }
+    .ev-seg { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .ev-seg label { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--ak-border); border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; background: #fff; transition: border-color .15s, background .15s; }
+    .ev-seg label:hover { border-color: #a5b4fc; }
+    .ev-seg label.is-on { border-color: #4f46e5; background: #eef2ff; color: #312e81; box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+    .ev-seg input { accent-color: #4f46e5; }
+    .ev-panel { border: 1px solid var(--ak-line); background: #f8fafc; border-radius: 12px; padding: 16px; }
+    .ev-panel-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 900px) { .ev-panel-grid { grid-template-columns: 2fr 1fr; } .ev-panel-grid .ev-span-2 { grid-column: auto; } }
+    .ev-inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+    .ev-inline .select2-container { flex: 1 1 220px; }
+    .ev-inline .select2-container { flex: 1; min-width: 0; }
+    .ev-add-shop { white-space: nowrap; height: 40px; }
+    .ev-note { margin: 10px 0 0; padding: 9px 12px; border-left: 3px solid #4f46e5; background: #eef2ff; border-radius: 6px; font-size: 13px; color: #312e81; }
+    .ev-files { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--ak-muted); list-style: disc; }
+    .ev-modal-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 520px) { .ev-modal-grid { grid-template-columns: minmax(0, 1fr); } }
+    .ev-modal-grid .ak-field input, .ev-modal-grid .ak-field select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--ak-border); border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    .ev-modal-grid .ak-field label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
 </style>

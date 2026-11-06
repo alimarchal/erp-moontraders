@@ -109,7 +109,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                     </div>
                 </div>
 
-                <div><x-settlement-attachment-field /></div>
+                <div><x-settlement-attachment-field section="bank_transfers" /></div>
 
                 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
                     <table class="min-w-full text-sm">

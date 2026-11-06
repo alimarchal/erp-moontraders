@@ -114,3 +114,49 @@ function seedGrnPostingAccounts(): void
         );
     }
 }
+
+/**
+ * Accounts, an open accounting period and the cost center the expense, vendor-payment and payroll services post to.
+ * Posting writes its journal entry or fails, so any test that approves one needs this. Safe to call more than once.
+ *
+ * @return array<string, ChartOfAccount> accounts keyed by account code
+ */
+function seedExpenseLedger(): array
+{
+    $currency = Currency::where('is_base_currency', true)->first()
+        ?? Currency::create(['currency_code' => 'PKR', 'currency_name' => 'Pakistani Rupee', 'currency_symbol' => 'Rs', 'is_base_currency' => true]);
+
+    // The services post to cost center 1.
+    CostCenter::unguarded(fn () => CostCenter::updateOrCreate(['id' => 1], ['code' => 'CC001', 'name' => 'Head Office', 'is_active' => true]));
+
+    foreach ([now()->subMonthNoOverflow(), now(), now()->addMonthNoOverflow()] as $month) {
+        if (! AccountingPeriod::where('start_date', '<=', $month)->where('end_date', '>=', $month)->exists()) {
+            AccountingPeriod::create(['name' => $month->format('F Y'), 'start_date' => $month->copy()->startOfMonth(), 'end_date' => $month->copy()->endOfMonth(), 'status' => 'open']);
+        }
+    }
+
+    $definitions = [
+        '1121' => ['Cash', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
+        '1131' => ['Employee Advances', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
+        '1132' => ['Employee Loans', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
+        '1171' => ['HBL Main Account', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
+        '2112' => ['Payroll Payable', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
+        '2113' => ['Expense Payables', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
+        '2120' => ['Duties and Taxes', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
+        '5221' => ['Miscellaneous Expenses', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
+        '5281' => ['Salary', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
+    ];
+
+    $accounts = [];
+
+    foreach ($definitions as $code => [$name, $typeName, $reportGroup, $category, $normalBalance]) {
+        $type = AccountType::firstOrCreate(['type_name' => $typeName], ['report_group' => $reportGroup, 'category' => $category]);
+
+        $accounts[$code] = ChartOfAccount::firstOrCreate(['account_code' => $code], [
+            'account_type_id' => $type->id, 'currency_id' => $currency->id, 'account_name' => $name,
+            'normal_balance' => $normalBalance, 'is_active' => true,
+        ]);
+    }
+
+    return $accounts;
+}

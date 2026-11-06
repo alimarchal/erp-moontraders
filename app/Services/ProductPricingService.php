@@ -109,8 +109,10 @@ class ProductPricingService
             'price_type' => $priceType,
             'old_price' => $oldPrice,
             'new_price' => $newPrice,
-            'impacted_batch_ids' => $impactedBatchIds?->all(),
+            'impacted_batch_ids' => $impactedBatchIds?->map(fn ($id) => (int) $id)->all(),
             'impacted_batch_count' => $impactedBatchIds?->count() ?? 0,
+            // Written by the application, not left to the database's own clock, so it always agrees with posted_at.
+            'changed_at' => now(),
         ]);
     }
 }

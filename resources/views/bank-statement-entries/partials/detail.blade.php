@@ -93,7 +93,7 @@
             @if ($entry->status !== 'reconciled')
                 <form method="POST" action="{{ route('bank-statement-entries.attachments.store', $entry) }}" enctype="multipart/form-data" class="bank-noprint bk-stack" style="margin-top:12px">
                     @csrf
-                    <input type="file" name="files[]" multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv">
+                    <input type="file" name="files[]" data-compress multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv">
                     <div class="bk-row">
                         <select data-allow-clear="false" data-width="170px" name="label" class="select2 bank-select">
                             @foreach (\App\Models\Attachment::LABELS as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach

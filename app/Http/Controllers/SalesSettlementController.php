@@ -62,6 +62,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
     private array $existingAttachmentPaths = [];
 
     /**
+     * Files uploaded before the database transaction started, by attachment key.
+     *
+     * @var array<string, string>
+     */
+    private array $preparedUploads = [];
+
+    /**
      * Get the middleware that should be assigned to the controller.
      */
     public static function middleware(): array
@@ -635,6 +642,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function store(StoreSalesSettlementRequest $request)
     {
+        $this->prepareAttachmentUploads($request);
+
         DB::beginTransaction();
 
         try {
@@ -723,6 +732,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $this->recalcSettlementFinancials($settlement);
 
             DB::commit();
+            $this->finalizeUploads($settlement);
 
             $redirect = redirect()
                 ->route('sales-settlements.show', $settlement)
@@ -1097,12 +1107,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->with('error', 'Only draft Sales Settlements can be updated.');
         }
 
+        $this->prepareAttachmentUploads($request);
+
         DB::beginTransaction();
 
         try {
             $result = $this->applySettlementUpdate($request, $salesSettlement);
 
             DB::commit();
+            $this->finalizeUploads($salesSettlement);
 
             $redirect = redirect()
                 ->route('sales-settlements.show', $salesSettlement)
@@ -1452,10 +1465,74 @@ class SalesSettlementController extends Controller implements HasMiddleware
      *
      * @param  array<string, mixed>  $entry
      */
+    /**
+     * Shrink and store every uploaded attachment before the transaction opens. Inside the transaction a row then only
+     * records the path, so the Goods Issue lock is held for a moment however many pictures there are. Files that end up
+     * in no row (a refused save) are removed once the request is over.
+     */
+    private function prepareAttachmentUploads(Request $request): void
+    {
+        if (! SettlementAttachmentService::enabled()) {
+            return;
+        }
+
+        $service = app(SettlementAttachmentService::class);
+
+        foreach ((array) $request->file('attachment_files', []) as $key => $file) {
+            if ($file instanceof UploadedFile && SettlementAttachmentService::isAllowed($file)) {
+                $this->preparedUploads[(string) $key] = $service->storeUpload($file);
+            }
+        }
+
+        if ($this->preparedUploads !== []) {
+            app()->terminating(fn () => $this->discardUnusedUploads());
+        }
+    }
+
+    /**
+     * Once the settlement is saved (the database is no longer held), put each staged file in the settlement's own
+     * section folder and point its row there.
+     */
+    private function finalizeUploads(SalesSettlement $settlement): void
+    {
+        if ($this->preparedUploads === []) {
+            return;
+        }
+
+        $service = app(SettlementAttachmentService::class);
+        $tables = ['credit_sales' => 'sales_settlement_credit_sales', 'cheques' => 'sales_settlement_cheques', 'bank_transfers' => 'sales_settlement_bank_transfers', 'bank_slips' => 'sales_settlement_bank_slips', 'recoveries' => 'sales_settlement_recoveries'];
+
+        foreach ($tables as $section => $table) {
+            DB::table($table)->where('sales_settlement_id', $settlement->id)->whereNotNull('attachment')->get(['id', 'attachment'])
+                ->filter(fn ($row) => $service->isStaged($row->attachment))
+                ->each(function ($row) use ($service, $settlement, $section, $table) {
+                    $final = $service->moveStagedUpload($row->attachment, $settlement->settlement_number, $section);
+
+                    if ($final !== $row->attachment) {
+                        DB::table($table)->where('id', $row->id)->update(['attachment' => $final]);
+                    }
+                });
+        }
+    }
+
+    private function discardUnusedUploads(): void
+    {
+        $paths = array_values($this->preparedUploads);
+        $used = collect(['sales_settlement_credit_sales', 'sales_settlement_cheques', 'sales_settlement_bank_transfers', 'sales_settlement_bank_slips', 'sales_settlement_recoveries'])
+            ->flatMap(fn (string $table) => DB::table($table)->whereIn('attachment', $paths)->pluck('attachment'))
+            ->all();
+
+        $this->deleteAttachmentFiles(array_diff($paths, $used));
+    }
+
     private function resolveAttachment(Request $request, SalesSettlement $settlement, string $section, array $entry): ?string
     {
         $service = app(SettlementAttachmentService::class);
         $key = $entry['attachment_key'] ?? null;
+
+        if ($key && isset($this->preparedUploads[(string) $key])) {
+            return $this->preparedUploads[(string) $key];
+        }
 
         if ($key && SettlementAttachmentService::enabled()) {
             $file = $request->file('attachment_files.'.$key);
@@ -2254,6 +2331,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         $originalSettlementNumber = $salesSettlement->settlement_number;
 
+        $this->prepareAttachmentUploads($request);
+
         DB::beginTransaction();
 
         try {
@@ -2310,6 +2389,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             DB::commit();
+            $this->finalizeUploads($salesSettlement);
 
             Log::info('Sales settlement special edit applied (reverted, corrected, re-posted)', [
                 'settlement_id' => $salesSettlement->id,

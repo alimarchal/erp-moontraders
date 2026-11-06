@@ -13,8 +13,10 @@ use App\Models\SalesSettlement;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use App\Services\SettlementAttachmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -304,4 +306,44 @@ it('explains an invalid bank account on a bank recovery', function () {
 
     $response->assertStatus(422);
     expect($response->json('errors')['recoveries_entries.0.bank_account_id'][0])->toContain('Recovery 1');
+});
+
+it('shrinks and uploads attachments before the database transaction opens, so the goods issue lock is not held meanwhile', function () {
+    $baseline = DB::transactionLevel();
+    $GLOBALS['settlement_upload_levels'] = [];
+
+    app()->bind(SettlementAttachmentService::class, fn () => new class extends SettlementAttachmentService
+    {
+        public function storeUpload(UploadedFile $file): string
+        {
+            $GLOBALS['settlement_upload_levels'][] = DB::transactionLevel();
+
+            return parent::storeUpload($file);
+        }
+    });
+
+    $this->actingAs($this->user)
+        ->post(route('sales-settlements.store'), attachmentPayload(allEntriesWithKeys(), allFiles()))
+        ->assertRedirect();
+
+    expect($GLOBALS['settlement_upload_levels'])->not->toBeEmpty()->and(array_unique($GLOBALS['settlement_upload_levels']))->toBe([$baseline]);
+});
+
+it('leaves nothing in staging after a save, every file sits in its settlement section folder', function () {
+    $settlement = storeSettlementWithAttachments();
+
+    expect(Storage::disk('local')->allFiles('sales-settlement/_staging'))->toBe([])
+        ->and($settlement->cheques->first()->attachment)->toStartWith('sales-settlement/'.$settlement->settlement_number.'/cheques/');
+});
+
+it('removes the uploaded files again when the settlement is refused', function () {
+    storeSettlementWithAttachments();
+    Storage::disk('local')->deleteDirectory('sales-settlement/_staging');
+
+    // the same goods issue already has a draft settlement, so this second save is turned away
+    $this->actingAs($this->user)
+        ->post(route('sales-settlements.store'), attachmentPayload(allEntriesWithKeys(), allFiles()))
+        ->assertRedirect();
+
+    expect(SalesSettlement::count())->toBe(1)->and(Storage::disk('local')->allFiles('sales-settlement/_staging'))->toBe([]);
 });

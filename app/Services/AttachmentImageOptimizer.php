@@ -41,6 +41,12 @@ class AttachmentImageOptimizer
                 return $file;
             }
 
+            // GD holds about 5 bytes per pixel while it works. A huge picture could use up all the memory (a fatal error
+            // that cannot be caught), so such a picture is stored as it is instead.
+            if (! $this->fitsInMemory($width, $height)) {
+                return $file;
+            }
+
             $image = @imagecreatefromstring((string) file_get_contents($path));
 
             if ($image === false) {
@@ -70,6 +76,38 @@ class AttachmentImageOptimizer
 
             return $file;
         }
+    }
+
+    private function fitsInMemory(int $width, int $height): bool
+    {
+        $limit = $this->memoryLimitBytes();
+
+        if ($limit === null) {
+            return true;
+        }
+
+        return ($limit - memory_get_usage()) > $width * $height * 6;
+    }
+
+    /**
+     * @return int|null PHP's memory limit in bytes, or null when there is none
+     */
+    private function memoryLimitBytes(): ?int
+    {
+        $value = trim((string) ini_get('memory_limit'));
+
+        if ($value === '' || $value === '-1') {
+            return null;
+        }
+
+        $number = (int) $value;
+
+        return match (strtolower(substr($value, -1))) {
+            'g' => $number * 1024 ** 3,
+            'm' => $number * 1024 ** 2,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 
     /**

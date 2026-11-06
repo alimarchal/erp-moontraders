@@ -54,34 +54,73 @@ class ExpenseVoucherAttachmentService
     }
 
     /**
-     * Keep every uploaded file as an attachment of the voucher.
+     * Shrink and store the files. Done BEFORE the voucher's database transaction opens, so the slow part (the picture work
+     * and the upload to S3) never keeps the database busy; {@see record()} then only writes the rows.
+     *
+     * @param  array<int, UploadedFile>  $files
+     * @return array<int, array{file_name: string, file_type: string|null, file_size: int|false, file_path: string}>
+     */
+    public function upload(array $files, CarbonInterface $voucherDate): array
+    {
+        $optimizer = app(AttachmentImageOptimizer::class);
+        $uploaded = [];
+
+        try {
+            foreach ($files as $original) {
+                $file = $optimizer->optimize($original);
+                $uploaded[] = [
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'file_path' => $this->store($file, $voucherDate),
+                ];
+            }
+        } catch (\Throwable $e) {
+            $this->discard($uploaded);
+
+            throw $e;
+        }
+
+        return $uploaded;
+    }
+
+    /**
+     * Write the rows for files already stored by {@see upload()}.
+     *
+     * @param  array<int, array{file_name: string, file_type: string|null, file_size: int|false, file_path: string}>  $uploaded
+     */
+    public function record(ExpenseVoucher $voucher, array $uploaded): void
+    {
+        foreach ($uploaded as $file) {
+            $voucher->attachments()->create($file + ['created_by' => auth()->id()]);
+        }
+    }
+
+    /**
+     * Remove files that were stored but never recorded (the save failed).
+     *
+     * @param  array<int, array{file_path: string}>  $uploaded
+     */
+    public function discard(array $uploaded): void
+    {
+        foreach ($uploaded as $file) {
+            $this->delete($file['file_path']);
+        }
+    }
+
+    /**
+     * Keep every uploaded file as an attachment of the voucher (upload and record in one go).
      *
      * @param  array<int, UploadedFile>  $files
      */
     public function attach(ExpenseVoucher $voucher, array $files): void
     {
-        $stored = [];
+        $uploaded = $this->upload($files, $voucher->voucher_date);
 
         try {
-            $optimizer = app(AttachmentImageOptimizer::class);
-
-            foreach ($files as $original) {
-                $file = $optimizer->optimize($original);
-                $path = $this->store($file, $voucher->voucher_date);
-                $stored[] = $path;
-
-                $voucher->attachments()->create([
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                    'file_path' => $path,
-                    'created_by' => auth()->id(),
-                ]);
-            }
+            $this->record($voucher, $uploaded);
         } catch (\Throwable $e) {
-            foreach ($stored as $path) {
-                $this->delete($path);
-            }
+            $this->discard($uploaded);
 
             throw $e;
         }

@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\ExpenseVoucherAttachmentService;
 use App\Services\ExpenseVoucherService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -203,13 +204,22 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $data = $this->validated($request);
 
-        // The voucher and its files are saved together: if anything fails nothing is left behind.
-        $voucher = DB::transaction(function () use ($data, $request) {
-            $voucher = $this->service->create($data);
-            $this->attachments->attach($voucher, $request->file('attachments', []));
+        // The pictures are shrunk and stored first, outside the transaction; inside it only the rows are written. If the
+        // save fails nothing is left behind, rows or files.
+        $uploaded = $this->attachments->upload($request->file('attachments', []), Carbon::parse($data['voucher_date']));
 
-            return $voucher;
-        });
+        try {
+            $voucher = DB::transaction(function () use ($data, $uploaded) {
+                $voucher = $this->service->create($data);
+                $this->attachments->record($voucher, $uploaded);
+
+                return $voucher;
+            });
+        } catch (\Throwable $e) {
+            $this->attachments->discard($uploaded);
+
+            throw $e;
+        }
 
         if ($request->input('action') === 'draft') {
             return redirect()->route('expense-vouchers.show', $voucher)->with('success', 'Voucher '.$voucher->voucher_number.' saved as a draft.');
@@ -245,9 +255,10 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $submit = $request->input('action') !== 'draft';
         $remove = array_map('intval', (array) $request->input('remove_attachments', []));
         $removedPaths = [];
+        $uploaded = $this->attachments->upload($request->file('attachments', []), Carbon::parse($data['voucher_date']));
 
-        $redirect = $this->attempt(function () use ($expenseVoucher, $data, $request, $submit, $remove, &$removedPaths) {
-            DB::transaction(function () use ($expenseVoucher, $data, $request, $submit, $remove, &$removedPaths) {
+        $redirect = $this->attempt(function () use ($expenseVoucher, $data, $request, $submit, $remove, $uploaded, &$removedPaths) {
+            DB::transaction(function () use ($expenseVoucher, $data, $request, $submit, $remove, $uploaded, &$removedPaths) {
                 $this->service->update($expenseVoucher, $data);
 
                 foreach ($expenseVoucher->attachments()->whereIn('id', $remove)->get() as $file) {
@@ -255,7 +266,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
                     $file->delete();
                 }
 
-                $this->attachments->attach($expenseVoucher, $request->file('attachments', []));
+                $this->attachments->record($expenseVoucher, $uploaded);
 
                 if ($submit) {
                     $this->service->submit($expenseVoucher->fresh(), $request->user());
@@ -263,8 +274,10 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             });
         }, $expenseVoucher, $submit ? 'Voucher submitted for approval.' : 'Voucher updated.');
 
-        // Files go only after the database change is safely saved.
-        if (! session()->has('error')) {
+        // Files go only after the database change is safely saved; files stored for a refused save are dropped.
+        if (session()->has('error')) {
+            $this->attachments->discard($uploaded);
+        } else {
             foreach ($removedPaths as $path) {
                 $this->attachments->delete($path);
             }

@@ -1,5 +1,6 @@
 {{-- Shared support for optional settlement attachments: client file registry + preview modal. Include once per page. --}}
 @if (\App\Services\SettlementAttachmentService::enabled())
+    <x-attachment-compressor />
     @once
         @push('scripts')
             <script>
@@ -8,6 +9,8 @@
                     maxBytes: {{ (int) config('settlement_attachments.max_kb') * 1024 }},
                     allowed: @json(config('settlement_attachments.extensions')),
                     files: {},
+                    /** Photos still being shrunk in the browser; a save waits for them. */
+                    pending: new Set(),
 
                     extension(name) {
                         return (name.split('.').pop() || '').toLowerCase();
@@ -33,6 +36,13 @@
                         const key = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
                         this.files[key] = file;
                         input.value = '';
+
+                        // Shrink a photo in the browser (a few hundred KB instead of several MB) and swap it in when ready.
+                        if (window.AttachmentCompressor) {
+                            const job = window.AttachmentCompressor.compress(file).then(smaller => { if (this.files[key] === file) this.files[key] = smaller; });
+                            this.pending.add(job);
+                            job.finally(() => this.pending.delete(job));
+                        }
 
                         return { key, name: file.name, ext };
                     },
@@ -94,7 +104,16 @@
                         form.dataset.attachmentsBound = '1';
                         form.setAttribute('enctype', 'multipart/form-data');
 
-                        form.addEventListener('submit', () => {
+                        form.addEventListener('submit', async (event) => {
+                            // Wait for photos that are still being shrunk, then send the form again.
+                            if (this.pending.size > 0) {
+                                event.preventDefault();
+                                event.stopImmediatePropagation();
+                                await Promise.all([...this.pending]);
+                                form.requestSubmit(event.submitter || undefined);
+                                return;
+                            }
+
                             form.querySelectorAll('input[data-attachment-file]').forEach(el => el.remove());
                             const referenced = Array.from(form.querySelectorAll('input[type=hidden]'))
                                 .map(el => el.value).join(' ');
@@ -111,6 +130,17 @@
                                 el.files = transfer.files;
                                 form.appendChild(el);
                             });
+
+                            // Warn before sending when this server could not take the save (it would otherwise lose fields quietly).
+                            if (window.AttachmentCompressor) {
+                                const sending = Array.from(form.querySelectorAll('input[data-attachment-file]')).map(el => el.files[0]).filter(Boolean);
+                                const problem = window.AttachmentCompressor.tooBig(sending, form.elements.length);
+                                if (problem) {
+                                    event.preventDefault();
+                                    form.querySelectorAll('input[data-attachment-file]').forEach(el => el.remove());
+                                    alert(problem);
+                                }
+                            }
                         });
                     },
                 };

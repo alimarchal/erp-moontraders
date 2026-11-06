@@ -82,3 +82,17 @@ it('reads a bank statement from S3 through a temporary copy', function () {
     Storage::disk('s3')->assertExists($import->file_path);
     expect($import->status)->toBe('previewed')->and($import->preview['valid_rows'])->toBe(1);
 });
+
+it('keeps a picture as it is when decoding it would not fit in the available memory', function () {
+    $picture = UploadedFile::fake()->image('huge.jpg', 3000, 3000);
+    $original = ini_get('memory_limit');
+    ini_set('memory_limit', (int) ((memory_get_usage() / 1048576) + 40).'M');
+
+    try {
+        $result = app(AttachmentImageOptimizer::class)->optimize($picture);
+    } finally {
+        ini_set('memory_limit', $original);
+    }
+
+    expect($result)->toBe($picture);
+});

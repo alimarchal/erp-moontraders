@@ -82,3 +82,52 @@ it('reads a bank statement from S3 through a temporary copy', function () {
     Storage::disk('s3')->assertExists($import->file_path);
     expect($import->status)->toBe('previewed')->and($import->preview['valid_rows'])->toBe(1);
 });
+
+it('keeps a picture as it is when decoding it would not fit in the available memory', function () {
+    $picture = UploadedFile::fake()->image('huge.jpg', 3000, 3000);
+    $original = ini_get('memory_limit');
+    ini_set('memory_limit', (int) ((memory_get_usage() / 1048576) + 40).'M');
+
+    try {
+        $result = app(AttachmentImageOptimizer::class)->optimize($picture);
+    } finally {
+        ini_set('memory_limit', $original);
+    }
+
+    expect($result)->toBe($picture);
+});
+
+it('saves a large opaque PNG as a much smaller JPEG with the matching name', function () {
+    $path = tempnam(sys_get_temp_dir(), 'png-').'.png';
+    $image = imagecreatetruecolor(1200, 900);
+    for ($i = 0; $i < 400; $i++) {
+        imagefilledrectangle($image, ($i * 37) % 1100, ($i * 53) % 800, ($i * 37) % 1100 + 120, ($i * 53) % 800 + 90, imagecolorallocate($image, ($i * 7) % 255, ($i * 11) % 255, ($i * 13) % 255));
+    }
+    imagepng($image, $path, 0);
+    $png = new UploadedFile($path, 'scan.png', 'image/png', null, true);
+
+    $result = app(AttachmentImageOptimizer::class)->optimize($png);
+
+    expect($result->getClientOriginalName())->toBe('scan.jpg')
+        ->and($result->getClientMimeType())->toBe('image/jpeg')
+        ->and($result->getSize())->toBeLessThan($png->getSize() * 0.5);
+});
+
+it('flattens a see-through PNG onto white when it becomes a JPEG', function () {
+    $path = tempnam(sys_get_temp_dir(), 'png-').'.png';
+    $image = imagecreatetruecolor(1200, 900);
+    imagealphablending($image, false);
+    imagesavealpha($image, true);
+    imagefill($image, 0, 0, imagecolorallocatealpha($image, 10, 20, 30, 127));
+    for ($i = 0; $i < 300; $i++) {
+        imagefilledrectangle($image, 300 + ($i * 7) % 600, 250 + ($i * 5) % 400, 340 + ($i * 7) % 600, 290 + ($i * 5) % 400, imagecolorallocate($image, ($i * 7) % 255, ($i * 11) % 255, ($i * 13) % 255));
+    }
+    imagepng($image, $path, 0);
+
+    $result = app(AttachmentImageOptimizer::class)->optimize(new UploadedFile($path, 'logo.png', 'image/png', null, true));
+    $flat = imagecreatefromjpeg($result->getRealPath());
+    $corner = imagecolorsforindex($flat, imagecolorat($flat, 5, 5));
+
+    expect($result->getClientOriginalName())->toBe('logo.jpg')
+        ->and($corner['red'])->toBeGreaterThan(240)->and($corner['green'])->toBeGreaterThan(240)->and($corner['blue'])->toBeGreaterThan(240);
+});

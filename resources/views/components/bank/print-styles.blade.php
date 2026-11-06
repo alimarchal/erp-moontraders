@@ -86,6 +86,7 @@
     }
 </style>
 
+<x-attachment-compressor />
 <div id="bk-entry-modal" class="uf-modal bank-noprint" style="display:none" role="dialog" aria-modal="true" aria-labelledby="bk-entry-title">
     <div class="uf-modal-bg" data-bk-close></div>
     <div class="uf-modal-box bk-modal-box">

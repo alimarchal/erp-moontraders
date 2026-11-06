@@ -21,8 +21,10 @@ use App\Services\AccountingService;
 use App\Services\InventoryLedgerService;
 use App\Services\InventoryService;
 use App\Services\SalesSettlementRevertService;
+use App\Services\SettlementAttachmentService;
 use App\Services\StockValuationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
@@ -725,4 +727,23 @@ it('shows the Reverse Settlement button only to users holding the revert permiss
 
     $this->actingAs($without)->get(route('sales-settlements.show', $settlement))
         ->assertOk()->assertDontSee('Reverse Settlement');
+});
+
+it('keeps every attachment, the rows and the stored files, when a settlement is reverted, so it can be posted again', function () {
+    Storage::fake(SettlementAttachmentService::disk());
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $cheque = SalesSettlementCheque::factory()->create(['sales_settlement_id' => $settlement->id, 'status' => 'pending', 'attachment' => 'sales-settlement/'.$settlement->settlement_number.'/cheques/kept.pdf']);
+    Storage::disk(SettlementAttachmentService::disk())->put($cheque->attachment, 'cheque scan');
+
+    $this->actingAs($user);
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')->once()->andReturn(['success' => true, 'message' => 'Reversed']);
+    $service = new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class));
+
+    expect($service->revert($settlement)['success'])->toBeTrue();
+
+    expect($settlement->fresh()->status)->toBe('draft')
+        ->and($cheque->fresh()->attachment)->toBe('sales-settlement/'.$settlement->settlement_number.'/cheques/kept.pdf');
+    Storage::disk(SettlementAttachmentService::disk())->assertExists($cheque->attachment);
 });

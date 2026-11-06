@@ -133,7 +133,7 @@
                         <div class="uf-card-head"><h2 class="uf-card-title">3. Receipt <span class="ak-muted" style="font-weight:500">(optional, you can add it later)</span></h2></div>
                         <div class="uf-body">
                             <div class="uf-fields">
-                                <div class="uf-field" style="grid-column:1/-1"><label for="files">Receipt, slip or cheque copy</label><input id="files" type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv" style="height:auto; padding:8px"></div>
+                                <div class="uf-field" style="grid-column:1/-1"><label for="files">Receipt, slip or cheque copy</label><input id="files" type="file" name="files[]" data-compress multiple accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv" style="height:auto; padding:8px"></div>
                                 <div class="uf-field"><label for="label">Kind of file</label>
                                     <select data-allow-clear="false" id="label" name="label" class="select2 bank-select">
                                         @foreach (\App\Models\Attachment::LABELS as $value => $label)<option value="{{ $value }}" @selected($value === 'receipt')>{{ $label }}</option>@endforeach

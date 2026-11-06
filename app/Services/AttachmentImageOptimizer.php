@@ -41,6 +41,12 @@ class AttachmentImageOptimizer
                 return $file;
             }
 
+            // GD holds about 5 bytes per pixel while it works. A huge picture could use up all the memory (a fatal error
+            // that cannot be caught), so such a picture is stored as it is instead.
+            if (! $this->fitsInMemory($width, $height)) {
+                return $file;
+            }
+
             $image = @imagecreatefromstring((string) file_get_contents($path));
 
             if ($image === false) {
@@ -53,6 +59,19 @@ class AttachmentImageOptimizer
                 $ratio = $limit / max($width, $height);
                 $scaled = imagescale($image, max(1, (int) round($width * $ratio)), max(1, (int) round($height * $ratio)), IMG_BICUBIC);
                 $image = $scaled === false ? $image : $scaled;
+            }
+
+            // A PNG (a screenshot, a scanned page) is usually 2 to 4 times smaller as a JPEG. A receipt has no use for
+            // transparency, so see-through parts become white.
+            if ($extension === 'png') {
+                $jpeg = tempnam(sys_get_temp_dir(), 'att-img-');
+                $this->save($this->onWhite($image), 'jpg', $jpeg);
+
+                if (filesize($jpeg) < $file->getSize() * 0.7) {
+                    return new UploadedFile($jpeg, pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME).'.jpg', 'image/jpeg', null, true);
+                }
+
+                @unlink($jpeg);
             }
 
             $temporary = tempnam(sys_get_temp_dir(), 'att-img-');
@@ -70,6 +89,51 @@ class AttachmentImageOptimizer
 
             return $file;
         }
+    }
+
+    /**
+     * @param  \GdImage  $image
+     * @return \GdImage
+     */
+    private function onWhite($image)
+    {
+        $flat = imagecreatetruecolor(imagesx($image), imagesy($image));
+        imagefill($flat, 0, 0, imagecolorallocate($flat, 255, 255, 255));
+        imagecopy($flat, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
+
+        return $flat;
+    }
+
+    private function fitsInMemory(int $width, int $height): bool
+    {
+        $limit = $this->memoryLimitBytes();
+
+        if ($limit === null) {
+            return true;
+        }
+
+        return ($limit - memory_get_usage()) > $width * $height * 6;
+    }
+
+    /**
+     * @return int|null PHP's memory limit in bytes, or null when there is none
+     */
+    private function memoryLimitBytes(): ?int
+    {
+        $value = trim((string) ini_get('memory_limit'));
+
+        if ($value === '' || $value === '-1') {
+            return null;
+        }
+
+        $number = (int) $value;
+
+        return match (strtolower(substr($value, -1))) {
+            'g' => $number * 1024 ** 3,
+            'm' => $number * 1024 ** 2,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 
     /**

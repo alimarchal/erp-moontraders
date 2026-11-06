@@ -144,7 +144,8 @@
     @if(\App\Services\ExpenseVoucherAttachmentService::enabled())
     <div class="ak-field ev-span-3" x-data="{ names: [] }">
         <label for="attachments" class="ev-bi"><span>Attachments (optional): receipts, bills, photos</span><span class="ev-ur" lang="ur" dir="rtl">منسلک دستاویزات (اختیاری): رسید، بل یا تصویر</span></label>
-        <input id="attachments" type="file" name="attachments[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" class="ev-file" @change="names = [...$event.target.files].map(f => f.name)">
+        <x-attachment-compressor />
+        <input id="attachments" type="file" name="attachments[]" data-compress multiple accept=".pdf,.jpg,.jpeg,.png,.webp" class="ev-file" @change="names = [...$event.target.files].map(f => f.name)">
         <p class="ak-hint">You can pick several files together. PDF, JPG, PNG or WEBP, up to {{ round(config('voucher_attachments.max_kb') / 1024) }} MB each. Kept privately under Vouchers / {{ optional($voucher->voucher_date)->format('d-m-Y') ?? 'dd-mm-yyyy of the voucher' }}.</p>
         <ul class="ev-files" x-show="names.length" x-cloak><template x-for="name in names" :key="name"><li x-text="name"></li></template></ul>
         @if($voucher->exists && $voucher->attachments->isNotEmpty())

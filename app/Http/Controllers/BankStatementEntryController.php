@@ -120,7 +120,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             ])->all());
         }
 
-        $entry = DB::transaction(function () use ($request, $data, $debit, $credit, $classifier, $attachments) {
+        $entry = DB::transaction(function () use ($request, $data, $debit, $credit, $classifier) {
             $user = $request->user();
 
             $entry = BankStatementEntry::create([
@@ -152,12 +152,21 @@ class BankStatementEntryController extends Controller implements HasMiddleware
 
             BankEntryAuditLog::record($entry, 'created_manually', null, $entry->only(['posting_date', 'debit', 'credit', 'reference']), $user->id);
 
-            if ($request->hasFile('files')) {
-                $attachments->attach($entry, $request->file('files'), $request->input('label', 'receipt'), $request->input('attachment_description'), $user);
-            }
-
             return $entry;
         });
+
+        // The files are shrunk and uploaded after the entry is saved, so the database is never held while that happens.
+        // If the upload fails the entry is kept and the receipt can be attached to it again.
+        $attachmentWarning = null;
+
+        if ($request->hasFile('files')) {
+            try {
+                $attachments->attach($entry, $request->file('files'), $request->input('label', 'receipt'), $request->input('attachment_description'), $request->user());
+            } catch (\Throwable $e) {
+                report($e);
+                $attachmentWarning = ' The receipt file could not be stored, please attach it again from the entry.';
+            }
+        }
 
         if ($request->filled('scan_id')) {
             $scan = BankReceiptScan::find($request->integer('scan_id'));
@@ -168,7 +177,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
         }
 
         $after = $request->input('after', 'save');
-        $message = 'Entry saved.';
+        $message = 'Entry saved.'.$attachmentWarning;
 
         if ($after === 'submit') {
             if (! $request->user()->can('bank-statement-entry-submit')) {

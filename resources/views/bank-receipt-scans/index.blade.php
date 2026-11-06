@@ -31,7 +31,7 @@
                             @drop.prevent="over = false; $refs.files.files = $event.dataTransfer.files; names = [...$event.dataTransfer.files].map(f => f.name)">
                             <b>Drop scans or photos here</b>
                             <span class="ak-muted">or click to choose: PDF, JPG, PNG (up to 30 files)</span>
-                            <input x-ref="files" type="file" name="files[]" multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv" class="sr-only" @change="names = [...$event.target.files].map(f => f.name)">
+                            <input x-ref="files" type="file" name="files[]" data-compress multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv" class="sr-only" @change="names = [...$event.target.files].map(f => f.name)">
                             <ul class="ak-muted" style="margin:8px 0 0; padding:0; list-style:none; max-height:96px; overflow:auto"><template x-for="name in names" :key="name"><li x-text="name"></li></template></ul>
                         </label>
                         <div class="uf-field"><label for="scan_date">Receipt date <span class="uf-req">*</span></label><input id="scan_date" name="scan_date" type="date" max="{{ now()->toDateString() }}" required value="{{ old('scan_date', now()->toDateString()) }}"></div>

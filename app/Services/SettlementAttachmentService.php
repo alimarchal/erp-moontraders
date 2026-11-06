@@ -99,6 +99,43 @@ class SettlementAttachmentService
         return Storage::disk(self::disk())->putFileAs($folder, $file, $name);
     }
 
+    public const STAGING_FOLDER = '_staging';
+
+    /**
+     * Store an upload BEFORE the database transaction of a settlement starts: the shrinking and the upload to S3 can
+     * take seconds and must not keep the Goods Issue locked. The file waits in sales-settlement/_staging/; once the
+     * settlement is saved, {@see moveStagedUpload()} puts it in its settlement's own section folder.
+     */
+    public function storeUpload(UploadedFile $file): string
+    {
+        $file = app(AttachmentImageOptimizer::class)->optimize($file);
+        $name = hash('sha256', Str::uuid()->toString().$file->getClientOriginalName()).'.'.strtolower($file->getClientOriginalExtension());
+
+        return Storage::disk(self::disk())->putFileAs(config('settlement_attachments.root_folder').'/'.self::STAGING_FOLDER, $file, $name);
+    }
+
+    public function isStaged(?string $path): bool
+    {
+        return $path !== null && str_starts_with($path, config('settlement_attachments.root_folder').'/'.self::STAGING_FOLDER.'/') && ! str_contains($path, '..');
+    }
+
+    /**
+     * Move a staged file to sales-settlement/{settlement no}/{section}/ and return its new path. If the move fails the
+     * staged path is returned, which still opens (nothing checks the folder), and the file is not lost.
+     */
+    public function moveStagedUpload(string $stagedPath, string $settlementNumber, string $section): string
+    {
+        $target = config('settlement_attachments.root_folder').'/'.$settlementNumber.'/'.self::SECTIONS[$section].'/'.basename($stagedPath);
+
+        try {
+            return Storage::disk(self::disk())->move($stagedPath, $target) ? $target : $stagedPath;
+        } catch (\Throwable $e) {
+            Log::warning('A settlement attachment could not be moved out of staging', ['path' => $stagedPath, 'error' => $e->getMessage()]);
+
+            return $stagedPath;
+        }
+    }
+
     public function delete(?string $path): void
     {
         if ($path) {

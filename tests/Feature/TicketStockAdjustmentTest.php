@@ -382,3 +382,29 @@ it('updates only the batch selling price when just the selling cost changes, wit
         ->and(StockAdjustment::count())->toBe(0)
         ->and($ticket->fresh()->status)->toBe(TicketStatus::Approved);
 });
+
+it('applies a new selling cost to every batch of the product when All batches is chosen', function () {
+    $stock = adjustableStock($this);
+    $other = StockBatch::factory()->create(['product_id' => $stock['product']->id, 'status' => 'active', 'selling_price' => 70]);
+    $stock['batch']->update(['selling_price' => 80]);
+    CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['selling_price' => 80]);
+    CurrentStockByBatch::create(['product_id' => $stock['product']->id, 'warehouse_id' => $this->warehouse->id, 'stock_batch_id' => $other->id, 'quantity_on_hand' => 10, 'unit_cost' => 50, 'selling_price' => 70, 'total_value' => 500, 'status' => 'active']);
+
+    $payload = ['type' => 'stock_adjustment', 'title' => 'sell all'] + adjustmentPayload($this, $stock, 100);
+    $payload['items'][0]['selling_price'] = 99;
+    $payload['items'][0]['selling_scope'] = 'all';
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)->assertSessionHasNoErrors();
+
+    $ticket = Ticket::firstWhere('title', 'sell all');
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertRedirect();
+
+    expect((float) $stock['batch']->fresh()->selling_price)->toBe(99.0)
+        ->and((float) $other->fresh()->selling_price)->toBe(99.0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $other->id)->value('selling_price'))->toBe(99.0)
+        ->and((float) $stock['product']->fresh()->unit_sell_price)->toBe(99.0);
+});
+
+it('lists stock adjustments with tabs, filters and totals, and serves the help page', function () {
+    $this->actingAs($this->admin)->get(route('stock-adjustments.index', ['filter' => ['status' => 'posted']]))->assertOk()->assertSee('How it works');
+    $this->actingAs($this->admin)->get(route('stock-adjustments.help'))->assertOk()->assertSee('How stock adjustments work');
+});

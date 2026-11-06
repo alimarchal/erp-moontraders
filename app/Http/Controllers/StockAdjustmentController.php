@@ -15,15 +15,13 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class StockAdjustmentController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:stock-adjustment-list', only: ['index', 'show']),
+            new Middleware('permission:stock-adjustment-list', only: ['index', 'show', 'help']),
             new Middleware('permission:stock-adjustment-create', only: ['create', 'store']),
             new Middleware('permission:stock-adjustment-edit', only: ['edit', 'update']),
             new Middleware('permission:stock-adjustment-delete', only: ['destroy']),
@@ -31,32 +29,65 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         ];
     }
 
+    /** Rows-per-page choices on the list. */
+    public const PER_PAGE = [25, 50, 100, 200, 'all'];
+
+    private const SORTS = ['adjustment_date', 'adjustment_number', 'created_at'];
+
     public function index(Request $request)
     {
-        $query = StockAdjustment::query()->with(['warehouse', 'createdBy', 'postedBy']);
+        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
+        $sort = (string) $request->input('sort', '-adjustment_date');
+        $sort = in_array(ltrim($sort, '-'), self::SORTS, true) ? $sort : '-adjustment_date';
+        $perPage = (string) $request->input('per_page', '25');
+        $perPage = in_array($perPage, array_map('strval', self::PER_PAGE), true) ? $perPage : '25';
         $userSupplierId = $this->getUserSupplierScope();
 
-        if ($userSupplierId !== null) {
-            $query->whereHas('items.product', fn ($productQuery) => $productQuery->where('supplier_id', $userSupplierId));
-        }
+        $scoped = fn () => StockAdjustment::query()
+            ->when($userSupplierId !== null, fn ($query) => $query->whereHas('items.product', fn ($product) => $product->where('supplier_id', $userSupplierId)))
+            ->when($filters['search'] ?? null, function ($query, $value) {
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $query->where(fn ($q) => $q->whereRaw('LOWER(adjustment_number) LIKE ?', [$term])->orWhereRaw('LOWER(reason) LIKE ?', [$term]));
+            })
+            ->when($filters['warehouse_id'] ?? null, fn ($query, $value) => $query->where('warehouse_id', $value))
+            ->when($filters['adjustment_type'] ?? null, fn ($query, $value) => $query->where('adjustment_type', $value))
+            ->when($filters['date_from'] ?? null, fn ($query, $value) => $query->whereDate('adjustment_date', '>=', $value))
+            ->when($filters['date_to'] ?? null, fn ($query, $value) => $query->whereDate('adjustment_date', '<=', $value));
 
-        $adjustments = QueryBuilder::for($query)
-            ->allowedFilters([
-                AllowedFilter::partial('adjustment_number'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('adjustment_type'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::scope('adjustment_date_from'),
-                AllowedFilter::scope('adjustment_date_to'),
+        $statusCounts = $scoped()->reorder()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        $query = $scoped()
+            ->when($filters['status'] ?? null, fn ($q, $value) => $q->where('status', $value))
+            ->with(['warehouse', 'createdBy', 'postedBy'])
+            ->withCount('items')
+            ->withSum('items', 'adjustment_quantity')
+            ->withSum('items', 'adjustment_value')
+            ->addSelect(['revaluation_value' => InventoryLedgerEntry::query()
+                ->selectRaw('COALESCE(SUM(total_value), 0)')
+                ->whereColumn('stock_adjustment_id', 'stock_adjustments.id')
+                ->where('debit_qty', 0)->where('credit_qty', 0),
             ])
-            ->defaultSort('-adjustment_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy(ltrim($sort, '-'), str_starts_with($sort, '-') ? 'desc' : 'asc')
+            ->orderByDesc('id');
+
+        $adjustments = $query->paginate($perPage === 'all' ? max(1, (int) $statusCounts->sum()) : (int) $perPage)->withQueryString();
 
         return view('stock-adjustments.index', [
             'adjustments' => $adjustments,
+            'filters' => $filters,
+            'sort' => $sort,
+            'perPage' => $perPage,
+            'statusCounts' => $statusCounts,
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
         ]);
+    }
+
+    /**
+     * Step-by-step guide, English and Urdu.
+     */
+    public function help()
+    {
+        return view('stock-adjustments.help');
     }
 
     public function create()

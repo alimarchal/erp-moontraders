@@ -125,7 +125,7 @@
                                                 <td class="ak-num ak-muted">{{ number_format((float) $line['system_quantity'], 3) }}</td>
                                                 <td class="ak-num">{{ number_format((float) $line['actual_quantity'], 3) }}</td>
                                                 <td class="ak-num {{ $line['adjustment_quantity'] > 0 ? 'tk-up' : ($line['adjustment_quantity'] < 0 ? 'tk-down' : 'tk-flat') }}">{{ $signed($line['adjustment_quantity']) }}</td>
-                                                <td class="ak-num">{{ isset($line['selling_price']) && $line['selling_price'] !== '' && $line['selling_price'] !== null ? $money($line['selling_price']) : '—' }}</td>
+                                                <td class="ak-num">{{ isset($line['selling_price']) && $line['selling_price'] !== '' && $line['selling_price'] !== null ? $money($line['selling_price']) : '—' }}@if (isset($line['selling_price']) && $line['selling_price'] !== '' && ($line['selling_scope'] ?? 'batch') === 'all') <small class="ak-muted">all batches</small>@endif</td>
                                                 <td class="ak-num">{{ $money($line['unit_cost']) }}</td>
                                                 @php $lineValue = $line['adjustment_value'] + ($line['revaluation_value'] ?? 0); @endphp
                                                 <td class="ak-num ak-strong {{ $lineValue < 0 ? 'tk-down' : 'tk-up' }}">{{ $signed($lineValue) }}@if (abs($line['adjustment_quantity']) < 0.0005 && ! empty($line['revaluation_value'])) <small class="ak-muted">cost only</small>@endif</td>

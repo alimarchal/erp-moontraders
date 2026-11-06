@@ -89,6 +89,7 @@ class ProductImport implements ToCollection, WithHeadingRow
         private bool $updateExisting = false,
         private ?int $userId = null,
         private string $updateScope = 'all',
+        private ?string $supplierScopeName = null,
     ) {
         Product::withTrashed()->get()->each(function (Product $p) {
             $this->existing[strtoupper($p->product_code)] = $p;
@@ -230,7 +231,9 @@ class ProductImport implements ToCollection, WithHeadingRow
         }
 
         if ($this->supplierScope !== null && (int) $product->supplier_id !== $this->supplierScope) {
-            $this->log($rowNumber, 'error', $row, 'You can only update products of your own supplier.', $code);
+            $this->log($rowNumber, 'error', $row, $this->supplierScopeName !== null
+                ? "This file is for {$this->supplierScopeName}; this product belongs to another company."
+                : 'You can only update products of your own supplier.', $code);
 
             return;
         }
@@ -353,7 +356,9 @@ class ProductImport implements ToCollection, WithHeadingRow
 
         if ($this->supplierScope !== null) {
             if ($supplierId !== null && $supplierId !== $this->supplierScope) {
-                $error ??= 'You can only import products for your own supplier.';
+                $error ??= $this->supplierScopeName !== null
+                    ? "This file is for {$this->supplierScopeName}; the Supplier column names another company."
+                    : 'You can only import products for your own supplier.';
             }
             $supplierId = $updating ? $supplierId : $this->supplierScope;
         }

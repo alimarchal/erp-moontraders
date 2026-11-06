@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\ProductImportTemplateExport;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
@@ -110,4 +111,40 @@ it('requires product-create to import', function () {
     $this->user->revokePermissionTo('product-create');
 
     runProductImport([['X-1', 'X', '', '', 'Piece', '', '', '', '', '', '', '']])->assertForbidden();
+});
+
+it('downloads a template listing only the chosen company\'s products with its name filled in', function () {
+    $mezan = Supplier::factory()->create(['supplier_name' => 'Mezan Foods']);
+    $other = Supplier::factory()->create(['supplier_name' => 'Other Co']);
+    Product::factory()->create(['product_code' => 'MZ-1', 'supplier_id' => $mezan->id]);
+    Product::factory()->create(['product_code' => 'OT-1', 'supplier_id' => $other->id]);
+
+    $this->get(route('products.import.template', ['supplier' => $mezan->id]))->assertDownload('products_mezan-foods.xlsx');
+
+    $rows = (new ProductImportTemplateExport($mezan))->array();
+    expect(collect($rows)->pluck(0)->all())->toBe(['MZ-1'])
+        ->and($rows[0][5])->toBe('Mezan Foods');
+});
+
+it('limits an import to the chosen company: blank supplier defaults to it and another company is an error', function () {
+    Uom::factory()->create(['uom_name' => 'Piece']);
+    $mezan = Supplier::factory()->create(['supplier_name' => 'Mezan Foods']);
+    Supplier::factory()->create(['supplier_name' => 'Other Co']);
+
+    runProductImport([
+        ['SW-1', 'Blank supplier', '', '', 'Piece', '', '', '', '', '', '', ''],
+        ['SW-2', 'Wrong supplier', '', 'Other Co', 'Piece', '', '', '', '', '', '', ''],
+    ], ['supplier_id' => $mezan->id])->assertRedirect();
+
+    $result = session('import_result');
+    expect(Product::where('product_code', 'SW-1')->value('supplier_id'))->toBe($mezan->id)
+        ->and(Product::where('product_code', 'SW-2')->exists())->toBeFalse()
+        ->and(collect($result['report'])->firstWhere('code', 'SW-2')['message'])->toContain('This file is for Mezan Foods')
+        ->and($result['supplier'])->toBe('Mezan Foods');
+});
+
+it('shows the company picker on the import page', function () {
+    Supplier::factory()->create(['supplier_name' => 'Picker Co']);
+
+    $this->get(route('products.import.form'))->assertSuccessful()->assertSee('Picker Co')->assertSee('Download blank template', false);
 });

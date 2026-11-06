@@ -40,7 +40,7 @@
                 <div class="uf-card-head">
                     <h2 class="uf-card-title">
                         {{ $result['dry_run'] ? 'Check only — nothing was saved' : 'Import finished' }}
-                        <span class="ak-muted" style="font-weight:400">{{ $result['file'] }}@if ($result['update_existing'] ?? false) · updating {{ ($result['update_scope'] ?? 'all') === 'prices' ? 'prices only' : 'every filled column' }}@endif</span>
+                        <span class="ak-muted" style="font-weight:400">{{ $result['file'] }}@if (! empty($result['supplier'])) · {{ $result['supplier'] }}@endif@if ($result['update_existing'] ?? false) · updating {{ ($result['update_scope'] ?? 'all') === 'prices' ? 'prices only' : 'every filled column' }}@endif</span>
                     </h2>
                 </div>
                 <div class="ak-kpis" style="padding:16px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
@@ -84,10 +84,38 @@
 
         <div class="uf-grid">
             <section class="uf-card">
-                <div class="uf-card-head"><h2 class="uf-card-title"><span class="uf-step">1</span> Upload file</h2></div>
+                <div class="uf-card-head"><h2 class="uf-card-title"><span class="uf-step">1</span> Choose the company and get its template</h2></div>
                 <div class="uf-body">
-                    <form method="POST" action="{{ route('products.import') }}" enctype="multipart/form-data" x-data="{ busy: false }" @submit="busy = true">
+                    <form method="POST" action="{{ route('products.import') }}" enctype="multipart/form-data"
+                        x-data="{ supplier: @js((string) old('supplier_id', $lockedSupplierId ?? ($suppliers->count() === 1 ? $suppliers->first()->id : ''))), busy: false, tpl: @js(route('products.import.template')) }" @submit="busy = true">
                         @csrf
+                        <div class="uf-fields" style="grid-template-columns: 1fr">
+                            <div class="uf-field">
+                                <label for="supplier_id">Company / supplier <span class="uf-req">*</span></label>
+                                <select id="supplier_id" name="supplier_id" x-model="supplier" required @if ($lockedSupplierId) style="pointer-events:none; background:#f8fafc" @endif>
+                                    @unless ($lockedSupplierId)
+                                        <option value="">Select company…</option>
+                                    @endunless
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}">{{ $supplier->supplier_name }}</option>
+                                    @endforeach
+                                    @unless ($lockedSupplierId)
+                                        <option value="all">All companies (the file has a Supplier column)</option>
+                                    @endunless
+                                </select>
+                                <p class="ak-muted" style="margin:6px 0 0; font-size:12.5px">The import is limited to this company: new products are added to it, and a row that names another company is reported as an error.</p>
+                                @error('supplier_id') <p class="uf-error">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <a :href="supplier && supplier !== 'all' ? tpl + '?supplier=' + supplier : tpl" class="ak-btn ak-btn-outline" :style="!supplier ? 'opacity:.5; pointer-events:none' : ''">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-4-4 4m0 0-4-4m4 4V4" /></svg>
+                                    <span x-text="supplier && supplier !== 'all' ? 'Download this company\'s template' : 'Download blank template'"></span>
+                                </a>
+                                <span class="ak-muted" style="display:block; margin-top:6px; font-size:12.5px" x-show="supplier && supplier !== 'all'" x-cloak>It lists the company's products with their current values. Edit them, add new rows at the bottom, then upload it in step 2.</span>
+                            </div>
+                        </div>
+
+                        <h3 style="margin:22px 0 10px; font-size:15px; font-weight:700"><span class="uf-step">2</span> Upload the filled file</h3>
                         <div class="uf-fields" style="grid-template-columns: 1fr">
                             <div class="uf-field">
                                 <label for="import_file">Excel file (.xlsx, .xls, .csv — max 5 MB) <span class="uf-req">*</span></label>
@@ -111,7 +139,7 @@
                             @endcan
                         </div>
                         <div style="margin-top:20px; display:flex; justify-content:flex-end">
-                            <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy"><span x-show="!busy">Run import</span><span x-show="busy" x-cloak>Working…</span></button>
+                            <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy || !supplier"><span x-show="!busy">Run import</span><span x-show="busy" x-cloak>Working…</span></button>
                         </div>
                     </form>
                 </div>
@@ -121,7 +149,7 @@
                 <div class="uf-card-head"><h2 class="uf-card-title">How it works</h2></div>
                 <div class="uf-body" style="font-size:13.5px; line-height:1.6">
                     <ol style="margin:0 0 12px 18px; list-style:decimal">
-                        <li>Download the template (same columns as the product Excel export) and fill one product per row.</li>
+                        <li>Choose the company and download its template: it lists that company's products with their current values (a blank sample if it has none). Fix the values you want to change and add new products as new rows.</li>
                         <li>Required: <b>Product Code</b>, <b>Product Name</b> and <b>UOM</b> (defaults to <i>Piece</i> if empty).</li>
                         <li>Run with “Check only” first, then import for real.</li>
                     </ol>

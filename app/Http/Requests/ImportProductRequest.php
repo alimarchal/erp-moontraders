@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ImportProductRequest extends FormRequest
 {
@@ -18,6 +19,7 @@ class ImportProductRequest extends FormRequest
     {
         return [
             'import_file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
+            'supplier_id' => ['nullable', Rule::when($this->input('supplier_id') !== 'all', ['integer', 'exists:suppliers,id'])],
             'dry_run' => ['nullable', 'boolean'],
             'update_existing' => ['nullable', 'boolean'],
             'update_scope' => ['nullable', 'in:all,prices'],

@@ -112,17 +112,30 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function importForm()
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
         return view('products.import', [
             'valuationMethods' => Product::VALUATION_METHODS,
+            'suppliers' => Supplier::query()
+                ->when($userSupplierId, fn ($query) => $query->where('id', $userSupplierId))
+                ->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'lockedSupplierId' => $userSupplierId,
         ]);
     }
 
     /**
      * Download the blank import template.
      */
-    public function importTemplate()
+    public function importTemplate(Request $request)
     {
-        return Excel::download(new ProductImportTemplateExport, 'products_import_template.xlsx');
+        $userSupplierId = $this->getUserSupplierScope();
+        $supplierId = $userSupplierId ?? $request->integer('supplier') ?: null;
+        $supplier = $supplierId ? Supplier::query()->findOrFail($supplierId) : null;
+
+        return Excel::download(
+            new ProductImportTemplateExport($supplier),
+            $supplier ? 'products_'.str($supplier->supplier_name)->slug().'.xlsx' : 'products_import_template.xlsx'
+        );
     }
 
     /**
@@ -133,7 +146,10 @@ class ProductController extends Controller implements HasMiddleware
     {
         $dryRun = $request->boolean('dry_run');
         $updateExisting = $request->boolean('update_existing') && $request->user()->can('product-edit');
-        $import = new ProductImport($dryRun, $this->getUserSupplierScope(), $updateExisting, auth()->id(), $request->input('update_scope') === 'prices' ? 'prices' : 'all');
+        // A company user is always limited to their own supplier; anyone else may limit the file to the chosen company.
+        $supplierId = $this->getUserSupplierScope() ?? ($request->integer('supplier_id') ?: null);
+        $supplier = $supplierId ? Supplier::query()->find($supplierId) : null;
+        $import = new ProductImport($dryRun, $supplierId, $updateExisting, auth()->id(), $request->input('update_scope') === 'prices' ? 'prices' : 'all', $supplier?->supplier_name);
 
         DB::beginTransaction();
 
@@ -158,6 +174,7 @@ class ProductController extends Controller implements HasMiddleware
                 'counts' => $import->counts(),
                 'report' => $import->report(),
                 'file' => $request->file('import_file')->getClientOriginalName(),
+                'supplier' => $supplier?->supplier_name,
             ]);
     }
 

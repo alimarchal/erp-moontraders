@@ -174,8 +174,15 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         $denominations = $this->clearedDenominations($isCleared ? (array) ($validated['denom'] ?? []) : []);
         $counted = $denominations['total'];
 
-        if ($counted > 0 && abs($counted - $clearedAmount) > 0.009) {
-            return back()->withInput()->with('error', 'The notes you counted add up to Rs '.number_format($counted, 2).' but the cleared amount is Rs '.number_format($clearedAmount, 2).'. Make them equal, or leave the notes empty.');
+        if ($isCleared && abs($counted - $clearedAmount) > 0.009) {
+            return back()->withInput()->with('error', $counted > 0
+                ? 'The notes you counted add up to Rs '.number_format($counted, 2).' but the cleared amount is Rs '.number_format($clearedAmount, 2).'. Make them equal.'
+                : 'Count the cash notes brought back for this cleared cheque; they must add up to Rs '.number_format($clearedAmount, 2).'.');
+        }
+
+        // A cheque already cleared can be corrected only on the day it was cleared, because that day's cash report is already built from it.
+        if ($isCleared && $cheque->status === 'cleared' && $cheque->cleared_date && ! $cheque->cleared_date->isToday()) {
+            return back()->with('error', 'This cheque was cleared on '.$cheque->cleared_date->format('d-M-Y').'. Its cleared details can be changed only on that day.');
         }
 
         DB::transaction(function () use ($cheque, $validated, $isCleared, $clearedAmount, $denominations) {

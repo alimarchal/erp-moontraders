@@ -338,6 +338,7 @@
                                         <button type="button" @click="$dispatch('open-cheque-status-modal', {
                                                         url: '{{ route('reports.cheque-register.update-status', $cheque->id) }}',
                                                         status: '{{ $cheque->status }}',
+                                                        number: @js($cheque->cheque_number),
                                                         clearedDate: '{{ $cheque->cleared_date?->format('Y-m-d') }}',
                                                         amount: '{{ $cheque->amount }}',
                                                         clearedAmount: '{{ $cheque->cleared_amount }}',
@@ -407,20 +408,20 @@
                         x-transition:leave="ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave-end="opacity-0 translate-y-4 sm:scale-95"
-                        class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl ring-1 ring-black/5"
+                        class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-3xl ring-1 ring-black/5"
                         @click.outside="close()">
 
-                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-start gap-4">
+                        <div class="bg-green-600 text-white px-6 py-4 flex justify-between items-start gap-4">
                             <div>
-                                <h3 class="text-lg font-bold text-gray-900">Update cheque status</h3>
-                                <p class="text-sm text-gray-500 mt-0.5">Cheque amount: <span class="font-semibold text-gray-800">Rs <span x-text="Number(form.amount || 0).toLocaleString()"></span></span></p>
+                                <h3 class="text-xl font-bold" x-text="form.status === 'cleared' ? 'Cheque cleared: count the cash' : 'Update cheque status'"></h3>
+                                <p class="text-sm text-green-100 mt-0.5">Cheque <span class="font-mono" x-text="form.number"></span> · Rs <span x-text="Number(form.amount || 0).toLocaleString()"></span></p>
                             </div>
-                            <button type="button" @click="close()" class="text-gray-400 hover:text-gray-700 rounded-full p-1" aria-label="Close">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <button type="button" @click="close()" class="text-green-100 hover:text-white rounded-full p-1" aria-label="Close">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
 
-                        <form :action="formAction" method="POST" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+                        <form :action="formAction" method="POST" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto" @submit="if (form.status === 'cleared' && ! notesMatch()) { $event.preventDefault(); notesError = true; }">
                             @csrf
 
                             <div>
@@ -453,8 +454,8 @@
                                 <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                                     <div class="flex items-center justify-between gap-3 mb-3">
                                         <div>
-                                            <p class="text-sm font-bold text-gray-800">Cash notes (optional)</p>
-                                            <p class="text-xs text-gray-500">Count the notes brought back. They are added to the note count of the Cash Collection report.</p>
+                                            <p class="text-sm font-bold text-gray-800">Cash notes <span class="text-red-600">*</span></p>
+                                            <p class="text-xs text-gray-500">Count every note brought back. The total must equal the amount cleared. These notes are added to the Cash Collection report.</p>
                                         </div>
                                         <button type="button" class="text-xs font-semibold text-indigo-600 hover:underline" @click="clearNotes()">Clear</button>
                                     </div>
@@ -473,6 +474,7 @@
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-right">
                                         </div>
                                     </div>
+                                    <p class="mt-2 text-sm font-semibold text-red-600" x-show="notesError && ! notesMatch()" x-cloak>The notes must add up to the cleared amount (Rs <span x-text="Number(form.cleared_amount || 0).toLocaleString()"></span>) before you can save.</p>
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm" x-show="counted() > 0">
                                         <span class="font-semibold text-gray-800">Counted: Rs <span x-text="counted().toLocaleString()"></span></span>
                                         <span :class="Math.abs(counted() - Number(form.cleared_amount || 0)) < 0.01 ? 'text-green-700' : 'text-red-600'" class="font-semibold"
@@ -490,7 +492,7 @@
                                 <button type="button" @click="close()"
                                     class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100">Cancel</button>
                                 <button type="submit"
-                                    class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm">Update status</button>
+                                    class="px-5 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 shadow-sm" x-text="form.status === 'cleared' ? 'Save cleared cheque' : 'Update status'">Update status</button>
                             </div>
                         </form>
                     </div>
@@ -509,10 +511,16 @@
                             cleared_date: '',
                             cleared_amount: '',
                             amount: '',
+                            number: '',
                             notes: '',
                             denom: {},
                         },
                         notes: [5000, 1000, 500, 100, 50, 20, 10],
+                        notesError: false,
+
+                        notesMatch() {
+                            return this.counted() > 0 && Math.abs(this.counted() - Number(this.form.cleared_amount || 0)) < 0.01;
+                        },
 
                         counted() {
                             return this.notes.reduce((sum, note) => sum + (Number(this.form.denom[note]) || 0) * note, 0) + (Number(this.form.denom.coins) || 0);
@@ -530,6 +538,8 @@
                             this.form.cleared_amount = detail.clearedAmount || detail.amount || '';
                             this.form.notes = '';
                             this.form.denom = detail.denom || {};
+                            this.form.number = detail.number || '';
+                            this.notesError = false;
                             this.show = true;
                         },
 

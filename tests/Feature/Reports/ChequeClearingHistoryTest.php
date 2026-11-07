@@ -25,7 +25,7 @@ beforeEach(function () {
 
 it('clears a cheque with the cleared amount defaulting to the cheque amount and records history', function () {
     $this->actingAs($this->user)
-        ->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28'])
+        ->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]])
         ->assertRedirect();
 
     $this->cheque->refresh();
@@ -38,11 +38,11 @@ it('clears a cheque with the cleared amount defaulting to the cheque amount and 
 
 it('keeps a different cleared amount and requires a date when clearing', function () {
     $this->actingAs($this->user)
-        ->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared'])
+        ->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'denom' => ['5000' => 2]])
         ->assertSessionHasErrors('cleared_date');
 
     $this->actingAs($this->user)
-        ->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'cleared_amount' => 9500, 'notes' => 'bank charges'])
+        ->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'cleared_amount' => 9500, 'notes' => 'bank charges', 'denom' => ['5000' => 1, '1000' => 4, '500' => 1]])
         ->assertRedirect();
 
     expect((float) $this->cheque->fresh()->cleared_amount)->toBe(9500.0)
@@ -50,7 +50,7 @@ it('keeps a different cleared amount and requires a date when clearing', functio
 });
 
 it('clears the cleared date and amount when a cheque goes back, but keeps the history', function () {
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28']);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['1000' => 10]]);
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'bounced', 'notes' => 'returned by bank']);
 
     $this->cheque->refresh();
@@ -60,7 +60,7 @@ it('clears the cleared date and amount when a cheque goes back, but keeps the hi
 });
 
 it('returns the status history as json for users who can view the register', function () {
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28']);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]]);
 
     $this->actingAs($this->user)->getJson(route('reports.cheque-register.history', $this->cheque))
         ->assertOk()
@@ -75,7 +75,7 @@ it('feeds the distributor report with the cleared amount on the cleared date', f
     Permission::findOrCreate('report-audit-cash-collection-distributor-all-companies');
     $this->user->givePermissionTo(['report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies']);
 
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'cleared_amount' => 9500]);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'cleared_amount' => 9500, 'denom' => ['5000' => 1, '1000' => 4, '500' => 1]]);
 
     $tables = $this->actingAs($this->user)
         ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'date' => '2026-10-28']))
@@ -108,10 +108,24 @@ it('refuses notes that do not add up to the cleared amount, and drops them when 
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), [
         'status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 1],
     ])->assertSessionHas('error');
+
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28'])->assertSessionHas('error');
     expect($this->cheque->fresh()->status)->toBe('pending');
 
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]])->assertSessionHasNoErrors();
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'bounced']);
 
     expect($this->cheque->fresh()->cleared_denom_5000)->toBeNull();
+});
+
+it('lets a cleared cheque be corrected on the day it was cleared but not on a later day', function () {
+    $clear = fn (array $denom) => $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => now()->toDateString(), 'denom' => $denom]);
+
+    $clear(['5000' => 2])->assertSessionHasNoErrors();
+    $clear(['1000' => 10])->assertSessionHasNoErrors();
+    expect($this->cheque->fresh()->cleared_denom_5000)->toBeNull()->and($this->cheque->fresh()->cleared_denom_1000)->toBe(10);
+
+    $this->cheque->update(['cleared_date' => now()->subDay()->toDateString()]);
+    $clear(['5000' => 2])->assertSessionHas('error');
+    expect($this->cheque->fresh()->cleared_denom_1000)->toBe(10);
 });

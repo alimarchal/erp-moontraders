@@ -662,6 +662,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::prefix('reports/daily-sales')->name('reports.daily-sales.')->group(function () {
         Route::get('/', [DailySalesReportController::class, 'index'])->name('index');
         Route::get('/product-wise', [DailySalesReportController::class, 'productWise'])->name('product-wise');
+        Route::get('/product-wise/pdf', [DailySalesReportController::class, 'productWisePdf'])->name('product-wise.pdf');
+        Route::get('/product-wise/excel', [DailySalesReportController::class, 'productWiseExcel'])->name('product-wise.excel');
         Route::get('/salesman-wise', [DailySalesReportController::class, 'salesmanWise'])->name('salesman-wise');
         Route::get('/van-stock', [DailySalesReportController::class, 'vanStock'])->name('van-stock');
     });

@@ -2,19 +2,37 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Exports\ProductWiseSalesExport;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DailySalesReportController extends Controller implements HasMiddleware
 {
+    /** @var array<string, string> */
+    public const OPTIONAL_COLUMNS = [
+        'returned' => 'Rtn Qty',
+        'shortage' => 'Short Qty',
+        'net_sales' => 'Net Sales',
+        'net_profit' => 'Net Profit',
+        'np_percent' => 'NP %',
+    ];
+
+    /** @var array<int, string> */
+    public const DEFAULT_COLUMNS = ['net_sales', 'net_profit', 'np_percent'];
+
     public static function middleware(): array
     {
         return [
@@ -127,32 +145,99 @@ class DailySalesReportController extends Controller implements HasMiddleware
      */
     public function productWise(Request $request)
     {
+        return view('reports.daily-sales.product-wise', $this->productWiseData($request) + [
+            'employees' => Employee::orderBy('name')->get(['id', 'name']),
+            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
+            'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'products' => Product::orderBy('product_name')->get(['id', 'product_name']),
+            'optionalColumns' => self::OPTIONAL_COLUMNS,
+        ]);
+    }
+
+    public function productWisePdf(Request $request)
+    {
+        $data = $this->productWiseData($request);
+        $landscape = $request->input('orientation') === 'landscape';
+        $pdf = Pdf::loadView('reports.daily-sales.pdf.product-wise', $data + [
+            'filterLines' => $this->productWiseFilterLines($data),
+            'optionalColumns' => self::OPTIONAL_COLUMNS,
+        ])->setPaper('a4', $landscape ? 'landscape' : 'portrait');
+        $pdf->render();
+        $canvas = $pdf->getDomPDF()->getCanvas();
+        $canvas->page_text($canvas->get_width() - 80, $canvas->get_height() - 25, 'Page {PAGE_NUM} of {PAGE_COUNT}', $pdf->getDomPDF()->getFontMetrics()->getFont('Helvetica'), 7);
+
+        return $pdf->download('product-wise-sales-'.$data['startDate'].'-to-'.$data['endDate'].'.pdf');
+    }
+
+    public function productWiseExcel(Request $request)
+    {
+        $data = $this->productWiseData($request);
+
+        return Excel::download(
+            new ProductWiseSalesExport($data['productSales'], $data['totals'], $data['visibleColumns'], $this->productWiseFilterLines($data), $data['startDate'], $data['endDate']),
+            'product-wise-sales-'.$data['startDate'].'-to-'.$data['endDate'].'.xlsx'
+        );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function productWiseFilterLines(array $data): array
+    {
+        $names = [
+            'employeeId' => ['Salesman', Employee::class, 'name'],
+            'vehicleId' => ['Vehicle', Vehicle::class, 'vehicle_number'],
+            'warehouseId' => ['Warehouse', Warehouse::class, 'warehouse_name'],
+            'supplierId' => ['Supplier', Supplier::class, 'supplier_name'],
+            'categoryId' => ['Category', Category::class, 'name'],
+            'productId' => ['Product', Product::class, 'product_name'],
+        ];
+        $lines = [];
+        foreach ($names as $key => [$label, $model, $column]) {
+            if ($data[$key]) {
+                $lines[] = $label.': '.($model::find($data[$key])?->{$column} ?? $data[$key]);
+            }
+        }
+        if ($data['search'] !== '') {
+            $lines[] = 'Product contains: '.$data['search'];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Filtered, aggregated rows for the on-screen report and both exports.
+     *
+     * @return array<string, mixed>
+     */
+    private function productWiseData(Request $request): array
+    {
         $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $employeeId = $request->input('employee_id');
         $vehicleId = $request->input('vehicle_id');
         $warehouseId = $request->input('warehouse_id');
+        $supplierId = $request->input('supplier_id');
+        $categoryId = $request->input('category_id');
+        $productId = $request->input('product_id');
+        $search = trim((string) $request->input('search', ''));
 
-        // Get raw data for PHP-side aggregation to handle expense allocation
         $rawItems = DB::table('sales_settlement_items as ssi')
             ->join('sales_settlements as ss', 'ssi.sales_settlement_id', '=', 'ss.id')
             ->join('products as p', 'ssi.product_id', '=', 'p.id')
             ->join('employees as e', 'ss.employee_id', '=', 'e.id')
             ->join('vehicles as v', 'ss.vehicle_id', '=', 'v.id')
             ->where('ss.status', 'posted')
-            ->whereBetween('ss.settlement_date', [$startDate, $endDate]);
-
-        if ($employeeId) {
-            $rawItems->where('ss.employee_id', $employeeId);
-        }
-
-        if ($vehicleId) {
-            $rawItems->where('ss.vehicle_id', $vehicleId);
-        }
-
-        if ($warehouseId) {
-            $rawItems->where('ss.warehouse_id', $warehouseId);
-        }
+            ->whereBetween('ss.settlement_date', [$startDate, $endDate])
+            ->when($employeeId, fn ($q) => $q->where('ss.employee_id', $employeeId))
+            ->when($vehicleId, fn ($q) => $q->where('ss.vehicle_id', $vehicleId))
+            ->when($warehouseId, fn ($q) => $q->where('ss.warehouse_id', $warehouseId))
+            ->when($supplierId, fn ($q) => $q->where('ss.supplier_id', $supplierId))
+            ->when($categoryId, fn ($q) => $q->where('p.category_id', $categoryId))
+            ->when($productId, fn ($q) => $q->where('p.id', $productId))
+            ->when($search !== '', fn ($q) => $q->whereRaw('LOWER(p.product_name) like ?', ['%'.mb_strtolower($search).'%']));
 
         $rawItems = $rawItems->select(
             'p.id as product_id',
@@ -207,9 +292,8 @@ class DailySalesReportController extends Controller implements HasMiddleware
                 'allocated_expense' => $allocatedExpense,
                 'net_profit' => $netProfit,
             ];
-        })->sortByDesc('total_sales_value');
+        })->sortByDesc('total_sales_value')->values();
 
-        // Calculate totals
         $totals = [
             'total_issued' => $productSales->sum('total_issued'),
             'total_sold' => $productSales->sum('total_sold'),
@@ -221,18 +305,25 @@ class DailySalesReportController extends Controller implements HasMiddleware
             'net_profit' => $productSales->sum('net_profit'),
         ];
 
-        return view('reports.daily-sales.product-wise', [
-            'productSales' => $productSales,
-            'totals' => $totals,
-            'employees' => Employee::orderBy('name')->get(['id', 'name']),
-            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
-            'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'employeeId' => $employeeId,
-            'vehicleId' => $vehicleId,
-            'warehouseId' => $warehouseId,
-        ]);
+        return compact(
+            'productSales', 'totals', 'startDate', 'endDate', 'employeeId', 'vehicleId', 'warehouseId',
+            'supplierId', 'categoryId', 'productId', 'search'
+        ) + ['visibleColumns' => $this->visibleColumns($request)];
+    }
+
+    /**
+     * Optional columns shown, from ?columns=a,b (default: the three profit columns).
+     *
+     * @return array<int, string>
+     */
+    private function visibleColumns(Request $request): array
+    {
+        if (! $request->has('columns')) {
+            return self::DEFAULT_COLUMNS;
+        }
+        $requested = is_array($request->input('columns')) ? $request->input('columns') : explode(',', (string) $request->input('columns'));
+
+        return array_values(array_intersect(array_keys(self::OPTIONAL_COLUMNS), $requested));
     }
 
     /**

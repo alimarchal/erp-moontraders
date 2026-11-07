@@ -166,6 +166,17 @@
                                         <div><dt>{{ $field['label'] }}</dt><dd>{{ $shown }}</dd></div>
                                     @endforeach
                                 </dl>
+                                @if ($ticket->type === TicketType::NewCustomer && $ticket->isPending() && auth()->user()->can('ticket-approve'))
+                                    <form method="POST" action="{{ route('tickets.customer-code', $ticket) }}" class="tk-gen4" style="margin-top:16px; align-items:end">
+                                        @csrf
+                                        <div class="tk-span2">
+                                            <label class="tk-label" for="customer_code">Customer code {{ ! empty($data['code_generated']) ? '(made by the system)' : '' }} <span class="uf-req">*</span></label>
+                                            <input id="customer_code" name="customer_code" type="text" value="{{ old('customer_code', $data['customer_code'] ?? '') }}" required maxlength="191" autocomplete="off" data-code-check="{{ route('tickets.customer-code.check') }}" data-except="{{ $ticket->uuid }}">
+                                            @error('customer_code')<p style="margin:6px 0 0; color:#b91c1c; font-size:13px">{{ $message }}</p>@enderror
+                                        </div>
+                                        <div><button type="submit" class="ak-btn ak-btn-outline" style="height:40px">Change code</button></div>
+                                    </form>
+                                @endif
                             </div>
                             @if ($ticket->type !== TicketType::NewCustomer)
                                 <div class="tk-warn" style="background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe">Approving only creates this entry. Posting it to the general ledger stays a separate step on its own screen.</div>
@@ -357,4 +368,7 @@
             </div>
         @endif
     </div>
+@push('scripts')
+    @include('tickets.partials.code-check')
+@endpush
 </x-app-layout>

@@ -145,6 +145,11 @@ class TicketRequest extends FormRequest
             $rules['data.supplier_id'] = [...(array) $rules['data.supplier_id'], Rule::in([$supplierId])];
         }
 
+        // Company users do not type a customer code, the system makes it.
+        if ($this->ticketType() === TicketType::NewCustomer && ! $this->user()->isTicketAdmin()) {
+            $rules['data.customer_code'] = ['nullable'];
+        }
+
         return $rules;
     }
 
@@ -220,6 +225,16 @@ class TicketRequest extends FormRequest
     {
         return [function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            if ($this->ticketType() === TicketType::NewCustomer && $this->user()->isTicketAdmin()) {
+                $ticket = $this->route('ticket');
+
+                if (! app(TicketService::class)->customerCodeAvailable((string) $this->input('data.customer_code'), $ticket instanceof Ticket ? $ticket : null)) {
+                    $validator->errors()->add('data.customer_code', 'This customer code is already used by a customer or another waiting ticket.');
+                }
+
                 return;
             }
 

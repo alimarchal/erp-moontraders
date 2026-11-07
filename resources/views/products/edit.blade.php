@@ -115,14 +115,6 @@
 
     @push('scripts')
         <script>
-            $(document).ready(function() {
-                $('.select2').select2({
-                    width: '100%',
-                    placeholder: 'Select an option',
-                    allowClear: false,
-                });
-            });
-
             function productEditForm() {
                 const original = {
                     product_code:           {{ Js::from($product->product_code) }},

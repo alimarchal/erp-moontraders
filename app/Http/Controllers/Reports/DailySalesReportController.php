@@ -33,6 +33,8 @@ class DailySalesReportController extends Controller implements HasMiddleware
         'net_sales' => 'Net Sales',
         'net_profit' => 'Net Profit',
         'np_percent' => 'NP %',
+        'prev_sold' => 'Prev Month Sold Qty',
+        'sold_change' => 'Qty Change vs Prev Month',
         'prev_sales' => 'Prev Month Sales',
         'change' => 'Change vs Prev Month',
         'change_pct' => 'Change %',
@@ -257,8 +259,10 @@ class DailySalesReportController extends Controller implements HasMiddleware
 
         $previousStart = Carbon::parse($startDate)->subMonthNoOverflow()->toDateString();
         $previousEnd = Carbon::parse($endDate)->subMonthNoOverflow()->toDateString();
-        $previousSales = $filtered($previousStart, $previousEnd)
-            ->groupBy('p.id')->select('p.id', DB::raw('SUM(ssi.total_sales_value) as sales'))->pluck('sales', 'id');
+        $previousRows = $filtered($previousStart, $previousEnd)
+            ->groupBy('p.id')->select('p.id', DB::raw('SUM(ssi.total_sales_value) as sales'), DB::raw('SUM(ssi.quantity_sold) as sold'))->get()->keyBy('id');
+        $previousSales = $previousRows->map(fn ($r) => (float) $r->sales);
+        $previousSold = $previousRows->map(fn ($r) => (float) $r->sold);
 
         $rawItems = $filtered($startDate, $endDate);
 
@@ -287,7 +291,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         // Aggregate data strictly by Product ID
         $productSales = $rawItems->groupBy(function ($item) {
             return $item->product_id;
-        })->map(function ($group) use ($previousSales) {
+        })->map(function ($group) use ($previousSales, $previousSold) {
             $first = $group->first();
 
             // Calculate allocated expense for ALL items in this product group
@@ -312,6 +316,8 @@ class DailySalesReportController extends Controller implements HasMiddleware
                 'category_name' => $first->category_name,
                 'brand' => $first->brand,
                 'branch_names' => $group->pluck('warehouse_name')->filter()->unique()->sort()->implode(', '),
+                'previous_sold' => (float) ($previousSold[$first->product_id] ?? 0),
+                'sold_change' => $group->sum('quantity_sold') - (float) ($previousSold[$first->product_id] ?? 0),
                 'previous_sales' => $previous,
                 'sales_change' => $totalSales - $previous,
                 'sales_change_pct' => $previous > 0 ? (($totalSales - $previous) / $previous) * 100 : null,
@@ -337,6 +343,8 @@ class DailySalesReportController extends Controller implements HasMiddleware
             'total_cogs' => $productSales->sum('total_cogs'),
             'gross_profit' => $productSales->sum('gross_profit'),
             'net_profit' => $productSales->sum('net_profit'),
+            'previous_sold' => $productSales->sum('previous_sold'),
+            'sold_change' => $productSales->sum('sold_change'),
             'previous_sales' => $productSales->sum('previous_sales'),
             'sales_change' => $productSales->sum('sales_change'),
         ];

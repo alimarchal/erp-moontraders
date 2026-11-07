@@ -164,6 +164,8 @@
                     <th class="ak-num" x-show="cols.includes('net_sales')">Net Sales</th>
                     <th class="ak-num" x-show="cols.includes('net_profit')">Net Profit</th>
                     <th class="ak-num" x-show="cols.includes('np_percent')">NP %</th>
+                    <th class="ak-num" x-show="cols.includes('prev_sold')">Prev Month Sold Qty</th>
+                    <th class="ak-num" x-show="cols.includes('sold_change')">Qty Change vs Prev Month</th>
                     <th class="ak-num" x-show="cols.includes('prev_sales')" title="{{ \Carbon\Carbon::parse($previousStart)->format('d M Y') }} – {{ \Carbon\Carbon::parse($previousEnd)->format('d M Y') }}">Prev Month Sales</th>
                     <th class="ak-num" x-show="cols.includes('change')">Change vs Prev Month</th>
                     <th class="ak-num" x-show="cols.includes('change_pct')">Change %</th>
@@ -183,12 +185,14 @@
                             <td class="ak-num ak-strong" x-show="cols.includes('net_sales')">{{ number_format($product->total_sales_value, 2) }}</td>
                             <td class="ak-num ak-strong {{ $product->net_profit < 0 ? 'pw-neg' : '' }}" x-show="cols.includes('net_profit')">{{ number_format($product->net_profit, 2) }}</td>
                             <td class="ak-num" x-show="cols.includes('np_percent')">{{ $np($product->net_profit, $product->total_sales_value) }}</td>
+                            <td class="ak-num" x-show="cols.includes('prev_sold')">{{ number_format($product->previous_sold, 0) }}</td>
+                            <td class="ak-num ak-strong {{ $product->sold_change < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('sold_change')">{{ ($product->sold_change > 0 ? '+' : '').number_format($product->sold_change, 0) }}</td>
                             <td class="ak-num" x-show="cols.includes('prev_sales')">{{ number_format($product->previous_sales, 2) }}</td>
                             <td class="ak-num ak-strong {{ $product->sales_change < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change')">{{ ($product->sales_change > 0 ? '+' : '').number_format($product->sales_change, 2) }}</td>
                             <td class="ak-num {{ $product->sales_change < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change_pct')">{{ $product->sales_change_pct === null ? 'New' : ($product->sales_change_pct > 0 ? '+' : '').number_format($product->sales_change_pct, 2).'%' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="15" style="text-align:center; padding:28px; color:var(--ak-muted)">No posted sales for these filters.</td></tr>
+                        <tr><td colspan="17" style="text-align:center; padding:28px; color:var(--ak-muted)">No posted sales for these filters.</td></tr>
                     @endforelse
                 </tbody>
                 @if($productSales->isNotEmpty())
@@ -204,6 +208,8 @@
                         <td class="ak-num" x-show="cols.includes('net_sales')">{{ number_format($totals['total_sales_value'], 2) }}</td>
                         <td class="ak-num" x-show="cols.includes('net_profit')">{{ number_format($totals['net_profit'], 2) }}</td>
                         <td class="ak-num" x-show="cols.includes('np_percent')">{{ $np($totals['net_profit'], $totals['total_sales_value']) }}</td>
+                        <td class="ak-num" x-show="cols.includes('prev_sold')">{{ number_format($totals['previous_sold'], 0) }}</td>
+                        <td class="ak-num {{ $totals['sold_change'] < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('sold_change')">{{ ($totals['sold_change'] > 0 ? '+' : '').number_format($totals['sold_change'], 0) }}</td>
                         <td class="ak-num" x-show="cols.includes('prev_sales')">{{ number_format($totals['previous_sales'], 2) }}</td>
                         <td class="ak-num {{ $totals['sales_change'] < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change')">{{ ($totals['sales_change'] > 0 ? '+' : '').number_format($totals['sales_change'], 2) }}</td>
                         <td class="ak-num {{ $totals['sales_change'] < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change_pct')">{{ $totals['previous_sales'] > 0 ? ($totals['sales_change'] > 0 ? '+' : '').number_format($totals['sales_change'] / $totals['previous_sales'] * 100, 2).'%' : '—' }}</td>

@@ -101,12 +101,12 @@ test('pdf contains only the visible columns and the filtered rows', function () 
 test('previous month comparison uses the same range one month back', function () {
     $product = Product::where('product_name', 'Alpha Biscuit')->first();
     $old = SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now()->subMonthNoOverflow(), 'total_sales_amount' => 800]);
-    SalesSettlementItem::factory()->create(['sales_settlement_id' => $old->id, 'product_id' => $product->id, 'goods_issue_item_id' => null, 'total_sales_value' => 800]);
+    SalesSettlementItem::factory()->create(['sales_settlement_id' => $old->id, 'product_id' => $product->id, 'goods_issue_item_id' => null, 'total_sales_value' => 800, 'quantity_sold' => 4]);
 
     $row = $this->get(route('reports.daily-sales.product-wise', ['columns' => 'prev_sales,change,change_pct,category,branch']))
         ->assertSuccessful()->viewData('productSales')->firstWhere('product_name', 'Alpha Biscuit');
 
-    expect($row->previous_sales)->toBe(800.0)->and($row->sales_change)->toBe(200.0)->and(round($row->sales_change_pct, 2))->toBe(25.0);
+    expect($row->previous_sold)->toBe(4.0)->and($row->sold_change)->toBe(6.0)->and($row->previous_sales)->toBe(800.0)->and($row->sales_change)->toBe(200.0)->and(round($row->sales_change_pct, 2))->toBe(25.0);
 });
 
 test('category branch and comparison columns are hidden by default', function () {

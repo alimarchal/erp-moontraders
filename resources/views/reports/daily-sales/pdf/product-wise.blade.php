@@ -19,6 +19,8 @@
         @if($show('net_sales'))<th class="n">Net Sales</th>@endif
         @if($show('net_profit'))<th class="n">Net Profit</th>@endif
         @if($show('np_percent'))<th class="n">NP %</th>@endif
+        @if($show('prev_sold'))<th class="n">Prev Month Qty</th>@endif
+        @if($show('sold_change'))<th class="n">Qty Change</th>@endif
         @if($show('prev_sales'))<th class="n">Prev Month Sales</th>@endif
         @if($show('change'))<th class="n">Change vs Prev</th>@endif
         @if($show('change_pct'))<th class="n">Change %</th>@endif
@@ -32,6 +34,8 @@
                 @if($show('net_sales'))<td class="n">{{ $fmt($row->total_sales_value) }}</td>@endif
                 @if($show('net_profit'))<td class="n">{{ $fmt($row->net_profit) }}</td>@endif
                 @if($show('np_percent'))<td class="n">{{ $np($row->net_profit, $row->total_sales_value) }}</td>@endif
+                @if($show('prev_sold'))<td class="n">{{ number_format($row->previous_sold, 0) }}</td>@endif
+                @if($show('sold_change'))<td class="n" style="color:{{ $row->sold_change < 0 ? '#b91c1c' : '#15803d' }}">{{ ($row->sold_change > 0 ? '+' : '').number_format($row->sold_change, 0) }}</td>@endif
                 @if($show('prev_sales'))<td class="n">{{ $fmt($row->previous_sales) }}</td>@endif
                 @if($show('change'))<td class="n" style="color:{{ $row->sales_change < 0 ? '#b91c1c' : '#15803d' }}">{{ ($row->sales_change > 0 ? '+' : '').$fmt($row->sales_change) }}</td>@endif
                 @if($show('change_pct'))<td class="n" style="color:{{ $row->sales_change < 0 ? '#b91c1c' : '#15803d' }}">{{ $row->sales_change_pct === null ? 'New' : ($row->sales_change_pct > 0 ? '+' : '').number_format($row->sales_change_pct, 2).'%' }}</td>@endif
@@ -48,6 +52,8 @@
         @if($show('net_sales'))<td class="n">{{ $fmt($totals['total_sales_value']) }}</td>@endif
         @if($show('net_profit'))<td class="n">{{ $fmt($totals['net_profit']) }}</td>@endif
         @if($show('np_percent'))<td class="n">{{ $np($totals['net_profit'], $totals['total_sales_value']) }}</td>@endif
+        @if($show('prev_sold'))<td class="n">{{ number_format($totals['previous_sold'], 0) }}</td>@endif
+        @if($show('sold_change'))<td class="n">{{ ($totals['sold_change'] > 0 ? '+' : '').number_format($totals['sold_change'], 0) }}</td>@endif
         @if($show('prev_sales'))<td class="n">{{ $fmt($totals['previous_sales']) }}</td>@endif
         @if($show('change'))<td class="n">{{ ($totals['sales_change'] > 0 ? '+' : '').$fmt($totals['sales_change']) }}</td>@endif
         @if($show('change_pct'))<td class="n">{{ $totals['previous_sales'] > 0 ? ($totals['sales_change'] > 0 ? '+' : '').number_format($totals['sales_change'] / $totals['previous_sales'] * 100, 2).'%' : '-' }}</td>@endif

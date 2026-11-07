@@ -55,7 +55,7 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
             }
         }
         $heading[] = 'Sold Qty';
-        foreach (['returned', 'shortage', 'net_sales', 'net_profit', 'np_percent', 'prev_sales', 'change', 'change_pct'] as $key) {
+        foreach (['returned', 'shortage', 'net_sales', 'net_profit', 'np_percent', 'prev_sold', 'sold_change', 'prev_sales', 'change', 'change_pct'] as $key) {
             if ($has($key)) {
                 $heading[] = $labels[$key];
             }
@@ -63,10 +63,10 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
         $out[] = $heading;
 
         foreach ($this->rows as $i => $row) {
-            $out[] = $this->line([$i + 1, $row->product_name], $row->category_name ?? '', $row->brand ?? '', $row->branch_names, round($row->avg_selling_price, 2), (float) $row->total_sold, $row->total_returned, $row->total_shortage, $row->total_sales_value, $row->net_profit, $row->previous_sales, $row->sales_change);
+            $out[] = $this->line([$i + 1, $row->product_name], $row->category_name ?? '', $row->brand ?? '', $row->branch_names, round($row->avg_selling_price, 2), (float) $row->total_sold, $row->total_returned, $row->total_shortage, $row->total_sales_value, $row->net_profit, $row->previous_sales, $row->sales_change, $row->previous_sold, $row->sold_change);
         }
         $t = $this->totals;
-        $out[] = $this->line(['', 'Total ('.$this->rows->count().' rows)'], '', '', '', '', (float) $t['total_sold'], $t['total_returned'], $t['total_shortage'], $t['total_sales_value'], $t['net_profit'], $t['previous_sales'], $t['sales_change']);
+        $out[] = $this->line(['', 'Total ('.$this->rows->count().' rows)'], '', '', '', '', (float) $t['total_sold'], $t['total_returned'], $t['total_shortage'], $t['total_sales_value'], $t['net_profit'], $t['previous_sales'], $t['sales_change'], $t['previous_sold'], $t['sold_change']);
 
         return $out;
     }
@@ -77,7 +77,7 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
      * @param  array<int, mixed>  $lead
      * @return array<int, mixed>
      */
-    private function line(array $lead, string $category, string $brand, string $branch, float|int|string $avg, float $sold, float|int|string $returned, float|int|string $shortage, float|int|string $sales, float|int|string $profit, float|int|string $previous, float|int|string $change): array
+    private function line(array $lead, string $category, string $brand, string $branch, float|int|string $avg, float $sold, float|int|string $returned, float|int|string $shortage, float|int|string $sales, float|int|string $profit, float|int|string $previous, float|int|string $change, float|int|string $previousSold, float|int|string $soldChange): array
     {
         $has = fn (string $key) => in_array($key, $this->columns, true);
         $line = $lead;
@@ -93,6 +93,8 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
             'net_sales' => round((float) $sales, 2),
             'net_profit' => round((float) $profit, 2),
             'np_percent' => $sales > 0 ? round($profit / $sales * 100, 2) : 0,
+            'prev_sold' => (float) $previousSold,
+            'sold_change' => (float) $soldChange,
             'prev_sales' => round((float) $previous, 2),
             'change' => round((float) $change, 2),
             'change_pct' => $previous > 0 ? round($change / $previous * 100, 2) : 'New',

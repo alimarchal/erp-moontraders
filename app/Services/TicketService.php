@@ -22,7 +22,7 @@ use function Illuminate\Support\defer;
 
 class TicketService
 {
-    public function __construct(private ProductPricingService $pricing) {}
+    public function __construct(private ProductPricingService $pricing, private CustomerCodeGenerator $customerCodes) {}
 
     /**
      * @param  array<string, mixed>  $data  validated TicketRequest payload
@@ -43,7 +43,7 @@ class TicketService
 
             $ticket->update(['ticket_number' => 'TKT-'.str_pad((string) $ticket->id, 6, '0', STR_PAD_LEFT)]);
 
-            $this->syncItems($ticket, $data);
+            $this->syncItems($ticket, $data, $user);
             $this->record($ticket, $user, 'created', null, TicketStatus::Pending, $data['description'] ?? null);
 
             // Mailing happens after the response is sent, so submitting never waits for the mail server.
@@ -83,8 +83,9 @@ class TicketService
                 'supplier_id' => $this->resolveSupplierId($user, $ticket->type, $data) ?? $ticket->supplier_id,
             ]);
 
+            $keptCode = $ticket->items()->first()?->payload ?? [];
             $ticket->items()->delete();
-            $this->syncItems($ticket, $data);
+            $this->syncItems($ticket, $data, $user, $keptCode);
             $this->record($ticket, $user, 'updated', TicketStatus::Pending, TicketStatus::Pending);
 
             return $ticket;
@@ -180,7 +181,7 @@ class TicketService
     /**
      * @param  array<string, mixed>  $data
      */
-    private function syncItems(Ticket $ticket, array $data): void
+    private function syncItems(Ticket $ticket, array $data, User $user, array $keptCustomer = []): void
     {
         match ($ticket->type) {
             TicketType::NewSku => $ticket->items()->create([
@@ -188,7 +189,8 @@ class TicketService
                 'remarks' => $data['sku']['remarks'] ?? null,
             ]),
             TicketType::StockAdjustment => $ticket->items()->create(['payload' => $this->adjustmentPayload($data)]),
-            TicketType::LedgerEntry, TicketType::ClaimEntry, TicketType::NewCustomer => $ticket->items()->create(['payload' => TicketEntryForms::normalize($ticket->type, $data['data'])]),
+            TicketType::NewCustomer => $ticket->items()->create(['payload' => $this->customerPayload($ticket, $user, $data['data'], $keptCustomer)]),
+            TicketType::LedgerEntry, TicketType::ClaimEntry => $ticket->items()->create(['payload' => TicketEntryForms::normalize($ticket->type, $data['data'])]),
             TicketType::PriceUpdate => collect($data['items'])->each(fn (array $row) => $this->createPriceItem($ticket, $row)),
             TicketType::ReactivateSku => collect($data['items'])->each(function (array $row) use ($ticket) {
                 $product = Product::findOrFail($row['product_id']);
@@ -200,6 +202,75 @@ class TicketService
                 ]);
             }),
         };
+    }
+
+    /**
+     * Company users never choose the customer code: the system makes one from their company (an edit keeps it).
+     * Admins type it themselves.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $kept  payload of the item being replaced on an edit
+     * @return array<string, mixed>
+     */
+    private function customerPayload(Ticket $ticket, User $user, array $data, array $kept): array
+    {
+        $payload = TicketEntryForms::normalize(TicketType::NewCustomer, $data);
+
+        if ($user->isTicketAdmin()) {
+            return $payload;
+        }
+
+        $payload['customer_code'] = $kept['customer_code'] ?? $this->customerCodes->next($ticket->supplier_id);
+        $payload['code_generated'] = $kept['code_generated'] ?? true;
+
+        return $payload;
+    }
+
+    /**
+     * An approver may replace the code (for instance the system's suggestion) while the ticket is pending.
+     *
+     * @throws ValidationException when the ticket is closed or the code is already in use
+     */
+    public function changeCustomerCode(Ticket $ticket, User $approver, string $code): Ticket
+    {
+        return DB::transaction(function () use ($ticket, $approver, $code) {
+            $ticket = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            $this->guardPending($ticket);
+            abort_unless($ticket->type === TicketType::NewCustomer, 404);
+
+            $item = $ticket->items()->firstOrFail();
+            $code = strtoupper(trim($code));
+
+            if ($this->customerCodeInUse($code, $item->id)) {
+                throw ValidationException::withMessages(['customer_code' => "Customer code {$code} is already used by a customer or another waiting ticket."]);
+            }
+
+            $old = $item->payload['customer_code'] ?? null;
+            $item->update(['payload' => ['customer_code' => $code, 'code_generated' => false] + $item->payload]);
+            $this->record($ticket, $approver, 'updated', TicketStatus::Pending, TicketStatus::Pending, "Customer code changed from {$old} to {$code}.");
+
+            return $ticket;
+        });
+    }
+
+    /**
+     * Whether no customer (deleted ones included) and no other waiting ticket uses the code; the ticket being edited is ignored.
+     */
+    public function customerCodeAvailable(string $code, ?Ticket $except = null): bool
+    {
+        $code = strtoupper(trim($code));
+
+        return $code !== '' && ! $this->customerCodeInUse($code, null, $except?->id);
+    }
+
+    private function customerCodeInUse(string $code, ?int $exceptItemId = null, ?int $exceptTicketId = null): bool
+    {
+        return Customer::withTrashed()->where('customer_code', $code)->exists()
+            || TicketItem::query()
+                ->when($exceptItemId, fn ($q) => $q->whereKeyNot($exceptItemId))
+                ->when($exceptTicketId, fn ($q) => $q->where('ticket_id', '!=', $exceptTicketId))
+                ->whereHas('ticket', fn ($q) => $q->where('type', TicketType::NewCustomer)->where('status', TicketStatus::Pending))
+                ->get()->contains(fn (TicketItem $other) => ($other->payload['customer_code'] ?? null) === $code);
     }
 
     /**
@@ -328,6 +399,12 @@ class TicketService
     {
         $data = TicketEntryForms::normalize(TicketType::NewCustomer, $item->payload);
 
+        // A system-made code that someone else used in the meantime is simply replaced by the next free one.
+        if (! empty($data['code_generated']) && Customer::withTrashed()->where('customer_code', $data['customer_code'])->exists()) {
+            $data['customer_code'] = $this->customerCodes->next($item->ticket?->supplier_id);
+            $item->update(['payload' => ['customer_code' => $data['customer_code']] + $item->payload]);
+        }
+
         $taken = Customer::query()->where('customer_code', $data['customer_code'])
             ->when($data['email'] ?? null, fn ($q, $email) => $q->orWhere('email', $email))->exists();
 
@@ -336,7 +413,7 @@ class TicketService
         }
 
         // Blank optional fields fall back to the column defaults (payment terms, country, … are NOT NULL).
-        $customer = Customer::create(array_filter($data, fn ($value) => $value !== null && $value !== ''));
+        $customer = Customer::create(array_filter(Arr::except($data, 'code_generated'), fn ($value) => $value !== null && $value !== ''));
         $item->update(['payload' => $item->payload + ['created_id' => $customer->id]]);
 
         return "Customer {$customer->customer_code} created.";

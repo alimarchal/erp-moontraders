@@ -34,11 +34,11 @@ class TicketController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:ticket-list', only: ['index', 'show', 'help']),
+            new Middleware('can:ticket-list', only: ['index', 'show', 'help', 'checkCustomerCode']),
             new Middleware('can:ticket-create', only: ['create', 'store', 'batches', 'adjustmentBatches']),
             new Middleware('can:ticket-edit', only: ['edit', 'update']),
             new Middleware('can:ticket-delete', only: ['destroy']),
-            new Middleware('can:ticket-approve', only: ['approve', 'reject']),
+            new Middleware('can:ticket-approve', only: ['approve', 'reject', 'updateCustomerCode']),
         ];
     }
 
@@ -205,6 +205,32 @@ class TicketController extends Controller implements HasMiddleware
 
         return redirect()->route('tickets.show', $ticket)
             ->with('success', "Ticket {$ticket->ticket_number} approved and applied to the system.");
+    }
+
+    /**
+     * Live "is this code free?" answer for the customer code boxes.
+     */
+    public function checkCustomerCode(Request $request): JsonResponse
+    {
+        $code = strtoupper(trim((string) $request->query('code')));
+        $except = $request->query('except') ? Ticket::query()->where('uuid', $request->query('except'))->first() : null;
+        $available = $this->tickets->customerCodeAvailable($code, $except);
+
+        return response()->json([
+            'code' => $code,
+            'available' => $available,
+            'message' => $code === '' ? 'Enter a customer code.' : ($available ? "{$code} is available." : "{$code} is already used by a customer or another waiting ticket."),
+        ]);
+    }
+
+    public function updateCustomerCode(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeVisible($request, $ticket);
+        $data = $request->validate(['customer_code' => ['required', 'string', 'max:191']]);
+
+        $this->tickets->changeCustomerCode($ticket, $request->user(), $data['customer_code']);
+
+        return redirect()->route('tickets.show', $ticket)->with('success', 'Customer code updated.');
     }
 
     public function reject(Request $request, Ticket $ticket): RedirectResponse

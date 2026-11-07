@@ -693,9 +693,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     |----------------------------------------------------------------------
     */
     Route::get('tickets/products/{product}/batches', [TicketController::class, 'batches'])->name('tickets.product-batches');
+    Route::get('tickets/customer-code/check', [TicketController::class, 'checkCustomerCode'])->name('tickets.customer-code.check');
     Route::get('tickets/help', [TicketController::class, 'help'])->name('tickets.help');
     Route::get('tickets/stock-adjustment/products/{product}/warehouses/{warehouse}/batches', [TicketController::class, 'adjustmentBatches'])->name('tickets.adjustment-batches');
     Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->name('tickets.approve');
+    Route::post('tickets/{ticket}/customer-code', [TicketController::class, 'updateCustomerCode'])->name('tickets.customer-code');
     Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
     Route::resource('tickets', TicketController::class);
 

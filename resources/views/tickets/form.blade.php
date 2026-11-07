@@ -294,6 +294,13 @@
             </div></header>
             <div class="uf-body tk-gen4">
                 @foreach ($entryFields as $field)
+                    @if ($type === TicketType::NewCustomer && $field['name'] === 'customer_code' && ! auth()->user()->isTicketAdmin())
+                        <div>
+                            <span class="tk-label">Customer code</span>
+                            <div class="ak-muted" style="padding:9px 0; font-size:14px">{{ $isEdit && ! empty($entry['customer_code']) ? $entry['customer_code'] : 'Made by the system when you submit' }}</div>
+                        </div>
+                        @continue
+                    @endif
                     @php
                         $value = $entry[$field['name']] ?? ($field['default'] ?? '');
                         $id = 'entry_'.$field['name'];
@@ -310,7 +317,7 @@
                             </select>
                         @else
                             <input id="{{ $id }}" name="data[{{ $field['name'] }}]" type="{{ $field['type'] === 'number' ? 'number' : ($field['type'] === 'date' ? 'date' : 'text') }}"
-                                @if ($field['type'] === 'number') step="0.01" @endif @required(! empty($field['required'])) value="{{ $value }}">
+                                @if ($field['type'] === 'number') step="0.01" @endif @if ($type === TicketType::NewCustomer && $field['name'] === 'customer_code') data-code-check="{{ route('tickets.customer-code.check') }}" @if ($isEdit) data-except="{{ $ticket->uuid }}" @endif autocomplete="off" @endif @required(! empty($field['required'])) value="{{ $value }}">
                         @endif
                     </div>
                 @endforeach
@@ -556,6 +563,7 @@
 <style>.tk-cost-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; padding: 16px; }</style>
 
 @push('scripts')
+    @include('tickets.partials.code-check')
     <script>
         $(function () {
             // Ticket type: searchable drop-down that switches the form.

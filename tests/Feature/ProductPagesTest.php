@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Product;
+use App\Models\Uom;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
 
@@ -33,4 +34,16 @@ it('shows the carton entry fields on create and edit with the saved values', fun
 
 it('hides the products help page from users without the list permission', function () {
     $this->actingAs(User::factory()->create())->get(route('products.help'))->assertForbidden();
+});
+
+it('keeps the saved dropdown values selected on edit and never re-initialises the Select2 boxes', function () {
+    $uom = Uom::factory()->create();
+    $product = Product::factory()->create(['uom_id' => $uom->id]);
+
+    $html = $this->get(route('products.edit', $product))->assertSuccessful()->getContent();
+
+    expect($html)->toContain('<option value="'.$uom->id.'" selected')
+        ->and($html)->not->toContain("\$('.select2').select2(");
+
+    $this->get(route('products.create'))->assertSuccessful()->assertDontSee("\$('.select2').select2(", false);
 });

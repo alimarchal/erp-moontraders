@@ -68,7 +68,8 @@ it('creates a pending ticket for each entry type and touches no live data until 
         ->and(LedgerRegister::count() + ClaimRegister::count() + Customer::count())->toBe(0);
 
     $customerTicket = Ticket::firstWhere('title', 'New customer');
-    expect($customerTicket->items->first()->payload['customer_code'])->toBe('CUST-900')
+    expect($customerTicket->items->first()->payload['customer_code'])->toMatch('/^[A-Z]\d{11}$/')
+        ->and($customerTicket->items->first()->payload['code_generated'])->toBeTrue()
         ->and($customerTicket->items->first()->payload['email'])->toBe('madina@example.com');
 
     foreach (Ticket::all() as $ticket) {
@@ -86,8 +87,9 @@ it('validates with the rules of the real screens and keeps company users on thei
     $this->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'x', 'data' => customerData(['channel_type' => 'Moon base'])])->assertSessionHasErrors('data.channel_type');
     $this->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'x', 'data' => customerData(['customer_name' => ''])])->assertSessionHasErrors('data.customer_name');
 
+    // Admins type the code themselves, and it must be unused.
     Customer::factory()->create(['customer_code' => 'CUST-900']);
-    $this->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'x', 'data' => customerData()])->assertSessionHasErrors('data.customer_code');
+    $this->actingAs($this->admin)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'x', 'data' => customerData()])->assertSessionHasErrors('data.customer_code');
 
     expect(Ticket::count())->toBe(0);
 });
@@ -145,11 +147,12 @@ it('creates the customer on approval exactly like the Customers screen, and refu
     $this->post(route('customers.store'), customerData(['customer_code' => 'VIA-SCREEN', 'email' => 'screen@example.com', 'is_active' => 1]))->assertRedirect(route('customers.index'));
     $screen = Customer::firstWhere('customer_code', 'VIA-SCREEN');
 
-    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'New customer', 'data' => customerData(['customer_code' => 'via-ticket', 'email' => 'ticket@example.com'])]);
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'New customer', 'data' => customerData(['email' => 'ticket@example.com'])]);
     $ticket = Ticket::firstOrFail();
+    $generatedCode = $ticket->items->first()->payload['customer_code'];
     $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertRedirect();
 
-    $viaTicket = Customer::firstWhere('customer_code', 'VIA-TICKET');
+    $viaTicket = Customer::firstWhere('customer_code', $generatedCode);
     $columns = ['customer_name', 'channel_type', 'customer_category', 'phone', 'city', 'credit_limit', 'is_active'];
 
     expect($viaTicket)->not->toBeNull()
@@ -214,11 +217,73 @@ it('creates a customer from a ticket with every optional field left blank', func
     $blank = array_fill_keys(['business_name', 'phone', 'email', 'ntn', 'owner_cnic', 'address', 'sub_locality', 'city', 'state', 'country', 'credit_limit', 'payment_terms', 'notes'], '');
 
     $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'Minimal customer', 'data' => [
-        'customer_code' => 'min-1', 'customer_name' => 'Minimal Store', 'channel_type' => 'General Store', 'customer_category' => 'C',
+        'customer_name' => 'Minimal Store', 'channel_type' => 'General Store', 'customer_category' => 'C',
     ] + $blank])->assertSessionHasNoErrors()->assertRedirect();
 
     $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstOrFail()))->assertSessionHasNoErrors();
 
-    $customer = Customer::firstWhere('customer_code', 'MIN-1');
+    $customer = Customer::firstWhere('customer_code', Ticket::firstOrFail()->items->first()->payload['customer_code']);
     expect($customer)->not->toBeNull()->and($customer->country)->toBe('Pakistan')->and($customer->payment_terms)->not->toBeNull();
+});
+
+it('makes the customer code from the company letter and the next number of that letter, whatever the user sends', function () {
+    $kausar = Supplier::factory()->create(['disabled' => false, 'short_name' => 'Kausar']);
+    $krm = Supplier::factory()->create(['disabled' => false, 'short_name' => 'KRM']);
+    $lipton = Supplier::factory()->create(['disabled' => false, 'short_name' => 'Lipton']);
+    Customer::factory()->create(['customer_code' => 'K00000509410']);
+    Customer::factory()->create(['customer_code' => 'M00000509409']);
+    Customer::factory()->create(['customer_code' => 'N00000549384']);
+    Customer::factory()->create(['customer_code' => 'L00000509252']);
+
+    foreach ([[$kausar, 'K00000509411'], [$krm, 'K00000509412'], [$lipton, 'L00000509253']] as [$supplier, $expected]) {
+        $user = User::factory()->create(['supplier_id' => $supplier->id]);
+        $user->assignRole('company-user');
+        $this->actingAs($user)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => $expected, 'data' => customerData(['customer_code' => 'HACK-1'])])->assertSessionHasNoErrors();
+
+        expect(Ticket::firstWhere('title', $expected)->items->first()->payload['customer_code'])->toBe($expected);
+    }
+});
+
+it('keeps the generated code when the requester edits the ticket', function () {
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'New customer', 'data' => customerData()]);
+    $ticket = Ticket::firstOrFail();
+    $code = $ticket->items->first()->payload['customer_code'];
+
+    $this->put(route('tickets.update', $ticket), ['type' => 'new_customer', 'title' => 'Renamed', 'data' => customerData(['customer_name' => 'Renamed Store', 'customer_code' => 'OTHER-1'])])->assertSessionHasNoErrors();
+
+    expect($ticket->fresh()->items->first()->payload)->toMatchArray(['customer_code' => $code, 'customer_name' => 'Renamed Store']);
+});
+
+it('lets an admin type the code and an approver change it before approving', function () {
+    $this->actingAs($this->admin)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'By admin', 'data' => customerData(['customer_code' => 'm00000700001'])])->assertSessionHasNoErrors();
+    expect(Ticket::firstWhere('title', 'By admin')->items->first()->payload['customer_code'])->toBe('M00000700001');
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'By company', 'data' => customerData(['email' => 'two@example.com'])]);
+    $ticket = Ticket::firstWhere('title', 'By company');
+
+    $this->actingAs($this->admin)->get(route('tickets.show', $ticket))->assertOk()->assertSee('name="customer_code"', false);
+    $this->post(route('tickets.customer-code', $ticket), ['customer_code' => 'M00000700001'])->assertSessionHasErrors('customer_code');
+
+    $this->post(route('tickets.customer-code', $ticket), ['customer_code' => 'k00000800000'])->assertSessionHasNoErrors();
+    expect($ticket->fresh()->items->first()->payload)->toMatchArray(['customer_code' => 'K00000800000', 'code_generated' => false]);
+
+    $this->post(route('tickets.approve', $ticket))->assertRedirect();
+    expect(Customer::where('customer_code', 'K00000800000')->exists())->toBeTrue();
+});
+
+it('answers whether a customer code is free, counting customers, deleted customers and waiting tickets', function () {
+    Customer::factory()->create(['customer_code' => 'K00000600001']);
+    Customer::factory()->create(['customer_code' => 'K00000600002'])->delete();
+    $this->actingAs($this->admin)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'Waiting', 'data' => customerData(['customer_code' => 'K00000600003'])]);
+    $waiting = Ticket::firstOrFail();
+
+    foreach (['k00000600001', 'K00000600002', 'K00000600003'] as $taken) {
+        $this->getJson(route('tickets.customer-code.check', ['code' => $taken]))->assertOk()->assertJson(['available' => false]);
+    }
+
+    $this->getJson(route('tickets.customer-code.check', ['code' => 'K00000600004']))->assertJson(['available' => true]);
+    $this->getJson(route('tickets.customer-code.check', ['code' => 'K00000600003', 'except' => $waiting->uuid]))->assertJson(['available' => true]);
+
+    // An admin cannot raise a second ticket with a code another waiting ticket already holds.
+    $this->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'Dup', 'data' => customerData(['customer_code' => 'K00000600003', 'email' => 'dup@example.com'])])->assertSessionHasErrors('data.customer_code');
 });

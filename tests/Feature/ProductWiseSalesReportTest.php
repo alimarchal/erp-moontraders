@@ -6,13 +6,14 @@ use App\Models\SalesSettlementItem;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
 function productWiseSale(string $productName, ?Supplier $supplier, float $sales, float $cogs): void
 {
-    $product = Product::factory()->create(['product_name' => $productName]);
+    $product = Product::factory()->create(['product_name' => $productName, 'supplier_id' => $supplier?->id]);
     $settlement = SalesSettlement::factory()->create([
         'status' => 'posted',
         'supplier_id' => $supplier?->id,
@@ -57,8 +58,8 @@ test('net columns are visible by default and return and short columns are not', 
     $this->get(route('reports.daily-sales.product-wise'))
         ->assertViewHas('visibleColumns', ['net_sales', 'net_profit', 'np_percent']);
 
-    $this->get(route('reports.daily-sales.product-wise', ['columns' => 'returned,shortage']))
-        ->assertViewHas('visibleColumns', ['returned', 'shortage']);
+    $this->get(route('reports.daily-sales.product-wise', ['columns' => 'avg_price,returned']))
+        ->assertViewHas('visibleColumns', ['avg_price', 'returned']);
 });
 
 test('pdf downloads in both orientations and respects filters', function () {
@@ -77,4 +78,22 @@ test('excel downloads', function () {
 test('the report needs the daily sales permission', function () {
     $this->actingAs(User::factory()->create());
     $this->get(route('reports.daily-sales.product-wise'))->assertForbidden();
+});
+
+test('pdf contains only the visible columns and the filtered rows', function () {
+    $html = fn (array $query) => view('reports.daily-sales.pdf.product-wise', $this->get(route('reports.daily-sales.product-wise', $query))->viewData('productSales') instanceof Collection
+        ? [
+            'productSales' => $this->get(route('reports.daily-sales.product-wise', $query))->viewData('productSales'),
+            'totals' => $this->get(route('reports.daily-sales.product-wise', $query))->viewData('totals'),
+            'visibleColumns' => $this->get(route('reports.daily-sales.product-wise', $query))->viewData('visibleColumns'),
+            'startDate' => now()->toDateString(), 'endDate' => now()->toDateString(), 'filterLines' => [],
+        ] : [])->render();
+
+    $default = $html(['supplier_id' => $this->supplierA->id]);
+    expect($default)->toContain('Alpha Biscuit')->not->toContain('Beta Juice')
+        ->toContain('Net Sales')->toContain('Net Profit')->toContain('NP %')
+        ->not->toContain('Avg Price')->not->toContain('Rtn Qty')->not->toContain('Short Qty');
+
+    $custom = $html(['columns' => 'avg_price,shortage']);
+    expect($custom)->toContain('Avg Price')->toContain('Short Qty')->not->toContain('Net Sales')->not->toContain('Net Profit');
 });

@@ -23,6 +23,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
 {
     /** @var array<string, string> */
     public const OPTIONAL_COLUMNS = [
+        'avg_price' => 'Avg Price',
         'returned' => 'Rtn Qty',
         'shortage' => 'Short Qty',
         'net_sales' => 'Net Sales',
@@ -149,7 +150,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
             'employees' => Employee::orderBy('name')->get(['id', 'name']),
             'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::whereIn('id', DB::table('products')->whereIn('id', DB::table('sales_settlement_items')->select('product_id'))->select('supplier_id'))->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'products' => Product::orderBy('product_name')->get(['id', 'product_name']),
             'optionalColumns' => self::OPTIONAL_COLUMNS,
@@ -168,7 +169,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         $canvas = $pdf->getDomPDF()->getCanvas();
         $canvas->page_text($canvas->get_width() - 80, $canvas->get_height() - 25, 'Page {PAGE_NUM} of {PAGE_COUNT}', $pdf->getDomPDF()->getFontMetrics()->getFont('Helvetica'), 7);
 
-        return $pdf->download('product-wise-sales-'.$data['startDate'].'-to-'.$data['endDate'].'.pdf');
+        return $pdf->download('sku-wise-sales-'.$data['startDate'].'-to-'.$data['endDate'].'.pdf');
     }
 
     public function productWiseExcel(Request $request)
@@ -177,7 +178,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
 
         return Excel::download(
             new ProductWiseSalesExport($data['productSales'], $data['totals'], $data['visibleColumns'], $this->productWiseFilterLines($data), $data['startDate'], $data['endDate']),
-            'product-wise-sales-'.$data['startDate'].'-to-'.$data['endDate'].'.xlsx'
+            'sku-wise-sales-'.$data['startDate'].'-to-'.$data['endDate'].'.xlsx'
         );
     }
 
@@ -234,7 +235,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
             ->when($employeeId, fn ($q) => $q->where('ss.employee_id', $employeeId))
             ->when($vehicleId, fn ($q) => $q->where('ss.vehicle_id', $vehicleId))
             ->when($warehouseId, fn ($q) => $q->where('ss.warehouse_id', $warehouseId))
-            ->when($supplierId, fn ($q) => $q->where('ss.supplier_id', $supplierId))
+            ->when($supplierId, fn ($q) => $q->where('p.supplier_id', $supplierId))
             ->when($categoryId, fn ($q) => $q->where('p.category_id', $categoryId))
             ->when($productId, fn ($q) => $q->where('p.id', $productId))
             ->when($search !== '', fn ($q) => $q->whereRaw('LOWER(p.product_name) like ?', ['%'.mb_strtolower($search).'%']));

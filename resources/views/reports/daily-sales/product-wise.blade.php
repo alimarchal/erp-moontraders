@@ -1,5 +1,5 @@
 {{--
-    Product Wise Sales Report. Same toolbar, filter panel and table as the expense vouchers list:
+    SKU Wise Sales Report. Same toolbar, filter panel and table as the expense vouchers list:
     filters hidden behind a Filters button, a Columns dropdown, PDF (portrait / landscape), Excel and Print.
 --}}
 @php
@@ -20,7 +20,7 @@
     ];
     $rangeUrl = fn (string $from, string $to) => request()->fullUrlWithQuery(['start_date' => $from, 'end_date' => $to]);
     $np = fn ($profit, $sales) => $sales > 0 ? number_format($profit / $sales * 100, 2).'%' : '0.00%';
-    $exportQuery = collect(request()->except(['columns', 'orientation', 'page']))->toArray();
+    $exportQuery = collect(request()->except(['columns', 'orientation', 'page']))->filter(fn ($v) => $v !== null && $v !== '')->all();
     $exportQuery += ['start_date' => $startDate, 'end_date' => $endDate];
 @endphp
 
@@ -29,9 +29,9 @@
         <div class="ak-head">
             <div>
                 <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('dashboard') }}">Dashboard</a><span aria-hidden="true">›</span><a href="{{ route('reports.index') }}">Reports</a><span aria-hidden="true">›</span><span>Product Wise Sales</span>
+                    <a href="{{ route('dashboard') }}">Dashboard</a><span aria-hidden="true">›</span><a href="{{ route('reports.index') }}">Reports</a><span aria-hidden="true">›</span><span>SKU Wise Sales</span>
                 </nav>
-                <h1 class="ak-title">Product Wise Sales Report</h1>
+                <h1 class="ak-title">SKU Wise Sales Report</h1>
                 <p class="ak-sub">Posted sales settlements grouped by product &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions" x-data="{ cols: @js($visibleColumns), colsOpen: false, pdfOpen: false,
@@ -101,7 +101,7 @@
     <div class="ak-page" x-data="{ cols: @js($visibleColumns) }" @pw-columns.window="cols = $event.detail">
         <div class="ak-print-head">
             <div class="ak-print-bank">{{ config('app.name') }}</div>
-            <div class="ak-print-title">Product Wise Sales Report &middot; {{ $periodLabel }}</div>
+            <div class="ak-print-title">SKU Wise Sales Report &middot; {{ $periodLabel }}</div>
             @php
                 $printLines = collect([
                     $employeeId ? 'Salesman: '.($employees->firstWhere('id', $employeeId)->name ?? '') : null,
@@ -150,7 +150,7 @@
         <section class="ak-card" style="overflow-x:auto">
             <table class="ak-dt pw-table">
                 <thead><tr>
-                    <th>Sr#</th><th>Product Name</th><th class="ak-num">Avg Price</th><th class="ak-num">Sold Qty</th>
+                    <th>Sr#</th><th>Product Name</th><th class="ak-num" x-show="cols.includes('avg_price')">Avg Price</th><th class="ak-num">Sold Qty</th>
                     <th class="ak-num" x-show="cols.includes('returned')">Rtn Qty</th>
                     <th class="ak-num" x-show="cols.includes('shortage')">Short Qty</th>
                     <th class="ak-num" x-show="cols.includes('net_sales')">Net Sales</th>
@@ -162,7 +162,7 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td class="ak-strong">{{ $product->product_name }}</td>
-                            <td class="ak-num">{{ number_format($product->avg_selling_price, 2) }}</td>
+                            <td class="ak-num" x-show="cols.includes('avg_price')">{{ number_format($product->avg_selling_price, 2) }}</td>
                             <td class="ak-num ak-strong">{{ number_format($product->total_sold, 0) }}</td>
                             <td class="ak-num" x-show="cols.includes('returned')">{{ number_format($product->total_returned, 0) }}</td>
                             <td class="ak-num" x-show="cols.includes('shortage')">{{ number_format($product->total_shortage, 0) }}</td>
@@ -176,7 +176,8 @@
                 </tbody>
                 @if($productSales->isNotEmpty())
                     <tfoot><tr>
-                        <td colspan="3">Total ({{ $productSales->count() }} rows)</td>
+                        <td colspan="2">Total ({{ $productSales->count() }} rows)</td>
+                        <td class="ak-num" x-show="cols.includes('avg_price')"></td>
                         <td class="ak-num">{{ number_format($totals['total_sold'], 0) }}</td>
                         <td class="ak-num" x-show="cols.includes('returned')">{{ number_format($totals['total_returned'], 0) }}</td>
                         <td class="ak-num" x-show="cols.includes('shortage')">{{ number_format($totals['total_shortage'], 0) }}</td>

@@ -37,7 +37,7 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
     public function array(): array
     {
         $out = [
-            [config('app.name').' - Product Wise Sales Report'],
+            [config('app.name').' - SKU Wise Sales Report'],
             ['Period: '.$this->startDate.' to '.$this->endDate],
         ];
         if ($this->filterLines) {
@@ -46,16 +46,17 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
         $out[] = [];
         $this->headingRow = count($out) + 1;
 
-        $heading = ['Sr#', 'Product Name', 'Avg Price', 'Sold Qty'];
-        foreach ($this->columns as $key) {
+        $showAvg = in_array('avg_price', $this->columns, true);
+        $heading = $showAvg ? ['Sr#', 'Product Name', 'Avg Price', 'Sold Qty'] : ['Sr#', 'Product Name', 'Sold Qty'];
+        foreach (array_diff($this->columns, ['avg_price']) as $key) {
             $heading[] = DailySalesReportController::OPTIONAL_COLUMNS[$key];
         }
         $out[] = $heading;
 
         foreach ($this->rows as $i => $row) {
-            $out[] = array_merge([$i + 1, $row->product_name, round($row->avg_selling_price, 2), (float) $row->total_sold], $this->optional($row->total_returned, $row->total_shortage, $row->total_sales_value, $row->net_profit));
+            $out[] = array_merge($showAvg ? [$i + 1, $row->product_name, round($row->avg_selling_price, 2), (float) $row->total_sold] : [$i + 1, $row->product_name, (float) $row->total_sold], $this->optional($row->total_returned, $row->total_shortage, $row->total_sales_value, $row->net_profit));
         }
-        $out[] = array_merge(['', 'Total ('.$this->rows->count().' rows)', '', (float) $this->totals['total_sold']], $this->optional($this->totals['total_returned'], $this->totals['total_shortage'], $this->totals['total_sales_value'], $this->totals['net_profit']));
+        $out[] = array_merge($showAvg ? ['', 'Total ('.$this->rows->count().' rows)', '', (float) $this->totals['total_sold']] : ['', 'Total ('.$this->rows->count().' rows)', (float) $this->totals['total_sold']], $this->optional($this->totals['total_returned'], $this->totals['total_shortage'], $this->totals['total_sales_value'], $this->totals['net_profit']));
 
         return $out;
     }
@@ -73,7 +74,7 @@ class ProductWiseSalesExport implements FromArray, ShouldAutoSize, WithStyles
             'np_percent' => $sales > 0 ? round($profit / $sales * 100, 2) : 0,
         ];
 
-        return array_map(fn (string $key) => $values[$key], $this->columns);
+        return array_map(fn (string $key) => $values[$key], array_values(array_diff($this->columns, ['avg_price'])));
     }
 
     /**

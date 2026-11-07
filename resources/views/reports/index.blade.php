@@ -259,7 +259,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('report-sales-daily-sales')
-                                <x-settings-row data-settings-item data-search="sales by product revenue breakdown by product category sales analysis sales, settlements and targets" x-bind:hidden="! matches($el)" href="{{ route('reports.daily-sales.product-wise') }}" label="Sales by Product"
+                                <x-settings-row data-settings-item data-search="sales by product revenue breakdown by product category sales analysis sales, settlements and targets" x-bind:hidden="! matches($el)" href="{{ route('reports.daily-sales.product-wise') }}" label="SKU Wise Sales Report"
                                     description="Revenue breakdown by product category" icon-bg="bg-emerald-500">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"

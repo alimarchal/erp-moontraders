@@ -13,6 +13,7 @@ use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -23,12 +24,17 @@ class DailySalesReportController extends Controller implements HasMiddleware
 {
     /** @var array<string, string> */
     public const OPTIONAL_COLUMNS = [
+        'category' => 'Category',
+        'branch' => 'Branch',
         'avg_price' => 'Avg Price',
         'returned' => 'Rtn Qty',
         'shortage' => 'Short Qty',
         'net_sales' => 'Net Sales',
         'net_profit' => 'Net Profit',
         'np_percent' => 'NP %',
+        'prev_sales' => 'Prev Month Sales',
+        'change' => 'Change vs Prev Month',
+        'change_pct' => 'Change %',
     ];
 
     /** @var array<int, string> */
@@ -225,13 +231,15 @@ class DailySalesReportController extends Controller implements HasMiddleware
         $productId = $request->input('product_id');
         $search = trim((string) $request->input('search', ''));
 
-        $rawItems = DB::table('sales_settlement_items as ssi')
+        $filtered = fn (string $from, string $to) => DB::table('sales_settlement_items as ssi')
             ->join('sales_settlements as ss', 'ssi.sales_settlement_id', '=', 'ss.id')
             ->join('products as p', 'ssi.product_id', '=', 'p.id')
             ->join('employees as e', 'ss.employee_id', '=', 'e.id')
             ->join('vehicles as v', 'ss.vehicle_id', '=', 'v.id')
+            ->leftJoin('warehouses as w', 'ss.warehouse_id', '=', 'w.id')
+            ->leftJoin('categories as c', 'p.category_id', '=', 'c.id')
             ->where('ss.status', 'posted')
-            ->whereBetween('ss.settlement_date', [$startDate, $endDate])
+            ->whereBetween('ss.settlement_date', [$from, $to])
             ->when($employeeId, fn ($q) => $q->where('ss.employee_id', $employeeId))
             ->when($vehicleId, fn ($q) => $q->where('ss.vehicle_id', $vehicleId))
             ->when($warehouseId, fn ($q) => $q->where('ss.warehouse_id', $warehouseId))
@@ -240,9 +248,18 @@ class DailySalesReportController extends Controller implements HasMiddleware
             ->when($productId, fn ($q) => $q->where('p.id', $productId))
             ->when($search !== '', fn ($q) => $q->whereRaw('LOWER(p.product_name) like ?', ['%'.mb_strtolower($search).'%']));
 
+        $previousStart = Carbon::parse($startDate)->subMonthNoOverflow()->toDateString();
+        $previousEnd = Carbon::parse($endDate)->subMonthNoOverflow()->toDateString();
+        $previousSales = $filtered($previousStart, $previousEnd)
+            ->groupBy('p.id')->select('p.id', DB::raw('SUM(ssi.total_sales_value) as sales'))->pluck('sales', 'id');
+
+        $rawItems = $filtered($startDate, $endDate);
+
         $rawItems = $rawItems->select(
             'p.id as product_id',
             'p.product_name',
+            'c.name as category_name',
+            'w.warehouse_name',
             'e.id as employee_id',
             'e.name as employee_name',
             'v.id as vehicle_id',
@@ -262,7 +279,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         // Aggregate data strictly by Product ID
         $productSales = $rawItems->groupBy(function ($item) {
             return $item->product_id;
-        })->map(function ($group) {
+        })->map(function ($group) use ($previousSales) {
             $first = $group->first();
 
             // Calculate allocated expense for ALL items in this product group
@@ -279,9 +296,16 @@ class DailySalesReportController extends Controller implements HasMiddleware
             $grossProfit = $totalSales - $totalCogs;
             $netProfit = $grossProfit - $allocatedExpense;
 
+            $previous = (float) ($previousSales[$first->product_id] ?? 0);
+
             return (object) [
                 'product_id' => $first->product_id,
                 'product_name' => $first->product_name,
+                'category_name' => $first->category_name,
+                'branch_names' => $group->pluck('warehouse_name')->filter()->unique()->sort()->implode(', '),
+                'previous_sales' => $previous,
+                'sales_change' => $totalSales - $previous,
+                'sales_change_pct' => $previous > 0 ? (($totalSales - $previous) / $previous) * 100 : null,
                 'avg_selling_price' => $group->avg('unit_selling_price'),
                 'total_issued' => $group->sum('quantity_issued'),
                 'total_sold' => $group->sum('quantity_sold'),
@@ -304,11 +328,13 @@ class DailySalesReportController extends Controller implements HasMiddleware
             'total_cogs' => $productSales->sum('total_cogs'),
             'gross_profit' => $productSales->sum('gross_profit'),
             'net_profit' => $productSales->sum('net_profit'),
+            'previous_sales' => $productSales->sum('previous_sales'),
+            'sales_change' => $productSales->sum('sales_change'),
         ];
 
         return compact(
             'productSales', 'totals', 'startDate', 'endDate', 'employeeId', 'vehicleId', 'warehouseId',
-            'supplierId', 'categoryId', 'productId', 'search'
+            'supplierId', 'categoryId', 'productId', 'search', 'previousStart', 'previousEnd'
         ) + ['visibleColumns' => $this->visibleColumns($request)];
     }
 

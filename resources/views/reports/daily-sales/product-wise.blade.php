@@ -87,6 +87,7 @@
         .pw-table { min-width: 640px; }
         .pw-table tfoot td { font-weight: 700; background: #f8fafc; border-top: 2px solid var(--ak-border); }
         .pw-neg { color: #b91c1c; }
+        .pw-pos { color: #15803d; }
         .ak-filters .select2-container { width: 100% !important; display: block; }
         .ak-filters .select2-container .select2-selection--single { height: 38px; margin-top: 0; padding: 0 30px 0 12px; display: flex; align-items: center; border: 1px solid var(--ak-border); border-radius: 8px; box-shadow: none; font-size: 14px; }
         .ak-filters .select2-container .select2-selection__arrow { top: 50% !important; transform: translateY(-50%); height: 24px !important; }
@@ -106,7 +107,7 @@
                 $printLines = collect([
                     $employeeId ? 'Salesman: '.($employees->firstWhere('id', $employeeId)->name ?? '') : null,
                     $vehicleId ? 'Vehicle: '.($vehicles->firstWhere('id', $vehicleId)->vehicle_number ?? '') : null,
-                    $warehouseId ? 'Warehouse: '.($warehouses->firstWhere('id', $warehouseId)->warehouse_name ?? '') : null,
+                    $warehouseId ? 'Branch: '.($warehouses->firstWhere('id', $warehouseId)->warehouse_name ?? '') : null,
                     $supplierId ? 'Supplier: '.($suppliers->firstWhere('id', $supplierId)->supplier_name ?? '') : null,
                     $categoryId ? 'Category: '.($categories->firstWhere('id', $categoryId)->name ?? '') : null,
                     $productId ? 'Product: '.($products->firstWhere('id', $productId)->product_name ?? '') : null,
@@ -129,8 +130,8 @@
                         <select class="js-select2" id="f_employee" name="employee_id"><option value="">All salesmen</option>@foreach($employees as $employee)<option value="{{ $employee->id }}" @selected((string) $employeeId === (string) $employee->id)>{{ $employee->name }}</option>@endforeach</select></div>
                     <div class="ak-field"><label for="f_vehicle">Vehicle</label>
                         <select class="js-select2" id="f_vehicle" name="vehicle_id"><option value="">All vehicles</option>@foreach($vehicles as $vehicle)<option value="{{ $vehicle->id }}" @selected((string) $vehicleId === (string) $vehicle->id)>{{ $vehicle->vehicle_number }}</option>@endforeach</select></div>
-                    <div class="ak-field"><label for="f_warehouse">Warehouse</label>
-                        <select class="js-select2" id="f_warehouse" name="warehouse_id"><option value="">All warehouses</option>@foreach($warehouses as $warehouse)<option value="{{ $warehouse->id }}" @selected((string) $warehouseId === (string) $warehouse->id)>{{ $warehouse->warehouse_name }}</option>@endforeach</select></div>
+                    <div class="ak-field"><label for="f_warehouse">Branch (Warehouse)</label>
+                        <select class="js-select2" id="f_warehouse" name="warehouse_id"><option value="">All branches</option>@foreach($warehouses as $warehouse)<option value="{{ $warehouse->id }}" @selected((string) $warehouseId === (string) $warehouse->id)>{{ $warehouse->warehouse_name }}</option>@endforeach</select></div>
                     <div class="ak-field"><label for="f_category">Category</label>
                         <select class="js-select2" id="f_category" name="category_id"><option value="">All categories</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected((string) $categoryId === (string) $category->id)>{{ $category->name }}</option>@endforeach</select></div>
                     <div class="ak-field"><label for="f_product">Product</label>
@@ -150,18 +151,26 @@
         <section class="ak-card" style="overflow-x:auto">
             <table class="ak-dt pw-table">
                 <thead><tr>
-                    <th>Sr#</th><th>Product Name</th><th class="ak-num" x-show="cols.includes('avg_price')">Avg Price</th><th class="ak-num">Sold Qty</th>
+                    <th>Sr#</th><th>Product Name</th>
+                    <th x-show="cols.includes('category')">Category</th>
+                    <th x-show="cols.includes('branch')">Branch</th>
+                    <th class="ak-num" x-show="cols.includes('avg_price')">Avg Price</th><th class="ak-num">Sold Qty</th>
                     <th class="ak-num" x-show="cols.includes('returned')">Rtn Qty</th>
                     <th class="ak-num" x-show="cols.includes('shortage')">Short Qty</th>
                     <th class="ak-num" x-show="cols.includes('net_sales')">Net Sales</th>
                     <th class="ak-num" x-show="cols.includes('net_profit')">Net Profit</th>
                     <th class="ak-num" x-show="cols.includes('np_percent')">NP %</th>
+                    <th class="ak-num" x-show="cols.includes('prev_sales')" title="{{ \Carbon\Carbon::parse($previousStart)->format('d M Y') }} – {{ \Carbon\Carbon::parse($previousEnd)->format('d M Y') }}">Prev Month Sales</th>
+                    <th class="ak-num" x-show="cols.includes('change')">Change vs Prev Month</th>
+                    <th class="ak-num" x-show="cols.includes('change_pct')">Change %</th>
                 </tr></thead>
                 <tbody>
                     @forelse($productSales as $product)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td class="ak-strong">{{ $product->product_name }}</td>
+                            <td x-show="cols.includes('category')">{{ $product->category_name ?? '—' }}</td>
+                            <td x-show="cols.includes('branch')">{{ $product->branch_names ?: '—' }}</td>
                             <td class="ak-num" x-show="cols.includes('avg_price')">{{ number_format($product->avg_selling_price, 2) }}</td>
                             <td class="ak-num ak-strong">{{ number_format($product->total_sold, 0) }}</td>
                             <td class="ak-num" x-show="cols.includes('returned')">{{ number_format($product->total_returned, 0) }}</td>
@@ -169,14 +178,19 @@
                             <td class="ak-num ak-strong" x-show="cols.includes('net_sales')">{{ number_format($product->total_sales_value, 2) }}</td>
                             <td class="ak-num ak-strong {{ $product->net_profit < 0 ? 'pw-neg' : '' }}" x-show="cols.includes('net_profit')">{{ number_format($product->net_profit, 2) }}</td>
                             <td class="ak-num" x-show="cols.includes('np_percent')">{{ $np($product->net_profit, $product->total_sales_value) }}</td>
+                            <td class="ak-num" x-show="cols.includes('prev_sales')">{{ number_format($product->previous_sales, 2) }}</td>
+                            <td class="ak-num ak-strong {{ $product->sales_change < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change')">{{ ($product->sales_change > 0 ? '+' : '').number_format($product->sales_change, 2) }}</td>
+                            <td class="ak-num {{ $product->sales_change < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change_pct')">{{ $product->sales_change_pct === null ? 'New' : ($product->sales_change_pct > 0 ? '+' : '').number_format($product->sales_change_pct, 2).'%' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" style="text-align:center; padding:28px; color:var(--ak-muted)">No posted sales for these filters.</td></tr>
+                        <tr><td colspan="14" style="text-align:center; padding:28px; color:var(--ak-muted)">No posted sales for these filters.</td></tr>
                     @endforelse
                 </tbody>
                 @if($productSales->isNotEmpty())
                     <tfoot><tr>
                         <td colspan="2">Total ({{ $productSales->count() }} rows)</td>
+                        <td x-show="cols.includes('category')"></td>
+                        <td x-show="cols.includes('branch')"></td>
                         <td class="ak-num" x-show="cols.includes('avg_price')"></td>
                         <td class="ak-num">{{ number_format($totals['total_sold'], 0) }}</td>
                         <td class="ak-num" x-show="cols.includes('returned')">{{ number_format($totals['total_returned'], 0) }}</td>
@@ -184,6 +198,9 @@
                         <td class="ak-num" x-show="cols.includes('net_sales')">{{ number_format($totals['total_sales_value'], 2) }}</td>
                         <td class="ak-num" x-show="cols.includes('net_profit')">{{ number_format($totals['net_profit'], 2) }}</td>
                         <td class="ak-num" x-show="cols.includes('np_percent')">{{ $np($totals['net_profit'], $totals['total_sales_value']) }}</td>
+                        <td class="ak-num" x-show="cols.includes('prev_sales')">{{ number_format($totals['previous_sales'], 2) }}</td>
+                        <td class="ak-num {{ $totals['sales_change'] < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change')">{{ ($totals['sales_change'] > 0 ? '+' : '').number_format($totals['sales_change'], 2) }}</td>
+                        <td class="ak-num {{ $totals['sales_change'] < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change_pct')">{{ $totals['previous_sales'] > 0 ? ($totals['sales_change'] > 0 ? '+' : '').number_format($totals['sales_change'] / $totals['previous_sales'] * 100, 2).'%' : '—' }}</td>
                     </tr></tfoot>
                 @endif
             </table>

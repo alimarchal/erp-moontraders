@@ -113,3 +113,11 @@ test('category branch and comparison columns are hidden by default', function ()
     $this->get(route('reports.daily-sales.product-wise'))
         ->assertViewHas('visibleColumns', fn ($c) => array_intersect($c, ['category', 'branch', 'avg_price', 'prev_sales', 'change', 'change_pct']) === []);
 });
+
+test('brand filter narrows the rows', function () {
+    Product::where('product_name', 'Beta Juice')->update(['brand' => 'Zeta']);
+
+    $rows = $this->get(route('reports.daily-sales.product-wise', ['brand' => 'Zeta']))->viewData('productSales');
+
+    expect($rows->pluck('product_name')->all())->toBe(['Beta Juice']);
+});

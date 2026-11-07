@@ -25,6 +25,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
     /** @var array<string, string> */
     public const OPTIONAL_COLUMNS = [
         'category' => 'Category',
+        'brand' => 'Brand',
         'branch' => 'Branch',
         'avg_price' => 'Avg Price',
         'returned' => 'Rtn Qty',
@@ -158,6 +159,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'suppliers' => Supplier::whereIn('id', DB::table('products')->whereIn('id', DB::table('sales_settlement_items')->select('product_id'))->select('supplier_id'))->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'brands' => Product::whereNotNull('brand')->where('brand', '!=', '')->distinct()->orderBy('brand')->pluck('brand'),
             'products' => Product::orderBy('product_name')->get(['id', 'product_name']),
             'optionalColumns' => self::OPTIONAL_COLUMNS,
         ]);
@@ -196,7 +198,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         $names = [
             'employeeId' => ['Salesman', Employee::class, 'name'],
             'vehicleId' => ['Vehicle', Vehicle::class, 'vehicle_number'],
-            'warehouseId' => ['Warehouse', Warehouse::class, 'warehouse_name'],
+            'warehouseId' => ['Branch', Warehouse::class, 'warehouse_name'],
             'supplierId' => ['Supplier', Supplier::class, 'supplier_name'],
             'categoryId' => ['Category', Category::class, 'name'],
             'productId' => ['Product', Product::class, 'product_name'],
@@ -206,6 +208,9 @@ class DailySalesReportController extends Controller implements HasMiddleware
             if ($data[$key]) {
                 $lines[] = $label.': '.($model::find($data[$key])?->{$column} ?? $data[$key]);
             }
+        }
+        if ($data['brand']) {
+            $lines[] = 'Brand: '.$data['brand'];
         }
         if ($data['search'] !== '') {
             $lines[] = 'Product contains: '.$data['search'];
@@ -229,6 +234,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         $supplierId = $request->input('supplier_id');
         $categoryId = $request->input('category_id');
         $productId = $request->input('product_id');
+        $brand = $request->input('brand');
         $search = trim((string) $request->input('search', ''));
 
         $filtered = fn (string $from, string $to) => DB::table('sales_settlement_items as ssi')
@@ -246,6 +252,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
             ->when($supplierId, fn ($q) => $q->where('p.supplier_id', $supplierId))
             ->when($categoryId, fn ($q) => $q->where('p.category_id', $categoryId))
             ->when($productId, fn ($q) => $q->where('p.id', $productId))
+            ->when($brand, fn ($q) => $q->where('p.brand', $brand))
             ->when($search !== '', fn ($q) => $q->whereRaw('LOWER(p.product_name) like ?', ['%'.mb_strtolower($search).'%']));
 
         $previousStart = Carbon::parse($startDate)->subMonthNoOverflow()->toDateString();
@@ -258,6 +265,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         $rawItems = $rawItems->select(
             'p.id as product_id',
             'p.product_name',
+            'p.brand',
             'c.name as category_name',
             'w.warehouse_name',
             'e.id as employee_id',
@@ -302,6 +310,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
                 'product_id' => $first->product_id,
                 'product_name' => $first->product_name,
                 'category_name' => $first->category_name,
+                'brand' => $first->brand,
                 'branch_names' => $group->pluck('warehouse_name')->filter()->unique()->sort()->implode(', '),
                 'previous_sales' => $previous,
                 'sales_change' => $totalSales - $previous,
@@ -334,7 +343,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
 
         return compact(
             'productSales', 'totals', 'startDate', 'endDate', 'employeeId', 'vehicleId', 'warehouseId',
-            'supplierId', 'categoryId', 'productId', 'search', 'previousStart', 'previousEnd'
+            'supplierId', 'categoryId', 'productId', 'brand', 'search', 'previousStart', 'previousEnd'
         ) + ['visibleColumns' => $this->visibleColumns($request)];
     }
 

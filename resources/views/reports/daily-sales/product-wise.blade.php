@@ -3,7 +3,7 @@
     filters hidden behind a Filters button, a Columns dropdown, PDF (portrait / landscape), Excel and Print.
 --}}
 @php
-    $filterKeys = ['employee_id', 'vehicle_id', 'warehouse_id', 'supplier_id', 'category_id', 'product_id', 'search'];
+    $filterKeys = ['employee_id', 'vehicle_id', 'warehouse_id', 'supplier_id', 'category_id', 'brand', 'product_id', 'search'];
     $activeFilterCount = collect($filterKeys)->filter(fn ($k) => filled(request($k)))->count();
     $today = now()->toDateString();
     $isCustomPeriod = $startDate !== $today || $endDate !== $today;
@@ -110,6 +110,7 @@
                     $warehouseId ? 'Branch: '.($warehouses->firstWhere('id', $warehouseId)->warehouse_name ?? '') : null,
                     $supplierId ? 'Supplier: '.($suppliers->firstWhere('id', $supplierId)->supplier_name ?? '') : null,
                     $categoryId ? 'Category: '.($categories->firstWhere('id', $categoryId)->name ?? '') : null,
+                    $brand ? 'Brand: '.$brand : null,
                     $productId ? 'Product: '.($products->firstWhere('id', $productId)->product_name ?? '') : null,
                     $search !== '' ? 'Product contains: '.$search : null,
                 ])->filter();
@@ -134,6 +135,8 @@
                         <select class="js-select2" id="f_warehouse" name="warehouse_id"><option value="">All branches</option>@foreach($warehouses as $warehouse)<option value="{{ $warehouse->id }}" @selected((string) $warehouseId === (string) $warehouse->id)>{{ $warehouse->warehouse_name }}</option>@endforeach</select></div>
                     <div class="ak-field"><label for="f_category">Category</label>
                         <select class="js-select2" id="f_category" name="category_id"><option value="">All categories</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected((string) $categoryId === (string) $category->id)>{{ $category->name }}</option>@endforeach</select></div>
+                    <div class="ak-field"><label for="f_brand">Brand</label>
+                        <select class="js-select2" id="f_brand" name="brand"><option value="">All brands</option>@foreach($brands as $brandName)<option value="{{ $brandName }}" @selected($brand === $brandName)>{{ $brandName }}</option>@endforeach</select></div>
                     <div class="ak-field"><label for="f_product">Product</label>
                         <select class="js-select2" id="f_product" name="product_id"><option value="">All products</option>@foreach($products as $product)<option value="{{ $product->id }}" @selected((string) $productId === (string) $product->id)>{{ $product->product_name }}</option>@endforeach</select></div>
                     <div class="ak-field"><label for="f_search">Product name contains</label><input id="f_search" type="search" name="search" value="{{ $search }}" placeholder="e.g. biscuit" autocomplete="off"></div>
@@ -153,6 +156,7 @@
                 <thead><tr>
                     <th>Sr#</th><th>Product Name</th>
                     <th x-show="cols.includes('category')">Category</th>
+                    <th x-show="cols.includes('brand')">Brand</th>
                     <th x-show="cols.includes('branch')">Branch</th>
                     <th class="ak-num" x-show="cols.includes('avg_price')">Avg Price</th><th class="ak-num">Sold Qty</th>
                     <th class="ak-num" x-show="cols.includes('returned')">Rtn Qty</th>
@@ -170,6 +174,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td class="ak-strong">{{ $product->product_name }}</td>
                             <td x-show="cols.includes('category')">{{ $product->category_name ?? '—' }}</td>
+                            <td x-show="cols.includes('brand')">{{ $product->brand ?: '—' }}</td>
                             <td x-show="cols.includes('branch')">{{ $product->branch_names ?: '—' }}</td>
                             <td class="ak-num" x-show="cols.includes('avg_price')">{{ number_format($product->avg_selling_price, 2) }}</td>
                             <td class="ak-num ak-strong">{{ number_format($product->total_sold, 0) }}</td>
@@ -183,13 +188,14 @@
                             <td class="ak-num {{ $product->sales_change < 0 ? 'pw-neg' : 'pw-pos' }}" x-show="cols.includes('change_pct')">{{ $product->sales_change_pct === null ? 'New' : ($product->sales_change_pct > 0 ? '+' : '').number_format($product->sales_change_pct, 2).'%' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="14" style="text-align:center; padding:28px; color:var(--ak-muted)">No posted sales for these filters.</td></tr>
+                        <tr><td colspan="15" style="text-align:center; padding:28px; color:var(--ak-muted)">No posted sales for these filters.</td></tr>
                     @endforelse
                 </tbody>
                 @if($productSales->isNotEmpty())
                     <tfoot><tr>
                         <td colspan="2">Total ({{ $productSales->count() }} rows)</td>
                         <td x-show="cols.includes('category')"></td>
+                        <td x-show="cols.includes('brand')"></td>
                         <td x-show="cols.includes('branch')"></td>
                         <td class="ak-num" x-show="cols.includes('avg_price')"></td>
                         <td class="ak-num">{{ number_format($totals['total_sold'], 0) }}</td>

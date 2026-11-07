@@ -13,7 +13,7 @@
 </tr></table>
 <table class="grid">
     <thead><tr>
-        <th>Sr#</th><th>Product Name</th>@if($show('category'))<th>Category</th>@endif@if($show('branch'))<th>Branch</th>@endif@if($show('avg_price'))<th class="n">Avg Price</th>@endif<th class="n">Sold Qty</th>
+        <th>Sr#</th><th>Product Name</th>@if($show('category'))<th>Category</th>@endif@if($show('brand'))<th>Brand</th>@endif@if($show('branch'))<th>Branch</th>@endif@if($show('avg_price'))<th class="n">Avg Price</th>@endif<th class="n">Sold Qty</th>
         @if($show('returned'))<th class="n">Rtn Qty</th>@endif
         @if($show('shortage'))<th class="n">Short Qty</th>@endif
         @if($show('net_sales'))<th class="n">Net Sales</th>@endif
@@ -26,7 +26,7 @@
     <tbody>
         @forelse($productSales as $row)
             <tr>
-                <td>{{ $loop->iteration }}</td><td>{{ $row->product_name }}</td>@if($show('category'))<td>{{ $row->category_name ?? '-' }}</td>@endif@if($show('branch'))<td>{{ $row->branch_names ?: '-' }}</td>@endif@if($show('avg_price'))<td class="n">{{ $fmt($row->avg_selling_price) }}</td>@endif<td class="n">{{ number_format($row->total_sold, 0) }}</td>
+                <td>{{ $loop->iteration }}</td><td>{{ $row->product_name }}</td>@if($show('category'))<td>{{ $row->category_name ?? '-' }}</td>@endif@if($show('brand'))<td>{{ $row->brand ?: '-' }}</td>@endif@if($show('branch'))<td>{{ $row->branch_names ?: '-' }}</td>@endif@if($show('avg_price'))<td class="n">{{ $fmt($row->avg_selling_price) }}</td>@endif<td class="n">{{ number_format($row->total_sold, 0) }}</td>
                 @if($show('returned'))<td class="n">{{ number_format($row->total_returned, 0) }}</td>@endif
                 @if($show('shortage'))<td class="n">{{ number_format($row->total_shortage, 0) }}</td>@endif
                 @if($show('net_sales'))<td class="n">{{ $fmt($row->total_sales_value) }}</td>@endif
@@ -42,7 +42,7 @@
     </tbody>
     @if($productSales->isNotEmpty())
     <tfoot><tr>
-        <td colspan="{{ 2 + ($show('category') ? 1 : 0) + ($show('branch') ? 1 : 0) + ($show('avg_price') ? 1 : 0) }}">Total ({{ $productSales->count() }} rows)</td><td class="n">{{ number_format($totals['total_sold'], 0) }}</td>
+        <td colspan="{{ 2 + ($show('category') ? 1 : 0) + ($show('brand') ? 1 : 0) + ($show('branch') ? 1 : 0) + ($show('avg_price') ? 1 : 0) }}">Total ({{ $productSales->count() }} rows)</td><td class="n">{{ number_format($totals['total_sold'], 0) }}</td>
         @if($show('returned'))<td class="n">{{ number_format($totals['total_returned'], 0) }}</td>@endif
         @if($show('shortage'))<td class="n">{{ number_format($totals['total_shortage'], 0) }}</td>@endif
         @if($show('net_sales'))<td class="n">{{ $fmt($totals['total_sales_value']) }}</td>@endif

@@ -39,11 +39,30 @@ return new class extends Migration
      */
     private function allowRegisterReportGroup(): void
     {
+        $this->replaceReportGroupCheck(['BalanceSheet', 'IncomeStatement', 'BankRegister'], 'widen');
+    }
+
+    /**
+     * Drop and re-add chk_report_group. "DROP CONSTRAINT IF EXISTS" is MariaDB-only syntax and a syntax error on
+     * MySQL 8, so the drop is a plain "DROP CONSTRAINT" (MariaDB and MySQL 8.0.19+) whose failure when the constraint
+     * is absent is ignored.
+     *
+     * @param  array<int, string>  $groups
+     */
+    private function replaceReportGroupCheck(array $groups, string $action): void
+    {
+        $list = "'".implode("', '", $groups)."'";
+
         try {
-            DB::statement('ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group');
-            DB::statement("ALTER TABLE account_types ADD CONSTRAINT chk_report_group CHECK (report_group IN ('BalanceSheet', 'IncomeStatement', 'BankRegister'))");
+            DB::statement('ALTER TABLE account_types DROP CONSTRAINT chk_report_group');
+        } catch (Throwable) {
+            // not there (or not droppable): adding it below still tells us if the database accepts it
+        }
+
+        try {
+            DB::statement("ALTER TABLE account_types ADD CONSTRAINT chk_report_group CHECK (report_group IN ({$list}))");
         } catch (Throwable $e) {
-            Log::warning('Could not widen chk_report_group: '.$e->getMessage());
+            Log::warning("Could not {$action} chk_report_group: ".$e->getMessage());
         }
     }
 
@@ -56,12 +75,7 @@ return new class extends Migration
             $table->dropConstrainedForeignId('register_chart_of_account_id');
         });
 
-        try {
-            DB::statement('ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group');
-            DB::statement("ALTER TABLE account_types ADD CONSTRAINT chk_report_group CHECK (report_group IN ('BalanceSheet', 'IncomeStatement'))");
-        } catch (Throwable $e) {
-            // register account types still exist: the wider constraint stays
-            Log::warning('Could not restore chk_report_group: '.$e->getMessage());
-        }
+        // register account types still exist when this fails: the wider constraint then stays
+        $this->replaceReportGroupCheck(['BalanceSheet', 'IncomeStatement'], 'restore');
     }
 };

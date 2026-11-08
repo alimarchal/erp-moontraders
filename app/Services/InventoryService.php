@@ -363,7 +363,7 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
+                // Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
 
                 return $result['data'];
             }
@@ -431,7 +431,7 @@ class InventoryService
             ]);
 
             if ($result['success']) {
-                Log::info("Opening stock JE created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Amount: {$totalCost}");
+                // Log::info("Opening stock JE created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Amount: {$totalCost}");
 
                 return $result['data'];
             }
@@ -502,7 +502,7 @@ class InventoryService
             }
         }
 
-        Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} mirrors JE #{$grn->journal_entry_id}");
+        // Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} mirrors JE #{$grn->journal_entry_id}");
 
         return $result['data'];
     }
@@ -688,12 +688,12 @@ class InventoryService
         $currentStock->last_updated = now();
         $currentStock->save();
 
-        Log::debug('CurrentStock synced from current_stock_by_batch', [
-            'product_id' => $productId,
-            'warehouse_id' => $warehouseId,
-            'quantity_on_hand' => $totalQty,
-            'total_value' => $totalValue,
-        ]);
+        // Log::debug('CurrentStock synced from current_stock_by_batch', [
+        // 'product_id' => $productId,
+        // 'warehouse_id' => $warehouseId,
+        // 'quantity_on_hand' => $totalQty,
+        // 'total_value' => $totalValue,
+        // ]);
     }
 
     /**

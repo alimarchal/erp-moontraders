@@ -508,11 +508,11 @@ class DistributionService
             throw new \Exception($result['message'] ?? 'Failed to create supplementary journal entry for goods issue');
         }
 
-        Log::info('Supplementary Goods Issue JE created', [
-            'goods_issue_id' => $goodsIssue->id,
-            'reference' => $reference,
-            'amount' => $totalIssueCost,
-        ]);
+        // Log::info('Supplementary Goods Issue JE created', [
+        // 'goods_issue_id' => $goodsIssue->id,
+        // 'reference' => $reference,
+        // 'amount' => $totalIssueCost,
+        // ]);
 
         return $result['data'];
     }
@@ -605,11 +605,11 @@ class DistributionService
                 throw new \Exception($result['message'] ?? 'Failed to create journal entry for goods issue');
             }
 
-            Log::info('Goods Issue JE created', [
-                'goods_issue_id' => $goodsIssue->id,
-                'journal_entry_id' => $result['data']->id ?? null,
-                'amount' => $totalIssueCost,
-            ]);
+            // Log::info('Goods Issue JE created', [
+            // 'goods_issue_id' => $goodsIssue->id,
+            // 'journal_entry_id' => $result['data']->id ?? null,
+            // 'amount' => $totalIssueCost,
+            // ]);
 
             return $result['data'];
         } catch (\Exception $e) {

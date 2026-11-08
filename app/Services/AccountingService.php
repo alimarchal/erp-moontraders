@@ -76,10 +76,10 @@ class AccountingService
 
                 $this->markEntryAsPosted($journalEntry);
 
-                Log::info('Journal entry posted successfully', [
-                    'entry_id' => $journalEntry->id,
-                    'reference' => $journalEntry->reference,
-                ]);
+                // Log::info('Journal entry posted successfully', [
+                // 'entry_id' => $journalEntry->id,
+                // 'reference' => $journalEntry->reference,
+                // ]);
 
                 return [
                     'success' => true,
@@ -152,10 +152,10 @@ class AccountingService
 
                 $this->markEntryAsPosted($reversingEntry);
 
-                Log::info('Journal entry reversed successfully', [
-                    'original_entry_id' => $originalEntry->id,
-                    'reversing_entry_id' => $reversingEntry->id,
-                ]);
+                // Log::info('Journal entry reversed successfully', [
+                // 'original_entry_id' => $originalEntry->id,
+                // 'reversing_entry_id' => $reversingEntry->id,
+                // ]);
 
                 return [
                     'success' => true,
@@ -383,14 +383,14 @@ class AccountingService
 
                 $journalEntry->load(['details.account', 'details.costCenter', 'currency']);
 
-                Log::info(
-                    $isNew ? 'Journal entry created successfully' : 'Journal entry updated successfully',
-                    [
-                        'entry_id' => $journalEntry->id,
-                        'reference' => $journalEntry->reference,
-                        'status' => $journalEntry->status,
-                    ]
-                );
+                // Log::info(
+                // $isNew ? 'Journal entry created successfully' : 'Journal entry updated successfully',
+                // [
+                // 'entry_id' => $journalEntry->id,
+                // 'reference' => $journalEntry->reference,
+                // 'status' => $journalEntry->status,
+                // ]
+                // );
 
                 return [
                     'success' => true,

@@ -1504,7 +1504,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         foreach ($tables as $section => $table) {
             DB::table($table)->where('sales_settlement_id', $settlement->id)->whereNotNull('attachment')->get(['id', 'attachment'])
-                ->filter(fn ($row) => $service->isStaged($row->attachment))
+                ->filter(fn ($row) => $service->isStaged($row->attachment) && in_array($row->attachment, $this->preparedUploads, true))
                 ->each(function ($row) use ($service, $settlement, $section, $table) {
                     $final = $service->moveStagedUpload($row->attachment, $settlement->settlement_number, $section);
 

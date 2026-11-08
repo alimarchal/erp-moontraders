@@ -120,7 +120,9 @@ class SettlementAttachmentService
     }
 
     /**
-     * Move a staged file to sales-settlement/{settlement no}/{section}/ and return its new path. If the move fails the
+     * Move a staged file to sales-settlement/{settlement no}/{section}/ and return its new path. It copies the stream and
+     * then deletes the staged file instead of using Flysystem's move(), because move() also reads the object's ACL and
+     * that needs the extra s3:GetObjectAcl permission the documented IAM policy does not grant. If the move fails the
      * staged path is returned, which still opens (nothing checks the folder), and the file is not lost.
      */
     public function moveStagedUpload(string $stagedPath, string $settlementNumber, string $section): string
@@ -128,7 +130,36 @@ class SettlementAttachmentService
         $target = config('settlement_attachments.root_folder').'/'.$settlementNumber.'/'.self::SECTIONS[$section].'/'.basename($stagedPath);
 
         try {
-            return Storage::disk(self::disk())->move($stagedPath, $target) ? $target : $stagedPath;
+            $disk = Storage::disk(self::disk());
+
+            if (config('filesystems.disks.'.self::disk().'.driver') === 's3') {
+                $bucket = config('filesystems.disks.'.self::disk().'.bucket');
+                $prefix = trim((string) config('filesystems.disks.'.self::disk().'.root', ''), '/');
+                $key = fn (string $path): string => ltrim(($prefix !== '' ? $prefix.'/' : '').$path, '/');
+
+                $disk->getClient()->copyObject([
+                    'Bucket' => $bucket,
+                    'Key' => $key($target),
+                    'CopySource' => rawurlencode($bucket.'/'.$key($stagedPath)),
+                ]);
+                $disk->delete($stagedPath);
+
+                return $target;
+            }
+
+            $stream = $disk->readStream($stagedPath);
+
+            if ($stream === null || ! $disk->writeStream($target, $stream)) {
+                return $stagedPath;
+            }
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            $disk->delete($stagedPath);
+
+            return $target;
         } catch (\Throwable $e) {
             Log::warning('A settlement attachment could not be moved out of staging', ['path' => $stagedPath, 'error' => $e->getMessage()]);
 

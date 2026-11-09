@@ -50,3 +50,7 @@ Schedule::command('accounting:reconcile-stock-gl')
 // Database backups — twice daily
 // Schedule::command('backup:run --only-db')->dailyAt('06:00')->name('backup-morning')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('23:40')->name('backup-night')->withoutOverlapping();
+
+// Every morning at 7: email (in Urdu) every goods issue dated before today whose sale is not yet
+// posted, to the user who left it and to every super admin and admin. Sends nothing when all clear.
+Schedule::command('settlements:notify-pending')->dailyAt('07:00')->name('pending-settlements-notice')->withoutOverlapping();

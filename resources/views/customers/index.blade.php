@@ -195,8 +195,7 @@
                                 <tr>
                                     <th scope="col" class="ak-c">#</th>
                                     <th scope="col" aria-sort="{{ $ariaSort('customer_name') }}"><a href="{{ $sortUrl('customer_name') }}">Customer <span aria-hidden="true">{{ $sortMark('customer_name') }}</span></a></th>
-                                    <th scope="col">Phone</th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('city') }}"><a href="{{ $sortUrl('city') }}">Location <span aria-hidden="true">{{ $sortMark('city') }}</span></a></th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('city') }}"><a href="{{ $sortUrl('city') }}">Address <span aria-hidden="true">{{ $sortMark('city') }}</span></a></th>
                                     <th scope="col" aria-sort="{{ $ariaSort('channel_type') }}"><a href="{{ $sortUrl('channel_type') }}">Channel <span aria-hidden="true">{{ $sortMark('channel_type') }}</span></a></th>
                                     <th scope="col" class="ak-c" aria-sort="{{ $ariaSort('credit_limit') }}"><a href="{{ $sortUrl('credit_limit') }}">Credit limit <span aria-hidden="true">{{ $sortMark('credit_limit') }}</span></a></th>
                                     <th scope="col">Status</th>
@@ -211,10 +210,9 @@
                                             <a href="{{ route('customers.show', $customer) }}" class="ak-primary-link">{{ $customer->customer_name }}</a>
                                             <div class="ak-muted ak-mono">{{ $customer->customer_code }}@if ($customer->business_name) · {{ $customer->business_name }}@endif</div>
                                         </td>
-                                        <td data-label="Phone">{{ $customer->phone ?: '—' }}</td>
-                                        <td data-label="Location">
-                                            <div>{{ $customer->sub_locality ?: '—' }}</div>
-                                            <div class="ak-muted">{{ $customer->city ?: '—' }}</div>
+                                        <td data-label="Address">
+                                            <div>{{ $customer->address ?: '—' }}</div>
+                                            <div class="ak-muted">{{ collect([$customer->sub_locality, $customer->city])->filter()->implode(' · ') ?: '—' }}</div>
                                         </td>
                                         <td data-label="Channel">
                                             <div>{{ $customer->channel_type }}</div>

@@ -72,3 +72,18 @@ it('deactivates and activates a customer without deleting anything', function ()
     $this->post(route('customers.toggle-active', $customer))->assertRedirect();
     $this->assertDatabaseHas('customers', ['id' => $customer->id, 'is_active' => true, 'deleted_at' => null]);
 });
+
+it('shows the address instead of the phone number on the customers index', function () {
+    $this->user->givePermissionTo('customer-list');
+    Customer::factory()->create([
+        'address' => 'Shop 12, Main Bazaar Road',
+        'city' => 'Lahore',
+        'phone' => '0300-1234567',
+    ]);
+
+    $this->get(route('customers.index'))
+        ->assertSuccessful()
+        ->assertSee('Shop 12, Main Bazaar Road')
+        ->assertSee('Lahore')
+        ->assertDontSee('0300-1234567');
+});

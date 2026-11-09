@@ -1738,7 +1738,19 @@ class DistributionService
             }
         }
 
-        // 3. Per-item quantity integrity: B/F Out must be exactly 0
+        // 3. Every line of the goods issue is settled, once, at the quantity issued on it: a line added
+        // with Add More Items after the settlement page was opened would otherwise stay on the van.
+        $goodsIssue = GoodsIssue::findOrFail($settlement->goods_issue_id);
+        $mismatch = $goodsIssue->settlementLinesMismatch($settlement->items->map(fn ($item) => [
+            'goods_issue_item_id' => $item->goods_issue_item_id,
+            'quantity_issued' => $item->quantity_issued,
+        ]));
+
+        if ($mismatch !== null) {
+            throw new \RuntimeException('Cannot post: '.$mismatch);
+        }
+
+        // 4. Per-item quantity integrity: B/F Out must be exactly 0
         // B/F In  = van stock already on hand before this goods issue (from prior unsettled GIs)
         // Total Available = B/F In + Quantity Issued
         // B/F Out = Total Available - Sold - Returned - Shortage (must equal 0)

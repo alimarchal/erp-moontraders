@@ -42,6 +42,13 @@
             }
         }
 
+        // Goods issue lines this settlement already holds. A line missing from it was added to the
+        // goods issue (Add More Items) after the settlement was saved, so it starts fully sold, as
+        // every line does on the create page. Null when an old row has no line link to go by.
+        $savedGoodsIssueItemIds = $settlement->items->contains(fn ($item) => $item->goods_issue_item_id === null)
+            ? null
+            : $settlement->items->pluck('goods_issue_item_id')->map(fn ($id) => (int) $id)->values();
+
         $creditSalesData = $settlement->creditSales->map(function ($sale) {
             return [
                 'customer_id' => $sale->customer_id,
@@ -268,7 +275,7 @@
                         <div id="settlementTableContainer"
                             style="display: none; text-align: center; margin: 10px; padding: 0px">
                             <x-detail-table
-                                title="Batch-wise Settlement (B/F + Issued = Total Available | Sold + Returned + Shortage + Balance = Total)"
+                                title="Batch-wise Settlement (Sold + Returned + Shortage + B/F Out = Issued | B/F In is for information only)"
                                 :headers="[
         ['label' => 'Product / Batch', 'align' => 'text-left'],
         ['label' => 'Batch Breakdown', 'align' => 'text-left'],
@@ -1089,6 +1096,8 @@
         <script>
             let invoiceCounter = 1;
             const savedBatchQuantities = @json($savedBatchesData);
+            const savedGoodsIssueItemIds = @json($savedGoodsIssueItemIds);
+            const isSpecialEditPage = @json($isSpecialEdit);
             const savedCreditSales = @json($creditSalesDecoded);
             const savedRecoveries = @json($recoveriesDecoded);
             const savedBankTransfers = @json($bankTransfersDecoded);
@@ -1506,8 +1515,8 @@
                 let returned = Math.round(parseFloat(returnedInput.value) || 0);
                 let shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
-                // Total available = B/F (In) + Issued
-                const totalAvailable = bfIn + issued;
+                // B/F (In) is shown for information only: a line can settle at most what was issued on it.
+                const totalAvailable = issued;
 
                 // Auto-adjust: Sold + Returned + Shortage cannot exceed Total Available
                 const totalUsed = sold + returned + shortage;
@@ -1549,7 +1558,7 @@
                     hideQuantityWarning(itemIndex, batchIndex);
                 }
 
-                // B/F (Out) = Total Available - Sold - Returned - Shortage (should always be >= 0 now)
+                // B/F (Out) = Issued - Sold - Returned - Shortage (never below zero)
                 const bfOut = totalAvailable - sold - returned - shortage;
 
                 const bfOutSpan = document.getElementById(`bf-out-${itemIndex}-${batchIndex}`);
@@ -1618,8 +1627,8 @@
                 const returned = Math.round(parseFloat(returnedInput.value) || 0);
                 const shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
-                // Total available = B/F (In) + Issued
-                const totalAvailable = bfIn + issued;
+                // B/F (In) is shown for information only: a line can settle at most what was issued on it.
+                const totalAvailable = issued;
 
                 // No longer auto-fill shortage - user must enter it manually
                 // B/F (Out) is calculated automatically
@@ -1737,10 +1746,10 @@
                     }
                 });
 
-                // B/F (Out) = B/F (In) + Issued - Sold - Returned - Shortage
-                const grandTotalAvailable = grandBfIn + grandIssued;
+                // B/F (Out) = Issued - Sold - Returned - Shortage; B/F (In) is for information only
+                const grandTotalAvailable = grandIssued;
                 const grandBfOut = grandTotalAvailable - grandSold - grandReturned - grandShortage;
-                const grandBfOutValue = (grandBfInValue + grandIssuedValue) - grandSoldValue - grandReturnValue - grandShortageValue;
+                const grandBfOutValue = grandIssuedValue - grandSoldValue - grandReturnValue - grandShortageValue;
 
                 // Update quantity displays with null checks
                 const soldEl = document.getElementById('grandTotalSold');
@@ -2164,6 +2173,11 @@
 
                         const resolveSavedBatch = (item, batch) => savedBatchQuantities[`${item.id}_${batch.stock_batch_id}`] || {};
 
+                        // A goods issue line this settlement has not saved yet (added after it was
+                        // saved) starts fully sold, the same default the create page gives every line.
+                        const isLineNewToSettlement = (item) => Array.isArray(savedGoodsIssueItemIds)
+                            && !savedGoodsIssueItemIds.includes(Number(item.id));
+
                         // A settlement records the price actually charged on its date.
                         // Prefer the price saved on this settlement's own batch row over
                         // the live stock batch price, which may have changed since.
@@ -2215,9 +2229,16 @@
                                     const batchValue = parseFloat(batch.quantity) * sellingPrice;
                                     // For B/F, distribute proportionally across batches or show on first batch only
                                     const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
-                                    const savedSold = Math.round(parseFloat(savedBatch.sold) || 0);
+                                    const isNewLine = isLineNewToSettlement(item);
                                     const savedReturned = Math.round(parseFloat(savedBatch.returned) || 0);
                                     const savedShortage = Math.round(parseFloat(savedBatch.shortage) || 0);
+                                    // Stock is not carried on the van, so a draft line saved with nothing sold,
+                                    // returned or short was never filled in: it starts fully sold, like a new line.
+                                    const savedNothingSettled = !isSpecialEditPage
+                                        && Math.round(parseFloat(savedBatch.sold) || 0) + savedReturned + savedShortage === 0;
+                                    const savedSold = isNewLine || savedNothingSettled
+                                        ? Math.round(parseFloat(batch.quantity) || 0)
+                                        : Math.round(parseFloat(savedBatch.sold) || 0);
 
                                     const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
                                     const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
@@ -2230,6 +2251,8 @@
                                                                                                                                                                                                                                                             <div class="text-xs text-gray-500 break-words">
                                                                                                                                                                                                                                                                 ${productCode}<br>Batch: ${batch.batch_code}
                                                                                                                                                                                                                                                                 ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                                                ${item.is_supplementary ? `<span class="ml-1 px-1.5 py-0.5 bg-sky-100 text-sky-800 text-xs font-bold rounded">Supplementary${item.supplementary_date ? ' · ' + item.supplementary_date : ''}</span>` : ''}
+                                                                ${isNewLine ? '<span class="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded" title="Added to the goods issue after this settlement was saved">NEW</span>' : ''}
                                                                                                                                                                                                                                                             </div>
                                                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                                                         <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
@@ -2288,7 +2311,7 @@
                                                                                                                                                                                                                                                                 oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
                                                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                                                         <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${(parseFloat(batch.quantity) + batchBfQuantity) - savedSold - savedReturned - savedShortage}</span>
+                                                                                                                                                                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) - savedSold - savedReturned - savedShortage}</span>
                                                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                                                     </tr>
                                                                                                                                                                                                                                                 `;

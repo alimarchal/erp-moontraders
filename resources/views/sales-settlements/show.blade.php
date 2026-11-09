@@ -561,6 +561,9 @@
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>
                                     <div class="font-semibold">{{ $item->product->product_name }}</div>
+                                    @if ($item->goodsIssueItem?->is_supplementary)
+                                        <span class="inline-block mt-0.5 px-1.5 rounded text-xs font-semibold bg-sky-100 text-sky-800">Supplementary{{ $item->goodsIssueItem->supplementary_posted_at ? ' · '.$item->goodsIssueItem->supplementary_posted_at->format('d M') : '' }}</span>
+                                    @endif
                                     <!-- <div class="text-xs">{{ $item->product->product_name }}</div> -->
 
                                 </td>

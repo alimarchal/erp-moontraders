@@ -71,7 +71,7 @@
                         <div id="settlementTableContainer"
                             style="display: none; text-align: center; margin: 10px; padding: 0px">
                             <x-detail-table
-                                title="Batch-wise Settlement (B/F + Issued = Total Available | Sold + Returned + Shortage + Balance = Total)"
+                                title="Batch-wise Settlement (Sold + Returned + Shortage + B/F Out = Issued | B/F In is for information only)"
                                 :headers="[
         ['label' => 'Product / Batch', 'align' => 'text-left'],
         ['label' => 'Batch Breakdown', 'align' => 'text-left'],
@@ -1122,8 +1122,8 @@
                 let returned = Math.round(parseFloat(returnedInput.value) || 0);
                 let shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
-                // Total available = B/F (In) + Issued
-                const totalAvailable = bfIn + issued;
+                // B/F (In) is shown for information only: a line can settle at most what was issued on it.
+                const totalAvailable = issued;
 
                 // Auto-adjust: Sold + Returned + Shortage cannot exceed Total Available
                 const totalUsed = sold + returned + shortage;
@@ -1165,7 +1165,7 @@
                     hideQuantityWarning(itemIndex, batchIndex);
                 }
 
-                // B/F (Out) = Total Available - Sold - Returned - Shortage (should always be >= 0 now)
+                // B/F (Out) = Issued - Sold - Returned - Shortage (never below zero)
                 const bfOut = totalAvailable - sold - returned - shortage;
 
                 const bfOutSpan = document.getElementById(`bf-out-${itemIndex}-${batchIndex}`);
@@ -1234,8 +1234,8 @@
                 const returned = Math.round(parseFloat(returnedInput.value) || 0);
                 const shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
-                // Total available = B/F (In) + Issued
-                const totalAvailable = bfIn + issued;
+                // B/F (In) is shown for information only: a line can settle at most what was issued on it.
+                const totalAvailable = issued;
 
                 // No longer auto-fill shortage - user must enter it manually
                 // B/F (Out) is calculated automatically
@@ -1353,10 +1353,10 @@
                     }
                 });
 
-                // B/F (Out) = B/F (In) + Issued - Sold - Returned - Shortage
-                const grandTotalAvailable = grandBfIn + grandIssued;
+                // B/F (Out) = Issued - Sold - Returned - Shortage; B/F (In) is for information only
+                const grandTotalAvailable = grandIssued;
                 const grandBfOut = grandTotalAvailable - grandSold - grandReturned - grandShortage;
-                const grandBfOutValue = (grandBfInValue + grandIssuedValue) - grandSoldValue - grandReturnValue - grandShortageValue;
+                const grandBfOutValue = grandIssuedValue - grandSoldValue - grandReturnValue - grandShortageValue;
 
                 // Update quantity displays with null checks
                 const soldEl = document.getElementById('grandTotalSold');
@@ -1828,6 +1828,7 @@
                                                                                                                                                                                                                             <div class="text-xs text-gray-500 break-words">
                                                                                                                                                                                                                                 ${productCode}<br>Batch: ${batch.batch_code}
                                                                                                                                                                                                                                 ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                                                ${item.is_supplementary ? `<span class="ml-1 px-1.5 py-0.5 bg-sky-100 text-sky-800 text-xs font-bold rounded">Supplementary${item.supplementary_date ? ' · ' + item.supplementary_date : ''}</span>` : ''}
                                                                                                                                                                                                                             </div>
                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                         <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
@@ -1883,7 +1884,7 @@
                                                                                                                                                                                                                                 oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                         <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="${batchBfQuantity === 0 ? 'font-bold text-green-600' : 'font-bold text-orange-600'}">${batchBfQuantity}</span>
+                                                                                                                                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="font-bold text-green-600">0</span>
                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                     </tr>
                                                                                                                                                                                                                 `;

@@ -579,9 +579,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         // Format items to ensure product and uom data are included
-        $formattedItems = $goodsIssue->items->map(function ($item) {
+        $formattedItems = $goodsIssue->itemsInSettlementOrder()->map(function ($item) {
             return [
                 'id' => $item->id,
+                'line_no' => $item->line_no,
+                'is_supplementary' => (bool) $item->is_supplementary,
+                'supplementary_date' => $item->is_supplementary ? $item->supplementary_posted_at?->format('d M') : null,
                 'product_id' => $item->product_id,
                 'quantity_issued' => $item->quantity_issued,
                 'bf_quantity' => $item->bf_quantity ?? 0,
@@ -682,6 +685,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     ->with('info', "A draft settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. You can view and edit it here.");
             }
 
+            if ($mismatch = $goodsIssue->settlementLinesMismatch($request->input('items', []))) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', $mismatch);
+            }
+
             $payload = $this->buildSettlementPayload($request);
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
@@ -775,6 +784,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'verifiedBy',
             'journalEntry',
             'supplier',
+            'goodsIssue.items',
+            'items.goodsIssueItem',
             'items.product',
             'items.batches.stockBatch',
             'customerEmployeeTransactions.account.customer',
@@ -788,6 +799,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'recoveries.customer',
             'bankSlips.bankAccount',
         ]);
+
+        // List the lines as the settlement form does: an added supplementary line under its product's first line.
+        if ($salesSettlement->goodsIssue) {
+            $position = $salesSettlement->goodsIssue->itemsInSettlementOrder()->pluck('id')->flip();
+            $salesSettlement->setRelation('items', $salesSettlement->items
+                ->sortBy(fn (SalesSettlementItem $item) => [$position[$item->goods_issue_item_id] ?? PHP_INT_MAX, $item->id])
+                ->values());
+        }
 
         // Calculate BF (In) for each product
         // Logic: BF = Sum of (Debit - Credit) from InventoryLedgerEntry before this Goods Issue
@@ -1174,6 +1193,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         if ($existingSettlement) {
             throw new \RuntimeException("Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
+        }
+
+        if ($mismatch = $goodsIssue->settlementLinesMismatch($request->input('items', []))) {
+            throw new \RuntimeException($mismatch);
         }
 
         $savedBatchPricing = [];

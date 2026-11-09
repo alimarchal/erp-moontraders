@@ -342,7 +342,7 @@
                         @endphp
                         <tr>
                             <td class="i">{{ $index + 1 }}</td>
-                            <td class="b">{{ $item->product->product_name }}</td>
+                            <td class="b">{{ $item->product->product_name }}@if ($item->goodsIssueItem?->is_supplementary) <small>(Supplementary{{ $item->goodsIssueItem->supplementary_posted_at ? ' · '.$item->goodsIssueItem->supplementary_posted_at->format('d M') : '' }})</small>@endif</td>
                             <td class="n">{{ $money($bfIn) }}</td>
                             <td class="n">{{ $money($item->quantity_issued) }}</td>
                             <td>

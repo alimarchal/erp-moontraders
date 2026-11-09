@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 class GoodsIssue extends Model
 {
@@ -105,6 +106,65 @@ class GoodsIssue extends Model
     public function items(): HasMany
     {
         return $this->hasMany(GoodsIssueItem::class);
+    }
+
+    /**
+     * The issue's lines in the order a settlement lists them: by line number, except that a
+     * later line of a product already on the issue (an added supplementary line) sits right
+     * under that product's first line, so the salesman's count for it is read in one place.
+     *
+     * @return Collection<int, GoodsIssueItem>
+     */
+    /**
+     * Why a settlement's lines do not settle this issue in full, or null when they do. Every line of the
+     * issue must be there exactly once with the quantity it was issued, so a line added with Add More
+     * Items after the settlement page was opened cannot be left on the van unsettled.
+     *
+     * @param  iterable<int, array{goods_issue_item_id?: int|string|null, quantity_issued?: int|float|string|null}>  $settlementLines
+     */
+    public function settlementLinesMismatch(iterable $settlementLines): ?string
+    {
+        $listed = collect($settlementLines)->groupBy(fn (array $line) => (int) ($line['goods_issue_item_id'] ?? 0));
+
+        // The settlement form names the goods issue line of every row; rows built without that link
+        // (older hand-made data) cannot be matched to lines, so there is nothing to compare.
+        if ($listed->keys()->filter()->isEmpty()) {
+            return null;
+        }
+
+        $this->loadMissing('items.product');
+        $problems = [];
+
+        foreach ($this->itemsInSettlementOrder() as $item) {
+            $lines = $listed->pull($item->id, collect());
+            $issued = (float) $item->quantity_issued;
+            $label = 'line '.$item->line_no.' ('.($item->product?->product_name ?? 'product '.$item->product_id).', '.(float) $issued.')';
+
+            if ($lines->isEmpty()) {
+                $problems[] = $label.' is missing';
+            } elseif ($lines->count() > 1) {
+                $problems[] = $label.' is listed '.$lines->count().' times';
+            } elseif (abs((float) ($lines->first()['quantity_issued'] ?? 0) - $issued) > 0.0001) {
+                $problems[] = $label.' is listed with '.(float) $lines->first()['quantity_issued'].' issued';
+            }
+        }
+
+        if ($listed->isNotEmpty()) {
+            $problems[] = $listed->flatten(1)->count().' line(s) are not on this goods issue';
+        }
+
+        return $problems === [] ? null : "The settlement does not match Goods Issue {$this->issue_number}: "
+            .implode('; ', $problems).'. The goods issue may have changed after the page was opened: reload it and enter every line.';
+    }
+
+    public function itemsInSettlementOrder(): Collection
+    {
+        $firstLineOfProduct = $this->items->groupBy('product_id')->map(fn (Collection $lines) => $lines->min('line_no'));
+
+        return $this->items
+            ->sort(fn (GoodsIssueItem $a, GoodsIssueItem $b) => [$firstLineOfProduct[$a->product_id], $a->line_no, $a->id]
+                <=> [$firstLineOfProduct[$b->product_id], $b->line_no, $b->id])
+            ->values();
     }
 
     public function settlement(): HasMany

@@ -13,6 +13,7 @@ use App\Models\BankEntryRule;
 use App\Models\BankPartyAlias;
 use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
+use App\Models\BankStatementImport;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\BankRegister\BankApprovalRules;
@@ -49,12 +50,12 @@ class BankStatementEntryController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(Request $request, BankStatementSearch $search): View
+    public function index(Request $request, BankStatementSearch $search, BankApprovalRules $rules): View
     {
         $filters = (array) $request->input('filter', []);
 
         $entries = $search->query($filters)
-            ->with(['company', 'category', 'bankAccount'])
+            ->with(['company', 'category', 'bankAccount', 'submitter', 'attachments'])
             ->withCount('attachments')
             ->orderByDesc('posting_date')
             ->orderByDesc('id')
@@ -73,9 +74,19 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             'summary' => $summary,
             'withoutReceipt' => $withoutReceipt,
             'totals' => $totals,
-            'pendingScans' => BankReceiptScan::where('status', BankReceiptScan::STATUS_PENDING)->count(),
-            'tiles' => $this->tiles($summary),
             'filters' => $filters,
+            // The approvals a waiting entry already has, and whether this person can give the next one: the
+            // "Waiting for approval" tab is the checker's inbox, so there is no separate approvals page.
+            'approvals' => $entries->getCollection()
+                ->where('status', BankStatementEntry::STATUS_PENDING_APPROVAL)
+                ->mapWithKeys(fn (BankStatementEntry $entry) => [$entry->id => [
+                    'approved' => $rules->approvedLevels($entry)->load('user'),
+                    'can_approve' => $rules->canApprove($entry, $request->user()),
+                ]]),
+            // Statement files are a filter of the register instead of a list of their own.
+            'imports' => $request->user()->can('bank-statement-import-list')
+                ? BankStatementImport::query()->whereHas('entries')->latest()->limit(100)->get(['id', 'file_name', 'created_at'])
+                : collect(),
         ] + $this->options());
     }
 
@@ -272,8 +283,9 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             $this->syncClassificationStatus($bankStatementEntry, $request->user()->id);
             $bankStatementEntry->save();
 
-            $changed = $old['company_id'] !== $bankStatementEntry->company_id
-                || $old['bank_entry_category_id'] !== $bankStatementEntry->bank_entry_category_id
+            // the form sends ids as text, so they are compared as numbers: a note-only edit must not withdraw the approval request
+            $changed = (int) $old['company_id'] !== (int) $bankStatementEntry->company_id
+                || (int) $old['bank_entry_category_id'] !== (int) $bankStatementEntry->bank_entry_category_id
                 || (float) $old['debit'] !== (float) $bankStatementEntry->debit
                 || (float) $old['credit'] !== (float) $bankStatementEntry->credit
                 || ! $old['posting_date']->equalTo($bankStatementEntry->posting_date);
@@ -501,23 +513,6 @@ class BankStatementEntryController extends Controller implements HasMiddleware
                 );
             }
         }
-    }
-
-    /**
-     * @param  array<string, array{count: int, amount: float}>  $summary
-     * @return array<string, mixed>
-     */
-    private function tiles(array $summary): array
-    {
-        $amount = fn (string ...$statuses) => array_sum(array_map(fn (string $s) => $summary[$s]['amount'] ?? 0, $statuses));
-        $count = fn (string ...$statuses) => array_sum(array_map(fn (string $s) => $summary[$s]['count'] ?? 0, $statuses));
-
-        return [
-            'unclassified' => ['count' => $count('unclassified', 'rejected'), 'amount' => $amount('unclassified', 'rejected')],
-            'pending' => ['count' => $count('pending_approval'), 'amount' => $amount('pending_approval')],
-            'unreconciled' => ['count' => $count('posted'), 'amount' => $amount('posted')],
-            'reconciled' => ['count' => $count('reconciled'), 'amount' => $amount('reconciled')],
-        ];
     }
 
     /**

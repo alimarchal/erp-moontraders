@@ -10,6 +10,7 @@ use App\Services\BankRegister\BankEntryApprovalService;
 use App\Services\BankRegister\BankEntryPostingService;
 use App\Services\BankRegister\BankRegisterException;
 use App\Services\BankRegister\BankRegisterLedger;
+use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
     $this->fixture = bankRegisterFixture();
@@ -263,4 +264,55 @@ test('a reconciled entry cannot be reversed', function () {
     $entry->update(['status' => BankStatementEntry::STATUS_RECONCILED]);
 
     expect(fn () => app(BankEntryPostingService::class)->reverse($entry, $this->checker, 'x'))->toThrow(BankRegisterException::class, 'reconciled');
+});
+
+test('an entry that needed approval cannot be reversed by the person who submitted it, only by someone else', function () {
+    $pending = $this->approvals->submit(classifiedEntry($this->fixture, 3000000), $this->maker);
+    $posted = $this->approvals->approve($pending, $this->checker);
+
+    expect(fn () => app(BankEntryPostingService::class)->reverse($posted, $this->maker, 'Wrong company'))
+        ->toThrow(BankRegisterException::class, 'different person');
+    expect($posted->fresh()->status)->toBe(BankStatementEntry::STATUS_POSTED);
+
+    expect(app(BankEntryPostingService::class)->reverse($posted, $this->checker, 'Wrong company')->status)
+        ->toBe(BankStatementEntry::STATUS_REVERSED);
+});
+
+test('with the reversal setting off the maker reverses a large entry alone', function () {
+    config()->set('bank.maker_checker.reversal_requires_approval', false);
+    $posted = $this->approvals->approve($this->approvals->submit(classifiedEntry($this->fixture, 3000000), $this->maker), $this->checker);
+
+    expect(app(BankEntryPostingService::class)->reverse($posted, $this->maker, 'Wrong company')->status)
+        ->toBe(BankStatementEntry::STATUS_REVERSED);
+});
+
+test('the approve button is not offered to the person who submitted the entry', function () {
+    $pending = $this->approvals->submit(classifiedEntry($this->fixture, 3000000), $this->checker);
+    $approveUrl = route('bank-approvals.approve', $pending);
+
+    $this->actingAs($this->checker)->get(route('bank-statement-entries.show', $pending))->assertOk()->assertDontSee($approveUrl, false);
+    $this->actingAs($this->senior)->get(route('bank-statement-entries.show', $pending))->assertOk()->assertSee($approveUrl, false);
+});
+
+test('the waiting-for-approval tab of the register is the checker inbox, so there is no separate approvals page', function () {
+    $pending = $this->approvals->submit(classifiedEntry($this->fixture, 3000000), $this->checker);
+    $inbox = route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]);
+    $approveUrl = route('bank-approvals.approve', $pending);
+
+    // the person who submitted it is not offered the approve button, a different approver is
+    $this->actingAs($this->checker)->get($inbox)->assertOk()->assertSee('Approval limits')->assertDontSee($approveUrl, false);
+    $this->actingAs($this->senior)->get($inbox)->assertOk()->assertSee($approveUrl, false)->assertSee('Approve selected');
+
+    expect(Route::has('bank-approvals.index'))->toBeFalse()
+        ->and(Route::has('bank-statement-imports.index'))->toBeFalse();
+});
+
+test('ticked entries are approved together from the register', function () {
+    $first = $this->approvals->submit(classifiedEntry($this->fixture, 3000000), $this->maker);
+    $second = $this->approvals->submit(classifiedEntry($this->fixture, 4000000), $this->maker);
+
+    $this->actingAs($this->checker)->post(route('bank-approvals.bulk-approve'), ['ids' => [$first->id, $second->id]])->assertSessionHas('success');
+
+    expect($first->fresh()->status)->toBe(BankStatementEntry::STATUS_POSTED)
+        ->and($second->fresh()->status)->toBe(BankStatementEntry::STATUS_POSTED);
 });

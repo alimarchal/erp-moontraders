@@ -1,29 +1,59 @@
-@props(['inside' => false])
+{{-- The Bank Register menu: one panel, opened with the Menu button of the page head (as the Filters panel is),
+     instead of a long row of links on every screen. Each person sees only what they may open. --}}
+@props(['button' => false])
 
 @php
     $user = auth()->user();
-    $pendingApprovals = $user?->can('bank-statement-entry-approve') ? \App\Models\BankStatementEntry::where('status', 'pending_approval')->count() : 0;
     $pendingScans = $user?->can('bank-receipt-scan-list') ? \App\Models\BankReceiptScan::where('status', 'pending')->count() : 0;
-    $items = [
-        ['label' => 'Register', 'route' => 'bank-statement-entries.index', 'active' => ['bank-statement-entries.*', 'bank-statement-imports.*'], 'can' => 'bank-statement-entry-list'],
-        ['label' => 'Approvals', 'route' => 'bank-approvals.index', 'active' => ['bank-approvals.*'], 'can' => 'bank-statement-entry-approve', 'badge' => $pendingApprovals, 'badgeClass' => 'bg-amber-500'],
-        ['label' => 'Receipt scans', 'route' => 'bank-receipt-scans.index', 'active' => ['bank-receipt-scans.*'], 'can' => 'bank-receipt-scan-list', 'badge' => $pendingScans, 'badgeClass' => 'bg-sky-600'],
-        ['label' => 'Reconciliation', 'route' => 'bank-reconciliations.index', 'active' => ['bank-reconciliations.*'], 'can' => 'bank-reconciliation-list'],
-        ['label' => 'Reports', 'route' => 'reports.index', 'active' => ['reports.bank.*'], 'canAny' => \App\Services\BankRegister\BankRegisterPermissions::REPORTS],
+    $onRegister = request()->routeIs('bank-statement-entries.index');
+    $groups = [
+        'Daily work' => [
+            ['label' => 'Register', 'hint' => 'Every bank, cash and wallet line', 'route' => 'bank-statement-entries.index', 'active' => ['bank-statement-entries.*'], 'can' => 'bank-statement-entry-list'],
+            ['label' => 'Receipt scans', 'hint' => 'Scanned receipts to link to entries', 'route' => 'bank-receipt-scans.index', 'active' => ['bank-receipt-scans.*'], 'can' => 'bank-receipt-scan-list', 'badge' => $pendingScans],
+            ['label' => 'Reconciliation', 'hint' => 'Match the statement with the books', 'route' => 'bank-reconciliations.index', 'active' => ['bank-reconciliations.*'], 'can' => 'bank-reconciliation-list'],
+            ['label' => 'Cheques', 'hint' => 'Issued and received cheques', 'route' => 'bank-cheques.index', 'active' => ['bank-cheques.*'], 'can' => 'bank-cheque-list'],
+        ],
+        'Reports' => [
+            ['label' => 'Reports', 'hint' => 'Entries, summary, reconciliation, audit log', 'route' => 'reports.bank.index', 'active' => ['reports.bank.*'], 'canAny' => \App\Services\BankRegister\BankRegisterPermissions::REPORTS],
+        ],
+        'Setup' => [
+            ['label' => 'Categories', 'hint' => 'Kinds of receipt and payment', 'route' => 'bank-entry-categories.index', 'active' => ['bank-entry-categories.*'], 'can' => 'bank-entry-category-list'],
+            ['label' => 'Party aliases', 'hint' => 'Different spellings of one party', 'route' => 'bank-party-aliases.index', 'active' => ['bank-party-aliases.*'], 'can' => 'bank-party-alias-list'],
+            ['label' => 'Auto-classify rules', 'hint' => 'Tag entries by text in the narration', 'route' => 'bank-entry-rules.index', 'active' => ['bank-entry-rules.*'], 'can' => 'bank-entry-rule-list'],
+        ],
     ];
+    $groups = collect($groups)->map(fn (array $items) => array_values(array_filter($items, fn (array $item) => (! isset($item['can']) || $user?->can($item['can'])) && (! isset($item['canAny']) || $user?->canAny($item['canAny'])))))->filter();
 @endphp
 
-<nav aria-label="Bank Register sections" class="bank-noprint {{ $inside ? '' : 'ak-page' }}" style="{{ $inside ? '' : 'padding-bottom:0;padding-top:16px' }}">
-    <div class="bk-tabs-nav">
-        @foreach ($items as $item)
-            @continue(isset($item['can']) && ! $user?->can($item['can']))
-            @continue(isset($item['canAny']) && ! $user?->canAny($item['canAny']))
-            @php($active = request()->routeIs(...$item['active']))
-            <a href="{{ route($item['route']) }}" @if ($active) aria-current="page" @endif class="{{ $active ? 'is-active' : '' }}">
-                {{ $item['label'] }}
-                @if (($item['badge'] ?? 0) > 0)<span class="bk-badge">{{ $item['badge'] }}</span>@endif
-            </a>
+<div class="bank-noprint max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{ open: false }" @bk-toggle-menu.window="open = ! open" @keydown.escape.window="open = false">
+    @if ($button)
+        <div class="bk-menu-standalone">
+            <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Register</a>
+            <x-bank.menu-button />
+        </div>
+    @endif
+
+    <nav id="bk-menu-panel" class="ak-card bk-menu" aria-label="Bank Register menu" x-show="open" x-cloak x-transition style="display:none">
+        @foreach ($groups as $title => $items)
+            <div class="bk-menu-group">
+                <p class="bk-menu-title">{{ $title }}</p>
+                @foreach ($items as $item)
+                    @php($active = request()->routeIs(...$item['active']))
+                    <a href="{{ route($item['route']) }}" @if ($active) aria-current="page" @endif class="bk-menu-item {{ $active ? 'is-active' : '' }}">
+                        <b>{{ $item['label'] }} @if (($item['badge'] ?? 0) > 0)<span class="bk-badge">{{ $item['badge'] }}</span>@endif</b>
+                        <span>{{ $item['hint'] }}</span>
+                    </a>
+                @endforeach
+                @if ($title === 'Reports')
+                    @if ($onRegister && $user?->can('bank-statement-entry-export'))
+                        <a href="{{ route('bank-statement-entries.export', array_filter(['filter' => request()->input('filter')])) }}" class="bk-menu-item"><b>Export to Excel</b><span>The entries listed now, with the same filters</span></a>
+                    @endif
+                    <button type="button" class="bk-menu-item" @click="open = false; $nextTick(() => window.print())"><b>Print this page</b><span>Black and white, for the laser printer</span></button>
+                @endif
+                @if ($title === 'Setup')
+                    <a href="{{ route('bank-register.help') }}" target="_blank" rel="noopener" class="bk-menu-item"><b>Help <span dir="rtl" lang="ur">(اردو)</span></b><span>How the bank register works</span></a>
+                @endif
+            </div>
         @endforeach
-        <a href="{{ route('bank-register.help') }}" target="_blank" rel="noopener" class="bk-help-link">? Help <span dir="rtl" lang="ur">(اردو)</span></a>
-    </div>
-</nav>
+    </nav>
+</div>

@@ -207,3 +207,52 @@ test('the category list is offered to the form with each category type so it can
         ->and(BankEntryCategory::where('type', 'payment')->exists())->toBeTrue()
         ->and(BankEntryCategory::where('type', 'receipt')->exists())->toBeTrue();
 });
+
+test('the save buttons send their choice in a hidden field and are never disabled, so the choice reaches the server', function () {
+    $this->get(route('bank-statement-entries.create'))
+        ->assertOk()
+        ->assertSee('<input type="hidden" name="after"', false)
+        ->assertDontSee(':disabled="busy"', false);
+});
+
+test('changing only the note keeps an entry in the approval queue', function () {
+    $this->post(route('bank-statement-entries.store'), ($this->payload)([
+        'company_id' => $this->fixture['company']->id, 'bank_entry_category_id' => $this->fixture['category']->id,
+        'amount' => 2500000, 'after' => 'submit',
+    ]));
+    $entry = BankStatementEntry::firstOrFail();
+
+    $this->put(route('bank-statement-entries.update', $entry), [
+        'direction' => 'credit', 'amount' => '2500000', 'posting_date' => now()->toDateString(),
+        'reference' => $entry->reference, 'party_name_in_statement' => $entry->party_name_in_statement, 'narration' => $entry->narration,
+        'company_id' => (string) $this->fixture['company']->id, 'bank_entry_category_id' => (string) $this->fixture['category']->id,
+        'description' => 'Slip is with the cashier',
+    ])->assertRedirect();
+
+    expect($entry->fresh()->status)->toBe(BankStatementEntry::STATUS_PENDING_APPROVAL)
+        ->and($entry->fresh()->description)->toBe('Slip is with the cashier');
+});
+
+test('the transaction page offers delete for an entry that is not posted and not for a posted one', function () {
+    $open = BankStatementEntry::factory()->create(['bank_account_id' => $this->fixture['bank']->id]);
+    $this->get(route('bank-statement-entries.show', $open))->assertOk()->assertSee('Delete entry');
+
+    $this->post(route('bank-statement-entries.store'), ($this->payload)([
+        'company_id' => $this->fixture['company']->id, 'bank_entry_category_id' => $this->fixture['category']->id, 'after' => 'submit',
+    ]));
+    $posted = BankStatementEntry::where('status', BankStatementEntry::STATUS_POSTED)->firstOrFail();
+
+    $this->get(route('bank-statement-entries.show', $posted))->assertOk()->assertDontSee('Delete entry');
+});
+
+test('the register list offers post and delete on a classified row', function () {
+    $entry = BankStatementEntry::factory()->create([
+        'bank_account_id' => $this->fixture['bank']->id, 'bank_entry_category_id' => $this->fixture['category']->id,
+        'status' => BankStatementEntry::STATUS_CLASSIFIED, 'credit' => 5000, 'debit' => 0,
+    ]);
+
+    $this->get(route('bank-statement-entries.index'))
+        ->assertOk()
+        ->assertSee(route('bank-statement-entries.submit', $entry), false)
+        ->assertSee(route('bank-statement-entries.edit', $entry), false);
+});

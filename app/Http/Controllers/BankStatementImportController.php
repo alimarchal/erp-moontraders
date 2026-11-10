@@ -18,16 +18,9 @@ class BankStatementImportController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:bank-statement-import-list', only: ['index', 'show']),
+            new Middleware('can:bank-statement-import-list', only: ['show']),
             new Middleware('can:bank-statement-import-create', only: ['create', 'store', 'confirm', 'destroy']),
         ];
-    }
-
-    public function index(): View
-    {
-        $imports = BankStatementImport::query()->with(['bankAccount', 'importer'])->latest()->paginate(25);
-
-        return view('bank-statement-imports.index', ['imports' => $imports]);
     }
 
     public function create(): View
@@ -78,6 +71,6 @@ class BankStatementImportController extends Controller implements HasMiddleware
         Storage::disk(config('bank.attachments.disk'))->delete($bankStatementImport->file_path);
         $bankStatementImport->delete();
 
-        return redirect()->route('bank-statement-imports.index')->with('success', 'Import discarded.');
+        return redirect()->route('bank-statement-entries.index')->with('success', 'Import discarded.');
     }
 }

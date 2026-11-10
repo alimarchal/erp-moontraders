@@ -22,21 +22,29 @@
         @endif
 
         @if ($entry->status === 'pending_approval')
-            <div class="ak-alert ak-alert-warn" role="status">This entry is waiting for approval. Changing the company or category withdraws it and it has to be submitted again.</div>
+            <div class="ak-alert ak-alert-warn" role="status">This entry is waiting for approval. Changing the amount, date, company or category withdraws it and it has to be submitted again.</div>
         @endif
 
-        <form method="POST" action="{{ route('bank-statement-entries.update', $entry) }}" class="bk-stack">
+        <form method="POST" action="{{ route('bank-statement-entries.update', $entry) }}" class="bk-stack"
+            x-data="{
+                direction: '{{ old('direction', $entry->direction) === 'debit' ? 'debit' : 'credit' }}',
+                categories: @js($categories->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'type' => $c->type])->values()),
+                category: '{{ old('bank_entry_category_id', $entry->bank_entry_category_id) }}',
+                get options() { return this.categories.filter(c => c.type === 'both' || c.type === (this.direction === 'credit' ? 'receipt' : 'payment')); },
+                pick(d) { this.direction = d; if (! this.options.some(c => String(c.id) === String(this.category))) { this.category = ''; } }
+            }">
             @csrf @method('PUT')
 
             @if ($entry->import_id === null)
                 <section class="uf-card">
                     <div class="uf-card-head"><h2 class="uf-card-title">Money and date</h2></div>
                     <div class="uf-body"><div class="uf-fields">
-                        <div class="uf-field"><label for="direction">Money</label>
-                            <select data-allow-clear="false" id="direction" name="direction" class="select2 bank-select">
-                                <option value="credit" @selected(old('direction', $entry->direction) === 'credit')>Received</option>
-                                <option value="debit" @selected(old('direction', $entry->direction) === 'debit')>Paid out</option>
-                            </select></div>
+                        <div class="uf-field"><label>Received or paid out</label>
+                            <input type="hidden" name="direction" :value="direction">
+                            <div class="ak-seg" role="group" aria-label="Direction of the money">
+                                <button type="button" @click="pick('credit')" :class="direction === 'credit' && 'is-on'" :aria-pressed="direction === 'credit'">＋ Received</button>
+                                <button type="button" @click="pick('debit')" :class="direction === 'debit' && 'is-on'" :aria-pressed="direction === 'debit'">− Paid out</button>
+                            </div></div>
                         <div class="uf-field"><label for="amount">Amount (PKR) <span class="uf-req">*</span></label><input id="amount" name="amount" type="number" step="0.01" min="0.01" required value="{{ old('amount', $entry->amount) }}"></div>
                         <div class="uf-field"><label for="posting_date">Date <span class="uf-req">*</span></label><input id="posting_date" name="posting_date" type="date" required value="{{ old('posting_date', $entry->posting_date->format('Y-m-d')) }}"></div>
                         <div class="uf-field"><label for="value_date">Value date</label><input id="value_date" name="value_date" type="date" value="{{ old('value_date', $entry->value_date?->format('Y-m-d')) }}"></div>
@@ -56,11 +64,11 @@
                             @foreach ($companies as $company)<option value="{{ $company->id }}" @selected((int) old('company_id', $entry->company_id) === $company->id)>{{ $company->supplier_name }}</option>@endforeach
                         </select></div>
                     <div class="uf-field"><label for="bank_entry_category_id">Category</label>
-                        <select data-placeholder="—" id="bank_entry_category_id" name="bank_entry_category_id" class="select2 bank-select">
+                        <select data-placeholder="—" id="bank_entry_category_id" name="bank_entry_category_id" x-model="category" class="select2 bank-select">
                             <option value="">—</option>
-                            @foreach ($categories->filter(fn ($c) => in_array($c->type, ['both', $entry->direction === 'credit' ? 'receipt' : 'payment'], true)) as $category)
-                                <option value="{{ $category->id }}" @selected((int) old('bank_entry_category_id', $entry->bank_entry_category_id) === $category->id)>{{ $category->name }}</option>
-                            @endforeach
+                            <template x-for="option in options" :key="option.id">
+                                <option :value="option.id" x-text="option.name" :selected="String(option.id) === String(category)"></option>
+                            </template>
                         </select></div>
                     <div class="uf-field" style="grid-column:1/-1"><label for="description">Note</label>
                         <textarea id="description" name="description" rows="3" dir="auto" placeholder="Anything the auditor should know about this entry" style="width:100%; padding:10px 12px; border:1px solid var(--ak-border-strong); border-radius:8px; font-size:14px">{{ old('description', $entry->description) }}</textarea></div>

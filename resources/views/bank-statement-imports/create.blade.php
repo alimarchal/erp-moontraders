@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-bank.head title="Import bank statement" sub="Step 1 of 3: upload the file. You check a summary before anything is imported." :crumbs="['Statement imports' => route('bank-statement-imports.index'), 'Import' => null]">
-            <a href="{{ route('bank-statement-imports.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+        <x-bank.head title="Import bank statement" sub="Step 1 of 3: upload the file. You check a summary before anything is imported." :crumbs="['Import' => null]">
+            <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
         </x-bank.head>
     </x-slot>
 
@@ -37,7 +37,7 @@
             </section>
 
             <div class="bk-row" style="justify-content:space-between">
-                <a href="{{ route('bank-statement-imports.index') }}" class="ak-btn ak-btn-ghost">Cancel</a>
+                <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-ghost">Cancel</a>
                 <button class="ak-btn ak-btn-primary">Read file &amp; show summary</button>
             </div>
         </form>

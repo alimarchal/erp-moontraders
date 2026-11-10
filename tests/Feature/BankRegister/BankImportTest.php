@@ -154,7 +154,8 @@ test('the import screens work end to end for a user with the import permission',
     $this->post(route('bank-statement-imports.confirm', $import))->assertRedirect();
     expect(BankStatementEntry::count())->toBe(4);
 
-    $this->get(route('bank-statement-imports.index'))->assertOk()->assertSee('statement.xlsx');
+    // the list of imported files is a filter of the register now
+    $this->get(route('bank-statement-entries.index'))->assertOk()->assertSee('statement.xlsx');
 });
 
 test('a user without the import permission cannot import', function () {

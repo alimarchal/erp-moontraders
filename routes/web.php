@@ -710,7 +710,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     */
     Route::get('bank-register/help', BankRegisterHelpController::class)->name('bank-register.help');
 
-    Route::resource('bank-statement-imports', BankStatementImportController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+    Route::resource('bank-statement-imports', BankStatementImportController::class)->only(['create', 'store', 'show', 'destroy']);
     Route::post('bank-statement-imports/{bankStatementImport}/confirm', [BankStatementImportController::class, 'confirm'])->name('bank-statement-imports.confirm');
 
     Route::get('bank-statement-entries/export', [BankStatementEntryController::class, 'export'])->name('bank-statement-entries.export');
@@ -731,7 +731,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('bank-receipt-scans/{bankReceiptScan}/link', [BankReceiptScanController::class, 'link'])->name('bank-receipt-scans.link');
     Route::resource('bank-receipt-scans', BankReceiptScanController::class)->only(['index', 'store', 'destroy'])->parameters(['bank-receipt-scans' => 'bankReceiptScan']);
 
-    Route::get('bank-approvals', [BankApprovalController::class, 'index'])->name('bank-approvals.index');
     Route::post('bank-approvals/bulk-approve', [BankApprovalController::class, 'bulkApprove'])->name('bank-approvals.bulk-approve');
     Route::post('bank-approvals/{bankStatementEntry}/approve', [BankApprovalController::class, 'approve'])->name('bank-approvals.approve');
     Route::post('bank-approvals/{bankStatementEntry}/reject', [BankApprovalController::class, 'reject'])->name('bank-approvals.reject');
@@ -743,7 +742,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('bank-reconciliations/{bankReconciliation}/complete', [BankReconciliationController::class, 'complete'])->name('bank-reconciliations.complete');
     Route::post('bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])->name('bank-reconciliations.cancel');
 
-    Route::prefix('settings')->group(function () {
+    // Setup lists and reports live under the Bank Register too (not under Settings / Reports); the route names are unchanged.
+    Route::prefix('bank-register')->group(function () {
         Route::get('bank-entry-categories/export/{format}', [BankEntryCategoryController::class, 'export'])->name('bank-entry-categories.export');
         Route::resource('bank-entry-categories', BankEntryCategoryController::class)->except(['show'])->parameters(['bank-entry-categories' => 'bankEntryCategory']);
         Route::resource('bank-party-aliases', BankPartyAliasController::class)->except(['show'])->parameters(['bank-party-aliases' => 'bankPartyAlias']);
@@ -751,7 +751,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('bank-cheques', BankChequeController::class)->except(['show'])->parameters(['bank-cheques' => 'bankCheque']);
     });
 
-    Route::prefix('reports/bank')->name('reports.bank.')->group(function () {
+    Route::prefix('bank-register/reports')->name('reports.bank.')->group(function () {
         Route::get('/', [BankReportController::class, 'index'])->name('index');
         Route::get('{report}/export/excel', [BankReportController::class, 'exportExcel'])->name('export.excel');
         Route::get('{report}/export/pdf', [BankReportController::class, 'exportPdf'])->name('export.pdf');

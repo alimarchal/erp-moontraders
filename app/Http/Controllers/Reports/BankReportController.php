@@ -11,7 +11,6 @@ use App\Models\BankReconciliation;
 use App\Models\BankStatementEntry;
 use App\Models\Supplier;
 use App\Services\BankRegister\BankReportService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -20,9 +19,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BankReportController extends Controller
 {
-    public function index(): RedirectResponse
+    /**
+     * The Bank Register's own list of reports: only the ones this person may open.
+     */
+    public function index(Request $request): View
     {
-        return redirect()->route('reports.index');
+        $reports = collect(BankReportService::REPORTS)->filter(fn (array $report) => $request->user()->can($report['permission']));
+
+        abort_if($reports->isEmpty(), 403);
+
+        return view('reports.bank.index', ['reports' => $reports]);
     }
 
     public function show(Request $request, string $report, BankReportService $service): View

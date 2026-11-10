@@ -98,12 +98,17 @@ test('masters respect the delete permission', function () {
     $this->get(route('bank-entry-categories.create'))->assertForbidden();
 });
 
-test('the settings page lists the bank register for a permitted user', function () {
+test('the bank register setup lists are reached from the bank register menu, not from the settings page', function () {
     Permission::findOrCreate('setting-view');
+    $this->actingAs(bankUser(['setting-view', 'bank-entry-category-list', 'bank-statement-entry-list']));
 
-    $this->actingAs(bankUser(['setting-view', 'bank-entry-category-list', 'bank-statement-entry-list']))
-        ->get(route('settings.index'))
+    $this->get(route('settings.index'))->assertOk()->assertDontSee('Bank Entry Categories');
+
+    $this->get(route('bank-statement-entries.index'))
         ->assertOk()
-        ->assertSee('Bank Register')
-        ->assertSee('Bank Entry Categories');
+        ->assertSee(route('bank-entry-categories.index'), false)
+        ->assertDontSee(route('bank-party-aliases.index'), false);
+
+    expect(route('bank-entry-categories.index'))->toContain('/bank-register/')
+        ->and(route('reports.bank.show', 'entries'))->toContain('/bank-register/reports/');
 });

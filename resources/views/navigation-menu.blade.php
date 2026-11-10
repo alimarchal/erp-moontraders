@@ -14,7 +14,10 @@
     ];
     $isSettingsSection = request()->routeIs($settingsRoutePatterns) || request()->is('settings', 'settings/*');
     // Expense records are managed from the Expense Detail report, so they belong to the Reports menu item.
-    $isReportsSection = request()->routeIs('reports.*', 'expense-details.*');
+    // Every Bank Register screen, its setup lists and its reports keep the "Bank Register" menu item highlighted.
+    $isBankSection = request()->routeIs('bank-statement-*', 'bank-approvals.*', 'bank-reconciliations.*', 'bank-receipt-scans.*', 'bank-cheques.*',
+        'bank-entry-categories.*', 'bank-party-aliases.*', 'bank-entry-rules.*', 'bank-register.*', 'reports.bank.*');
+    $isReportsSection = request()->routeIs('reports.*', 'expense-details.*') && ! $isBankSection;
 @endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 print:hidden">
     <!-- Primary Navigation Menu -->
@@ -58,7 +61,7 @@
                     @endcan
                     @can('bank-statement-entry-list')
                         @php($pendingBank = \App\Models\BankStatementEntry::query()->where('status', 'pending_approval')->count())
-                        <x-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*') || request()->routeIs('bank-receipt-scans.*') || request()->routeIs('reports.bank.*')">
+                        <x-nav-link href="{{ route('bank-statement-entries.index') }}" :active="$isBankSection">
                             {{ __('Bank Register') }}
                             @if ($pendingBank > 0)
                                 <span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{{ $pendingBank }}</span>
@@ -252,7 +255,7 @@
                 </x-responsive-nav-link>
             @endcan
             @can('bank-statement-entry-list')
-                <x-responsive-nav-link href="{{ route('bank-statement-entries.index') }}" :active="request()->routeIs('bank-statement-*') || request()->routeIs('bank-approvals.*') || request()->routeIs('bank-reconciliations.*') || request()->routeIs('bank-receipt-scans.*')">
+                <x-responsive-nav-link href="{{ route('bank-statement-entries.index') }}" :active="$isBankSection">
                     {{ __('Bank Register') }}
                 </x-responsive-nav-link>
             @endcan

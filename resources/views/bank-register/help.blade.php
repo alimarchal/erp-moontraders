@@ -1,381 +1,460 @@
-<!DOCTYPE html>
-<html lang="ur" dir="rtl">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>بینک سٹیٹمنٹ رجسٹر — استعمال کی رہنمائی</title>
+{{--
+    Bank Register -> Help (/bank-register/help). Urdu, right-to-left user guide of every screen, with the life of an
+    entry, every filter and every setting. Static page: no data is read. Screenshots live in
+    public/icons-images/bank-register-help.
+--}}
+@php
+    // the file time is added so a browser never keeps showing an older screenshot under the same name
+    $shot = fn (string $file) => asset('icons-images/bank-register-help/'.$file.'.jpg').'?v='.(@filemtime(public_path('icons-images/bank-register-help/'.$file.'.jpg')) ?: 1);
+    $sections = [
+        'what' => 'بینک رجسٹر کیا ہے', 'screen' => 'سکرین کا نقشہ', 'lifecycle' => 'انٹری کی زندگی (لائف سائیکل)', 'roles' => 'کون کیا کرتا ہے',
+        'daily' => 'روزانہ کا آسان طریقہ', 'import' => 'سٹیٹمنٹ امپورٹ کرنا', 'manual' => 'ہاتھ سے انٹری شامل کرنا', 'scans' => 'رسیدوں کا اسکین ان باکس',
+        'register' => 'رجسٹر، ٹیب اور پاپ اپ', 'filters' => 'تمام فلٹر', 'classify' => 'کمپنی اور کیٹیگری لگانا', 'attach' => 'رسید اور اٹیچمنٹ',
+        'maker' => 'پوسٹ کرنا یا منظوری کے لیے بھیجنا', 'checker' => 'منظور یا مسترد کرنا', 'posting' => 'پوسٹنگ اور رجسٹر کے اکاؤنٹس',
+        'reverse' => 'ریورس اور ڈیلیٹ', 'recon' => 'بینک ریکنسیلی ایشن', 'masters' => 'سیٹ اپ: کیٹیگری، الیاس، رولز، چیک', 'reports' => 'رپورٹس',
+        'env' => 'تمام سیٹنگز (.env)', 'print' => 'پرنٹ کرنا', 'faq' => 'عام سوالات اور مسائل',
+    ];
+@endphp
+<x-app-layout>
+    <x-slot name="header">
+        <x-bank.head title="Bank Register Help" sub="How the bank register works, step by step, in Urdu." :crumbs="['Help' => null]">
+            <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Register</a>
+            <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+        </x-bank.head>
+    </x-slot>
+
+    <x-bank.print-styles />
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --navy: #1e2a5a; --line: #e2e8f0; --soft: #f8fafc; --text: #0f172a; --muted: #475569; --green: #166534; }
-        * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; scroll-padding-top: 70px; }
-        body { margin: 0; background: #f1f5f9; color: var(--text); font-family: 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', Tahoma, serif; font-size: 18px; line-height: 2; }
-        .bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 10px; justify-content: space-between; align-items: center; padding: 10px 24px; background: #fff; border-bottom: 1px solid var(--line); }
-        .bar h1 { margin: 0; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif; font-size: 22px; color: var(--navy); }
-        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 18px; border: 1px solid var(--navy); border-radius: 8px; background: var(--navy); color: #fff; font: inherit; font-size: 16px; cursor: pointer; text-decoration: none; }
-        .btn.light { background: #fff; color: var(--navy); }
-        main { max-width: 940px; margin: 24px auto; padding: 0 16px 48px; }
-        section { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 18px 24px; margin-bottom: 18px; }
-        h2 { margin: 0 0 8px; font-size: 22px; color: var(--navy); font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif; line-height: 2.2; }
-        h3 { margin: 14px 0 4px; font-size: 19px; color: var(--green); }
-        p { margin: 6px 0; }
-        ol, ul { margin: 6px 0; padding-inline-start: 26px; }
-        li { margin: 4px 0; }
-        .note { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 8px 14px; margin: 10px 0; font-size: 17px; }
-        .tip { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 8px 14px; margin: 10px 0; font-size: 17px; }
-        .warn { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 8px 14px; margin: 10px 0; font-size: 17px; }
-        figure { margin: 12px 0; }
-        figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; display: block; }
-        figcaption { margin-top: 4px; font-size: 15px; color: var(--muted); text-align: center; }
-        table { width: 100%; border-collapse: collapse; font-size: 16px; line-height: 1.9; margin: 8px 0; }
-        th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: right; vertical-align: top; }
-        th { background: var(--soft); }
-        .en { direction: ltr; unicode-bidi: isolate; font-family: Inter, Arial, sans-serif; font-size: 0.85em; background: #eef2ff; border-radius: 6px; padding: 0 6px; white-space: nowrap; }
-        code.en { background: #f1f5f9; }
-        .badge { display: inline-block; padding: 0 12px; border-radius: 999px; font-size: 15px; }
-        .b-gray { background: #f3f4f6; color: #374151; } .b-blue { background: #dbeafe; color: #1e40af; } .b-amber { background: #fef3c7; color: #92400e; }
-        .b-red { background: #fee2e2; color: #991b1b; } .b-green { background: #dcfce7; color: #166534; } .b-teal { background: #ccfbf1; color: #115e59; } .b-purple { background: #f3e8ff; color: #6b21a8; }
-        .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0; }
-        .flow span.step { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 2px 12px; font-size: 16px; }
-        .toc a { color: var(--navy); text-decoration: none; } .toc a:hover { text-decoration: underline; }
-        .toc ol { columns: 2; }
-        @media (max-width: 640px) { .toc ol { columns: 1; } body { font-size: 17px; } }
-        @media print { .bar .btn { display: none; } body { background: #fff; font-size: 15px; } section { break-inside: avoid; border-color: #cbd5e1; } .bar { position: static; } }
+        .bh { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', Tahoma, serif; font-size: 17px; line-height: 2.5; color: var(--ak-text); }
+        .bh-layout { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+        @media (min-width: 1024px) { .bh-layout { grid-template-columns: 270px minmax(0, 1fr); } .bh-toc { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; } }
+        .bh-toc, .bh section { background: #fff; border: 1px solid var(--ak-border); border-radius: var(--ak-radius); box-shadow: var(--ak-shadow); }
+        .bh-toc { padding: 14px 18px; font-size: 15px; line-height: 2.3; }
+        .bh-toc b { display: block; color: var(--ak-navy); font-size: 17px; }
+        .bh-toc ol { margin: 0; padding-inline-start: 24px; list-style: decimal; }
+        .bh-toc a { color: var(--ak-text); text-decoration: none; } .bh-toc a:hover { color: var(--ak-navy); text-decoration: underline; }
+        .bh-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .bh section { padding: 20px 26px; scroll-margin-top: 16px; }
+        .bh h2 { margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--ak-line); font-size: 24px; font-weight: 700; line-height: 2.2; color: var(--ak-navy); }
+        .bh h3 { margin: 16px 0 4px; font-size: 19px; font-weight: 700; line-height: 2.2; color: #166534; }
+        .bh p { margin: 6px 0; }
+        .bh ol, .bh ul { margin: 6px 0; padding-inline-start: 28px; } .bh ol { list-style: decimal; } .bh ul { list-style: disc; } .bh li { margin: 2px 0; }
+        .bh .en { direction: ltr; unicode-bidi: isolate; display: inline-block; padding: 0 7px; border-radius: 6px; background: #eef2ff; color: var(--ak-navy); font-family: Figtree, Inter, Arial, sans-serif; font-size: 13.5px; font-weight: 600; line-height: 1.7; white-space: nowrap; }
+        .bh code.en { background: #f1f5f9; font-family: ui-monospace, Menlo, monospace; font-weight: 500; }
+        .bh .note, .bh .tip, .bh .warn { margin: 12px 0; padding: 8px 16px; border-radius: 10px; border: 1px solid; font-size: 16px; }
+        .bh .note { background: #fffbeb; border-color: #fcd34d; } .bh .tip { background: #eff6ff; border-color: #bfdbfe; } .bh .warn { background: #fef2f2; border-color: #fecaca; }
+        .bh table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15.5px; line-height: 2.3; }
+        .bh th, .bh td { border: 0.75pt solid #000; padding: 4px 12px; text-align: right; vertical-align: top; }
+        .bh th { background: #e6e6e6; font-weight: 700; white-space: nowrap; }
+        .bh td.en-cell { direction: ltr; text-align: left; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.8; white-space: nowrap; }
+        .bh .badge { display: inline-block; padding: 0 12px; border-radius: 999px; direction: ltr; font-family: Figtree, Inter, Arial, sans-serif; font-size: 13px; font-weight: 700; line-height: 1.9; white-space: nowrap; }
+        .bh .b-gray { background: #f1f5f9; color: #334155; } .bh .b-blue { background: #dbeafe; color: #1e40af; } .bh .b-amber { background: #fef3c7; color: #92400e; }
+        .bh .b-red { background: #fee2e2; color: #991b1b; } .bh .b-green { background: #dcfce7; color: #166534; }
+        .bh .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; font-size: 15.5px; }
+        .bh .flow .step { padding: 0 14px; border: 1px solid #c7d2fe; border-radius: 10px; background: #eef2ff; }
+        .bh .flow .arrow { color: var(--ak-muted); }
+        .bh figure { margin: 14px 0; }
+        .bh figure img { display: block; width: 100%; height: auto; border: 1px solid var(--ak-border); border-radius: 10px; }
+        .bh figcaption { margin-top: 2px; font-size: 14.5px; color: var(--ak-muted); text-align: center; }
+        .bh .shots { display: grid; gap: 14px; grid-template-columns: 1fr; }
+        @media (min-width: 1100px) { .bh .shots { grid-template-columns: 1fr 1fr; } }
+        @media print {
+            .bh-layout { display: block; } .bh-toc { display: none; } .bh { font-size: 13px; line-height: 2.2; }
+            .bh section { border: 0; box-shadow: none; padding: 0 0 10px; break-inside: auto; } .bh figure, .bh table tr { break-inside: avoid; }
+        }
     </style>
-</head>
-<body>
-    <div class="bar">
-        <h1>بینک سٹیٹمنٹ رجسٹر — استعمال کی رہنمائی</h1>
-        <div style="display:flex; gap:8px">
-            <button type="button" class="btn" onclick="window.print()">🖨 پرنٹ کریں</button>
-            <button type="button" class="btn light" onclick="window.close()">بند کریں</button>
+
+    <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+        <div class="bh" lang="ur" dir="rtl">
+            <div class="bh-layout">
+                <nav class="bh-toc bank-noprint" aria-label="فہرست">
+                    <b>فہرست</b>
+                    <ol>
+                        @foreach ($sections as $id => $title)<li><a href="#{{ $id }}">{{ $title }}</a></li>@endforeach
+                    </ol>
+                </nav>
+
+                <div class="bh-main">
+                    <section id="what">
+                        <h2>بینک سٹیٹمنٹ رجسٹر کیا ہے؟</h2>
+                        <p>بینک، کیش اور موبائل والٹ کے ہر اکاؤنٹ میں آنے اور جانے والی <b>ہر رقم</b> یہاں لکھی جاتی ہے۔ ہر رقم پر <b>کمپنی اور کیٹیگری</b> لگتی ہے، اس کی <b>رسید</b> ساتھ لگتی ہے، بڑی رقم کو دوسرا آدمی <b>منظور</b> کرتا ہے، پھر وہ <b>پوسٹ</b> ہو کر کھاتے میں جاتی ہے، اور مہینے کے آخر میں بینک کی سٹیٹمنٹ سے <b>ملائی</b> جاتی ہے۔</p>
+                        <div class="flow">
+                            <span class="step">امپورٹ یا ہاتھ سے انٹری</span><span class="arrow">←</span>
+                            <span class="step">کمپنی اور کیٹیگری</span><span class="arrow">←</span>
+                            <span class="step">رسید لگانا</span><span class="arrow">←</span>
+                            <span class="step">پوسٹ یا منظوری کے لیے بھیجنا</span><span class="arrow">←</span>
+                            <span class="step">چیکر کی منظوری</span><span class="arrow">←</span>
+                            <span class="step">پوسٹنگ</span><span class="arrow">←</span>
+                            <span class="step">ریکنسیلی ایشن اور لاک</span>
+                        </div>
+                        <div class="tip">رجسٹر کا حساب باقی سسٹم (جی آر این، سیٹلمنٹ، گڈز ایشو) سے <b>بالکل الگ</b> ہے۔ یہاں کی کوئی انٹری ان کے بیلنس نہیں بدلتی۔</div>
+                    </section>
+
+                    <section id="screen">
+                        <h2>سکرین کا نقشہ</h2>
+                        <p>اوپر کے مینو میں <span class="en">Bank Register</span> دبائیں تو رجسٹر کھلتا ہے۔ بینک رجسٹر کی ہر چیز اسی ایک جگہ سے ملتی ہے؛ <span class="en">Settings</span> یا <span class="en">Reports</span> میں اب اس کا کوئی حصہ نہیں۔</p>
+                        <table>
+                            <tr><th>بٹن</th><th>کام</th></tr>
+                            <tr><td><span class="en">Filters</span></td><td>تلاش اور فلٹر کا خانہ کھولتا یا بند کرتا ہے۔ جتنے فلٹر لگے ہوں، بٹن پر ان کی گنتی آتی ہے۔</td></tr>
+                            <tr><td><span class="en">+ Add entry</span></td><td>ہاتھ سے نئی انٹری۔</td></tr>
+                            <tr><td><span class="en">Import statement</span></td><td>بینک کی ایکسل یا <span class="en">CSV</span> فائل سے انٹریاں لانا۔</td></tr>
+                            <tr><td><span class="en">? Help</span></td><td>یہی رہنمائی۔ ہر صفحے پر موجود ہے۔</td></tr>
+                            <tr><td><span class="en">Menu</span></td><td>باقی تمام سکرینیں: روز کا کام، رپورٹس اور سیٹ اپ۔</td></tr>
+                        </table>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('01-register') }}" alt="رجسٹر" loading="lazy"><figcaption>رجسٹر: اوپر بٹن، پھر حالت کے ٹیب، پھر انٹریاں</figcaption></figure>
+                            <figure><img src="{{ $shot('36-menu') }}" alt="مینو" loading="lazy"><figcaption><span class="en">Menu</span> دبانے پر کھلنے والا خانہ</figcaption></figure>
+                        </div>
+                        <h3>مینو کے تین حصے</h3>
+                        <table>
+                            <tr><th>حصہ</th><th>اس میں کیا ہے</th></tr>
+                            <tr><td><span class="en">Daily work</span></td><td><span class="en">Register</span> (رجسٹر)، <span class="en">Receipt scans</span> (رسیدوں کا ان باکس)، <span class="en">Reconciliation</span> (سٹیٹمنٹ سے ملانا)، <span class="en">Cheques</span> (چیک رجسٹر)۔</td></tr>
+                            <tr><td><span class="en">Reports</span></td><td>بینک رجسٹر کی رپورٹس، <span class="en">Export to Excel</span> (جو انٹریاں اس وقت سامنے ہیں وہی، انہی فلٹر کے ساتھ) اور <span class="en">Print this page</span>۔</td></tr>
+                            <tr><td><span class="en">Setup</span></td><td><span class="en">Categories</span>، <span class="en">Party aliases</span>، <span class="en">Auto-classify rules</span> اور یہ رہنمائی۔</td></tr>
+                        </table>
+                        <div class="note">منظوری کی الگ سکرین اور امپورٹ کی ہوئی فائلوں کی الگ فہرست اب نہیں ہے۔ منظوری کے لیے رجسٹر کا ٹیب <span class="en">Waiting for approval</span> ہے، اور کسی ایک فائل کی لائنیں دیکھنے کے لیے فلٹر <span class="en">Statement file</span>۔</div>
+                    </section>
+
+                    <section id="lifecycle">
+                        <h2>انٹری کی زندگی (لائف سائیکل)</h2>
+                        <p>ہر انٹری ان حالتوں سے گزرتی ہے۔ رجسٹر کے ٹیب بھی اسی ترتیب میں ہیں اور ہر ٹیب پر گنتی لکھی ہے۔ ٹیب ہمیشہ نظر آتے ہیں؛ جس میں کوئی انٹری نہ ہو وہ ہلکا دکھتا ہے۔</p>
+                        <table>
+                            <tr><th>حالت</th><th>مطلب</th><th>اب کون کیا کرے</th><th>اگلا قدم</th></tr>
+                            <tr><td><span class="badge b-gray">To classify</span></td><td>انٹری آ گئی ہے مگر کیٹیگری نہیں لگی۔</td><td>میکر <span class="en">Classify</span> دبا کر کمپنی اور کیٹیگری لگائے۔</td><td><span class="en">Ready to post</span></td></tr>
+                            <tr><td><span class="badge b-blue">Ready to post</span></td><td>کیٹیگری لگ چکی ہے، ابھی کھاتے میں نہیں گئی۔</td><td>میکر <span class="en">Post</span> دبائے۔ چھوٹی رقم فوراً پوسٹ، بڑی منظوری کو جاتی ہے۔</td><td><span class="en">Posted</span> یا <span class="en">Waiting for approval</span></td></tr>
+                            <tr><td><span class="badge b-amber">Waiting for approval</span></td><td>رقم حد سے زیادہ ہے؛ دوسرے آدمی کی منظوری چاہیے۔</td><td>چیکر (اور بہت بڑی رقم پر سینئر) <span class="en">Approve</span> یا <span class="en">Reject</span> کرے۔</td><td><span class="en">Posted</span> یا <span class="en">Rejected</span></td></tr>
+                            <tr><td><span class="badge b-red">Rejected</span></td><td>چیکر نے وجہ لکھ کر واپس کر دی۔</td><td>میکر درست کر کے دوبارہ <span class="en">Post</span> دبائے۔</td><td><span class="en">Waiting for approval</span></td></tr>
+                            <tr><td><span class="badge b-green">Posted</span></td><td>کھاتے میں چلی گئی، رسید نمبر مل گیا، لاک ہے۔</td><td>غلط ہو تو <span class="en">Reverse entry</span>؛ ورنہ ریکنسیلی ایشن کا انتظار۔</td><td><span class="en">Reconciled</span> یا <span class="en">Reversed</span></td></tr>
+                            <tr><td><span class="badge b-green">Reconciled</span></td><td>بینک سٹیٹمنٹ سے مل گئی اور مدت لاک ہو گئی۔</td><td>کچھ نہیں۔ بدلنا ہو تو پہلے ریکنسیلی ایشن واپس کرنی ہوگی۔</td><td>—</td></tr>
+                            <tr><td><span class="badge b-red">Reversed</span></td><td>پوسٹ ہوئی تھی، پھر الٹی جرنل انٹری سے واپس لی گئی۔</td><td>میکر <span class="en">Edit</span> سے درست کر کے دوبارہ <span class="en">Post</span> کرے (رسید نمبر وہی رہتا ہے) یا ڈیلیٹ کرے۔</td><td><span class="en">Posted</span></td></tr>
+                        </table>
+                        <div class="tip">ٹیبل کی قطار میں حالت کے نیچے وہی لفظ لکھا ہوتا ہے جو ٹیب پر ہے، اس لیے الجھن نہیں ہوتی۔ ہر قدم (کس نے، کب) انٹری کی <span class="en">History</span> میں لکھا جاتا ہے۔</div>
+                    </section>
+
+                    <section id="roles">
+                        <h2>کون کیا کرتا ہے</h2>
+                        <table>
+                            <tr><th>کردار</th><th>کیا کر سکتا ہے</th></tr>
+                            <tr><td>میکر / اکاؤنٹنٹ <span class="en">accountant</span></td><td>سٹیٹمنٹ امپورٹ، ہاتھ سے انٹری، رسیدیں اسکین کرنا اور جوڑنا، کمپنی اور کیٹیگری لگانا، فائلیں لگانا، پوسٹ کرنا یا منظوری کے لیے بھیجنا۔ حد سے کم رقم خود پوسٹ کر سکتا ہے۔ تمام رپورٹیں دیکھ سکتا ہے۔</td></tr>
+                            <tr><td>چیکر <span class="en">bank-checker</span></td><td>انتظار والی انٹری منظور یا مسترد کرنا، ریورس کرنا، ریکنسیلی ایشن مکمل کرنا۔ منظوری سے پہلے رسید کھول کر دیکھ سکتا ہے۔</td></tr>
+                            <tr><td>سینئر منظور کنندہ <span class="en">bank-senior-approver</span></td><td>بہت بڑی رقم کی دوسری منظوری۔</td></tr>
+                            <tr><td>آڈیٹر <span class="en">auditor</span></td><td>سب کچھ دیکھنا (رسیدوں سمیت)، ایکسپورٹ اور رپورٹیں۔ کچھ بدل نہیں سکتا۔</td></tr>
+                            <tr><td>ایڈمن</td><td>سب کچھ، اور اجازتیں دینا (<span class="en">Settings › Roles</span>)۔ ڈیلیٹ کی اجازت صرف سپر ایڈمن کے پاس ہے۔</td></tr>
+                        </table>
+                        <div class="note"><b>اصول:</b> جس نے انٹری بھیجی وہ اسے خود منظور نہیں کر سکتا، اور ایک ہی آدمی دونوں منظوریاں نہیں دے سکتا۔ جو بٹن یا سکرین آپ کو نظر نہ آئے، اس کی اجازت آپ کے پاس نہیں۔</div>
+                    </section>
+
+                    <section id="daily">
+                        <h2>روزانہ کا آسان طریقہ</h2>
+                        <ol>
+                            <li><b>رسیدیں:</b> دن بھر کی رسیدیں، پرچیاں اور چیک کی کاپیاں موبائل سے فوٹو کر کے <span class="en">Menu › Receipt scans</span> میں ڈال دیں۔</li>
+                            <li><b>انٹری:</b> ہر رقم کے لیے <span class="en">+ Add entry</span> دبائیں، رقم اور پارٹی لکھیں۔ <span class="en">Save &amp; add another</span> سے اگلی انٹری فوراً کھل جاتی ہے۔</li>
+                            <li><b>سٹیٹمنٹ آئے تو:</b> <span class="en">Import statement</span> سے فائل لگائیں۔</li>
+                            <li><b>درجہ بندی:</b> ٹیب <span class="en">To classify</span> کھولیں اور سب پر کمپنی اور کیٹیگری لگا دیں۔</li>
+                            <li><b>پوسٹ:</b> ٹیب <span class="en">Ready to post</span> کھولیں، سب پر ٹک لگا کر <span class="en">Submit selected</span> دبائیں۔</li>
+                            <li><b>رسید رہ گئی ہو؟</b> ٹیب کی لائن کے آخر میں پیلا بٹن <span class="en">No receipt</span> ایسی تمام انٹریاں دکھاتا ہے۔</li>
+                            <li><b>مہینے کے آخر میں:</b> <span class="en">Menu › Reconciliation</span> سے سٹیٹمنٹ ملائیں اور مدت لاک کریں۔</li>
+                        </ol>
+                        <div class="tip">نیا بینک، کیش یا والٹ اکاؤنٹ <span class="en">Settings › Bank Accounts</span> میں بنتا ہے؛ بنتے ہی رجسٹر میں آ جاتا ہے۔</div>
+                    </section>
+
+                    <section id="import">
+                        <h2>سٹیٹمنٹ امپورٹ کرنا</h2>
+                        <ol>
+                            <li>رجسٹر پر <span class="en">Import statement</span> دبائیں۔</li>
+                            <li><span class="en">Bank account</span> چنیں اور ایکسل یا <span class="en">CSV</span> فائل لگائیں۔ فائل کی پہلی قطار میں کم از کم <span class="en">Posting date</span> اور <span class="en">Debit / Credit</span> کے عنوان ہوں (یا ایک <span class="en">Amount</span> کالم جس کے ساتھ <span class="en">Dr/Cr</span> ہو)۔ کالموں کی ترتیب کوئی بھی ہو سکتی ہے۔</li>
+                            <li>پرنٹ شدہ سٹیٹمنٹ کے اعداد لکھیں: <span class="en">Opening balance</span>، <span class="en">Closing balance</span>، <span class="en">Total debits</span>، <span class="en">Total credits</span>۔ <b>یہ ضرور لکھیں</b>؛ نظام فائل کا جوڑ نکال کر ان سے ملاتا ہے۔</li>
+                            <li><span class="en">Read file &amp; show summary</span> دبائیں۔ خلاصہ آئے گا: کتنی قطاریں نئی ہیں، کتنی پہلے سے ہیں، کتنی میں غلطی ہے (غلط قطاروں کی فہرست نیچے ہوتی ہے)۔</li>
+                            <li>تینوں جانچیں سبز <span class="badge b-green">Tallies</span> ہوں تو <span class="en">Confirm import</span> دبائیں۔ سرخ <span class="badge b-red">Does not tally</span> ہو تو امپورٹ بند رہتی ہے؛ فائل یا اعداد درست کر کے دوبارہ لگائیں۔</li>
+                        </ol>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('04-import-form') }}" alt="امپورٹ فارم" loading="lazy"><figcaption>پہلا قدم: فائل اور سٹیٹمنٹ کے اعداد</figcaption></figure>
+                            <figure><img src="{{ $shot('05-import-preview') }}" alt="امپورٹ کا خلاصہ" loading="lazy"><figcaption>خلاصہ اور جوڑ کی جانچ</figcaption></figure>
+                        </div>
+                        <div class="tip">ایک ہی فائل دوبارہ لگ جائے تو پرانی انٹریاں دوبارہ نہیں بنتیں؛ وہ <span class="en">Already in system</span> میں گنی جاتی ہیں۔ بعد میں اسی فائل کی لائنیں دیکھنی ہوں تو رجسٹر میں <span class="en">Filters › More filters › Statement file</span> سے فائل چنیں؛ وہاں سے <span class="en">Open its import summary</span> پر خلاصہ بھی کھل جاتا ہے۔</div>
+                    </section>
+
+                    <section id="manual">
+                        <h2>ہاتھ سے انٹری شامل کرنا</h2>
+                        <p>سٹیٹمنٹ فائل نہ ہو، یا رقم آج ہی لکھنی ہو، تو <span class="en">+ Add entry</span> دبائیں۔ سارا فارم ایک ہی خانے میں ہے۔</p>
+                        <ol>
+                            <li><b>رقم آئی یا گئی:</b> <span class="en">+ Received</span> یا <span class="en">− Paid out</span> دبائیں اور رقم لکھیں۔</li>
+                            <li>بینک اکاؤنٹ اور تاریخ چنیں (آج کی تاریخ لگی ہوتی ہے؛ آنے والی تاریخ نہیں چلتی)۔</li>
+                            <li>پارٹی کا نام لکھیں۔ اگر اس نام کا الیاس بنا ہو تو کمپنی خود لگ جاتی ہے۔</li>
+                            <li>کیٹیگری چنیں (پوسٹ کرنے کے لیے ضروری ہے) یا <span class="en">decide later</span> رہنے دیں۔ کیٹیگریاں رقم کی سمت کے حساب سے خود چھن جاتی ہیں۔</li>
+                            <li>رسید ابھی لگانی ہو تو اسی خانے میں فائل چنیں۔</li>
+                            <li>ریفرنس / چیک نمبر، نریشن، نوٹ اور ویلیو ڈیٹ کے لیے نیچے <span class="en">More details</span> کھولیں۔</li>
+                        </ol>
+                        <table>
+                            <tr><th>بٹن</th><th>کام</th></tr>
+                            <tr><td><span class="en">Save</span></td><td>صرف محفوظ کرتا ہے اور انٹری کا صفحہ کھولتا ہے۔</td></tr>
+                            <tr><td><span class="en">Save &amp; add another</span></td><td>محفوظ کر کے اگلی انٹری کا خالی فارم کھولتا ہے، وہی اکاؤنٹ، تاریخ اور سمت کے ساتھ۔</td></tr>
+                            <tr><td><span class="en">Save &amp; submit</span></td><td>محفوظ کر کے فوراً پوسٹ کرتا ہے؛ رقم حد سے زیادہ ہو تو منظوری کے لیے بھیج دیتا ہے۔ کیٹیگری ضروری ہے۔</td></tr>
+                        </table>
+                        <figure><img src="{{ $shot('24-add-entry') }}" alt="نئی انٹری" loading="lazy"><figcaption>ہاتھ سے نئی انٹری</figcaption></figure>
+                        <div class="note"><b>دوبارہ تو نہیں ڈل گئی؟</b> اسی اکاؤنٹ، تاریخ اور رقم کی انٹری پہلے سے ہو تو پیلا انتباہ آتا ہے اور موجودہ انٹری کا لنک ملتا ہے۔ واقعی الگ لین دین ہو تو <span class="en">save it anyway</span> پر ٹک لگا کر محفوظ کریں۔</div>
+                    </section>
+
+                    <section id="scans">
+                        <h2>رسیدوں کا اسکین ان باکس</h2>
+                        <p>رسید ملتے ہی فوٹو یا اسکین ان باکس میں ڈال دیں، چاہے انٹری ابھی نہ بنی ہو۔ اس طرح رسید کبھی گم نہیں ہوتی۔</p>
+                        <ol>
+                            <li><span class="en">Menu › Receipt scans</span> کھولیں۔</li>
+                            <li>فائلیں خانے میں گھسیٹ کر چھوڑیں، رسید کی تاریخ لکھیں۔ <b>ایک ہی فائل ہو تو رقم اور سمت بھی لکھ دیں</b>؛ نظام خود ملتی جلتی انٹری ڈھونڈ لیتا ہے۔</li>
+                            <li><span class="en">Save to inbox</span> دبائیں۔ ہر فائل کا اپنا کارڈ بنتا ہے۔</li>
+                            <li>ہرے ڈبے میں <span class="en">Looks like …</span> نظر آئے تو <span class="en">Attach here</span>؛ نہ ملے تو <span class="en">Create entry from this scan</span> یا انٹری نمبر لکھ کر <span class="en">Link</span>۔</li>
+                        </ol>
+                        <figure><img src="{{ $shot('25-scan-inbox') }}" alt="اسکین ان باکس" loading="lazy"><figcaption>اسکین ان باکس۔ جتنی رسیدیں ابھی جڑی نہیں، ان کی گنتی <span class="en">Menu</span> کے بٹن پر آتی ہے</figcaption></figure>
+                    </section>
+
+                    <section id="register">
+                        <h2>رجسٹر، ٹیب اور پاپ اپ</h2>
+                        <h3>ٹیب</h3>
+                        <p>آٹھ ٹیب ہمیشہ اسی ترتیب میں ہیں: <span class="en">All</span>، <span class="en">To classify</span>، <span class="en">Ready to post</span>، <span class="en">Waiting for approval</span>، <span class="en">Rejected</span>، <span class="en">Posted</span>، <span class="en">Reconciled</span>، <span class="en">Reversed</span>۔ آخر میں پیلا بٹن <span class="en">No receipt</span> وہ انٹریاں دکھاتا ہے جن کی رسید نہیں لگی؛ دوبارہ دبانے سے ہٹ جاتا ہے۔</p>
+                        <p>ٹیبل کے اوپر موجودہ فہرست کے کل لکھے ہیں: انٹریاں، وصولی، ادائیگی اور نیٹ۔</p>
+                        <h3>قطار کے بٹن</h3>
+                        <table>
+                            <tr><th>بٹن</th><th>کب نظر آتا ہے</th><th>کام</th></tr>
+                            <tr><td><span class="en">Classify</span></td><td>کیٹیگری نہ لگی ہو</td><td>کمپنی اور کیٹیگری لگانے کا فارم۔</td></tr>
+                            <tr><td><span class="en">Post</span></td><td><span class="en">Ready to post</span>، <span class="en">Rejected</span> یا <span class="en">Reversed</span></td><td>پوسٹ کرتا ہے؛ رقم حد سے زیادہ ہو تو منظوری کے لیے بھیجتا ہے۔</td></tr>
+                            <tr><td><span class="en">Approve</span></td><td><span class="en">Waiting for approval</span>، اور آپ منظور کر سکتے ہوں</td><td>منظوری؛ آخری منظوری کے ساتھ ہی پوسٹ۔</td></tr>
+                            <tr><td><span class="en">Edit</span></td><td>پوسٹ ہونے سے پہلے</td><td>درستی کا فارم۔</td></tr>
+                            <tr><td>آنکھ کا نشان</td><td>ہمیشہ</td><td>ٹرانزیکشن کا پاپ اپ۔ قطار پر کہیں بھی کلک سے بھی کھلتا ہے۔</td></tr>
+                        </table>
+                        <h3>ٹرانزیکشن کا پاپ اپ</h3>
+                        <p>پاپ اپ میں چار ٹیبل ہیں: <b>۱ - Entry</b> (تاریخ، اکاؤنٹ، رقم، رسید نمبر، پارٹی، کمپنی، کیٹیگری، ریفرنس، نریشن، نوٹ، جرنل)، <b>۲ - Approval</b> (کس نے کب بھیجا اور منظور کیا)، <b>۳ - Receipt &amp; attachments</b> (فائلیں) اور <b>۴ - History</b> (ہر قدم)۔ نیچے وہی بٹن ہیں جن کی آپ کو اجازت ہے۔ <span class="en">Esc</span> یا <span class="en">Close</span> سے بند ہوتا ہے، اور <span class="en">Print</span> سے صرف وہی ٹرانزیکشن چھپتی ہے۔</p>
+                        <figure><img src="{{ $shot('03-transaction-modal') }}" alt="ٹرانزیکشن کا پاپ اپ" loading="lazy"><figcaption>ٹرانزیکشن کا پاپ اپ</figcaption></figure>
+                    </section>
+
+                    <section id="filters">
+                        <h2>تمام فلٹر</h2>
+                        <p><span class="en">Filters</span> دبائیں تو تلاش کا خانہ کھلتا ہے۔ پہلی لائن میں روز کے فلٹر ہیں؛ باقی <span class="en">More filters</span> میں۔ فلٹر چن کر <span class="en">Apply</span> دبائیں۔ فلٹر اس ٹیب پر بھی لاگو رہتے ہیں جو آپ نے کھولا ہو۔</p>
+                        <figure><img src="{{ $shot('02-filters') }}" alt="فلٹر" loading="lazy"><figcaption>فلٹر کا خانہ، <span class="en">More filters</span> کھلا ہوا</figcaption></figure>
+                        <table>
+                            <tr><th>فلٹر</th><th>کیا ڈھونڈتا ہے</th></tr>
+                            <tr><td><span class="en">Search</span></td><td>کوئی بھی لفظ: پارٹی، ریفرنس، رسید نمبر، نریشن، نوٹ یا لگی ہوئی فائل کا نام۔ اردو بھی چلتی ہے۔</td></tr>
+                            <tr><td><span class="en">From</span> / <span class="en">To</span></td><td>تاریخ سے تاریخ تک۔</td></tr>
+                            <tr><td><span class="en">Account</span></td><td>ایک بینک، کیش یا والٹ اکاؤنٹ۔</td></tr>
+                            <tr><td><span class="en">Money</span></td><td><span class="en">Received</span> (رقم آئی) یا <span class="en">Paid out</span> (رقم گئی)۔</td></tr>
+                            <tr><td><span class="en">Company / principal</span></td><td>ایک کمپنی، یا <span class="en">no company</span> یعنی جن پر کمپنی نہیں لگی۔</td></tr>
+                            <tr><td><span class="en">Category</span></td><td>ایک کیٹیگری، یا <span class="en">no category</span>۔</td></tr>
+                            <tr><td><span class="en">Amount from</span> / <span class="en">Amount to</span></td><td>رقم کی حد، مثلاً ۱۰ لاکھ سے اوپر کی سب انٹریاں۔</td></tr>
+                            <tr><td><span class="en">Reference</span></td><td>بینک کا ریفرنس یا چیک نمبر۔</td></tr>
+                            <tr><td><span class="en">Receipt no.</span></td><td>رجسٹر کا رسید نمبر، جیسے <span class="en">BR-2026-27-000001</span>۔</td></tr>
+                            <tr><td><span class="en">Receipt file</span></td><td><span class="en">Has attachment</span> یا <span class="en">No attachment</span>۔</td></tr>
+                            <tr><td><span class="en">Review flag</span></td><td>جن پر جائزے کا نشان لگا ہے یا نہیں لگا۔</td></tr>
+                            <tr><td><span class="en">Statement file</span></td><td>کسی ایک امپورٹ کی ہوئی فائل کی لائنیں۔</td></tr>
+                            <tr><td><span class="en">Maker</span></td><td>جس آدمی نے انٹری بھیجی۔</td></tr>
+                        </table>
+                        <ul>
+                            <li><b>Quick dates:</b> ایک کلک میں <span class="en">Today</span>، <span class="en">Yesterday</span>، <span class="en">This week</span>، <span class="en">This month</span>، <span class="en">Last month</span>۔ <span class="en">× Clear</span> سب فلٹر ہٹا دیتا ہے۔</li>
+                            <li><b>گولیاں:</b> جو فلٹر لگا ہو وہ ٹیب کے نیچے گولی کی شکل میں دکھتا ہے؛ × سے صرف وہی ہٹتا ہے۔</li>
+                            <li><b>ایکسپورٹ:</b> فلٹر لگا کر <span class="en">Menu › Export to Excel</span> دبائیں تو وہی انٹریاں ایکسل میں آتی ہیں۔</li>
+                        </ul>
+                    </section>
+
+                    <section id="classify">
+                        <h2>کمپنی اور کیٹیگری لگانا</h2>
+                        <div class="tip"><b>کمپنی</b> سے مراد پرنسپل / سپلائر ہے (نیسلے، اینگرو وغیرہ)؛ فہرست سسٹم کے <span class="en">Suppliers</span> سے آتی ہے۔ ہر ڈراپ ڈاؤن میں تلاش ہے: ڈبے پر کلک کریں، چند حروف لکھیں، نتیجہ چنیں۔</div>
+                        <h3>ایک ایک کر کے</h3>
+                        <p>قطار میں <span class="en">Classify</span> (یا <span class="en">Edit</span>) دبائیں، کمپنی اور کیٹیگری چنیں، <span class="en">Save</span> دبائیں۔ کیٹیگری لگتے ہی انٹری <span class="badge b-blue">Ready to post</span> ہو جاتی ہے۔ ہاتھ سے بنائی ہوئی انٹری میں رقم، تاریخ، سمت اور پارٹی بھی یہیں درست ہوتی ہیں؛ امپورٹ کی ہوئی انٹری میں صرف کمپنی، کیٹیگری اور نوٹ بدلتے ہیں۔</p>
+                        <h3>بہت سی ایک ساتھ</h3>
+                        <ol>
+                            <li>قطاروں کے شروع میں ٹک لگائیں (سب کے لیے سب سے اوپر والا خانہ)۔</li>
+                            <li>سکرین کے <b>نیچے</b> ایک پٹی آتی ہے۔ اس میں کمپنی اور/یا کیٹیگری چنیں۔</li>
+                            <li><span class="en">Remember this party next time</span> پر ٹک لگائیں تو نظام اس پارٹی کا الیاس اور رول خود بنا لیتا ہے؛ اگلی بار یہی نام خود لگ جائے گا۔</li>
+                            <li><span class="en">Apply</span> دبائیں۔ اسی پٹی میں <span class="en">Submit selected</span> سے ٹک کی ہوئی سب انٹریاں پوسٹ ہو جاتی ہیں۔</li>
+                        </ol>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('07-edit-entry') }}" alt="انٹری کی درستی" loading="lazy"><figcaption>ایک انٹری کا فارم</figcaption></figure>
+                            <figure><img src="{{ $shot('06-classify-bulk') }}" alt="اکٹھی درجہ بندی" loading="lazy"><figcaption>ٹک لگانے پر نیچے آنے والی پٹی</figcaption></figure>
+                        </div>
+                        <div class="tip"><span class="en">Auto-classify</span> دبائیں تو نظام الیاس، رولز اور چیک رجسٹر تینوں کو تمام باقی انٹریوں پر چلا دیتا ہے۔</div>
+                    </section>
+
+                    <section id="attach">
+                        <h2>رسید اور اٹیچمنٹ</h2>
+                        <p>انٹری کے پاپ اپ یا صفحے پر ٹیبل <b>۳ - Receipt &amp; attachments</b> کے نیچے تین خانے ہیں: فائل چنیں، <span class="en">Kind of file</span> میں قسم (<span class="en">Receipt / Cheque / Deposit slip / Statement / Other</span>) چنیں، چاہیں تو وضاحت لکھیں، اور <span class="en">Attach</span> دبائیں۔ ایک ساتھ دس تک فائلیں لگتی ہیں (پی ڈی ایف، تصویر، ایکسل)۔</p>
+                        <figure><img src="{{ $shot('08-attachments') }}" alt="اٹیچمنٹ" loading="lazy"><figcaption>رسید لگانے کے خانے، اور نیچے تاریخچہ اور بٹن</figcaption></figure>
+                        <ul>
+                            <li>فائلیں نجی ہیں؛ صرف وہی کھول سکتا ہے جسے رجسٹر کی اجازت ہو۔</li>
+                            <li>ریکنسائل ہو جانے کے بعد اٹیچمنٹ نہ لگتی ہے نہ ہٹتی ہے۔</li>
+                        </ul>
+                    </section>
+
+                    <section id="maker">
+                        <h2>پوسٹ کرنا یا منظوری کے لیے بھیجنا</h2>
+                        <p>کیٹیگری لگنے کے بعد قطار میں <span class="en">Post</span> دبائیں (یا بہت سی ٹک کر کے <span class="en">Submit selected</span>)۔ آگے کیا ہوتا ہے، یہ رقم پر منحصر ہے:</p>
+                        <table>
+                            <tr><th>رقم</th><th>کیا ہوتا ہے</th></tr>
+                            <tr><td>۱۰ لاکھ سے کم</td><td>فوراً پوسٹ؛ رسید نمبر بن جاتا ہے۔ کسی منظوری کی ضرورت نہیں۔</td></tr>
+                            <tr><td>۱۰ لاکھ یا زیادہ</td><td>چیکر کی منظوری ضروری ہے۔ حالت <span class="badge b-amber">Waiting for approval</span> ہو جاتی ہے۔</td></tr>
+                            <tr><td>۱ کروڑ یا زیادہ</td><td>چیکر کے بعد سینئر منظور کنندہ کی دوسری منظوری بھی ضروری ہے۔</td></tr>
+                        </table>
+                        <div class="warn">انتظار والی انٹری کی <b>رقم، تاریخ، کمپنی یا کیٹیگری</b> بدلی جائے تو منظوری کی درخواست واپس ہو جاتی ہے اور دوبارہ بھیجنا پڑتا ہے۔ صرف نوٹ بدلنے سے کچھ نہیں بدلتا۔</div>
+                    </section>
+
+                    <section id="checker">
+                        <h2>منظور یا مسترد کرنا</h2>
+                        <p>منظوری کی الگ سکرین نہیں ہے۔ رجسٹر کا ٹیب <span class="en">Waiting for approval</span> ہی چیکر کا ان باکس ہے؛ اوپر کے مینو میں <span class="en">Bank Register</span> کے ساتھ انتظار والی انٹریوں کی گنتی بھی آتی ہے۔</p>
+                        <ol>
+                            <li>ٹیب <span class="en">Waiting for approval</span> کھولیں۔ اوپر نیلی پٹی میں منظوری کی حدیں لکھی ہیں۔</li>
+                            <li>حالت کے نیچے لکھا ہے کہ چیکر (اور سینئر) کی منظوری ہو چکی یا باقی ہے، اور کس نے کب بھیجی۔</li>
+                            <li><b>رسید دیکھیں:</b> <span class="en">Files</span> کے خانے میں فائل کے نام پر کلک کریں تو رسید نئے ٹیب میں کھلتی ہے۔ <span class="badge b-amber">No receipt</span> لکھا ہو تو منظوری سے پہلے رسید مانگیں۔</li>
+                            <li>ٹھیک ہو تو <span class="en">Approve</span>۔ آخری ضروری منظوری کے ساتھ ہی انٹری پوسٹ ہو جاتی ہے۔</li>
+                            <li>غلط ہو تو آنکھ کے نشان سے پاپ اپ کھولیں اور <span class="en">Reject</span> دبائیں؛ کھڑکی میں وجہ لکھنی ضروری ہے۔</li>
+                            <li>بہت سی ایک ساتھ: ٹک لگائیں اور نیچے کی پٹی میں <span class="en">Approve selected</span> (ایک بار میں زیادہ سے زیادہ ۱۰۰)۔</li>
+                        </ol>
+                        <figure><img src="{{ $shot('10-approvals') }}" alt="منظوری کا ٹیب" loading="lazy"><figcaption>ٹیب <span class="en">Waiting for approval</span>۔ یہاں انٹری بھیجنے والا خود لاگ ان ہے، اس لیے <span class="en">Approve</span> کا بٹن نہیں</figcaption></figure>
+                        <div class="tip">اپنی بھیجی ہوئی انٹری پر آپ کو <span class="en">Approve</span> کا بٹن نظر نہیں آتا؛ کوئی دوسرا آدمی منظور کرے گا۔</div>
+                    </section>
+
+                    <section id="posting">
+                        <h2>پوسٹنگ اور رجسٹر کے اپنے اکاؤنٹس</h2>
+                        <p>پوسٹ ہوتے ہی نظام ایک متوازن <span class="en">Journal Entry</span> بناتا ہے (ڈیبٹ = کریڈٹ) اور انٹری کو رسید نمبر دیتا ہے: <span class="en">BR-2026-27-000001</span> (رقم آئی) یا <span class="en">BP-2026-27-000001</span> (رقم گئی)۔ مالی سال جولائی سے جون ہے۔</p>
+                        <p><b>رجسٹر کا حساب الگ ہے:</b> یہ صرف اپنے اکاؤنٹس (کوڈ <span class="en">6000</span> سے شروع) استعمال کرتا ہے، اس لیے <span class="en">Balance Sheet</span> اور <span class="en">Income Statement</span> میں شامل نہیں ہوتا۔ <span class="en">Account Balances</span>، <span class="en">Trial Balance</span> اور <span class="en">General Ledger</span> میں یہ اپنے الگ گروپ میں نظر آتے ہیں۔</p>
+                        <table>
+                            <tr><th>کوڈ</th><th>اکاؤنٹ</th><th>کب استعمال ہوتا ہے</th></tr>
+                            <tr><td class="en-cell">6100+</td><td>ہر بینک / کیش / والٹ کا اپنا اکاؤنٹ</td><td>بینک کی طرف ہمیشہ یہی؛ ریکنسیلی ایشن کا کتابی بیلنس بھی اسی سے۔</td></tr>
+                            <tr><td class="en-cell">6300+</td><td>ہر کمپنی کا اپنا اکاؤنٹ</td><td>کسٹمر رسید، پرنسپل / سپلائر ادائیگی اور <span class="en">Other</span> میں، جب انٹری پر کمپنی لگی ہو۔</td></tr>
+                            <tr><td class="en-cell">6201 / 6202</td><td>کسٹمر رسیدیں / کیش جمع</td><td>کمپنی نہ لگی ہو تو۔</td></tr>
+                            <tr><td class="en-cell">6203 / 6210</td><td>نامعلوم آمد / نامعلوم ادائیگی</td><td>جہاں کیٹیگری کا اکاؤنٹ یا کمپنی طے نہیں۔</td></tr>
+                            <tr><td class="en-cell">6204 – 6209</td><td>مالک، سپلائر کلیئرنگ، تنخواہ، بینک چارجز، ٹیکس، منتقلی</td><td>متعلقہ کیٹیگری۔</td></tr>
+                        </table>
+                        <table>
+                            <tr><th>معاملہ</th><th>ڈیبٹ</th><th>کریڈٹ</th></tr>
+                            <tr><td>کسٹمر سے رقم آئی</td><td>بینک کا رجسٹر اکاؤنٹ</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا کسٹمر رسیدیں)</td></tr>
+                            <tr><td>پرنسپل / سپلائر کو ادائیگی</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا سپلائر کلیئرنگ)</td><td>بینک کا رجسٹر اکاؤنٹ</td></tr>
+                            <tr><td>کیش جمع کروایا</td><td>بینک</td><td>کیش جمع کلیئرنگ</td></tr>
+                            <tr><td>بینک چارجز / ٹیکس / تنخواہ</td><td>متعلقہ رجسٹر اکاؤنٹ</td><td>بینک</td></tr>
+                        </table>
+                        <figure><img src="{{ $shot('30-account-balances') }}" alt="اکاؤنٹ بیلنسز" loading="lazy"><figcaption><span class="en">Reports › Account Balances</span> میں رجسٹر کے اکاؤنٹس الگ گروپ میں</figcaption></figure>
+                    </section>
+
+                    <section id="reverse">
+                        <h2>ریورس اور ڈیلیٹ</h2>
+                        <h3>پوسٹ شدہ انٹری غلط ہو: ریورس</h3>
+                        <ol>
+                            <li>انٹری کا پاپ اپ کھولیں اور <span class="en">Reverse entry</span> دبائیں۔</li>
+                            <li>سرخ کھڑکی میں انٹری کی رقم، تاریخ، اکاؤنٹ، پارٹی اور رسید نمبر دکھتے ہیں۔ <b>وجہ لکھیں</b> اور <span class="en">Reverse entry</span> دبائیں۔</li>
+                            <li>نظام الٹی جرنل انٹری پوسٹ کرتا ہے اور انٹری <span class="badge b-red">Reversed</span> ہو جاتی ہے۔ اب اسے <span class="en">Edit</span> سے درست کر کے دوبارہ <span class="en">Post</span> کریں؛ رسید نمبر وہی رہتا ہے۔</li>
+                        </ol>
+                        <div class="warn">جس انٹری کو پوسٹ ہونے کے لیے منظوری چاہیے تھی (۱۰ لاکھ یا زیادہ)، اسے <b>بھیجنے والا خود ریورس نہیں کر سکتا</b>؛ کوئی دوسرا آدمی جس کے پاس ریورس کی اجازت ہو، کرے گا۔ ریکنسائل شدہ انٹری ریورس نہیں ہوتی؛ پہلے ریکنسیلی ایشن واپس کرنی ہوگی۔</div>
+                        <h3>غلطی سے بنی انٹری: ڈیلیٹ</h3>
+                        <p>جو انٹری پوسٹ نہیں ہوئی اور منظوری کے انتظار میں بھی نہیں، اس کے پاپ اپ میں <span class="en">Delete entry</span> ہے۔ کھڑکی میں انٹری کی تفصیل دیکھ کر <span class="en">Delete entry</span> دبائیں۔ ڈیلیٹ کی ہوئی انٹری اس سکرین سے واپس نہیں آتی۔</p>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('37-reverse-modal') }}" alt="ریورس کی کھڑکی" loading="lazy"><figcaption>ریورس: وجہ لکھنا ضروری ہے</figcaption></figure>
+                            <figure><img src="{{ $shot('38-delete-modal') }}" alt="ڈیلیٹ کی کھڑکی" loading="lazy"><figcaption>ڈیلیٹ کی تصدیق</figcaption></figure>
+                        </div>
+                    </section>
+
+                    <section id="recon">
+                        <h2>بینک ریکنسیلی ایشن</h2>
+                        <ol>
+                            <li><span class="en">Menu › Reconciliation</span> کھولیں اور <span class="en">+ New reconciliation</span> دبائیں۔ بینک اکاؤنٹ، مدت، اور سٹیٹمنٹ کی <span class="en">Opening / Closing balance</span> لکھ کر <span class="en">Start</span> دبائیں۔</li>
+                            <li>جو انٹریاں رجسٹر سے پوسٹ ہو چکی ہیں وہ خود جوڑ دی جاتی ہیں (<span class="en">Auto-match posted lines</span> سے دوبارہ بھی چلا سکتے ہیں)۔</li>
+                            <li>باقی سٹیٹمنٹ لائنیں بائیں طرف ہیں، ہر ایک کے ساتھ اس کی حالت۔ جو ابھی پوسٹ نہیں ہوئیں انہیں رجسٹر سے پوسٹ کریں۔ کتابوں کی وہ لائنیں جو سٹیٹمنٹ میں نہیں، دائیں طرف ہیں؛ <span class="en">Match</span> سے جوڑیں۔</li>
+                            <li>اوپر <span class="en">Difference</span> صفر ہو جائے اور کوئی لائن باقی نہ ہو تو <span class="en">Complete &amp; lock period</span> دبائیں۔</li>
+                        </ol>
+                        <figure><img src="{{ $shot('12-reconciliation-show') }}" alt="ریکنسیلی ایشن" loading="lazy"><figcaption>اوپر بیلنس اور فرق، نیچے دونوں طرف کی لائنیں</figcaption></figure>
+                        <div class="note">مکمل ہونے پر سب انٹریاں <span class="badge b-green">Reconciled</span> ہو کر لاک ہو جاتی ہیں۔ غلطی ملے تو <span class="en">Cancel reconciliation</span> سے مدت کھل جاتی ہے۔</div>
+                    </section>
+
+                    <section id="masters">
+                        <h2>سیٹ اپ: کیٹیگری، الیاس، رولز، چیک</h2>
+                        <p>یہ فہرستیں <span class="en">Menu › Setup</span> میں ہیں (چیک رجسٹر <span class="en">Menu › Daily work › Cheques</span> میں)۔ ہر ایک میں نیا بنانا، بدلنا اور (اجازت ہو تو) حذف کرنا ہے۔</p>
+                        <h3>کیٹیگریاں <span class="en">Categories</span></h3>
+                        <p>جیسے <span class="en">Customer Receipt</span>، <span class="en">Principal Payment</span>، <span class="en">Bank Charges</span>۔ ہر کیٹیگری کے لیے طے کریں کہ وہ رقم آنے کے لیے ہے، جانے کے لیے، یا دونوں کے لیے؛ چاہیں تو اس کا اپنا اکاؤنٹ لگائیں۔ جو کیٹیگری استعمال ہو چکی ہو اسے حذف نہیں، غیر فعال کریں۔</p>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('14-categories') }}" alt="کیٹیگریاں" loading="lazy"><figcaption>کیٹیگریوں کی فہرست</figcaption></figure>
+                            <figure><img src="{{ $shot('22-category-form') }}" alt="کیٹیگری کا فارم" loading="lazy"><figcaption>نئی کیٹیگری کا فارم</figcaption></figure>
+                        </div>
+                        <h3>پارٹی الیاس <span class="en">Party aliases</span></h3>
+                        <p>ایک ہی نام کئی طرح لکھا آتا ہے (<span class="en">JAMEEL AHMED / JAMEEL AHM</span>)۔ الیاس بتاتا ہے کہ یہ سب ایک ہی صحیح نام اور ایک ہی کمپنی ہیں۔ حروف کا چھوٹا بڑا ہونا اور فالتو جگہیں نظر انداز ہوتی ہیں۔</p>
+                        <h3>خودکار رولز <span class="en">Auto-classify rules</span></h3>
+                        <p>"نریشن میں <span class="en">Service Charges</span> ہو تو کیٹیگری <span class="en">Bank Charges</span>" جیسے اصول۔ <span class="en">Priority</span> میں چھوٹا نمبر پہلے چلتا ہے۔ <span class="en">Remember this party next time</span> سے بنے رول <span class="en">Remembered: …</span> کے نام سے یہاں آتے ہیں۔</p>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('15-aliases') }}" alt="الیاس" loading="lazy"><figcaption>الیاس کی فہرست</figcaption></figure>
+                            <figure><img src="{{ $shot('16-rules') }}" alt="رولز" loading="lazy"><figcaption>رولز کی فہرست</figcaption></figure>
+                        </div>
+                        <h3>چیک رجسٹر <span class="en">Cheques</span></h3>
+                        <p>جاری کیے گئے اور وصول ہونے والے چیک لکھیں۔ سٹیٹمنٹ کے ریفرنس میں وہی چیک نمبر اور وہی رقم آئے تو چیک خود <span class="en">Cleared</span> ہو کر اس لائن سے جڑ جاتا ہے۔</p>
+                        <figure><img src="{{ $shot('17-cheques') }}" alt="چیک رجسٹر" loading="lazy"><figcaption>چیک رجسٹر</figcaption></figure>
+                    </section>
+
+                    <section id="reports">
+                        <h2>رپورٹس</h2>
+                        <p><span class="en">Menu › Reports</span> کھولیں۔ ہر رپورٹ میں اوپر فلٹر کا بٹن، نیچے ٹیبل، اور <span class="en">Excel</span> / <span class="en">PDF</span> / پرنٹ کے بٹن ہیں۔ ہر رپورٹ اسی کو نظر آتی ہے جسے اس کی اجازت ہو۔</p>
+                        <table>
+                            <tr><th>رپورٹ</th><th>کام</th></tr>
+                            <tr><td><span class="en">Register entries</span></td><td>تمام انٹریوں کی فہرست۔ فلٹر: اکاؤنٹ، تاریخ، آمد / خرچ، کمپنی، کیٹیگری، حالت، رسید ہے یا نہیں۔ کمپنی چنیں تو اس کا کھاتہ بیلنس کے ساتھ ملتا ہے۔</td></tr>
+                            <tr><td><span class="en">Register summary</span></td><td>کل رقوم کا خلاصہ۔ <span class="en">Group by</span>: کمپنی، کیٹیگری، بینک اکاؤنٹ، مہینہ، دن، یا "کمپنی بہ ماہ"۔</td></tr>
+                            <tr><td><span class="en">Bank reconciliation statement</span></td><td>سٹیٹمنٹ بیلنس، بقایا چیزیں، کتابی بیلنس اور فرق۔</td></tr>
+                            <tr><td><span class="en">Scanned receipts not yet linked</span></td><td>ان باکس کی وہ رسیدیں جو کسی انٹری سے نہیں جڑیں، پرانی پہلے۔</td></tr>
+                            <tr><td><span class="en">Not yet in the live books</span></td><td>وہ رقمیں جو رجسٹر میں ہیں مگر سیٹلمنٹ / سپلائر ادائیگی کے لائیو حساب میں ابھی نہیں آئیں۔</td></tr>
+                            <tr><td><span class="en">Audit log</span></td><td>کس نے کب کیا کیا۔</td></tr>
+                        </table>
+                        <div class="shots">
+                            <figure><img src="{{ $shot('18-reports-index') }}" alt="رپورٹس" loading="lazy"><figcaption>بینک رجسٹر کی رپورٹس</figcaption></figure>
+                            <figure><img src="{{ $shot('20-report-ledger') }}" alt="رجسٹر انٹریز" loading="lazy"><figcaption>رپورٹ <span class="en">Register entries</span></figcaption></figure>
+                            <figure><img src="{{ $shot('19-report-company-month') }}" alt="رجسٹر خلاصہ" loading="lazy"><figcaption>رپورٹ <span class="en">Register summary</span> (کمپنی بہ ماہ)</figcaption></figure>
+                            <figure><img src="{{ $shot('29-live-gap') }}" alt="لائیو حساب میں نہیں" loading="lazy"><figcaption>رپورٹ <span class="en">Not yet in the live books</span></figcaption></figure>
+                        </div>
+                    </section>
+
+                    <section id="env">
+                        <h2>تمام سیٹنگز (.env)</h2>
+                        <p>یہ سیٹنگز کوڈ میں نہیں، سرور کی <span class="en">.env</span> فائل میں ہیں۔ ایڈمن قدر بدل کر <code class="en">php artisan config:clear</code> چلا دے۔</p>
+                        <table>
+                            <tr><th>سیٹنگ</th><th>موجودہ قدر</th><th>مطلب</th></tr>
+                            <tr><td class="en-cell">BANK_MAKER_CHECKER_ENABLED</td><td class="en-cell">true</td><td><span class="en">false</span> کریں تو منظوری بند؛ ہر انٹری میکر خود پوسٹ کرے گا۔</td></tr>
+                            <tr><td class="en-cell">BANK_APPROVAL_LEVEL1_THRESHOLD</td><td class="en-cell">1000000</td><td>اس رقم سے چیکر کی منظوری ضروری ہے۔</td></tr>
+                            <tr><td class="en-cell">BANK_APPROVAL_LEVEL2_THRESHOLD</td><td class="en-cell">10000000</td><td>اس رقم سے سینئر کی دوسری منظوری بھی ضروری ہے۔</td></tr>
+                            <tr><td class="en-cell">BANK_ALLOW_SELF_APPROVAL</td><td class="en-cell">false</td><td><span class="en">true</span> کریں تو بھیجنے والا اپنی انٹری خود منظور اور ریورس کر سکے گا۔</td></tr>
+                            <tr><td class="en-cell">BANK_APPROVAL_APPLIES_TO</td><td class="en-cell">both</td><td>منظوری کس پر لگے: <span class="en">debit</span> (صرف ادائیگی)، <span class="en">credit</span> (صرف وصولی) یا <span class="en">both</span>۔</td></tr>
+                            <tr><td class="en-cell">BANK_APPROVAL_REQUIRED_FOR_REVERSAL</td><td class="en-cell">true</td><td>منظوری والی انٹری کو بھیجنے والا خود ریورس نہ کر سکے۔</td></tr>
+                            <tr><td class="en-cell">BANK_BULK_APPROVAL_MAX_ENTRIES</td><td class="en-cell">100</td><td>ایک بار میں زیادہ سے زیادہ کتنی انٹریاں اکٹھی منظور ہوں۔</td></tr>
+                            <tr><td class="en-cell">BANK_ATTACHMENT_DISK</td><td class="en-cell">local</td><td>رسیدیں اور سٹیٹمنٹ فائلیں کہاں رکھی جائیں: <span class="en">local</span> (اسی سرور پر) یا <span class="en">s3</span>۔</td></tr>
+                            <tr><td class="en-cell">BANK_ATTACHMENT_MAX_KB</td><td class="en-cell">10240</td><td>ایک فائل کا زیادہ سے زیادہ حجم، کلو بائٹ میں۔</td></tr>
+                        </table>
+                        <div class="note">"موجودہ قدر" وہ ہے جو اس رہنمائی کے لکھتے وقت تھی۔ اصل قدر سرور کی <span class="en">.env</span> میں دیکھیں؛ رجسٹر کے ٹیب <span class="en">Waiting for approval</span> پر بھی حدیں لکھی ہوتی ہیں۔</div>
+                    </section>
+
+                    <section id="print">
+                        <h2>پرنٹ کرنا (لیزر پرنٹر، سیاہ و سفید)</h2>
+                        <ul>
+                            <li>کسی بھی سکرین پر <span class="en">Menu › Print this page</span>، یا <span class="en">Ctrl + P</span>۔</li>
+                            <li>پرنٹ سیاہ و سفید ہے: کوئی رنگ نہیں، ہر ٹیبل سیاہ لکیروں والے خانوں میں۔ مینو، بٹن، فلٹر اور ٹک کے خانے خود ہٹ جاتے ہیں۔</li>
+                            <li><b>رجسٹر:</b> فلٹر لگا کر پرنٹ کریں تو وہی انٹریاں چھپتی ہیں جو سکرین پر ہیں۔ صفحہ <span class="en">A4 Landscape</span> ہے۔</li>
+                            <li><b>ایک ٹرانزیکشن:</b> پاپ اپ کے <span class="en">Print</span> سے؛ چاروں ٹیبل (انٹری، منظوری، رسیدیں، تاریخچہ) شامل ہوتے ہیں۔</li>
+                            <li><b>رپورٹس:</b> ہر رپورٹ میں <span class="en">Excel</span> اور <span class="en">PDF</span> کے بٹن بھی ہیں۔</li>
+                            <li><b>یہ رہنمائی:</b> اوپر کے <span class="en">Print</span> سے پوری چھپتی ہے۔</li>
+                        </ul>
+                    </section>
+
+                    <section id="faq">
+                        <h2>عام سوالات اور مسائل</h2>
+                        <table>
+                            <tr><th>مسئلہ</th><th>حل</th></tr>
+                            <tr><td>امپورٹ <span class="en">Does not tally</span> کہتی ہے</td><td>پرنٹ شدہ سٹیٹمنٹ کے کل ڈیبٹ / کریڈٹ دوبارہ دیکھیں، یا فائل میں کوئی قطار رہ گئی ہو۔</td></tr>
+                            <tr><td><span class="en">File layout was not recognised</span></td><td>فائل کی پہلی قطار میں <span class="en">Posting date</span> اور <span class="en">Debit</span> / <span class="en">Credit</span> کے عنوان لکھیں۔</td></tr>
+                            <tr><td>قطار میں <span class="en">Post</span> کا بٹن نہیں ہے</td><td>پہلے کیٹیگری لگائیں؛ حالت <span class="en">Ready to post</span>، <span class="en">Rejected</span> یا <span class="en">Reversed</span> ہونی چاہیے۔</td></tr>
+                            <tr><td><span class="en">You submitted this entry, so a different person must approve it</span></td><td>بھیجنے والا اپنی انٹری منظور نہیں کر سکتا؛ چیکر سے کہیں۔</td></tr>
+                            <tr><td><span class="en">needs a senior approver</span></td><td>رقم دوسرے درجے کی حد سے اوپر ہے؛ سینئر منظور کنندہ منظور کرے۔</td></tr>
+                            <tr><td>ریورس کا بٹن نہیں، لکھا ہے کہ کوئی اور ریورس کرے</td><td>انٹری منظوری والی تھی اور آپ نے بھیجی تھی؛ کوئی دوسرا آدمی ریورس کرے گا۔</td></tr>
+                            <tr><td>انٹری بدل نہیں سکتی</td><td>پوسٹ شدہ انٹری لاک ہے؛ پہلے ریورس کریں۔</td></tr>
+                            <tr><td>انٹری دو بار بن گئی</td><td>جو پوسٹ نہیں ہوئی اسے <span class="en">Delete entry</span> سے حذف کریں؛ پوسٹ ہو چکی ہو تو ریورس کریں۔</td></tr>
+                            <tr><td>رجسٹر کی رقم باقی رپورٹوں میں نظر نہیں آتی</td><td>یہی اس کا ڈیزائن ہے: رجسٹر کا حساب الگ ہے۔ فرق رپورٹ <span class="en">Not yet in the live books</span> میں دیکھیں۔</td></tr>
+                            <tr><td>ریکنسیلی ایشن مکمل نہیں ہو رہی</td><td>دیکھیں کہ کوئی سٹیٹمنٹ لائن بغیر جوڑ کے تو نہیں، اور <span class="en">Difference</span> صفر ہے۔</td></tr>
+                            <tr><td>پہلے <span class="en">Settings</span> یا <span class="en">Reports</span> میں بینک کا حصہ تھا، اب نہیں ملتا</td><td>سب کچھ <span class="en">Bank Register › Menu</span> میں آ گیا ہے۔</td></tr>
+                            <tr><td>کوئی بٹن یا سکرین نظر نہیں آتی</td><td>اجازت نہیں ہوگی؛ ایڈمن سے <span class="en">Settings › Roles</span> میں اجازت دلوائیں۔</td></tr>
+                        </table>
+                    </section>
+                </div>
+            </div>
         </div>
     </div>
-
-    <main>
-        <section>
-            <h2>بینک سٹیٹمنٹ رجسٹر کیا ہے؟</h2>
-            <p>بینک کی سٹیٹمنٹ کی ہر انٹری (ہر جمع اور ہر نکلوائی گئی رقم) کو یہاں لایا جاتا ہے، اس پر <b>کمپنی اور کیٹیگری</b> لگائی جاتی ہے، <b>رسید اور اٹیچمنٹ</b> محفوظ ہوتی ہے، اور <b>ڈبل انٹری</b> کے ذریعے کھاتوں میں پوسٹ ہوتی ہے۔ آخر میں مہینے کا بینک ریکنسیلی ایشن کر کے مدت <b>لاک</b> کر دی جاتی ہے۔ پرانی ایکسل شیٹ کا سارا کام اب نظام کے اندر ہوتا ہے اور کسی بھی تاریخ، کمپنی، رقم یا لفظ سے تلاش ہو سکتا ہے۔</p>
-            <div class="flow">
-                <span class="step">امپورٹ</span> ←
-                <span class="step">کمپنی / کیٹیگری</span> ←
-                <span class="step">رسید + اٹیچمنٹ</span> ←
-                <span class="step">میکر بھیجے (<span class="en">Submit</span>)</span> ←
-                <span class="step">چیکر منظور کرے</span> ←
-                <span class="step">پوسٹنگ (ڈبل انٹری)</span> ←
-                <span class="step">ریکنسیلی ایشن + لاک</span>
-            </div>
-            <div class="toc">
-                <b>فہرست:</b>
-                <ol>
-                    <li><a href="#roles">کون کیا کرتا ہے</a></li>
-                    <li><a href="#daily">روزانہ کا آسان طریقہ</a></li>
-                    <li><a href="#import">سٹیٹمنٹ امپورٹ کرنا</a></li>
-                    <li><a href="#manual">ہاتھ سے انٹری شامل کرنا</a></li>
-                    <li><a href="#scans">رسیدوں کا اسکین ان باکس</a></li>
-                    <li><a href="#register">رجسٹر اور تلاش</a></li>
-                    <li><a href="#classify">کمپنی اور کیٹیگری لگانا</a></li>
-                    <li><a href="#attach">رسید اور اٹیچمنٹ</a></li>
-                    <li><a href="#maker">میکر: منظوری کے لیے بھیجنا</a></li>
-                    <li><a href="#checker">چیکر: منظور یا مسترد</a></li>
-                    <li><a href="#posting">پوسٹنگ، ڈبل انٹری اور رجسٹر کے اکاؤنٹس</a></li>
-                    <li><a href="#reverse">غلطی ہو جائے تو ریورس</a></li>
-                    <li><a href="#recon">بینک ریکنسیلی ایشن</a></li>
-                    <li><a href="#masters">سیٹنگز: کیٹیگری، الیاس، رولز، چیک</a></li>
-                    <li><a href="#reports">رپورٹس</a></li>
-                    <li><a href="#print">پرنٹ کرنا</a></li>
-                    <li><a href="#faq">عام سوالات اور مسائل</a></li>
-                </ol>
-            </div>
-            <figure><img src="{{ asset('icons-images/bank-register-help/21-settings-menu.jpg') }}" alt="مینو" loading="lazy"><figcaption>سیٹنگز کے صفحے پر "Bank Register" کا حصہ؛ اوپر مینو میں <span class="en">Bank Register</span> کا بٹن بھی ہے</figcaption></figure>
-        </section>
-
-        <section id="roles">
-            <h2>کون کیا کرتا ہے</h2>
-            <table>
-                <tr><th>کردار</th><th>کیا کر سکتا ہے</th></tr>
-                <tr><td>میکر / اکاؤنٹنٹ <span class="en">accountant</span></td><td>سٹیٹمنٹ امپورٹ، <b>ہاتھ سے انٹری شامل کرنا</b>، رسیدیں اسکین ان باکس میں ڈالنا اور انٹری سے جوڑنا، کمپنی/کیٹیگری لگانا، فائلیں لگانا، منظوری کے لیے بھیجنا۔ حد سے کم رقم والی انٹری خود پوسٹ کر سکتا ہے۔ تمام رپورٹیں دیکھ سکتا ہے۔</td></tr>
-                <tr><td>چیکر <span class="en">bank-checker</span></td><td>بھیجی گئی انٹری منظور یا مسترد کرنا، ریورس کرنا، ریکنسیلی ایشن مکمل کرنا۔ منظوری سے پہلے انٹری کی <b>رسید اور اٹیچمنٹ کھول کر دیکھ سکتا ہے</b> (ان باکس میں نام پر کلک کریں)۔ تمام رپورٹیں دیکھ سکتا ہے۔</td></tr>
-                <tr><td>سینئر منظور کنندہ <span class="en">bank-senior-approver</span></td><td>بہت بڑی رقم کی دوسری منظوری؛ رسید دیکھ سکتا ہے۔ منظوری، لیجر، ٹاپ پارٹیز، کیش فلو اور اکاؤنٹس کی رپورٹیں دیکھ سکتا ہے۔</td></tr>
-                <tr><td>آڈیٹر <span class="en">auditor</span></td><td>سب کچھ دیکھنا (رسیدیں سمیت)، ایکسپورٹ اور تمام رپورٹیں۔ کچھ بدل نہیں سکتا۔</td></tr>
-                <tr><td>ایڈمن</td><td>سب کچھ، اور لوگوں کو اجازتیں دینا (<span class="en">Settings › Roles</span>)۔</td></tr>
-            </table>
-            <div class="note"><b>اصول:</b> جس نے انٹری بھیجی (میکر)، وہ اسی کو خود منظور نہیں کر سکتا۔ اور ایک ہی آدمی دونوں منظوریاں نہیں دے سکتا۔</div>
-        </section>
-
-
-        <section id="daily">
-            <h2>روزانہ کا آسان طریقہ</h2>
-            <p>آپ کے ہاں کئی اکاؤنٹس ہیں، رقم آتی جاتی رہتی ہے، رسیدیں کاغذ پر آتی ہیں اور اکثر گم ہو جاتی ہیں۔ اس لیے سارا کام <b>اسی دن</b> کریں:</p>
-            <ol>
-                <li><b>صبح / شام:</b> دن بھر کی رسیدیں، پرچیاں اور چیک کی کاپیاں موبائل سے فوٹو یا اسکین کر کے <span class="en">Scan inbox</span> میں ڈال دیں۔ ایک ساتھ بیسیوں فائلیں ڈالی جا سکتی ہیں۔</li>
-                <li><b>انٹری بنائیں:</b> ہر رقم کے لیے <span class="en">Add entry</span> دبائیں (یا ان باکس کی رسید پر <span class="en">Create entry from this scan</span>)۔ رقم، تاریخ، پارٹی لکھیں۔ <span class="en">Save &amp; add another</span> سے اگلی انٹری فوراً کھل جاتی ہے۔</li>
-                <li><b>جب سٹیٹمنٹ آئے:</b> امپورٹ کریں۔ جو انٹریاں آپ پہلے ہاتھ سے ڈال چکے ہیں انہیں ریکنسیلی ایشن میں سٹیٹمنٹ کی لائنوں سے ملایا جاتا ہے۔</li>
-                <li><b>رسید رہ گئی ہو؟</b> رجسٹر پر پیلا بٹن <span class="en">📎 No receipt</span> ایسی تمام انٹریاں دکھاتا ہے۔</li>
-                <li><b>ہفتے کے آخر میں:</b> رپورٹ <span class="en">Register summary</span> (Group by = بینک اکاؤنٹ) سے ہر اکاؤنٹ کی حالت دیکھیں اور <span class="en">Scanned receipts not yet linked</span> سے وہ رسیدیں جو ابھی کسی انٹری سے نہیں جڑیں۔</li>
-            </ol>
-            <div class="tip">اکاؤنٹ بینک کا ہو، کیش کا یا موبائل والٹ کا؛ <span class="en">Settings › Bank Accounts</span> میں اسے بنا لیں تو وہ رجسٹر میں اپنے بٹن کے ساتھ آ جاتا ہے۔ ہر اکاؤنٹ کا ریکارڈ، رپورٹ اور ریکنسیلی ایشن الگ ہوتا ہے۔</div>
-        </section>
-
-        <section id="import">
-            <h2>سٹیٹمنٹ امپورٹ کرنا</h2>
-            <ol>
-                <li>اوپر <span class="en">Bank Register</span> کھولیں اور <span class="en">Import statement</span> دبائیں۔</li>
-                <li><span class="en">Bank account</span> چنیں اور ایکسل یا <span class="en">CSV</span> فائل لگائیں۔ فائل میں کم از کم <span class="en">Posting date</span> اور <span class="en">Debit / Credit</span> کے کالم ہونے چاہییں۔ ترتیب کوئی بھی ہو سکتی ہے۔</li>
-                <li>پرنٹ شدہ سٹیٹمنٹ کے اعداد لکھ دیں: <span class="en">Opening / Closing balance</span> اور کل <span class="en">Debits / Credits</span>۔ <b>یہ ضرور لکھیں</b>، کیونکہ نظام فائل کا جوڑ نکال کر ان سے ملاتا ہے۔</li>
-                <li><span class="en">Read file &amp; show summary</span> دبائیں۔ اب خلاصہ نظر آئے گا: کتنی قطاریں نئی ہیں، کتنی پہلے سے موجود ہیں، کتنی میں غلطی ہے۔</li>
-                <li>سبز <span class="badge b-green">Tallies</span> ہو تو <span class="en">Confirm import</span> دبائیں۔ اگر سرخ <span class="badge b-red">Does not tally</span> ہو تو امپورٹ بند رہتی ہے؛ فائل یا اعداد درست کر کے دوبارہ لگائیں۔</li>
-            </ol>
-            <figure><img src="{{ asset('icons-images/bank-register-help/04-import-form.jpg') }}" alt="امپورٹ فارم" loading="lazy"><figcaption>پہلا قدم: فائل اور سٹیٹمنٹ کے اعداد</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/05-import-preview.jpg') }}" alt="امپورٹ کا خلاصہ" loading="lazy"><figcaption>دوسرا قدم: خلاصہ اور جوڑ کی جانچ</figcaption></figure>
-            <div class="tip">ایک ہی فائل دوبارہ لگ جائے تو پرانی انٹریاں دوبارہ نہیں بنتیں؛ انہیں <span class="en">Already in system</span> میں گن کر چھوڑ دیا جاتا ہے۔ زرد قطاریں وہ ہیں جن کا نام نامعلوم (<span class="en">Unidentified</span>) تھا اور جائزہ لینا باقی ہے۔</div>
-            <figure><img src="{{ asset('icons-images/bank-register-help/23-import-list.jpg') }}" alt="امپورٹس کی فہرست" loading="lazy"><figcaption>پرانی امپورٹس کی فہرست</figcaption></figure>
-        </section>
-
-
-        <section id="manual">
-            <h2>۲۔ ہاتھ سے انٹری شامل کرنا</h2>
-            <p>اگر سٹیٹمنٹ فائل نہیں ہے، یا رقم آج ہی لکھنی ہے، تو انٹری ہاتھ سے بن سکتی ہے۔ رجسٹر کے اوپر سبز بٹن <span class="en">＋ Add entry</span> دبائیں۔</p>
-            <ol>
-                <li><b>رقم آئی یا گئی:</b> دو بڑے بٹن <span class="en">＋ Received</span> اور <span class="en">− Paid out</span> میں سے ایک دبائیں اور رقم لکھیں۔ رقم والا خانہ پہلے ہی سے چنا ہوتا ہے، فوراً لکھنا شروع کریں۔</li>
-                <li>بینک اکاؤنٹ اور تاریخ چنیں (آج کی تاریخ پہلے سے لگی ہوتی ہے، آنے والی تاریخ نہیں چلتی)۔</li>
-                <li>پارٹی کا نام اور ریفرنس / چیک نمبر لکھیں۔ اگر اس نام کا الیاس بنا ہوا ہو تو کمپنی خود لگ جاتی ہے۔</li>
-                <li>چاہیں تو کمپنی اور کیٹیگری ابھی چن لیں، ورنہ <span class="en">decide later</span> رہنے دیں۔ کیٹیگریاں رقم کی سمت کے حساب سے خود چھن جاتی ہیں۔</li>
-                <li>رسید فوراً لگانا چاہیں تو اسی فارم میں فائل چنیں۔</li>
-                <li>تین بٹن: <span class="en">Save</span>، <span class="en">Save &amp; add another</span> (اگلی انٹری، وہی اکاؤنٹ اور تاریخ اور رقم کی سمت کے ساتھ) اور <span class="en">Save &amp; submit</span> (فوراً منظوری کے لیے بھیج دے، چھوٹی رقم ہو تو پوسٹ بھی کر دے)۔</li>
-            </ol>
-            <figure><img src="{{ asset('icons-images/bank-register-help/24-add-entry.jpg') }}" alt="نئی انٹری" loading="lazy"><figcaption>ہاتھ سے نئی انٹری</figcaption></figure>
-            <div class="note"><b>دوبارہ تو نہیں ڈل گئی؟</b> اگر اسی اکاؤنٹ، تاریخ اور رقم کی انٹری پہلے سے ہو تو نظام پیلا انتباہ دکھاتا ہے اور موجودہ انٹری کا لنک دیتا ہے۔ اگر واقعی الگ لین دین ہو تو "<span class="en">save it anyway</span>" پر ٹک لگا کر محفوظ کریں۔</div>
-            <ul>
-                <li>غلطی ہو جائے تو پوسٹ ہونے سے پہلے <span class="en">Edit</span> میں تاریخ، رقم، سمت، پارٹی اور ریفرنس درست ہو سکتے ہیں۔ رقم یا کیٹیگری بدلنے پر منظوری دوبارہ لینی پڑتی ہے۔</li>
-                <li>سٹیٹمنٹ سے امپورٹ ہونے والی انٹری کی رقم، تاریخ اور ریفرنس نہیں بدلتے (وہی جو بینک نے چھاپا)؛ صرف کمپنی، کیٹیگری اور نوٹ بدلتے ہیں۔</li>
-                <li>پوسٹ ہو چکی انٹری ریورس ہوتی ہے، حذف نہیں۔ جو ابھی پوسٹ نہیں ہوئی اسے حذف کیا جا سکتا ہے۔</li>
-                <li>امپورٹ کے لیے ایکسل / <span class="en">CSV</span> میں <span class="en">Debit / Credit</span> کے دو کالم ہوں، یا ایک <span class="en">Amount</span> کالم جس کے ساتھ <span class="en">Dr/Cr</span> لکھا ہو یا منفی رقم؛ تاریخ <span class="en">15/10/2026</span> یا <span class="en">15-Oct-2026</span> دونوں چلتی ہیں۔</li>
-            </ul>
-        </section>
-
-        <section id="scans">
-            <h2>۳۔ رسیدوں کا اسکین ان باکس</h2>
-            <p>رسید ملتے ہی فوٹو/اسکین ان باکس میں ڈال دیں، چاہے بینک لائن ابھی نہ بنی ہو۔ اس طرح رسید کبھی گم نہیں ہوتی۔</p>
-            <ol>
-                <li><span class="en">Bank Register › Scan inbox</span> کھولیں۔</li>
-                <li>فائلیں خانے میں گھسیٹ کر چھوڑیں (یا کلک کر کے چنیں)، رسید کی تاریخ لکھیں، اکاؤنٹ اور نوٹ چاہیں تو لکھیں۔ <b>ایک ہی فائل ہو تو رقم اور سمت بھی لکھ دیں</b>، اس سے نظام خود ملتی جلتی انٹری ڈھونڈ لیتا ہے۔</li>
-                <li><span class="en">Save to inbox</span> دبائیں۔ ہر فائل کا اپنا کارڈ بنتا ہے۔</li>
-                <li>جب انٹری مل جائے: ہرے ڈبے میں <span class="en">Looks like …</span> نظر آئے تو <span class="en">Attach here</span> دبائیں؛ نہ ملے تو <span class="en">Create entry from this scan</span> (انٹری بن جائے گی اور رسید خود لگ جائے گی) یا انٹری نمبر لکھ کر <span class="en">Link</span>۔</li>
-            </ol>
-            <figure><img src="{{ asset('icons-images/bank-register-help/25-scan-inbox.jpg') }}" alt="اسکین ان باکس" loading="lazy"><figcaption>اسکین ان باکس: بائیں طرف فائلیں ڈالنے کا خانہ، نیچے رسیدوں کے کارڈ</figcaption></figure>
-            <div class="tip">جڑنے کے بعد فائل انٹری کی عام اٹیچمنٹ بن جاتی ہے (قسم "رسید")، اور انٹری کی <span class="en">History</span> میں لکھا جاتا ہے۔ ریکنسائل شدہ انٹری میں رسید نہیں جوڑی جا سکتی۔</div>
-        </section>
-
-        <section id="register">
-            <h2>۴۔ رجسٹر اور تلاش</h2>
-            <p>رجسٹر کا ڈیزائن <span class="en">Settings › Users</span> جیسا ہے: اوپر عنوان اور بٹن، پھر چار خانے، حالت کے ٹیب، تلاش، اور نیچے ٹیبل۔ ہر صفحے کے اوپر ایک پٹی ہے: <span class="en">Register · Approvals · Receipt scans · Reconciliation · Reports</span>۔ کیٹیگریز <span class="en">Settings › Bank Entry Categories</span> میں ہیں۔ موجودہ صفحہ گہرے نیلے رنگ میں ہوتا ہے، اور <span class="en">Approvals</span> / <span class="en">Receipt scans</span> کے ساتھ باقی کام کی گنتی۔ وہی حصے نظر آتے ہیں جن کی آپ کو اجازت ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/34-section-bar.jpg') }}" alt="اوپر کی پٹی" loading="lazy"><figcaption>ہر صفحے پر اوپر کی پٹی</figcaption></figure>
-            <h3>چار خانے</h3>
-            <p>سب سے اوپر چار خانے ہیں: <b>درجہ بندی باقی</b>، <b>منظوری کے انتظار میں</b>، <b>پوسٹ شدہ</b>، اور <b>رسید نہیں</b>۔ ہر خانے میں تعداد اور رقم ہے۔ خانے پر کلک کریں تو صرف وہی انٹریاں کھلتی ہیں؛ دوبارہ کلک کریں تو فلٹر ہٹ جاتا ہے۔ <b>رسید نہیں</b> والے خانے پر نارنجی لکھائی کا مطلب ہے کہ کچھ انٹریوں کی رسید باقی ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/01-register.jpg') }}" alt="رجسٹر" loading="lazy"><figcaption>رجسٹر: چار خانے، حالت کے ٹیب، تلاش اور انٹریاں</figcaption></figure>
-            <h3>ٹیب، تلاش اور فلٹر</h3>
-            <ul>
-                <li><b>ٹیب:</b> سب / درجہ بندی باقی / منظوری کے انتظار میں / مسترد / پوسٹ شدہ / ریکنسائل، ہر ایک کے ساتھ تعداد۔</li>
-                <li><b>تلاش کا خانہ:</b> کوئی بھی لفظ لکھیں: پارٹی، نریشن، ریفرنس، رسید نمبر، نوٹ یا اٹیچمنٹ کا نام (اردو بھی چلتی ہے)۔ ساتھ بینک اکاؤنٹ اور رقم کی سمت (جمع / نکلوائی) چن سکتے ہیں۔</li>
-                <li><b>More filters:</b> کمپنی، کیٹیگری، تاریخ سے تاریخ تک، رقم سے رقم تک، ریفرنس، رسید نمبر، رسید ہے یا نہیں، جائزے کا نشان، اور کس میکر نے بھیجی۔</li>
-                <li><b>فلٹر کی گولیاں:</b> جو فلٹر لگا ہو وہ گولی کی شکل میں نظر آتا ہے؛ × سے ہٹا دیں، یا <span class="en">Clear all</span>۔</li>
-                <li>ٹیبل کے اوپر موجودہ فلٹر کے کل: انٹریاں، وصولی، ادائیگی اور نیٹ۔ <span class="en">Export</span> سے یہی انٹریاں ایکسل میں آ جاتی ہیں۔</li>
-            </ul>
-            <figure><img src="{{ asset('icons-images/bank-register-help/02-filters.jpg') }}" alt="فلٹر" loading="lazy"><figcaption>تلاش اور More filters</figcaption></figure>
-            <h3>کسی بھی ٹرانزیکشن کو دیکھنا: پاپ اپ</h3>
-            <p>کسی بھی قطار پر کلک کریں (یا آنکھ کے نشان پر) تو ٹرانزیکشن <b>پاپ اپ</b> میں کھلتی ہے، بالکل ویسے جیسے یوزر ڈیلیٹ کرتے وقت پاپ اپ آتا ہے۔ اس میں رقم، پارٹی، کمپنی، کیٹیگری، منظوری کی کہانی، رسیدیں اور تاریخچہ ہے، اور نیچے بٹن: <span class="en">Edit / classify</span>، <span class="en">Post now / Submit for approval</span>، <span class="en">Approve</span>، <span class="en">Flag for review</span>۔ ریورس اور مسترد کے لیے وجہ لکھنی پڑتی ہے۔ <span class="en">Esc</span> یا <span class="en">Close</span> سے بند ہوتا ہے۔ یہی پاپ اپ منظوری، ریکنسائلیشن اور اسکین ان باکس سے بھی کھلتا ہے۔ ضرورت ہو تو پاپ اپ کے <span class="en">Print</span> سے صرف وہی ٹرانزیکشن چھپتی ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/03-transaction-modal.jpg') }}" alt="ٹرانزیکشن کا پاپ اپ" loading="lazy"><figcaption>ٹرانزیکشن پاپ اپ میں</figcaption></figure>
-        </section>
-
-        <section id="classify">
-            <h2>۵۔ کمپنی اور کیٹیگری لگانا</h2>
-            <div class="tip"><b>کمپنی</b> سے مراد پرنسپل / سپلائر (مثلاً یونی لیور، ڈالڈا، اینگرو) ہے۔ فہرست سسٹم کی <span class="en">Suppliers</span> سے آتی ہے، اس لیے وہی نام ہر جگہ چلتا ہے۔ ہر <b>ڈراپ ڈاؤن</b> میں تلاش کا خانہ ہے: ڈبے پر کلک کریں، چند حروف ٹائپ کریں، اور نتیجے پر کلک کریں۔ خانہ خالی کرنے کے لیے ✕ دبائیں۔</div>
-            <figure><img src="{{ asset('icons-images/bank-register-help/31-select2-dropdown.jpg') }}" alt="ڈراپ ڈاؤن میں تلاش" loading="lazy"><figcaption>ڈراپ ڈاؤن میں ٹائپ کر کے تلاش</figcaption></figure>
-            <h3>ایک ایک کر کے</h3>
-            <p>ٹرانزیکشن کے پاپ اپ میں <span class="en">Edit / classify</span> دبائیں، کمپنی اور کیٹیگری چنیں، چاہیں تو نوٹ لکھیں اور <span class="en">Save</span> دبائیں۔ کیٹیگری لگتے ہی انٹری <span class="badge b-blue">Classified</span> ہو جاتی ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/07-edit-entry.jpg') }}" alt="انٹری کی درجہ بندی" loading="lazy"><figcaption>انٹری کی درجہ بندی</figcaption></figure>
-            <h3>بہت سی انٹریاں ایک ساتھ</h3>
-            <ol>
-                <li>بائیں طرف کے خانوں میں ٹک لگائیں (سب کے لیے سب سے اوپر والا خانہ)۔</li>
-                <li>اوپر نیلی پٹی (بلک بار) آئے گی۔ کمپنی اور/یا کیٹیگری چنیں۔</li>
-                <li><span class="en">Remember for next time</span> پر ٹک لگائیں تو نظام اس پارٹی کا <b>الیاس اور رول</b> خود بنا لیتا ہے، اگلی بار یہی نام خود بخود لگ جائے گا۔</li>
-                <li><span class="en">Apply</span> دبائیں۔</li>
-            </ol>
-            <figure><img src="{{ asset('icons-images/bank-register-help/06-classify-bulk.jpg') }}" alt="اکٹھی درجہ بندی" loading="lazy"><figcaption>ٹک لگا کر اکٹھی درجہ بندی</figcaption></figure>
-            <div class="tip"><span class="en">⚡ Auto-classify unclassified</span> دبائیں تو نظام الیاس، رولز اور چیک رجسٹر تینوں کو تمام باقی انٹریوں پر چلا دیتا ہے۔ چیک نمبر اور رقم ملنے پر چیک خود <span class="en">Cleared</span> ہو جاتا ہے۔</div>
-        </section>
-
-        <section id="attach">
-            <h2>۶۔ رسید اور اٹیچمنٹ</h2>
-            <p>ٹرانزیکشن کے پاپ اپ میں <span class="en">Receipt &amp; attachments</span> میں فائل (پی ڈی ایف، تصویر، ایکسل) چنیں، قسم (<span class="en">Receipt / Cheque / Deposit slip / Statement</span>) اور وضاحت لکھ کر <span class="en">Attach</span> دبائیں۔ ایک ساتھ دس تک فائلیں لگ سکتی ہیں۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/08-attachments.jpg') }}" alt="اٹیچمنٹ" loading="lazy"><figcaption>فائلیں اور وضاحت</figcaption></figure>
-            <ul>
-                <li>فائلیں نجی ہیں؛ صرف لاگ ان صارف جسے رجسٹر کی اجازت ہو وہی کھول سکتا ہے۔</li>
-                <li>پوسٹ ہونے پر انٹری کو <b>رسید نمبر</b> ملتا ہے: <span class="en">BR-2024-25-000001</span> (رقم آئی) یا <span class="en">BP-2024-25-000001</span> (رقم گئی)۔ مالی سال جولائی سے جون ہے۔</li>
-                <li>ریکنسائل ہو جانے کے بعد اٹیچمنٹ ہٹائی نہیں جا سکتی۔</li>
-                <li><span class="en">Register entries</span> رپورٹ میں <span class="en">Receipt = Without receipt</span> لگانے سے پتا چلتا ہے کہ کن انٹریوں کی فائل رہ گئی ہے۔</li>
-            </ul>
-        </section>
-
-        <section id="maker">
-            <h2>۷۔ میکر: منظوری کے لیے بھیجنا</h2>
-            <p>درجہ بندی کے بعد <span class="en">Submit for approval</span> دبائیں (یا بہت سی ٹک کر کے <span class="en">Submit selected</span>)۔ آگے کیا ہوتا ہے، یہ رقم پر منحصر ہے:</p>
-            <table>
-                <tr><th>رقم</th><th>کیا ہوتا ہے</th></tr>
-                <tr><td>۱۰ لاکھ سے کم <span class="en">(Level 1 سے کم)</span></td><td>فوراً پوسٹ، بٹن پر <span class="en">Post now</span> لکھا ہوتا ہے۔ کسی منظوری کی ضرورت نہیں۔</td></tr>
-                <tr><td>۱۰ لاکھ یا زیادہ</td><td>چیکر کی منظوری ضروری ہے۔ حالت <span class="badge b-amber">Pending approval</span> ہو جاتی ہے۔</td></tr>
-                <tr><td>۱ کروڑ یا زیادہ</td><td>چیکر کے بعد سینئر منظور کنندہ کی دوسری منظوری بھی ضروری ہے۔</td></tr>
-            </table>
-            <div class="note"><b>حدیں بدلنے کے لیے:</b> یہ اعداد کوڈ میں نہیں، سرور کی <span class="en">.env</span> فائل میں ہیں۔ ایڈمن بدل کر <span class="en">php artisan config:clear</span> چلا دے:
-                <br><code class="en">BANK_APPROVAL_LEVEL1_THRESHOLD=1000000</code>
-                <br><code class="en">BANK_APPROVAL_LEVEL2_THRESHOLD=10000000</code>
-                <br><code class="en">BANK_MAKER_CHECKER_ENABLED=true</code> ← <span class="en">false</span> کریں تو سب انٹریاں میکر خود پوسٹ کرے گا
-                <br><code class="en">BANK_ALLOW_SELF_APPROVAL=false</code> ← میکر اپنی انٹری منظور نہ کر سکے
-                <br><code class="en">BANK_APPROVAL_APPLIES_TO=both</code> ← <span class="en">debit / credit / both</span>
-            </div>
-            <div class="warn">منظوری کے انتظار میں انٹری کی کمپنی یا کیٹیگری بدلی جائے تو پہلی منظوری ختم ہو جاتی ہے اور میکر کو دوبارہ بھیجنا پڑتا ہے۔</div>
-        </section>
-
-        <section id="checker">
-            <h2>۸۔ چیکر: منظور یا مسترد</h2>
-            <ol>
-                <li>اوپر <span class="en">Approvals</span> کھولیں؛ سب سے بڑی رقم سب سے اوپر ہوتی ہے۔</li>
-                <li>ہر کارڈ پر پارٹی، رقم، کس نے بھیجا، کتنی فائلیں لگی ہیں اور منظوریوں کی حالت (<span class="en">Checker / Senior</span>) نظر آتی ہے۔</li>
-                <li><b>رسید دیکھیں:</b> کارڈ پر فائلوں کے نام (اور تصویروں کی چھوٹی جھلک) ہیں؛ ان پر کلک کریں تو رسید نئے ٹیب میں کھل جاتی ہے۔ اگر لکھا ہو "<span class="en">No receipt or file attached</span>" تو منظوری سے پہلے رسید مانگیں۔</li>
-                <li>ٹھیک ہو تو <span class="en">Approve</span>۔ آخری ضروری منظوری کے ساتھ ہی انٹری خود پوسٹ ہو جاتی ہے اور رسید نمبر بن جاتا ہے۔</li>
-                <li>غلط ہو تو وجہ لکھ کر <span class="en">Reject</span>۔ انٹری میکر کو واپس جاتی ہے <span class="badge b-red">Rejected</span> کے ساتھ وجہ دکھتی ہے۔</li>
-                <li>بہت سی ایک ساتھ منظور کرنے کے لیے ٹک لگائیں اور <span class="en">Approve selected</span> دبائیں (ایک بار میں زیادہ سے زیادہ ۱۰۰)۔</li>
-            </ol>
-            <figure><img src="{{ asset('icons-images/bank-register-help/10-approvals.jpg') }}" alt="منظوری کا ان باکس" loading="lazy"><figcaption>چیکر کا ان باکس</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/35-approver-modal.jpg') }}" alt="چیکر کا پاپ اپ" loading="lazy"><figcaption>انٹری کے نام پر کلک کریں تو پاپ اپ میں ساری تفصیل اور رسیدیں کھلتی ہیں؛ فیصلہ وہیں سے ہو سکتا ہے</figcaption></figure>
-            <div class="tip">اپنی بھیجی ہوئی انٹری کے سامنے بٹن نہیں آتے؛ وہاں لکھا ہوتا ہے کہ کوئی اور منظور کرے گا۔</div>
-        </section>
-
-        <section id="posting">
-            <h2>۹۔ پوسٹنگ، ڈبل انٹری اور رجسٹر کے اپنے اکاؤنٹس</h2>
-            <p>پوسٹ ہوتے ہی نظام ایک متوازن <span class="en">Journal Entry</span> بناتا ہے (ڈیبٹ = کریڈٹ)، یعنی وہی جرنل سسٹم جو باقی ماڈیول استعمال کرتے ہیں۔ <b>لیکن رجسٹر کا حساب بالکل الگ ہے:</b> یہ صرف اپنے نئے اکاؤنٹس (کوڈ <span class="en">6000</span> سے شروع) استعمال کرتا ہے۔ جی آر این، سیٹلمنٹ، گڈز ایشو، کسٹمر/سپلائر یا بینک کے لائیو اکاؤنٹس کو نہ چھوا جاتا ہے نہ ان کا بیلنس بدلتا ہے۔</p>
-            <div class="tip">رجسٹر کے اکاؤنٹس کی رپورٹ ٹائپ <span class="en">BankRegister</span> ہے، اس لیے <span class="en">Balance Sheet</span> اور <span class="en">Income Statement</span> میں شامل نہیں ہوتے۔ <span class="en">Account Balances</span>، <span class="en">Trial Balance</span> اور <span class="en">General Ledger</span> میں یہ اپنے الگ گروپ میں نظر آتے ہیں۔ اکاؤنٹس کی فہرست: <span class="en">Settings › Register Ledger Accounts</span>۔</div>
-            <table>
-                <tr><th>کوڈ</th><th>اکاؤنٹ</th><th>کب استعمال ہوتا ہے</th></tr>
-                <tr><td class="en">6100+</td><td>ہر بینک / کیش / والٹ کے لیے الگ اکاؤنٹ (<span class="en">BR - HBL ...</span>)</td><td>بینک کی طرف ہمیشہ یہی؛ ریکنسیلی ایشن کا کتابی بیلنس بھی اسی سے</td></tr>
-                <tr><td class="en">6300+</td><td>ہر کمپنی کا اپنا اکاؤنٹ (<span class="en">BR - کمپنی کا نام</span>)</td><td>کسٹمر رسید، پرنسپل/سپلائر ادائیگی اور <span class="en">Other</span> میں جب انٹری پر کمپنی لگی ہو</td></tr>
-                <tr><td class="en">6201 / 6202</td><td>کسٹمر رسیدیں / کیش جمع</td><td>کمپنی نہ ہو تو</td></tr>
-                <tr><td class="en">6203 / 6210</td><td>نامعلوم آمد / نامعلوم ادائیگی (<span class="en">suspense</span>)</td><td>جہاں اکاؤنٹ یا کمپنی ابھی طے نہیں؛ بعد میں درست کمپنی لگا کر ریورس اور دوبارہ انٹری</td></tr>
-                <tr><td class="en">6204 – 6209</td><td>مالک، سپلائر کلیئرنگ، تنخواہ، بینک چارجز، ٹیکس، منتقلی</td><td>متعلقہ کیٹیگری</td></tr>
-            </table>
-            <table>
-                <tr><th>معاملہ</th><th>ڈیبٹ</th><th>کریڈٹ</th></tr>
-                <tr><td>کسٹمر/ریٹیلر سے رقم آئی</td><td>بینک کا رجسٹر اکاؤنٹ</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا کسٹمر رسیدیں کلیئرنگ)</td></tr>
-                <tr><td>پرنسپل / سپلائر کو ادائیگی</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا سپلائر کلیئرنگ)</td><td>بینک کا رجسٹر اکاؤنٹ</td></tr>
-                <tr><td>کیش جمع کروایا</td><td>بینک</td><td>کیش جمع کلیئرنگ</td></tr>
-                <tr><td>بینک چارجز / ٹیکس / تنخواہ</td><td>متعلقہ رجسٹر اکاؤنٹ</td><td>بینک</td></tr>
-                <tr><td>دو بینکوں کے بیچ منتقلی</td><td>وصول کرنے والا بینک</td><td>دینے والا بینک</td></tr>
-                <tr><td>کیٹیگری نہ ہو یا کمپنی نامعلوم</td><td>بینک / نامعلوم ادائیگی</td><td>نامعلوم آمد / بینک</td></tr>
-            </table>
-            <p><b>بیان (narration):</b> جرنل کی تفصیل میں خود بخود لکھا جاتا ہے: رسید نمبر | کمپنی/پارٹی | بینک ریفرنس | سٹیٹمنٹ کی عبارت۔ اس سے ہر لائن کو رپورٹ میں پہچانا اور الگ نکالا جا سکتا ہے۔ جس اکاؤنٹ کی کیٹیگری یا کمپنی موجود نہ ہو وہاں انٹری رکی نہیں رہتی، سسپنس اکاؤنٹ میں جاتی ہے اور بیان اسے واضح کرتا ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/11-posted.jpg') }}" alt="پوسٹ شدہ انٹری" loading="lazy"><figcaption>پوسٹ شدہ انٹری: رسید نمبر اور جرنل انٹری کا لنک</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/30-account-balances.jpg') }}" alt="اکاؤنٹ بیلنسز" loading="lazy"><figcaption>اکاؤنٹ بیلنسز میں رجسٹر کے اکاؤنٹس الگ گروپ میں</figcaption></figure>
-            <p>پوسٹ شدہ انٹری مالی ریکارڈ کا حصہ ہے؛ اسے بدلا نہیں جا سکتا، صرف ریورس کیا جا سکتا ہے۔</p>
-        </section>
-
-        <section id="reverse">
-            <h2>۱۰۔ غلطی ہو جائے تو ریورس</h2>
-            <ol>
-                <li>پوسٹ شدہ انٹری کی تفصیل کھولیں۔</li>
-                <li>وجہ لکھ کر <span class="en">Reverse</span> دبائیں (صرف چیکر / جس کے پاس <span class="en">reverse</span> کی اجازت ہو)۔</li>
-                <li>نظام الٹی جرنل انٹری پوسٹ کر دیتا ہے اور انٹری <span class="badge b-purple">Reversed</span> ہو جاتی ہے۔ اب اسے درست کر کے دوبارہ بھیجا جا سکتا ہے؛ رسید نمبر وہی رہتا ہے۔</li>
-            </ol>
-            <p>ریکنسائل شدہ انٹری ریورس نہیں ہو سکتی؛ پہلے ریکنسیلی ایشن واپس کرنی ہوگی۔ ہر قدم ٹرانزیکشن پاپ اپ کی <span class="en">History</span> میں لکھا جاتا ہے۔</p>
-        </section>
-
-        <section id="recon">
-            <h2>۱۱۔ بینک ریکنسیلی ایشن</h2>
-            <ol>
-                <li><span class="en">Reconcile › New reconciliation</span> دبائیں۔ بینک اکاؤنٹ، مدت، اور سٹیٹمنٹ کی <span class="en">Opening / Closing balance</span> لکھیں۔</li>
-                <li>جو انٹریاں رجسٹر سے پوسٹ ہوئی ہیں وہ خود جوڑ دی جاتی ہیں۔</li>
-                <li>باقی رہ جانے والی سٹیٹمنٹ لائنیں بائیں طرف ہیں، اور کتابوں کی وہ لائنیں جو سٹیٹمنٹ میں نہیں (راستے میں جمع / بقایا ادائیگیاں) دائیں طرف۔ نظام اسی رقم اور تین دن کے اندر والی لائن تجویز کرتا ہے؛ <span class="en">Match</span> دبا دیں۔</li>
-                <li>اوپر <span class="en">Difference</span> کا ڈبہ دیکھیں۔ سبز اور صفر ہو جائے اور کوئی لائن باقی نہ ہو تو <span class="en">Complete &amp; lock period</span> دبائیں۔</li>
-            </ol>
-            <figure><img src="{{ asset('icons-images/bank-register-help/13-reconciliation-create.jpg') }}" alt="نئی ریکنسیلی ایشن" loading="lazy"><figcaption>نئی ریکنسیلی ایشن شروع کرنا</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/12-reconciliation-show.jpg') }}" alt="ریکنسیلی ایشن کی سکرین" loading="lazy"><figcaption>دونوں طرف کی لائنیں اور فرق کا ڈبہ</figcaption></figure>
-            <div class="note">مکمل ہونے پر سب انٹریاں <span class="badge b-teal">Reconciled</span> ہو کر لاک ہو جاتی ہیں اور جرنل لائنیں بھی ریکنسائل ہو جاتی ہیں۔ غلطی ملے تو <span class="en">Undo reconciliation</span> سے مدت کھل جاتی ہے۔</div>
-        </section>
-
-        <section id="masters">
-            <h2>۱۲۔ سیٹنگز: کیٹیگری، الیاس، رولز، چیک</h2>
-            <p><span class="en">Settings › Bank Register</span> میں یہ فہرستیں ہیں۔ ہر ایک میں نیا بنانا، بدلنا اور (اجازت ہو تو) حذف کرنا ہے۔</p>
-            <h3>انٹری کیٹیگریاں <span class="en">Bank Entry Categories</span></h3>
-            <p>جیسے <i>Customer Receipt</i>، <i>Principal Payment</i>، <i>Bank Charges</i>۔ ہر کیٹیگری کے لیے طے کریں کہ وہ رقم آنے کے لیے ہے یا جانے کے لیے، اور چاہیں تو اس کا اپنا اکاؤنٹ (<span class="en">Own ledger account</span>) لگائیں؛ نہ لگائیں تو رجسٹر کا طے شدہ اکاؤنٹ استعمال ہوگا۔ جو کیٹیگری انٹریوں میں استعمال ہو چکی ہو اسے حذف نہیں، <b>غیر فعال</b> کریں۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/14-categories.jpg') }}" alt="کیٹیگریاں" loading="lazy"><figcaption>کیٹیگریوں کی فہرست</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/22-category-form.jpg') }}" alt="کیٹیگری کا فارم" loading="lazy"><figcaption>نئی کیٹیگری</figcaption></figure>
-            <h3>پارٹی الیاس <span class="en">Party Aliases</span></h3>
-            <p>ایک ہی شخص کے نام کئی طرح لکھے آتے ہیں (<span class="en">JAMEEL AHMED / JAMEEL AHM</span>)۔ الیاس بنا دیں کہ یہ سب ایک ہی صحیح نام اور ایک ہی کمپنی ہیں۔ حروف کا چھوٹا بڑا ہونا اور فالتو جگہیں نظر انداز ہوتی ہیں۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/15-aliases.jpg') }}" alt="الیاس" loading="lazy"><figcaption>الیاس کی فہرست</figcaption></figure>
-            <h3>خودکار رولز <span class="en">Auto-classify Rules</span></h3>
-            <p>"نریشن میں <span class="en">Service Charges</span> ہو تو کیٹیگری <span class="en">Bank Charges</span>" جیسے اصول۔ <span class="en">Priority</span> میں چھوٹا نمبر پہلے چلتا ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/16-rules.jpg') }}" alt="رولز" loading="lazy"><figcaption>رولز کی فہرست</figcaption></figure>
-            <h3>چیک رجسٹر <span class="en">Bank Cheque Register</span></h3>
-            <p>جاری کیے گئے اور وصول ہونے والے چیک لکھیں۔ سٹیٹمنٹ کے ریفرنس میں چیک نمبر اور وہی رقم آئے تو چیک خود <span class="en">Cleared</span> ہو جاتا ہے اور سٹیٹمنٹ لائن سے جُڑ جاتا ہے۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/17-cheques.jpg') }}" alt="چیک رجسٹر" loading="lazy"><figcaption>چیک رجسٹر</figcaption></figure>
-        </section>
-
-        <section id="reports">
-            <h2>۱۳۔ رپورٹس</h2>
-            <p>بینک رجسٹر کی رپورٹس <span class="en">Reports</span> کے صفحے پر الگ گروپ <span class="en">Bank Register</span> میں ہیں۔ ہر رپورٹ <span class="en">Account Balances</span> جیسے ایک ہی انداز میں کھلتی ہے: اوپر فلٹر کا بٹن، نیچے ٹیبل، اور <span class="en">Excel</span> / <span class="en">PDF</span> / پرنٹ کے بٹن۔ بہت سی الگ رپورٹوں کے بجائے چند لچکدار رپورٹیں ہیں جن میں فلٹر بدل کر ہر مطلوبہ نتیجہ مل جاتا ہے۔</p>
-            <table>
-                <tr><th>رپورٹ</th><th>کام</th></tr>
-                <tr><td><span class="en">Register entries</span></td><td>تمام انٹریوں کی فہرست۔ فلٹر: بینک اکاؤنٹ، تاریخ، آمد / خرچ، کمپنی، کیٹیگری، حالت (<span class="en">Status</span>)، رسید ہے یا نہیں، ترتیب۔ مثلاً: <b>کمپنی چنیں</b> تو اس کا کھاتہ بیلنس کے ساتھ؛ <b>حالت = Unclassified</b> تو غیر درجہ بند؛ <b>Receipt = Without receipt</b> تو بغیر رسید؛ <b>حالت = Pending approval</b> تو منظوری کے انتظار والی؛ کیٹیگری = <span class="en">Bank Charges</span> تو بینک چارجز</td></tr>
-                <tr><td><span class="en">Register summary</span></td><td>کل رقوم کا خلاصہ۔ <span class="en">Group by</span> میں کمپنی، کیٹیگری، بینک اکاؤنٹ، مہینہ، دن، یا "کمپنی بہ ماہ" / "کیٹیگری بہ ماہ" (پرانی ایکسل شیٹ جیسا، سٹیٹمنٹ کے کل اعداد سے فرق کے ساتھ)۔ فلٹر وہی۔ ٹاپ پارٹیز، کیش فلو، روزانہ خلاصہ سب یہیں سے</td></tr>
-                <tr><td><span class="en">Reconciliation statement</span></td><td>سٹیٹمنٹ بیلنس، بقایا چیزیں، کتابی بیلنس اور فرق</td></tr>
-                <tr><td><span class="en">Scanned receipts not yet linked</span></td><td>ان باکس کی وہ رسیدیں جو کسی انٹری سے نہیں جڑیں، پرانی پہلے</td></tr>
-                <tr><td><span class="en">Not yet in the live books</span></td><td>رجسٹر میں پوسٹ شدہ وہ رقمیں جو ابھی جی آر این/سیٹلمنٹ وغیرہ کے لائیو حساب میں نہیں آئیں</td></tr>
-                <tr><td><span class="en">Audit log</span></td><td>کس نے کب کیا کیا</td></tr>
-            </table>
-            <p>رجسٹر کے اپنے اکاؤنٹس کے بیلنس الگ صفحے کے بجائے <span class="en">Reports › Account Balances</span> میں <span class="en">Bank Register</span> گروپ کے تحت نظر آتے ہیں۔</p>
-            <figure><img src="{{ asset('icons-images/bank-register-help/18-reports-index.jpg') }}" alt="رپورٹس" loading="lazy"><figcaption>رپورٹس کا صفحہ: بینک رجسٹر کا الگ گروپ</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/19-report-company-month.jpg') }}" alt="رجسٹر خلاصہ" loading="lazy"><figcaption>رجسٹر کا خلاصہ (کمپنی بہ ماہ)</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/20-report-ledger.jpg') }}" alt="رجسٹر انٹریز" loading="lazy"><figcaption>رجسٹر انٹریز: کمپنی کا کھاتہ</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/29-live-gap.jpg') }}" alt="لائیو حساب میں نہیں" loading="lazy"><figcaption>رجسٹر اور لائیو حساب کا فرق</figcaption></figure>
-            <p>ہر رپورٹ اسی کو نظر آتی ہے جسے اس کی اجازت ہو۔ میکر، چیکر اور آڈیٹر سب رپورٹیں دیکھتے ہیں؛ سینئر منظور کنندہ صرف <span class="en">Register entries</span>، <span class="en">Register summary</span> اور <span class="en">Audit log</span>۔</p>
-        </section>
-
-        <section id="print">
-            <h2>۱۴۔ پرنٹ کرنا (لیزر پرنٹر، سیاہ و سفید)</h2>
-            <p>ہر صفحے کا <span class="en">Print</span> بٹن، یا <span class="en">Ctrl + P</span>۔ پرنٹ <b>سیاہ و سفید لیزر پرنٹر</b> کے حساب سے بنا ہے: کوئی رنگ نہیں، صرف سیاہ لکھائی اور لکیریں؛ حالت (جیسے <span class="en">Posted</span>) رنگ کی جگہ خانے میں لکھی آتی ہے۔ <b>صرف رسیدیں اور اٹیچ کی ہوئی تصویریں اپنے اصل رنگ میں</b> چھپتی ہیں۔</p>
-            <ul>
-                <li>مینو، بٹن، فلٹر اور ٹِک باکس خود ہٹ جاتے ہیں۔ اوپر کمپنی کا نام، رپورٹ کا عنوان، فلٹر، پرنٹ کی تاریخ اور پرنٹ کرنے والے کا نام آتا ہے۔</li>
-                <li>صفحہ <span class="en">A4 Landscape</span> ہے؛ ٹیبل پورے صفحے پر، ہر صفحے پر عنوان کی قطار دوبارہ آتی ہے، اور ایک قطار دو صفحوں میں نہیں ٹوٹتی۔</li>
-                <li><b>رجسٹر:</b> فلٹر لگا کر پرنٹ کریں تو وہی انٹریاں چھپتی ہیں جو اسکرین پر ہیں۔</li>
-                <li><b>ایک ٹرانزیکشن:</b> پاپ اپ یا ٹرانزیکشن کے صفحے سے پرنٹ کریں؛ رسید نمبر، جرنل، منظوری، رسیدوں کی فہرست اور تاریخچہ سب شامل ہوتے ہیں۔</li>
-                <li><b>رپورٹس:</b> ہر رپورٹ میں <span class="en">Excel</span> اور <span class="en">PDF</span> کے بٹن بھی ہیں۔</li>
-                <li><b>یہ رہنمائی:</b> اوپر کے <span class="en">🖨 پرنٹ کریں</span> سے پوری گائیڈ چھپتی ہے۔</li>
-            </ul>
-            <figure><img src="{{ asset('icons-images/bank-register-help/32-print-register.jpg') }}" alt="پرنٹ کا منظر" loading="lazy"><figcaption>رجسٹر کا پرنٹ: سیاہ و سفید، صاف عنوان، پورا ٹیبل</figcaption></figure>
-            <figure><img src="{{ asset('icons-images/bank-register-help/33-print-entry.jpg') }}" alt="ٹرانزیکشن کا پرنٹ" loading="lazy"><figcaption>ایک ٹرانزیکشن کا پرنٹ</figcaption></figure>
-        </section>
-
-        <section id="faq">
-            <h2>۱۵۔ عام سوالات اور مسائل</h2>
-            <table>
-                <tr><th>مسئلہ</th><th>حل</th></tr>
-                <tr><td>امپورٹ "Does not tally" کہتی ہے</td><td>پرنٹ شدہ سٹیٹمنٹ کے کل ڈیبٹ/کریڈٹ دوبارہ دیکھیں، یا فائل میں کوئی قطار رہ گئی ہو۔ غلط قطاروں کی فہرست خلاصے میں نیچے ہوتی ہے۔</td></tr>
-                <tr><td>"File layout was not recognised"</td><td>فائل میں سب سے اوپر کی قطار میں <span class="en">Posting date</span> اور <span class="en">Debit</span> / <span class="en">Credit</span> کے عنوان لکھیں۔</td></tr>
-                <tr><td>Submit کا بٹن نہیں ہے</td><td>انٹری کی کیٹیگری لگی ہونی چاہیے اور حالت <span class="en">Classified / Rejected / Reversed</span> ہو۔</td></tr>
-                <tr><td>"You submitted this entry, so a different person must approve it"</td><td>میکر اپنی انٹری منظور نہیں کر سکتا؛ چیکر سے کہیں۔</td></tr>
-                <tr><td>"needs a senior approver"</td><td>رقم دوسرے درجے کی حد سے اوپر ہے؛ ایسا شخص منظور کرے جس کے پاس <span class="en">approve-high-value</span> کی اجازت ہو۔</td></tr>
-                <tr><td>رجسٹر کی رقم باقی ماڈیولز کی رپورٹ میں کیوں نظر نہیں آتی</td><td>یہی اس کا ڈیزائن ہے: رجسٹر کا حساب الگ ہے۔ دونوں کا فرق <span class="en">Not yet in the live books</span> رپورٹ میں دیکھیں۔</td></tr>
-                <tr><td>انٹری بدل نہیں سکتی</td><td>پوسٹ شدہ انٹری لاک ہے؛ پہلے ریورس کریں۔</td></tr>
-                <tr><td>ریکنسیلی ایشن مکمل نہیں ہو رہی</td><td>دیکھیں کہ کوئی سٹیٹمنٹ لائن بغیر جوڑ کے تو نہیں، اور <span class="en">Difference</span> صفر ہے۔</td></tr>
-                <tr><td>رسید کاغذ پر ہے، انٹری ابھی نہیں بنی</td><td>رسید کو اسکین ان باکس میں ڈال دیں؛ انٹری بننے پر جوڑ دیں۔</td></tr>
-                <tr><td>انٹری دو بار بن گئی</td><td>ہاتھ سے بنائی ہوئی غیر پوسٹ انٹری حذف ہو سکتی ہے؛ پوسٹ ہو چکی ہو تو ریورس کریں۔</td></tr>
-                <tr><td>سٹیٹمنٹ کا فارمیٹ مختلف ہے</td><td>عنوانوں میں <span class="en">Date</span> اور <span class="en">Debit/Credit</span> یا <span class="en">Amount (+ Dr/Cr)</span> ہو تو چل جاتا ہے؛ ورنہ ہاتھ سے انٹری شامل کریں۔</td></tr>
-                <tr><td>"<span class="en">The date cannot be in the future</span>"</td><td>آنے والی تاریخ کی انٹری نہیں بن سکتی۔</td></tr>
-                <tr><td>کوئی بٹن یا صفحہ نظر نہیں آتا</td><td>اجازت نہیں ہوگی؛ ایڈمن سے <span class="en">Settings › Roles</span> میں اجازت دلوائیں۔</td></tr>
-            </table>
-            <div class="tip">پہلی بار استعمال: ۱) کیٹیگریاں اور الیاس دیکھ لیں، ۲) سب سے بڑی رقم والی غیر درجہ بند انٹریاں پہلے نمٹائیں (فہرست کو رقم کے حساب سے فلٹر کریں)، ۳) جس نام کو بار بار لگانا پڑے اس پر "<span class="en">Remember for next time</span>" ضرور لگائیں۔</div>
-        </section>
-    </main>
-</body>
-</html>
+</x-app-layout>

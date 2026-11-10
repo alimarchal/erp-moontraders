@@ -78,14 +78,14 @@ test('the senior approver sees only the reports needed to decide on large amount
         $this->get(route('reports.bank.show', $slug))->assertForbidden();
     }
 
-    $this->get(route('reports.index'))->assertOk()->assertSee('Register entries')->assertDontSee('Not yet in the live books');
+    $this->get(route('reports.bank.index'))->assertOk()->assertSee('Register entries')->assertDontSee('Not yet in the live books');
 });
 
 test('the checker can open the approvals inbox and see and open the receipt of the entry being approved', function () {
     app(BankEntryApprovalService::class)->submit($this->entry, $this->maker);
     $this->actingAs($this->checker);
 
-    $this->get(route('bank-approvals.index'))->assertOk()->assertSee('slip.pdf')->assertSee('inline=1', false);
+    $this->get(route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]))->assertOk()->assertSee('slip.pdf')->assertSee('inline=1', false);
     $this->get(route('bank-attachments.download', ['attachment' => $this->attachment, 'inline' => 1]))->assertOk()->assertHeader('content-disposition', 'inline; filename=slip.pdf');
     $this->get(route('bank-attachments.download', $this->attachment))->assertDownload('slip.pdf');
     $this->get(route('bank-statement-entries.drawer', $this->entry))->assertOk()->assertSee('slip.pdf');
@@ -102,14 +102,14 @@ test('an entry with no receipt is called out to the approver', function () {
     ]);
     app(BankEntryApprovalService::class)->submit($bare, $this->maker);
 
-    $this->actingAs($this->checker)->get(route('bank-approvals.index'))->assertSee('No receipt');
+    $this->actingAs($this->checker)->get(route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]))->assertSee('No receipt');
 });
 
 test('the maker can submit but not approve, reject or reverse', function () {
     app(BankEntryApprovalService::class)->submit($this->entry, $this->maker);
     $this->actingAs($this->maker);
 
-    $this->get(route('bank-approvals.index'))->assertOk();
+    $this->get(route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]))->assertOk();
     $this->post(route('bank-approvals.approve', $this->entry))->assertForbidden();
     $this->post(route('bank-approvals.reject', $this->entry), ['reason' => 'x'])->assertForbidden();
     $this->post(route('bank-statement-entries.reverse', $this->entry), ['reason' => 'x'])->assertForbidden();
@@ -125,7 +125,7 @@ test('the checker can approve, reject, reverse and complete a reconciliation but
     $this->post(route('bank-statement-entries.bulk-classify'), ['ids' => [$this->entry->id], 'bank_entry_category_id' => $this->fixture['category']->id])->assertForbidden();
     $this->post(route('bank-statement-entries.submit', $this->entry))->assertForbidden();
 
-    foreach (['bank-statement-entries.index', 'bank-reconciliations.index', 'bank-cheques.index', 'bank-receipt-scans.index', 'bank-approvals.index', 'bank-register.help'] as $name) {
+    foreach (['bank-statement-entries.index', 'bank-reconciliations.index', 'bank-cheques.index', 'bank-receipt-scans.index', 'bank-register.help'] as $name) {
         $this->get(route($name))->assertOk();
     }
 });
@@ -133,7 +133,7 @@ test('the checker can approve, reject, reverse and complete a reconciliation but
 test('the senior approver can approve high-value entries but cannot classify, post or reconcile', function () {
     $this->actingAs($this->senior);
 
-    $this->get(route('bank-approvals.index'))->assertOk();
+    $this->get(route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]))->assertOk();
     $this->get(route('bank-statement-entries.index'))->assertOk();
     $this->get(route('bank-reconciliations.index'))->assertForbidden();
     $this->get(route('bank-statement-entries.create'))->assertForbidden();
@@ -149,7 +149,7 @@ test('the auditor can look and export but change nothing', function () {
     $this->get(route('bank-statement-entries.export'))->assertOk();
     $this->get(route('bank-attachments.download', ['attachment' => $this->attachment, 'inline' => 1]))->assertOk();
 
-    $this->get(route('bank-approvals.index'))->assertOk();
+    $this->get(route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]))->assertOk();
     $this->post(route('bank-approvals.approve', $this->entry))->assertForbidden();
     $this->get(route('bank-statement-entries.create'))->assertForbidden();
     $this->get(route('bank-statement-entries.edit', $this->entry))->assertForbidden();
@@ -172,7 +172,7 @@ test('the maker can add entries, scan receipts and link them', function () {
 test('a user without any bank permission is refused everywhere and the menu hides the module', function () {
     $this->actingAs($this->nobody);
 
-    foreach (['bank-statement-entries.index', 'bank-statement-entries.create', 'bank-approvals.index', 'bank-reconciliations.index', 'bank-receipt-scans.index', 'bank-register.help'] as $name) {
+    foreach (['bank-statement-entries.index', 'bank-statement-entries.create', 'bank-reconciliations.index', 'bank-receipt-scans.index', 'bank-register.help'] as $name) {
         $response = $this->get(route($name));
         expect($response->status())->toBeIn([403]);
     }

@@ -113,7 +113,7 @@ test('the full maker-checker journey through the screens', function () {
     $this->entry->update(['submitted_by' => $this->maker->id]);
 
     // checker sees it in the inbox and approves
-    $this->actingAs($this->checker)->get(route('bank-approvals.index'))->assertOk()->assertSee('Unilever')->assertSee('2,500,000.00');
+    $this->actingAs($this->checker)->get(route('bank-statement-entries.index', ['filter' => ['status' => 'pending_approval']]))->assertOk()->assertSee('Unilever')->assertSee('2,500,000.00');
     $this->post(route('bank-approvals.approve', $this->entry))->assertSessionHas('success');
 
     $entry = $this->entry->fresh();
@@ -212,9 +212,9 @@ test('a user with no bank permission sees none of the bank screens', function ()
     $this->actingAs(bankUser([]));
 
     foreach ([
-        route('bank-statement-entries.index'), route('bank-approvals.index'), route('bank-reconciliations.index'),
+        route('bank-statement-entries.index'), route('bank-reconciliations.index'),
         route('bank-entry-categories.index'), route('bank-party-aliases.index'), route('bank-entry-rules.index'),
-        route('bank-cheques.index'), route('bank-statement-imports.index'), route('bank-register.help'),
+        route('bank-cheques.index'), route('bank-statement-imports.create'), route('bank-register.help'),
     ] as $url) {
         $this->get($url)->assertForbidden();
     }

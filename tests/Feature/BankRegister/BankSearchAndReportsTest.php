@@ -125,7 +125,7 @@ test('every report builds and renders for a user who may see it', function () {
     $user = bankUser(array_values(array_map(fn ($r) => $r['permission'], BankReportService::REPORTS)));
     $this->actingAs($user);
 
-    $this->get(route('reports.index'))->assertOk()->assertSee('Register entries')->assertSee('Register summary');
+    $this->get(route('reports.bank.index'))->assertOk()->assertSee('Register entries')->assertSee('Register summary');
 
     foreach (array_keys(BankReportService::REPORTS) as $slug) {
         $this->get(route('reports.bank.show', $slug))->assertOk();
@@ -156,4 +156,12 @@ test('the unlinked scans report lists waiting receipts oldest first', function (
     $report = app(BankReportService::class)->build('unlinked-scans', []);
 
     expect($report['rows'])->toHaveCount(2)->and($report['rows'][0][2])->toBe('old.jpg')->and($report['rows'][0][1])->toBe(9);
+});
+
+test('the bank reports list is refused to a person with no bank report permission and is not on the general reports page', function () {
+    $this->actingAs(bankUser(['bank-statement-entry-list']));
+    $this->get(route('reports.bank.index'))->assertForbidden();
+
+    $this->actingAs(bankUser(['report-bank-entries']));
+    $this->get(route('reports.index'))->assertOk()->assertDontSee('Register entries');
 });

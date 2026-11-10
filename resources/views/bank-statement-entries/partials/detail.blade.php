@@ -3,6 +3,8 @@
     $rules = app(\App\Services\BankRegister\BankApprovalRules::class);
     $level = $rules->requiredLevel($entry);
     $isIn = $entry->direction === 'credit';
+    $isOwnSubmission = (int) $entry->submitted_by === (int) auth()->id() && ! config('bank.maker_checker.allow_self_approval');
+    $canDelete = $canEdit && $entry->status !== 'pending_approval';
 @endphp
 <div class="bk-stack">
     {{-- Heading --}}
@@ -16,95 +18,94 @@
         <p class="ak-muted">{{ $isIn ? 'Received' : 'Paid out' }} on {{ $entry->posting_date->format('d F Y') }} · {{ $entry->bankAccount->account_name }}</p>
     </div>
 
-    <div class="bk-detail-grid">
-    <div class="bk-detail-main bk-stack">
-    {{-- Facts --}}
-    <dl class="bk-dl">
-        <div><dt>Party on statement</dt><dd dir="auto">{{ $entry->party_name_in_statement ?? '—' }}</dd></div>
-        <div><dt>Company / principal</dt><dd dir="auto">{{ $entry->company?->supplier_name ?? '—' }}</dd></div>
-        <div><dt>Category</dt><dd>{{ $entry->category?->name ?? '—' }}</dd></div>
-        <div><dt>Reference</dt><dd>{{ $entry->reference ?? '—' }}</dd></div>
-        <div class="bk-wide"><dt>Narration</dt><dd dir="auto">{{ $entry->narration ?? '—' }}</dd></div>
-        <div class="bk-wide"><dt>Note</dt><dd dir="auto">{{ $entry->description ?: '—' }}</dd></div>
-        @if ($entry->source_statement)<div class="bk-wide ak-muted">{{ $entry->source_statement }}@if ($entry->pdf_page) · PDF page {{ $entry->pdf_page }}@endif</div>@endif
-    </dl>
-
-    {{-- Journal --}}
-    @if ($entry->journalEntry)
-        <div class="bk-box">
-            <h4>Journal entry</h4>
-            <p><a href="{{ route('journal-entries.show', $entry->journalEntry) }}" class="ak-primary-link">#{{ $entry->journalEntry->id }} · {{ $entry->journalEntry->reference }}</a>
-                <span class="ak-muted">posted {{ $entry->posted_at?->format('d-m-Y H:i') }} by {{ $entry->poster?->name }}</span></p>
-        </div>
-    @endif
-
-    {{-- Approval --}}
-    <div class="bk-box">
-        <h4>Approval</h4>
-        @if ($level === 0)
-            <p>Below the approval limit (PKR {{ number_format(config('bank.maker_checker.level1_threshold')) }}): the maker can post it directly.</p>
-        @else
-            <p>Needs <b>{{ $level === 2 ? 'a checker and a senior approver' : 'a checker' }}</b>
-                (from PKR {{ number_format($level === 2 ? config('bank.maker_checker.level2_threshold') : config('bank.maker_checker.level1_threshold')) }}).</p>
-        @endif
-        @if ($entry->rejection_reason)
-            <p style="margin-top:8px"><b>Rejected</b> by {{ $entry->rejecter?->name }}: {{ $entry->rejection_reason }}</p>
-        @endif
-        @if ($entry->approvals->isNotEmpty())
-            <ol style="margin:8px 0 0; padding-left:18px; font-size:13px">
-                @foreach ($entry->approvals as $step)
-                    <li><b>{{ ucfirst(str_replace('_', ' ', $step->action)) }}</b>@if ($step->level) (level {{ $step->level }})@endif
-                        — {{ $step->user?->name ?? 'System' }}, {{ $step->acted_at->format('d-m-Y H:i') }}@if ($step->comment) · “{{ $step->comment }}”@endif</li>
-                @endforeach
-            </ol>
-        @endif
-    </div>
-
-    {{-- Audit --}}
-    <details>
-        <summary class="ak-muted" style="cursor:pointer">History ({{ $entry->auditLogs->count() }})</summary>
-        <ul style="margin:8px 0 0; padding-left:18px; font-size:13px">
-            @foreach ($entry->auditLogs as $log)
-                <li><b>{{ ucfirst(str_replace('_', ' ', $log->action)) }}</b> — {{ $log->user?->name ?? 'System' }}, {{ $log->created_at->format('d-m-Y H:i') }}</li>
-            @endforeach
-        </ul>
-    </details>
-    </div>
-
-    <div class="bk-detail-side bk-stack">
-    {{-- Attachments --}}
-    <div class="bk-box">
-        <h4>Receipt &amp; attachments ({{ $entry->attachments->count() }})</h4>
-        @forelse ($entry->attachments as $attachment)
-            <div class="bk-file">
-                <div style="min-width:0">
-                    <a href="{{ route('bank-attachments.download', ['attachment' => $attachment, 'inline' => 1]) }}" target="_blank" rel="noopener">{{ $attachment->file_name }}</a>
-                    <div class="ak-muted" dir="auto">{{ \App\Models\Attachment::LABELS[$attachment->label] ?? $attachment->label }} · {{ number_format(($attachment->file_size ?? 0) / 1024, 1) }} KB · {{ $attachment->uploader?->name }}@if ($attachment->description) · {{ $attachment->description }}@endif</div>
-                </div>
-                @can('bank-statement-entry-attach')
-                    <form method="POST" class="bank-noprint" action="{{ route('bank-attachments.destroy', $attachment) }}" onsubmit="return confirm('Remove this file?')">@csrf @method('DELETE')<button class="ak-btn ak-btn-danger-outline ak-btn-sm">Remove</button></form>
-                @endcan
-            </div>
-        @empty
-            <p class="ak-muted">No receipt or file attached yet.</p>
-        @endforelse
-
-        @can('bank-statement-entry-attach')
-            @if ($entry->status !== 'reconciled')
-                <form method="POST" action="{{ route('bank-statement-entries.attachments.store', $entry) }}" enctype="multipart/form-data" class="bank-noprint bk-stack" style="margin-top:12px">
-                    @csrf
-                    <input type="file" name="files[]" data-compress multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv">
-                    <div class="bk-row">
-                        <select data-allow-clear="false" data-width="170px" name="label" class="select2 bank-select">
-                            @foreach (\App\Models\Attachment::LABELS as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
-                        </select>
-                        <input name="description" maxlength="500" dir="auto" placeholder="Description (optional)" style="flex:1; min-width:140px; height:38px; padding:0 12px; border:1px solid var(--ak-border-strong); border-radius:8px">
-                        <button class="ak-btn ak-btn-primary">Attach</button>
-                    </div>
-                </form>
+    {{-- Bordered sheets, as on the Cash Collection report: the same tables on screen, in the pop-up and on paper --}}
+    <table class="bk-t">
+        <thead><tr class="cap"><th colspan="4">1 - Entry <small>{{ $entry->source_statement }}@if ($entry->pdf_page) · PDF page {{ $entry->pdf_page }}@endif</small></th></tr></thead>
+        <tbody>
+            <tr><th>Date</th><td>{{ $entry->posting_date->format('d-m-Y') }}</td><th>Account</th><td>{{ $entry->bankAccount->account_name }}@if ($entry->bankAccount->account_number) ({{ $entry->bankAccount->account_number }})@endif</td></tr>
+            <tr><th>{{ $isIn ? 'Received' : 'Paid out' }} (PKR)</th><td class="b">{{ number_format($entry->amount, 2) }}</td><th>Receipt no.</th><td class="b">{{ $entry->receipt_no ?? '—' }}</td></tr>
+            <tr><th>Party on statement</th><td dir="auto">{{ $entry->party_name_in_statement ?? '—' }}</td><th>Company / principal</th><td dir="auto">{{ $entry->company?->supplier_name ?? '—' }}</td></tr>
+            <tr><th>Category</th><td>{{ $entry->category?->name ?? '—' }}</td><th>Reference</th><td>{{ $entry->reference ?? '—' }}</td></tr>
+            <tr><th>Narration</th><td colspan="3" dir="auto">{{ $entry->narration ?? '—' }}</td></tr>
+            <tr><th>Note</th><td colspan="3" dir="auto">{{ $entry->description ?: '—' }}</td></tr>
+            @if ($entry->journalEntry)
+                <tr><th>Journal entry</th><td><a href="{{ route('journal-entries.show', $entry->journalEntry) }}" class="ak-primary-link">#{{ $entry->journalEntry->id }} · {{ $entry->journalEntry->reference }}</a></td>
+                    <th>Posted</th><td>{{ $entry->posted_at?->format('d-m-Y H:i') }} · {{ $entry->poster?->name }}</td></tr>
             @endif
-        @endcan
-    </div>
+        </tbody>
+    </table>
+
+    <table class="bk-t">
+        <thead>
+            <tr class="cap"><th colspan="5">2 - Approval
+                <small>@if ($level === 0)Below the approval limit (PKR {{ number_format(config('bank.maker_checker.level1_threshold')) }}): the maker can post it directly.@else Needs {{ $level === 2 ? 'a checker and a senior approver' : 'a checker' }} (from PKR {{ number_format($level === 2 ? config('bank.maker_checker.level2_threshold') : config('bank.maker_checker.level1_threshold')) }}).@endif</small></th></tr>
+            <tr><th>Step</th><th class="c">Level</th><th>By</th><th>When</th><th>Comment</th></tr>
+        </thead>
+        <tbody>
+            @forelse ($entry->approvals as $step)
+                <tr><td class="b">{{ ucfirst(str_replace('_', ' ', $step->action)) }}</td><td class="c">{{ $step->level ?: '—' }}</td>
+                    <td>{{ $step->user?->name ?? 'System' }}</td><td>{{ $step->acted_at->format('d-m-Y H:i') }}</td><td dir="auto">{{ $step->comment ?? '—' }}</td></tr>
+            @empty
+                <tr><td colspan="5" class="bk-none">Not submitted yet.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <table class="bk-t">
+        <thead>
+            <tr class="cap"><th colspan="{{ auth()->user()->can('bank-statement-entry-attach') ? 6 : 5 }}">3 - Receipt &amp; attachments <small>{{ $entry->attachments->count() }} file(s)</small></th></tr>
+            <tr><th>File</th><th>Kind</th><th class="n">Size (KB)</th><th>Added by</th><th>Description</th>@can('bank-statement-entry-attach')<th class="c bank-noprint">Remove</th>@endcan</tr>
+        </thead>
+        <tbody>
+            @forelse ($entry->attachments as $attachment)
+                <tr>
+                    <td><a href="{{ route('bank-attachments.download', ['attachment' => $attachment, 'inline' => 1]) }}" target="_blank" rel="noopener" class="ak-primary-link">{{ $attachment->file_name }}</a></td>
+                    <td>{{ \App\Models\Attachment::LABELS[$attachment->label] ?? $attachment->label }}</td>
+                    <td class="n">{{ number_format(($attachment->file_size ?? 0) / 1024, 1) }}</td>
+                    <td>{{ $attachment->uploader?->name ?? '—' }}</td>
+                    <td dir="auto">{{ $attachment->description ?? '—' }}</td>
+                    @can('bank-statement-entry-attach')
+                        <td class="c bank-noprint"><form method="POST" action="{{ route('bank-attachments.destroy', $attachment) }}" onsubmit="return confirm('Remove this file?')">@csrf @method('DELETE')<button class="ak-btn ak-btn-danger-outline ak-btn-sm">Remove</button></form></td>
+                    @endcan
+                </tr>
+            @empty
+                <tr><td colspan="{{ auth()->user()->can('bank-statement-entry-attach') ? 6 : 5 }}" class="bk-none">No receipt or file attached yet.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    @can('bank-statement-entry-attach')
+        @if ($entry->status !== 'reconciled')
+            <form method="POST" action="{{ route('bank-statement-entries.attachments.store', $entry) }}" enctype="multipart/form-data" class="bank-noprint bk-attach">
+                @csrf
+                <div class="bk-attach-file"><label for="attach-files-{{ $entry->id }}">Add a receipt, slip or cheque copy</label>
+                    <input id="attach-files-{{ $entry->id }}" type="file" name="files[]" data-compress multiple required accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv"></div>
+                <div><label for="attach-label-{{ $entry->id }}">Kind of file</label>
+                    <select id="attach-label-{{ $entry->id }}" name="label" class="select2 bank-select" data-allow-clear="false" data-width="100%">
+                        @foreach (\App\Models\Attachment::LABELS as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
+                    </select></div>
+                <div class="bk-attach-desc"><label for="attach-desc-{{ $entry->id }}">Description (optional)</label>
+                    <input id="attach-desc-{{ $entry->id }}" name="description" maxlength="500" dir="auto"></div>
+                <button class="ak-btn ak-btn-primary">Attach</button>
+            </form>
+        @endif
+    @endcan
+
+    <table class="bk-t">
+        <thead>
+            <tr class="cap"><th colspan="3">4 - History <small>{{ $entry->auditLogs->count() }} event(s), newest first</small></th></tr>
+            <tr><th>Action</th><th>By</th><th>When</th></tr>
+        </thead>
+        <tbody>
+            @foreach ($entry->auditLogs as $log)
+                <tr><td class="b">{{ ucfirst(str_replace('_', ' ', $log->action)) }}</td><td>{{ $log->user?->name ?? 'System' }}</td><td>{{ $log->created_at->format('d-m-Y H:i') }}</td></tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    @if ($entry->rejection_reason)
+        <p class="bk-note"><b>Rejected</b> by {{ $entry->rejecter?->name }}: {{ $entry->rejection_reason }}</p>
+    @endif
 
     {{-- Actions --}}
     <div class="bank-noprint bk-stack">
@@ -120,7 +121,7 @@
                 @endif
             @endcan
             @can('bank-statement-entry-approve')
-                @if ($entry->status === 'pending_approval')
+                @if ($entry->status === 'pending_approval' && ! $isOwnSubmission)
                     <form method="POST" action="{{ route('bank-approvals.approve', $entry) }}">@csrf
                         <button class="ak-btn ak-btn-success">Approve</button>
                     </form>
@@ -133,25 +134,48 @@
             @endcan
         </div>
 
-        @can('bank-statement-entry-reject')
-            @if ($entry->status === 'pending_approval')
-                <form method="POST" action="{{ route('bank-approvals.reject', $entry) }}" class="bk-inline-form">@csrf
-                    <input name="reason" required maxlength="500" dir="auto" placeholder="Reason for rejecting">
-                    <button class="ak-btn ak-btn-danger-outline">Reject</button>
-                </form>
-            @endif
-        @endcan
+        @if ($entry->status === 'pending_approval' && $isOwnSubmission)
+            <p class="ak-muted">You submitted this entry, so a different person has to approve it.</p>
+        @endif
+
+        <div class="bk-row">
+            @can('bank-statement-entry-reject')
+                @if ($entry->status === 'pending_approval')
+                    <x-bank.action-modal title="Reject entry" sub="It goes back to the maker to be corrected and submitted again."
+                        :action="route('bank-approvals.reject', $entry)" trigger="Reject" confirm="Reject entry">
+                        @include('bank-statement-entries.partials.summary')
+                        <div><label for="reject-reason-{{ $entry->id }}">Reason for rejecting <span class="uf-req">*</span></label>
+                            <textarea id="reject-reason-{{ $entry->id }}" name="reason" rows="3" required maxlength="500" dir="auto" placeholder="What has to be corrected"></textarea></div>
+                    </x-bank.action-modal>
+                @endif
+            @endcan
+
+            @can('bank-statement-entry-reverse')
+                @if ($entry->status === 'posted' && ! $rules->reversalNeedsSecondPerson($entry, auth()->user()))
+                    <x-bank.action-modal title="Reverse entry" sub="A reversing journal entry is posted. The line can then be corrected and posted again."
+                        :action="route('bank-statement-entries.reverse', $entry)" trigger="Reverse entry" confirm="Reverse entry">
+                        @include('bank-statement-entries.partials.summary')
+                        <div><label for="reverse-reason-{{ $entry->id }}">Reason for reversing <span class="uf-req">*</span></label>
+                            <textarea id="reverse-reason-{{ $entry->id }}" name="reason" rows="3" required maxlength="500" dir="auto" placeholder="Why this entry is being taken back"></textarea></div>
+                    </x-bank.action-modal>
+                @endif
+            @endcan
+
+            @can('bank-statement-entry-delete')
+                @if ($canDelete)
+                    <x-bank.action-modal title="Delete entry" sub="Use this for an entry that was typed in by mistake."
+                        :action="route('bank-statement-entries.destroy', $entry)" method="DELETE" trigger="Delete entry" confirm="Delete entry">
+                        @include('bank-statement-entries.partials.summary')
+                        <p>This removes the line from the register. It cannot be brought back from this screen.</p>
+                    </x-bank.action-modal>
+                @endif
+            @endcan
+        </div>
 
         @can('bank-statement-entry-reverse')
-            @if ($entry->status === 'posted')
-                <form method="POST" action="{{ route('bank-statement-entries.reverse', $entry) }}" class="bk-inline-form" onsubmit="return confirm('Reverse this entry? A reversing journal entry will be posted.')">@csrf
-                    <input name="reason" required maxlength="500" dir="auto" placeholder="Reason for reversing">
-                    <button class="ak-btn ak-btn-danger-outline">Reverse</button>
-                </form>
+            @if ($entry->status === 'posted' && $rules->reversalNeedsSecondPerson($entry, auth()->user()))
+                <p class="ak-muted">This entry needed approval, so a different person has to reverse it.</p>
             @endif
         @endcan
-    </div>
-
-    </div>
     </div>
 </div>

@@ -110,6 +110,10 @@ class BankEntryPostingService
                 throw new BankRegisterException('Only a posted entry can be reversed.');
             }
 
+            if ($this->approvalRules->reversalNeedsSecondPerson($entry, $user)) {
+                throw new BankRegisterException('This entry needed approval to be posted, so the person who submitted it cannot reverse it alone. A different person with the reverse permission must reverse it.');
+            }
+
             $result = $this->accounting->reverseJournalEntry($entry->journal_entry_id, "Reversal of {$entry->receipt_no}: {$reason}");
 
             if (! $result['success']) {

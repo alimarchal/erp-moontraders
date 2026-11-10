@@ -2,8 +2,8 @@
 <x-app-layout>
     <x-slot name="header">
         <x-bank.head :title="'Import summary: '.$import->file_name" :sub="$import->status === 'imported' ? 'Step 3 of 3: imported.' : 'Step 2 of 3: check the summary, then confirm.'"
-            :crumbs="['Statement imports' => route('bank-statement-imports.index'), $import->file_name => null]">
-            <a href="{{ route('bank-statement-imports.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
+            :crumbs="[$import->file_name => null]">
+            <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back</a>
             <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
         </x-bank.head>
     </x-slot>
@@ -11,7 +11,6 @@
     <x-bank.print-styles />
 
     <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
-        <x-bank.subnav inside />
         <x-bank.print-title title="Statement Import" :subtitle="$import->file_name" />
         <x-status-message />
 

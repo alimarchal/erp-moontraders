@@ -9,10 +9,9 @@
     <x-bank.print-styles />
 
     <div class="ak-page max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
-        <x-bank.subnav inside />
         <x-bank.print-title title="Bank Entry" :subtitle="'Transaction #'.$entry->id" />
         <x-status-message />
-        <section class="ak-card" style="padding:22px; max-width:820px">
+        <section class="ak-card" style="padding:22px">
             @include('bank-statement-entries.partials.detail')
         </section>
     </div>

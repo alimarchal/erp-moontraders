@@ -85,6 +85,13 @@
         <x-status-message />
         @if ($errors->any())<div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>@endif
 
+        <section class="apl-summary bank-noprint" aria-label="Totals for the entries listed">
+            <div class="apl-stat"><p class="apl-stat-label"><i aria-hidden="true"></i>Entries</p><p class="apl-stat-value">{{ number_format($totals->total_count) }}</p></div>
+            <div class="apl-stat is-in"><p class="apl-stat-label"><i aria-hidden="true"></i>Received</p><p class="apl-stat-value"><small>PKR</small>{{ number_format($totals->total_in, 2) }}</p></div>
+            <div class="apl-stat is-out"><p class="apl-stat-label"><i aria-hidden="true"></i>Paid out</p><p class="apl-stat-value"><small>PKR</small>{{ number_format($totals->total_out, 2) }}</p></div>
+            <div class="apl-stat is-net"><p class="apl-stat-label"><i aria-hidden="true"></i>Net</p><p class="apl-stat-value"><small>PKR</small>{{ $net < 0 ? '−' : '' }}{{ number_format(abs($net), 2) }}</p></div>
+        </section>
+
         {{-- Filters: their own panel, opened with the Filters button, as on Expense Vouchers --}}
         <section id="bk-filter-panel" class="ak-card bank-noprint" aria-label="Filters" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @bk-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
             <form method="GET" action="{{ route('bank-statement-entries.index') }}" class="ak-filters" x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
@@ -176,7 +183,8 @@
         </section>
 
         <section class="ak-card" aria-label="Entries">
-            <div class="ak-tabs" role="tablist">
+            <div class="ak-tabs">
+                <div class="apl-seg" role="tablist">
                 <a href="{{ $tabUrl('') }}" role="tab" aria-selected="{{ $tab === '' ? 'true' : 'false' }}" class="ak-tab {{ $tab === '' ? 'is-active' : '' }}">All <span class="ak-count">{{ number_format($totalCount) }}</span></a>
                 {{-- Every step is always shown, in the order an entry moves through them, so the tabs never jump around. --}}
                 @foreach ($tabLabels as $status => $label)
@@ -185,6 +193,7 @@
                         {{ $label }} <span class="ak-count">{{ number_format($tabCount) }}</span>
                     </a>
                 @endforeach
+                </div>
                 @if ($withoutReceipt || ($filters['has_attachment'] ?? '') === 'no')
                     <a href="{{ ($filters['has_attachment'] ?? '') === 'no' ? $withFilters(\Illuminate\Support\Arr::except($filters, 'has_attachment')) : $withFilters(array_merge($filters, ['has_attachment' => 'no'])) }}"
                         class="bk-tab-extra {{ ($filters['has_attachment'] ?? '') === 'no' ? 'is-active' : '' }}" title="Show only the entries that still have no receipt attached">No receipt {{ number_format($withoutReceipt) }}</a>
@@ -248,9 +257,11 @@
                     <div class="ak-dt-toolbar">
                         <p>
                             <b>{{ number_format($totals->total_count) }}</b> {{ \Illuminate\Support\Str::plural('entry', $totals->total_count) }}
+                            <span class="apl-dup">
                             &middot; received <b class="bk-in">{{ number_format($totals->total_in, 2) }}</b>
                             &middot; paid out <b class="bk-out">{{ number_format($totals->total_out, 2) }}</b>
                             &middot; net <b>{{ $net < 0 ? '−' : '' }}{{ number_format(abs($net), 2) }}</b>
+                            </span>
                         </p>
                         @can('bank-statement-entry-classify')
                             <form method="POST" action="{{ route('bank-statement-entries.auto-classify') }}" class="bank-noprint">@csrf

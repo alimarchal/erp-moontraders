@@ -16,7 +16,7 @@
 
     @push('header')
         <style>
-            .ur-help { font-family: 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', Tahoma, serif; font-size: 16px; line-height: 2.1; color: #1f2937; text-align: right; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
+            .ur-help { font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', Tahoma, serif; font-size: 16px; line-height: 2.1; color: #1f2937; text-align: right; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb; }
             .ur-help h3 { margin: 0 0 4px; font-size: 19px; font-weight: 700; color: #1e2a5a; }
             .ur-help p { margin: 0 0 8px; }
             .ur-help dl { display: grid; grid-template-columns: max-content 1fr; column-gap: 20px; row-gap: 4px; margin: 0; }

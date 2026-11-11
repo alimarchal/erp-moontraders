@@ -29,6 +29,7 @@
     @if ($button)
         <div class="bk-menu-standalone">
             <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Register</a>
+            <x-bank.help-button :title="trim(\Illuminate\Support\Str::headline(str_replace(['bank-', '.index', '.create', '.edit'], '', request()->route()?->getName() ?? '')))" />
             <x-bank.menu-button />
         </div>
     @endif

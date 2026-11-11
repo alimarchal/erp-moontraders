@@ -2,6 +2,10 @@
      transaction pop-up (any link with data-entry="<url>" opens that transaction in a modal instead of a new page). --}}
 @props(['menuButton' => false])
 @include('settings.partials.ui-style')
+{{-- Apple-style skin of every Bank Register screen: the class on <html> switches it on (see x-bank.apple-style). --}}
+<script>document.documentElement.classList.add('apl-on');</script>
+<x-bank.apple-style />
+<x-bank.help-style />
 <style>
     .bank-printonly { display: none; }
     .bk-dl { display: grid; gap: 14px 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
@@ -228,6 +232,94 @@
         <div class="bk-modal-body" id="bk-entry-body" aria-live="polite"></div>
     </div>
 </div>
+
+{{-- Help window: the Help button of each screen (x-bank.head) opens only the parts of the Urdu guide about that
+     screen. The guide page stays the one source: its sections are fetched once and copied in here. --}}
+<div id="bk-help-modal" class="uf-modal bank-noprint" style="display:none" role="dialog" aria-modal="true" aria-labelledby="bk-help-title">
+    <div class="uf-modal-bg" data-bk-help-close></div>
+    <div class="uf-modal-box bk-modal-box bk-help-box">
+        <div class="bk-modal-head">
+            <div>
+                <h3 id="bk-help-title">Help</h3>
+                <p>How this screen works, in Urdu</p>
+            </div>
+            <div class="bk-row">
+                <a id="bk-help-full" href="{{ route('bank-register.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline ak-btn-sm">Full guide</a>
+                <button type="button" class="ak-btn ak-btn-outline ak-btn-sm" data-bk-help-close>Close</button>
+            </div>
+        </div>
+        <div class="bk-modal-body">
+            <div class="bh" lang="ur" dir="rtl"><div class="bh-main" id="bk-help-body"></div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modal = document.getElementById('bk-help-modal');
+        if (!modal) { return; }
+        var body = document.getElementById('bk-help-body');
+        var title = document.getElementById('bk-help-title');
+        var full = document.getElementById('bk-help-full');
+        var guideUrl = full.getAttribute('href');
+        var guide = null;
+        var opener = null;
+
+        function loadGuide() {
+            if (!guide) {
+                guide = fetch(guideUrl, { credentials: 'same-origin' })
+                    .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.text(); })
+                    .then(function (html) { return new DOMParser().parseFromString(html, 'text/html'); })
+                    .catch(function (e) { guide = null; throw e; });
+            }
+            return guide;
+        }
+        function isOpen() { return modal.style.display !== 'none'; }
+        function close() {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            if (opener && document.contains(opener)) { opener.focus(); }
+            opener = null;
+        }
+        function open(topics, label) {
+            opener = document.activeElement;
+            title.textContent = label ? 'Help: ' + label : 'Help';
+            full.setAttribute('href', guideUrl + (topics.length ? '#' + topics[0] : ''));
+            body.innerHTML = '<div class="bk-skeleton" role="status" aria-label="Loading help"><i></i><i></i><i></i><i></i></div>';
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            modal.querySelector('.bk-modal-head [data-bk-help-close]').focus();
+            loadGuide().then(function (doc) {
+                body.innerHTML = '';
+                topics.forEach(function (id) {
+                    var section = doc.getElementById(id);
+                    if (!section) { return; }
+                    var copy = document.importNode(section, true);
+                    copy.id = 'bk-help-' + id;
+                    // a part of a section (one setup screen) gets its own card
+                    if (copy.tagName !== 'SECTION') { var card = document.createElement('section'); card.appendChild(copy); copy = card; }
+                    body.appendChild(copy);
+                });
+                if (!body.children.length) { body.innerHTML = '<p>اس سکرین کی مدد ابھی موجود نہیں۔ <a href="' + guideUrl + '" target="_blank" rel="noopener">پوری گائیڈ کھولیں</a></p>'; }
+                body.parentNode.parentNode.scrollTop = 0;
+            }).catch(function () {
+                body.innerHTML = '<p dir="ltr" lang="en" class="ak-muted">Help could not be loaded. Please try again, or open the full guide.</p>';
+            });
+        }
+
+        window.addEventListener('bk-help', function (e) { open((e.detail && e.detail.topics) || [], e.detail && e.detail.title); });
+        modal.addEventListener('click', function (e) { if (e.target.closest('[data-bk-help-close]')) { close(); } });
+        document.addEventListener('keydown', function (e) {
+            if (!isOpen()) { return; }
+            if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+            if (e.key !== 'Tab') { return; }
+            var stops = Array.prototype.filter.call(modal.querySelectorAll('a[href], button'), function (el) { return el.offsetParent !== null; });
+            var first = stops[0], last = stops[stops.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }, true);
+    })();
+</script>
 
 <script>
     (function () {

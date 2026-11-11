@@ -1,5 +1,6 @@
 @props(['title', 'sub' => null, 'crumbs' => []])
 
+
 <div class="ak-head">
     <div>
         <nav class="ak-crumbs" aria-label="Breadcrumb">
@@ -18,7 +19,7 @@
             <a href="{{ route('bank-statement-entries.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Register</a>
         @endif
         @unless (request()->routeIs('bank-register.help'))
-            <a href="{{ route('bank-register.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline" title="How the bank register works, step by step, in Urdu">? Help <span dir="rtl" lang="ur">(اردو)</span></a>
+            <x-bank.help-button :title="$title" />
         @endunless
         <x-bank.menu-button />
     </div>

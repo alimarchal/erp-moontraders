@@ -250,7 +250,7 @@
                             <b>{{ number_format($totals->total_count) }}</b> {{ \Illuminate\Support\Str::plural('entry', $totals->total_count) }}
                             &middot; received <b class="bk-in">{{ number_format($totals->total_in, 2) }}</b>
                             &middot; paid out <b class="bk-out">{{ number_format($totals->total_out, 2) }}</b>
-                            &middot; net <b>{{ number_format($net, 2) }}</b>
+                            &middot; net <b>{{ $net < 0 ? '−' : '' }}{{ number_format(abs($net), 2) }}</b>
                         </p>
                         @can('bank-statement-entry-classify')
                             <form method="POST" action="{{ route('bank-statement-entries.auto-classify') }}" class="bank-noprint">@csrf
@@ -281,10 +281,15 @@
                                         <td class="ak-mono" data-label="Date" style="white-space:nowrap">{{ $entry->posting_date->format('d-m-Y') }}</td>
                                         <td data-label="Party">
                                             <a href="{{ route('bank-statement-entries.show', $entry) }}" data-entry="{{ route('bank-statement-entries.drawer', $entry) }}" class="ak-primary-link" dir="auto">{{ $entry->company?->supplier_name ?? $entry->party_name_in_statement ?? '—' }}</a>
-                                            <div class="ak-muted" dir="auto">
-                                                @if ($entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->supplier_name) !== mb_strtolower($entry->party_name_in_statement)){{ $entry->party_name_in_statement }} · @endif
-                                                {{ $entry->reference }}@if ($entry->receipt_no) · <b>{{ $entry->receipt_no }}</b>@endif
-                                            </div>
+                                            @php
+                                                $subline = array_filter([
+                                                    $entry->company && $entry->party_name_in_statement && mb_strtolower($entry->company->supplier_name) !== mb_strtolower($entry->party_name_in_statement) ? $entry->party_name_in_statement : null,
+                                                    $entry->reference,
+                                                ]);
+                                            @endphp
+                                            @if ($subline || $entry->receipt_no)
+                                                <div class="ak-muted" dir="auto">{{ implode(' · ', $subline) }}@if ($entry->receipt_no)@if ($subline) · @endif<b>{{ $entry->receipt_no }}</b>@endif</div>
+                                            @endif
                                         </td>
                                         <td data-label="Category">{{ $entry->category?->name ?? '—' }}</td>
                                         <td class="ak-num bk-in" data-label="Received">@if ((float) $entry->credit > 0){{ number_format($entry->credit, 2) }}@endif</td>
@@ -299,15 +304,26 @@
                                             @endif
                                         </td>
                                         <td class="ak-c" data-label="Files">
-                                            @if ($entry->status === 'pending_approval')
-                                                {{-- the checker opens the receipt from the list before approving --}}
-                                                @forelse ($entry->attachments as $attachment)
-                                                    <div><a href="{{ route('bank-attachments.download', ['attachment' => $attachment, 'inline' => 1]) }}" target="_blank" rel="noopener" class="ak-primary-link">{{ \Illuminate\Support\Str::limit($attachment->file_name, 22) }}</a></div>
-                                                @empty
-                                                    <span class="ak-status ak-status-amber"><i aria-hidden="true"></i>No receipt</span>
-                                                @endforelse
-                                            @elseif ($entry->attachments_count)<span title="{{ $entry->attachments_count }} file(s) attached">{{ $entry->attachments_count }}</span>
-                                            @elseif (in_array($entry->status, ['classified', 'posted'], true))<span class="ak-muted" title="No receipt attached yet">none</span>@endif
+                                            @if ($entry->attachments_count)
+                                                {{-- one file opens straight away in a new tab; several open the transaction, where each has its own view icon --}}
+                                                @php($firstFile = $entry->attachments->first())
+                                                <a class="bk-clip bank-noprint"
+                                                    @if ($entry->attachments_count === 1 && $firstFile)
+                                                        href="{{ route('bank-attachments.download', ['attachment' => $firstFile, 'inline' => 1]) }}" target="_blank" rel="noopener"
+                                                        title="View {{ $firstFile->file_name }}" aria-label="View the attached file {{ $firstFile->file_name }}"
+                                                    @else
+                                                        href="{{ route('bank-statement-entries.show', $entry) }}" data-entry="{{ route('bank-statement-entries.drawer', $entry) }}"
+                                                        title="{{ $entry->attachments_count }} files attached. Open the transaction to view them." aria-label="{{ $entry->attachments_count }} files attached to entry {{ $entry->id }}"
+                                                    @endif>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32a1.5 1.5 0 0 1-2.122-2.122l7.693-7.693" /></svg>
+                                                    <span>{{ $entry->attachments_count }}</span>
+                                                </a>
+                                                <span class="bank-printonly">{{ $entry->attachments_count }}</span>
+                                            @elseif ($entry->status === 'pending_approval')
+                                                <span class="ak-status ak-status-amber"><i aria-hidden="true"></i>No receipt</span>
+                                            @elseif (in_array($entry->status, ['classified', 'posted'], true))
+                                                <span class="ak-muted" title="No receipt attached yet">none</span>
+                                            @endif
                                         </td>
                                         <td class="ak-sticky-end bank-noprint" data-label="">
                                             <div class="bk-row-actions">

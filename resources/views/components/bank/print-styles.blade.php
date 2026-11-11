@@ -30,19 +30,46 @@
     .bk-action-box .bk-modal-body p { margin: 0; font-size: 13.5px; color: var(--ak-text); }
     .bk-action-box label { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700; color: var(--ak-text); }
     .bk-action-box textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--ak-border-strong); border-radius: 8px; font-size: 14px; }
-    /* Bordered sheet tables, the same look as the Cash Collection report (table.p2): black grid, grey headings, caption row */
-    table.bk-t { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.35; color: #000; }
-    table.bk-t th, table.bk-t td { border: 0.75pt solid #000; padding: 4px 8px; vertical-align: top; text-align: left; word-break: break-word; }
-    table.bk-t th { background: #e6e6e6; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .2px; white-space: nowrap; }
-    table.bk-t tbody th { width: 18%; }
-    table.bk-t tr.cap th { background: #fff; padding: 4px 2px 3px; border-width: 0 0 1px; font-size: 16px; letter-spacing: .3px; white-space: normal; }
-    table.bk-t tr.cap th small { float: right; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 400; }
+    /* Sheet tables. On screen: a quiet card with hairlines. On paper: the black grid of the Cash Collection report (see @media print). */
+    table.bk-t { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid var(--ak-line); border-radius: 10px; background: #fff; font-size: 14px; line-height: 1.4; color: var(--ak-text); }
+    table.bk-t th, table.bk-t td { padding: 9px 14px; border-bottom: 1px solid var(--ak-line); vertical-align: top; text-align: left; word-break: break-word; }
+    table.bk-t tbody tr:last-child > * { border-bottom: 0; }
+    table.bk-t th { background: var(--ak-soft); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ak-muted); white-space: nowrap; }
+    table.bk-t tbody th { width: 18%; padding-top: 11px; }
+    table.bk-t tbody td { font-variant-numeric: tabular-nums; }
+    table.bk-t tr.cap th { padding: 11px 14px; background: #fff; font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--ak-text); white-space: normal; }
+    table.bk-t tr.cap th small { float: right; margin-inline-start: 12px; font-size: 12px; font-weight: 500; color: var(--ak-muted); }
     table.bk-t .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     table.bk-t .c { text-align: center; }
     table.bk-t .b { font-weight: 700; }
-    table.bk-t .bk-none { padding: 6px; font-style: italic; text-align: center; }
+    table.bk-t .bk-none { padding: 18px 14px; text-align: center; color: var(--ak-muted); }
     table.bk-t tr { break-inside: avoid; page-break-inside: avoid; }
-    .bk-note { margin: 0; padding: 6px 10px; border: 1px solid #000; font-size: 13px; }
+    table.bk-t a.ak-primary-link { color: var(--ak-navy); font-weight: 600; text-decoration: underline; text-decoration-color: #c7d2fe; text-underline-offset: 3px; }
+    table.bk-t a.ak-primary-link:hover { text-decoration-color: currentColor; }
+    /* Attached files: the name opens the file, and so do the icons at the end of the row */
+    table.bk-files td { vertical-align: middle; }
+    .bk-file-name { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; color: var(--ak-text); font-weight: 600; text-decoration: none; }
+    .bk-file-name:hover span:last-child { color: var(--ak-navy); text-decoration: underline; }
+    .bk-file-type { flex: none; min-width: 38px; padding: 4px 6px; border-radius: 6px; background: var(--ak-navy-tint); color: var(--ak-navy); font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; text-align: center; }
+    .bk-file-actions { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+    .bk-file-actions form { display: inline-flex; margin: 0; }
+    .bk-file-actions .ak-icon { width: 32px; height: 32px; }
+    .bk-file-actions .ak-icon svg, .bk-clip svg { width: 18px; height: 18px; }
+    .bk-icon-soft:hover { background: var(--ak-slate-bg); color: var(--ak-text); }
+    .bk-icon-danger { color: #b91c1c; } .bk-icon-danger:hover { background: #fee2e2; }
+    .bk-clip { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px; border-radius: 999px; background: var(--ak-navy-tint); color: var(--ak-navy); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; text-decoration: none; }
+    .bk-clip:hover { background: var(--ak-navy); color: #fff; }
+    .bk-clip:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+    .bk-spacer { flex: 1 1 auto; }
+    .bk-actions { padding-top: 14px; border-top: 1px solid var(--ak-line); }
+    /* Press and hover feedback: only the properties that change, quick and eased out */
+    .ak-btn, .ak-icon, .bk-clip { transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .12s cubic-bezier(.23, 1, .32, 1); }
+    .ak-btn:active, .ak-icon:active, .bk-clip:active { transform: scale(.97); }
+    .bk-skeleton { display: grid; gap: 12px; }
+    .bk-skeleton i { display: block; height: 18px; border-radius: 6px; background: var(--ak-slate-bg); animation: bk-pulse 1s ease-in-out infinite alternate; }
+    .bk-skeleton i:first-child { height: 84px; border-radius: 10px; } .bk-skeleton i:last-child { width: 60%; }
+    @keyframes bk-pulse { from { opacity: 1; } to { opacity: .45; } }
+    .bk-note { margin: 0; padding: 10px 14px; border: 1px solid #fecaca; border-radius: 10px; background: #fef2f2; color: #7f1d1d; font-size: 13.5px; }
     /* Attach a file: every control has its own label and full width, nothing is cut off */
     .bk-attach { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; padding: 12px 14px; border: 1px solid var(--ak-border); border-radius: 10px; background: #f8fafc; }
     @media (min-width: 760px) { .bk-attach { grid-template-columns: minmax(0, 1.4fr) 190px minmax(0, 1.2fr) auto; } }
@@ -78,21 +105,24 @@
     .bk-file a { font-weight: 700; color: var(--ak-navy); }
     /* The transaction pop-up: same look as the Sales Settlement windows (blurred page behind, green title bar, own scroll),
        sized from the screen: wide on a desktop, nearly full width on a tablet, a full-screen sheet on a phone. */
-    .bk-modal-box { width: min(96vw, 64rem); max-width: 64rem; max-height: min(92vh, 60rem); max-height: min(92dvh, 60rem); display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; animation: bk-pop .16s ease-out; }
+    .bk-modal-box { width: min(96vw, 64rem); max-width: 64rem; max-height: min(92vh, 60rem); max-height: min(92dvh, 60rem); display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; animation: bk-pop .2s cubic-bezier(.23, 1, .32, 1); }
     .bk-modal-head { flex: none; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; background: linear-gradient(to right, #16a34a, #15803d); color: #fff; }
     .bk-modal-head h3 { margin: 0; font-size: 16px; font-weight: 700; color: #fff; }
     .bk-modal-head .ak-btn { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.55); }
     .bk-modal-head .ak-btn:hover { background: rgba(255,255,255,.28); }
     .bk-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 22px 22px; background: #fff; }
-    @keyframes bk-pop { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) { .bk-modal-box { animation: none; } }
+    @keyframes bk-pop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes bk-fade { from { opacity: 0; } to { opacity: 1; } }
+    #bk-entry-modal .uf-modal-bg, .bk-action-modal .uf-modal-bg { animation: bk-fade .2s ease-out; }
+    @media (prefers-reduced-motion: reduce) { .bk-modal-box, #bk-entry-modal .uf-modal-bg, .bk-action-modal .uf-modal-bg, .bk-skeleton i { animation: none; } .ak-btn:active, .ak-icon:active, .bk-clip:active { transform: none; } }
     @media (max-width: 640px) {
         #bk-entry-modal { padding: 0; align-items: stretch; }
         .bk-modal-box { width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; }
         .bk-modal-head { padding: 12px 14px; } .bk-modal-body { padding: 14px; }
     }
     /* Transaction detail: the facts on one side, the receipt files and the actions on the other (one column on a phone) */
-    .bk-hero { padding: 14px 16px; border: 1px solid var(--ak-border); border-radius: 10px; background: linear-gradient(180deg, #f8fafc, #fff); }
+    .bk-hero { padding: 16px 18px; border: 1px solid var(--ak-line); border-radius: 10px; background: var(--ak-soft); }
+    .bk-hero .bk-amount { letter-spacing: -.02em; }
     .bk-hero .bk-amount { margin: 6px 0 2px; }
     .bk-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
     .bk-detail-main, .bk-detail-side { min-width: 0; }
@@ -149,7 +179,7 @@
         *:not(.ak-dt td):not(.ak-dt th) { border-color: #000 !important; }
         img, embed, iframe, object, canvas { filter: none !important; }
         .bank-noprint, nav, footer, [x-cloak], .select2-container--open, .bk-tabs-nav, #bk-entry-modal { display: none !important; }
-        .bank-printonly { display: block !important; }
+        .bank-printonly { display: block !important; } span.bank-printonly { display: inline !important; }
         .bk-box { border: 1px solid #000 !important; border-radius: 0; break-inside: avoid; }
         .bk-amount { font-size: 22px; }
         .ak-status, .ak-pill { border: 1px solid #000; padding: 0 5px !important; font-weight: 700; }
@@ -161,7 +191,13 @@
         .ak-dt { border-collapse: collapse !important; font-size: 10px; }
         .ak-dt th, .ak-dt td { border: 0.75pt solid #000 !important; padding: 3px 5px !important; }
         .ak-dt thead th { background: #e6e6e6 !important; }
-        table.bk-t { font-size: 10px; } table.bk-t th { font-size: 8.5px; } table.bk-t tr.cap th { font-size: 11px; } table.bk-t tr.cap th small { font-size: 9px; }
+        table.bk-t { border-collapse: collapse; border: 0; border-radius: 0; overflow: visible; font-size: 10px; line-height: 1.35; }
+        table.bk-t th, table.bk-t td, table.bk-t tbody tr:last-child > * { border: 0.75pt solid #000 !important; padding: 3px 6px; }
+        table.bk-t th { background: #e6e6e6 !important; letter-spacing: .2px; }
+        table.bk-t tr.cap th { background: #fff !important; padding: 4px 2px 3px; border-width: 0 0 1px !important; text-transform: uppercase; }
+        table.bk-t tr.cap th small { text-transform: none; font-weight: 400; }
+        .bk-note { border: 1px solid #000; border-radius: 0; }
+        table.bk-t th { font-size: 8.5px; } table.bk-t tr.cap th { font-size: 11px; } table.bk-t tr.cap th small { font-size: 9px; }
         .select2-selection__arrow, .select2-selection__clear { display: none !important; }
         a { text-decoration: none !important; }
         thead { display: table-header-group; }
@@ -199,16 +235,32 @@
         var body = document.getElementById('bk-entry-body');
         if (!modal) { return; }
 
-        function close() { modal.style.display = 'none'; document.body.classList.remove('bk-modal-open'); document.body.style.overflow = ''; }
-        function open(url) {
-            body.innerHTML = '<p class="ak-muted">Loading…</p>';
+        var title = document.getElementById('bk-entry-title');
+        var opener = null;
+
+        function isOpen() { return modal.style.display !== 'none'; }
+        function close() {
+            modal.style.display = 'none';
+            document.body.classList.remove('bk-modal-open');
+            document.body.style.overflow = '';
+            if (opener && document.contains(opener)) { opener.focus(); }
+            opener = null;
+        }
+        function open(url, from) {
+            opener = from || document.activeElement;
+            title.textContent = 'Transaction';
+            body.innerHTML = '<div class="bk-skeleton" role="status" aria-label="Loading the transaction"><i></i><i></i><i></i><i></i></div>';
             modal.style.display = 'flex';
             document.body.classList.add('bk-modal-open');
             document.body.style.overflow = 'hidden';
+            modal.querySelector('.bk-modal-head [data-bk-close]').focus();
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
                 .then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.text(); })
                 .then(function (html) {
                     body.innerHTML = html;
+                    body.scrollTop = 0;
+                    var named = body.querySelector('[data-bk-title]');
+                    if (named) { title.textContent = named.getAttribute('data-bk-title'); }
                     if (window.initSelect2) { window.initSelect2(body); }
                 })
                 .catch(function () { body.innerHTML = '<p class="ak-muted">This transaction could not be loaded. Please try again.</p>'; });
@@ -219,12 +271,24 @@
             if (link && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.target.closest('input, button, select, textarea, label')) {
                 if (link.tagName === 'TR' && e.target.closest('a:not([data-entry])')) { return; }
                 e.preventDefault();
-                open(link.getAttribute('data-entry'));
+                open(link.getAttribute('data-entry'), link.tagName === 'TR' ? link.querySelector('a[data-entry]') : link);
                 return;
             }
             if (e.target.closest('[data-bk-close]')) { close(); }
         });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.style.display !== 'none') { close(); } });
+        document.addEventListener('keydown', function (e) {
+            if (!isOpen()) { return; }
+            // an action window (reverse, delete, reject) opened on top closes first and keeps its own keys
+            if (document.querySelector('.bk-action-modal:not([style*="display: none"])')) { return; }
+            if (e.key === 'Escape') { close(); return; }
+            if (e.key !== 'Tab') { return; }
+            var stops = Array.prototype.filter.call(modal.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'), function (el) { return !el.disabled && el.offsetParent !== null; });
+            if (!stops.length) { return; }
+            var first = stops[0], last = stops[stops.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            else if (!modal.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        });
         document.getElementById('bk-entry-print').addEventListener('click', function () { window.print(); });
     })();
 

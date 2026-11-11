@@ -284,6 +284,22 @@
         </div>
     </div>
 
+    @if ($ledgerMatch)
+        {{-- Recoveries here and claim adjustments in the Supplier Ledger Register are one event: they must agree --}}
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 -mt-2 mb-4 no-print">
+            @php
+                $matched = abs($ledgerMatch['difference']) < 1;
+            @endphp
+            <div class="bg-white rounded-lg shadow px-4 py-3 border-l-4 {{ $matched ? 'border-emerald-500' : 'border-amber-500' }} flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
+                <span class="font-semibold text-gray-700">Recovery vs Supplier Ledger (up to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }})</span>
+                <span class="text-gray-500">Recovered here <b class="text-gray-900 tabular-nums">{{ number_format($ledgerMatch['recovered'], 2) }}</b></span>
+                <span class="text-gray-500">Claim adjust in <a href="{{ route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $supplierId]]) }}" class="text-indigo-600 hover:underline">Supplier Ledger</a> <b class="text-gray-900 tabular-nums">{{ number_format($ledgerMatch['adjusted'], 2) }}</b></span>
+                <span class="{{ $matched ? 'text-emerald-700' : 'text-amber-700' }} font-semibold">{{ $matched ? 'Matched' : 'Difference '.number_format($ledgerMatch['difference'], 2) }}</span>
+                <span class="text-gray-400 text-xs w-full">A recovery is the claim adjusted in the supplier's ledger. Only the Supplier Ledger Register's claim adjustment books it, so the claim is never taken off twice.</span>
+            </div>
+        </div>
+    @endif
+
     {{-- Main Report --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">

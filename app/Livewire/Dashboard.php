@@ -708,7 +708,7 @@ class Dashboard extends Component
     /**
      * Supplier invoices (what the supplier bills us) and online payments per
      * month, from the Supplier Ledger Register -- the same figures as
-     * /reports/ledger-register.
+     * /reports/supplier-ledger-register.
      */
     private function loadPurchasesVsPayments(): void
     {

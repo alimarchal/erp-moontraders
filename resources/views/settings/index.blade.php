@@ -564,6 +564,45 @@
                     </section>
                 @endcanany
 
+                {{-- Master data of the Bank Register (moved here from its Menu; the route names are the same) --}}
+                @canany(['bank-entry-category-list', 'bank-party-alias-list', 'bank-entry-rule-list'])
+                    <section id="bank-register-setup" x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid scroll-mt-6">
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Bank Register Setup</p>
+                        <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
+                            @can('bank-entry-category-list')
+                                <x-settings-row data-settings-item data-search="bank categories kinds of receipt and payment ledger account bank register setup" x-bind:hidden="! matches($el)" href="{{ route('bank-entry-categories.index') }}" label="Bank Categories"
+                                    description="Kinds of receipt and payment, and the account each posts to" :count="\App\Models\BankEntryCategory::count()" icon-bg="bg-sky-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z M6 6h.008v.008H6V6z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-party-alias-list')
+                                <x-settings-row data-settings-item data-search="party aliases spellings names statement bank register setup" x-bind:hidden="! matches($el)" href="{{ route('bank-party-aliases.index') }}" label="Party Aliases"
+                                    description="Different spellings of one party on bank statements" :count="\App\Models\BankPartyAlias::count()" icon-bg="bg-indigo-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('bank-entry-rule-list')
+                                <x-settings-row data-settings-item data-search="auto classify rules narration text tag bank register setup" x-bind:hidden="! matches($el)" href="{{ route('bank-entry-rules.index') }}" label="Auto-classify Rules"
+                                    description="Tag bank lines by text in the narration" :count="\App\Models\BankEntryRule::count()" icon-bg="bg-amber-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                        </div>
+                    </section>
+                @endcanany
+
 
 
                 </div>

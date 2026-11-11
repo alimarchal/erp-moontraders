@@ -11,6 +11,7 @@ use App\Models\SalesSettlement;
 use App\Models\StockMovement;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
+use App\Services\BankRegister\SettlementBankRegisterSync;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -55,6 +56,9 @@ class SalesSettlementRevertService
                 $this->reverseCustomerLedgerEntries($settlement);
                 $this->markStockMovementsReversed($settlement);
                 $this->resetSettlementToDraft($settlement);
+
+                // the settlement journal was reversed above: its bank register lines are reversed with it
+                app(SettlementBankRegisterSync::class)->sync($settlement->fresh(), auth()->id());
             });
 
             Log::info('Sales settlement reverted successfully', [
@@ -96,6 +100,15 @@ class SalesSettlementRevertService
             return [
                 'ok' => false,
                 'message' => "Cannot revert: {$clearedCheques} cheque(s) linked to this settlement have already been cleared.",
+            ];
+        }
+
+        // The excess was paid to the salesman with that month's salary; taking it back now would leave the payroll wrong.
+        if ($settlement->excessAmounts()->exists() && $settlement->employee
+            && app(PayrollService::class)->monthIsLocked($settlement->employee, $settlement->settlement_date)) {
+            return [
+                'ok' => false,
+                'message' => 'Cannot revert: this settlement\'s cash excess is already in the approved payroll of '.$settlement->settlement_date->format('F Y').'.',
             ];
         }
 

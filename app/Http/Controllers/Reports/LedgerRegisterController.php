@@ -195,7 +195,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         $selectedSupplier = $supplierId ? Supplier::find($supplierId) : null;
         $supplierLedgerDateEditable = filter_var(env('SUPPLIER_LEDGER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
 
-        return view('reports.ledger-register.index', [
+        return view('reports.supplier-ledger-register.index', [
             'entries' => $entries,
             'totals' => $totals,
             'openingBalance' => $openingBalance,

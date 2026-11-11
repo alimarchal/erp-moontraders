@@ -176,7 +176,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('report-audit-ledger-register')
-                                <x-settings-row data-settings-item data-search="supplier ledger register supplier transaction ledger with running balance supplier and registers supplier ledgers, cheques, claims and investment" x-bind:hidden="! matches($el)" href="{{ route('reports.ledger-register.index') }}"
+                                <x-settings-row data-settings-item data-search="supplier ledger register supplier transaction ledger with running balance supplier and registers supplier ledgers, cheques, claims and investment" x-bind:hidden="! matches($el)" href="{{ route('reports.supplier-ledger-register.index') }}"
                                     label="Supplier Ledger Register"
                                     description="Supplier transaction ledger with running balance" icon-bg="bg-teal-500">
                                     <x-slot name="icon">

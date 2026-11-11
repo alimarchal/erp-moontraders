@@ -38,7 +38,21 @@
         .bh figcaption { margin-top: 2px; font-size: 14.5px; color: var(--ak-muted); text-align: center; }
         .bh .shots { display: grid; gap: 14px; grid-template-columns: 1fr; }
         @media (min-width: 1100px) { .bh .shots { grid-template-columns: 1fr 1fr; } }
+        /* Flow at the end of a Help window: numbered steps joined by arrows, wrapping on narrow screens */
+        .bh .hf { margin-top: 4px; padding: 14px 16px 16px; border-radius: 14px; background: linear-gradient(180deg, #f5f5f7, #fff); border: 1px solid var(--ak-border); }
+        .bh .hf-title { margin: 0 0 10px; color: var(--ak-navy); font-size: 18px; }
+        .bh .hf-steps { display: flex; flex-wrap: wrap; gap: 10px 0; margin: 0; padding: 0; list-style: none; counter-reset: none; }
+        .bh .hf-step { position: relative; display: flex; align-items: flex-start; gap: 8px; flex: 1 1 170px; min-width: 150px; margin: 0; padding-inline-end: 26px; }
+        .bh .hf-step:not(:last-child)::after { content: '←'; position: absolute; inset-inline-end: 6px; top: 6px; color: #86868b; font-family: Figtree, Arial, sans-serif; font-size: 16px; line-height: 1; }
+        .bh .hf-num { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; margin-top: 4px; border-radius: 50%; background: #0071e3; color: #fff; font-family: Figtree, Arial, sans-serif; font-size: 13px; font-weight: 700; line-height: 1; }
+        .bh .hf-body { display: flex; flex-direction: column; min-width: 0; padding: 4px 12px 6px; border-radius: 12px; background: #fff; border: 1px solid #e5e5ea; box-shadow: 0 1px 2px rgba(0,0,0,.04); flex: 1; }
+        .bh .hf-body b { font-size: 15.5px; line-height: 2.1; color: var(--ak-text); }
+        .bh .hf-body small { font-size: 13.5px; line-height: 2; color: var(--ak-muted); }
+        .bh .hf-body .en { align-self: flex-start; margin-top: 2px; font-size: 12px; }
+        @media (max-width: 640px) { .bh .hf-step { flex-basis: 100%; } .bh .hf-step:not(:last-child)::after { content: '↓'; inset-inline-end: 4px; top: 10px; } }
+        @media (prefers-reduced-motion: no-preference) { .bh .hf-body { transition: transform .2s cubic-bezier(.23,1,.32,1); } .bh .hf-step:hover .hf-body { transform: translateY(-1px); } }
         @media print {
+            .bh .hf { break-inside: avoid; background: none; }
             .bh-layout { display: block; } .bh-toc { display: none; } .bh { font-size: 13px; line-height: 2.2; }
             .bh section { border: 0; box-shadow: none; padding: 0 0 10px; break-inside: auto; } .bh figure, .bh table tr { break-inside: avoid; }
         }

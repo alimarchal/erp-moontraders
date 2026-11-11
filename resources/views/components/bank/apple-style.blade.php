@@ -370,6 +370,64 @@
     .apl-on .bk-card-link b { font-size: 16px; font-weight: 600; letter-spacing: -.015em; color: var(--apl-label); }
     .apl-on .bk-card-link span { color: var(--apl-label-2); }
 
+    /* ---------- Expense vouchers and vendor payments (ev- / vp- / pv- / xs- classes) ---------- */
+    html.apl-on .ev-ur { color: inherit; }
+    html.apl-on .ak-title .ev-ur { color: var(--apl-label-2); font-weight: 600; }
+    html.apl-on .ev-form .ak-field input:not([type="radio"]):not([type="checkbox"]):not(.ev-file), html.apl-on .ev-form .ak-field select, html.apl-on .ev-form .ak-field textarea,
+    html.apl-on .ev-form .select2-container .select2-selection--single, html.apl-on .ev-modal-grid .ak-field input, html.apl-on .ev-modal-grid .ak-field select {
+        border: 0; border-radius: var(--apl-radius-sm); background: var(--apl-fill-2); font-family: var(--apl-font); font-size: 15px; color: var(--apl-label);
+    }
+    html.apl-on .ev-form .ak-field input:focus, html.apl-on .ev-form .ak-field select:focus, html.apl-on .ev-form .ak-field textarea:focus,
+    html.apl-on .ev-form .select2-container--focus .select2-selection--single, html.apl-on .ev-form .select2-container--open .select2-selection--single {
+        background: #fff; box-shadow: 0 0 0 4px rgba(0, 113, 227, .25), 0 0 0 1px var(--apl-blue);
+    }
+    html.apl-on .ev-form .ak-field input.ev-file { border: 0; border-radius: var(--apl-radius-sm); background: var(--apl-fill-2); }
+    html.apl-on .ev-form .ak-field input.ev-file::file-selector-button { border: 0; border-radius: 980px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .1); font-family: var(--apl-font); font-weight: 500; }
+    html.apl-on .ev-seg { gap: 2px; padding: 3px; border-radius: 12px; background: var(--apl-fill); width: fit-content; max-width: 100%; }
+    html.apl-on .ev-seg label { padding: 8px 14px; border: 0; border-radius: 9px; background: transparent; font-weight: 500; color: var(--apl-label); box-shadow: none;
+        transition: background-color .2s ease, box-shadow .2s ease, transform .16s var(--apl-ease-out); }
+    html.apl-on .ev-seg label:hover { background: rgba(255, 255, 255, .55); }
+    html.apl-on .ev-seg label:active { transform: scale(.97); }
+    html.apl-on .ev-seg label.is-on { background: #fff; color: var(--apl-label); font-weight: 600; box-shadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04); }
+    html.apl-on .ev-seg input { accent-color: var(--apl-blue); }
+    html.apl-on .ev-panel { border: 0; border-radius: 16px; background: var(--apl-bg); }
+    html.apl-on .ev-note { border: 0; border-radius: 12px; background: var(--apl-blue-tint); color: #00407f; }
+    html.apl-on .ev-form-foot { border-top-color: var(--apl-sep); }
+    html.apl-on .ev-current-file a { color: var(--apl-blue); text-decoration: none; }
+    html.apl-on .ev-ranges a { border: 0; border-radius: 980px; background: var(--apl-fill-2); font-weight: 500; color: var(--apl-label); }
+    html.apl-on .ev-ranges a:hover { background: var(--apl-fill); }
+    html.apl-on .ev-ranges a[aria-current] { background: var(--apl-label); color: #fff; }
+    html.apl-on .ev-ranges a.ev-clear { background: transparent; color: var(--apl-red); }
+    html.apl-on .ev-ranges-label { font-weight: 500; color: var(--apl-label-2); }
+    html.apl-on .ak-filters .select2-container .select2-selection--single { border: 0; border-radius: var(--apl-radius-sm); background: var(--apl-fill-2); }
+    html.apl-on .ev-table tfoot td, html.apl-on .ak-dt tfoot td { background: rgba(255, 255, 255, .92); border-top: 1px solid var(--apl-sep); font-weight: 600; }
+    html.apl-on .ak-dt th .ev-ur { color: inherit; }
+    /* voucher page: progress steps, details, ledger lines */
+    html.apl-on .ev-pad, html.apl-on .pv-pad { padding: 20px 22px; }
+    html.apl-on .ev-steps li { font-weight: 500; color: var(--apl-label-3); }
+    html.apl-on .ev-steps li + li::before { background: var(--apl-sep); }
+    html.apl-on .ev-steps .dot { border: 0; background: var(--apl-fill); color: var(--apl-label-2); }
+    html.apl-on .ev-steps li.is-done { color: var(--apl-green); } html.apl-on .ev-steps li.is-done .dot { background: #34c759; color: #fff; }
+    html.apl-on .ev-steps li.is-now { color: var(--apl-blue); } html.apl-on .ev-steps li.is-now .dot { background: var(--apl-blue); color: #fff; }
+    html.apl-on .ev-steps li.is-bad { color: var(--apl-red); } html.apl-on .ev-steps li.is-bad .dot { background: #ff3b30; color: #fff; }
+    html.apl-on .ev-dl dt, html.apl-on .pv-dl dt { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--apl-label-2); }
+    html.apl-on .ev-dl dd, html.apl-on .pv-dl dd { font-weight: 500; color: var(--apl-label); }
+    html.apl-on .ev-amount { font-weight: 600; letter-spacing: -.03em; }
+    html.apl-on .ev-lines th, html.apl-on .vp-table th, html.apl-on .pv-t th {
+        font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--apl-label-2); border-bottom: 1px solid var(--apl-sep);
+    }
+    html.apl-on .ev-lines td, html.apl-on .vp-table td, html.apl-on .pv-t td { border-bottom: 1px solid var(--apl-sep); }
+    html.apl-on .vp-table input[type=number] { height: 36px; border: 0; border-radius: var(--apl-radius-sm); background: var(--apl-fill-2); font-family: var(--apl-font); font-size: 15px; font-variant-numeric: tabular-nums; }
+    html.apl-on .vp-table input[type=number]:focus { outline: none; background: #fff; box-shadow: 0 0 0 4px rgba(0, 113, 227, .25), 0 0 0 1px var(--apl-blue); }
+    html.apl-on .vp-total { border-top: 1px solid var(--apl-sep); background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+    html.apl-on .xs-kpi { border: 0; border-radius: var(--apl-radius); box-shadow: var(--apl-shadow); }
+    html.apl-on .xs-kpi small { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--apl-label-2); }
+    html.apl-on .xs-t th { background: #fff; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--apl-label-2); border-bottom: 1px solid var(--apl-sep); }
+    html.apl-on .xs-t td { border-bottom: 1px solid var(--apl-sep); }
+    html.apl-on .xs-kpi b { font-weight: 600; letter-spacing: -.025em; }
+    /* Tailwind-built dialogs on these screens (new shop, approve, reject...) */
+    html.apl-on .ak-page [role="dialog"] .rounded-lg, html.apl-on .ak-page [role="dialog"] .rounded-xl { border-radius: 22px; }
+
     /* ---------- Phones: rows become inset grouped cards ---------- */
     @media screen and (max-width: 767px) {
         .apl-on .ak-title { font-size: 28px; }

@@ -144,7 +144,7 @@
                             @php
                                 $data = $item->payload;
                                 $createdLink = match ($ticket->type) {
-                                    TicketType::LedgerEntry => auth()->user()->can('report-audit-ledger-register') ? route('reports.ledger-register.index', ['filter' => ['supplier_id' => $data['supplier_id'] ?? null, 'date_from' => $data['transaction_date'] ?? null, 'date_to' => $data['transaction_date'] ?? null]]) : null,
+                                    TicketType::LedgerEntry => auth()->user()->can('report-audit-ledger-register') ? route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $data['supplier_id'] ?? null, 'date_from' => $data['transaction_date'] ?? null, 'date_to' => $data['transaction_date'] ?? null]]) : null,
                                     TicketType::ClaimEntry => auth()->user()->can('claim-register-list') && ! empty($data['created_id']) ? route('claim-registers.show', $data['created_id']) : null,
                                     TicketType::NewCustomer => auth()->user()->can('customer-list') && ! empty($data['created_id']) ? route('customers.show', $data['created_id']) : null,
                                     default => null,

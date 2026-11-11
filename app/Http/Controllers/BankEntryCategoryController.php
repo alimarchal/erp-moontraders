@@ -123,6 +123,7 @@ class BankEntryCategoryController extends Controller implements HasMiddleware
 
     private function accountOptions()
     {
-        return ChartOfAccount::orderBy('account_code')->get(['id', 'account_code', 'account_name']);
+        // journal lines go on leaf accounts only (database trigger), so groups are not offered
+        return ChartOfAccount::query()->where('is_group', false)->where('is_active', true)->orderBy('account_code')->get(['id', 'account_code', 'account_name']);
     }
 }

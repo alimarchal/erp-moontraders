@@ -96,7 +96,7 @@ it('validates with the rules of the real screens and keeps company users on thei
 
 it('creates the same ledger register entry as the Ledger Register screen and does not post it', function () {
     $this->actingAs($this->admin);
-    $this->post(route('reports.ledger-register.store'), ledgerData($this, ['document_number' => 'VIA-SCREEN']))->assertRedirect();
+    $this->post(route('reports.supplier-ledger-register.store'), ledgerData($this, ['document_number' => 'VIA-SCREEN']))->assertRedirect();
     $screen = LedgerRegister::firstWhere('document_number', 'VIA-SCREEN');
 
     $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'ledger_entry', 'title' => 'Ledger line', 'data' => ledgerData($this, ['document_number' => 'VIA-TICKET'])]);

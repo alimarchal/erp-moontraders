@@ -16,10 +16,9 @@
         'Reports' => [
             ['label' => 'Reports', 'hint' => 'Entries, summary, reconciliation, audit log', 'route' => 'reports.bank.index', 'active' => ['reports.bank.*'], 'canAny' => \App\Services\BankRegister\BankRegisterPermissions::REPORTS],
         ],
+        // the master data lives under Settings; this one item takes the person there
         'Setup' => [
-            ['label' => 'Categories', 'hint' => 'Kinds of receipt and payment', 'route' => 'bank-entry-categories.index', 'active' => ['bank-entry-categories.*'], 'can' => 'bank-entry-category-list'],
-            ['label' => 'Party aliases', 'hint' => 'Different spellings of one party', 'route' => 'bank-party-aliases.index', 'active' => ['bank-party-aliases.*'], 'can' => 'bank-party-alias-list'],
-            ['label' => 'Auto-classify rules', 'hint' => 'Tag entries by text in the narration', 'route' => 'bank-entry-rules.index', 'active' => ['bank-entry-rules.*'], 'can' => 'bank-entry-rule-list'],
+            ['label' => 'Bank setup in Settings', 'hint' => 'Categories, party aliases and auto-classify rules', 'route' => 'settings.index', 'fragment' => '#bank-register-setup', 'active' => \App\Services\BankRegister\BankRegisterPermissions::SETUP_ROUTES, 'canAny' => ['bank-entry-category-list', 'bank-party-alias-list', 'bank-entry-rule-list']],
         ],
     ];
     $groups = collect($groups)->map(fn (array $items) => array_values(array_filter($items, fn (array $item) => (! isset($item['can']) || $user?->can($item['can'])) && (! isset($item['canAny']) || $user?->canAny($item['canAny'])))))->filter();
@@ -40,7 +39,7 @@
                 <p class="bk-menu-title">{{ $title }}</p>
                 @foreach ($items as $item)
                     @php($active = request()->routeIs(...$item['active']))
-                    <a href="{{ route($item['route']) }}" @if ($active) aria-current="page" @endif class="bk-menu-item {{ $active ? 'is-active' : '' }}">
+                    <a href="{{ route($item['route']).($item['fragment'] ?? '') }}" @if ($active) aria-current="page" @endif class="bk-menu-item {{ $active ? 'is-active' : '' }}">
                         <b>{{ $item['label'] }} @if (($item['badge'] ?? 0) > 0)<span class="bk-badge">{{ $item['badge'] }}</span>@endif</b>
                         <span>{{ $item['hint'] }}</span>
                     </a>

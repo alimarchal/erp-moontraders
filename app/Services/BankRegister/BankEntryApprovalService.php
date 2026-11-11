@@ -40,6 +40,9 @@ class BankEntryApprovalService
                 throw new BankRegisterException('Choose a category before submitting.');
             }
 
+            // money another module already booked is linked, never posted a second time
+            $this->posting->assertNotAlreadyBooked($entry);
+
             $level = $this->rules->requiredLevel($entry);
             $round = $entry->approval_round + 1;
 

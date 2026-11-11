@@ -8,6 +8,9 @@ namespace App\Services\BankRegister;
  */
 class BankRegisterPermissions
 {
+    /** Route names of the register's master data, kept under Settings (categories, party aliases, auto-classify rules). */
+    public const SETUP_ROUTES = ['bank-entry-categories.*', 'bank-party-aliases.*', 'bank-entry-rules.*'];
+
     /**
      * Permission groups => actions ("bank-statement-entry-classify" is group + action).
      *

@@ -1,23 +1,23 @@
 <?php
 
 use App\Models\AccountType;
-use App\Models\BankAccount;
 use App\Models\BankEntryCategory;
+use App\Models\BankReconciliation;
+use App\Models\BankReconciliationItem;
 use App\Models\BankStatementEntry;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\JournalEntry;
-use App\Models\JournalEntryDetail;
-use App\Models\Supplier;
 use App\Services\BankRegister\BankEntryApprovalService;
-use App\Services\BankRegister\BankRegisterLedger;
+use App\Services\BankRegister\BankRegisterAccounts;
 use App\Services\BankRegister\BankReportService;
-use Spatie\Permission\Models\Permission;
+use App\Services\BankRegister\MemoLedgerRemoval;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     $this->fixture = bankRegisterFixture();
     config()->set('bank.maker_checker.enabled', false);
-    $this->ledger = app(BankRegisterLedger::class);
+    $this->accounts = app(BankRegisterAccounts::class);
     $this->maker = bankUser(['bank-statement-entry-list', 'bank-statement-entry-submit', 'bank-statement-entry-post'], 'Maker');
 });
 
@@ -31,93 +31,119 @@ function postRegisterEntry(array $fixture, $maker, array $overrides = []): BankS
     return app(BankEntryApprovalService::class)->submit($entry, $maker);
 }
 
-test('the register accounts live under their own root with their own account type and report group', function () {
-    $this->ledger->ensureStructure();
+/**
+ * A balanced, posted journal on the given accounts.
+ */
+function memoJournal(string $reference, int $debitAccountId, int $creditAccountId, float $amount): JournalEntry
+{
+    $journal = JournalEntry::create(['currency_id' => Currency::value('id'), 'entry_date' => now()->toDateString(), 'reference' => $reference, 'description' => $reference, 'status' => 'draft']);
+    $journal->details()->create(['chart_of_account_id' => $debitAccountId, 'line_no' => 1, 'debit' => $amount, 'credit' => 0]);
+    $journal->details()->create(['chart_of_account_id' => $creditAccountId, 'line_no' => 2, 'debit' => 0, 'credit' => $amount]);
+    $journal->update(['status' => 'posted']);
 
-    $type = AccountType::where('type_name', 'Bank Register')->firstOrFail();
-    $root = ChartOfAccount::where('account_name', 'Bank Register (memo accounts)')->firstOrFail();
+    return $journal;
+}
 
-    expect($type->report_group)->toBe('BankRegister')
-        ->and($root->account_code)->toBe('6000')->and($root->is_group)->toBeTrue()
-        ->and(ChartOfAccount::where('account_type_id', $type->id)->count())->toBe(1 + count(BankRegisterLedger::GROUPS) + count(BankRegisterLedger::ACCOUNTS) + 1); // + the fixture's bank ledger
-    foreach (ChartOfAccount::where('account_type_id', $type->id)->pluck('account_code') as $code) {
-        expect($code)->toMatch('/^\d{4}$/');
-    }
-});
+/**
+ * The former memo ledger as it was on the live database: its own account type, root 6000, a bank and a clearing account.
+ *
+ * @return array{type: AccountType, root: ChartOfAccount, bank: ChartOfAccount, clearing: ChartOfAccount}
+ */
+function memoLedger(array $fixture): array
+{
+    // the memo group was allowed by a CHECK that the cleanup migration narrowed again
+    DB::statement('ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group');
 
-test('creating the accounts twice makes no duplicates', function () {
-    $this->ledger->ensureStructure();
-    $count = ChartOfAccount::count();
+    $type = AccountType::create(['type_name' => 'Bank Register', 'report_group' => 'BankRegister']);
+    $make = fn (string $code, string $name, ?int $parent, bool $group) => ChartOfAccount::create([
+        'parent_id' => $parent, 'account_type_id' => $type->id, 'currency_id' => $fixture['liveLedger']->currency_id,
+        'account_code' => $code, 'account_name' => $name, 'normal_balance' => 'debit', 'is_group' => $group, 'is_active' => true,
+    ]);
+    $root = $make('6000', 'Bank Register (memo accounts)', null, true);
 
-    $this->ledger->ensureStructure();
-    $this->ledger->ledgerForBank($this->fixture['bank']);
-    $this->ledger->ledgerForBank($this->fixture['bank']);
+    return ['type' => $type, 'root' => $root, 'bank' => $make('6101', 'BR - HBL', $root->id, false), 'clearing' => $make('6201', 'BR - Customer Receipts Clearing', $root->id, false)];
+}
 
-    expect(ChartOfAccount::count())->toBe($count + 0)->and(ChartOfAccount::where('account_name', 'like', 'BR - %')->count())->toBeGreaterThan(0);
-});
-
-test('codes already used by live accounts are never taken or changed', function () {
-    // start from a database where the register accounts do not exist yet
-    BankAccount::query()->update(['register_chart_of_account_id' => null]);
-    ChartOfAccount::query()->where('account_name', 'like', 'BR - %')->orWhere('account_name', 'Bank Register (memo accounts)')
-        ->orderByDesc('account_code')->get()->each->delete();
-
+test('the accounts the register needs are created once in the main chart, under their group when it exists', function () {
     $type = AccountType::firstWhere('type_name', 'Assets');
-    foreach (['6000', '6100', '6101', '6200', '6201', '6202'] as $code) {
-        ChartOfAccount::create(['account_type_id' => $type->id, 'currency_id' => $this->fixture['liveLedger']->currency_id, 'account_code' => $code, 'account_name' => "Live account {$code}", 'normal_balance' => 'debit', 'is_active' => true]);
-    }
-    BankAccount::query()->update(['register_chart_of_account_id' => null]);
+    $taxGroup = ChartOfAccount::create(['account_type_id' => $type->id, 'currency_id' => $this->fixture['liveLedger']->currency_id, 'account_code' => '1160', 'account_name' => 'Tax Assets', 'normal_balance' => 'debit', 'is_group' => true, 'is_active' => true]);
+    ChartOfAccount::create(['account_type_id' => $type->id, 'currency_id' => $this->fixture['liveLedger']->currency_id, 'account_code' => '1165', 'account_name' => 'Some live tax account', 'normal_balance' => 'debit', 'is_active' => true]);
 
-    $this->ledger->ensureStructure();
-    $mine = ChartOfAccount::where('account_name', 'like', 'BR - %')->orWhere('account_name', 'Bank Register (memo accounts)')->pluck('account_code');
+    $this->accounts->ensureAll();
+    $count = ChartOfAccount::count();
+    $this->accounts->ensureAll();
 
-    expect($mine->duplicates())->toBeEmpty()
-        ->and($mine)->not->toContain('6101')->and($mine)->not->toContain('6201')->and($mine)->not->toContain('6000')
-        ->and(ChartOfAccount::where('account_name', 'Live account 6201')->exists())->toBeTrue()
-        ->and(ChartOfAccount::pluck('account_code')->duplicates())->toBeEmpty();
+    $tax = $this->accounts->account('bank_tax');
+
+    expect(ChartOfAccount::count())->toBe($count)
+        ->and($tax->parent_id)->toBe($taxGroup->id)
+        ->and($tax->account_code)->toBe('1166') // 1165 is taken by a live account and stays as it is
+        ->and(ChartOfAccount::pluck('account_code')->duplicates())->toBeEmpty()
+        ->and(ChartOfAccount::where('account_code', 'like', '6%')->exists())->toBeFalse();
 });
 
-test('every bank account gets its own register ledger, separate from its live ledger', function () {
-    $second = BankAccount::factory()->create(['account_name' => 'Meezan Wallet', 'account_number' => 'MZN-1', 'chart_of_account_id' => $this->fixture['liveLedger']->id]);
+test('the bank side of a register journal is the bank account\'s own live ledger', function () {
+    $posted = postRegisterEntry($this->fixture, $this->maker);
 
-    $first = $this->ledger->ledgerForBank($this->fixture['bank']);
-    $other = $this->ledger->ledgerForBank($second);
-
-    expect($first->id)->not->toBe($other->id)->and($first->id)->not->toBe($this->fixture['liveLedger']->id)
-        ->and($other->account_name)->toBe('BR - Meezan Wallet (MZN-1)')
-        ->and($second->fresh()->register_chart_of_account_id)->toBe($other->id)
-        ->and($second->fresh()->chart_of_account_id)->toBe($this->fixture['liveLedger']->id);
+    expect($posted->journalEntryDetail->chart_of_account_id)->toBe($this->fixture['liveLedger']->id)
+        ->and($this->accounts->bankLedger($this->fixture['bank'])->id)->toBe($this->fixture['liveLedger']->id);
 });
 
-test('each company has its own register account and the companies keep their own balances', function () {
-    $dalda = Supplier::factory()->create(['supplier_name' => 'Dalda Foods', 'disabled' => false]);
+test('a category with its own account keeps using it and unknown categories go to the bank suspense account', function () {
+    $type = AccountType::firstWhere('type_name', 'Assets');
+    $own = ChartOfAccount::create(['account_type_id' => $type->id, 'currency_id' => $this->fixture['liveLedger']->currency_id, 'account_code' => '5241', 'account_name' => 'Office Rent', 'normal_balance' => 'debit', 'is_active' => true]);
+    $rent = BankEntryCategory::factory()->create(['name' => 'Rent', 'slug' => 'rent', 'type' => 'payment', 'default_chart_of_account_id' => $own->id]);
 
-    postRegisterEntry($this->fixture, $this->maker, ['credit' => 1000]);
-    postRegisterEntry($this->fixture, $this->maker, ['credit' => 0, 'debit' => 400, 'company_id' => $dalda->id]);
+    $posted = postRegisterEntry($this->fixture, $this->maker, ['bank_entry_category_id' => $rent->id, 'company_id' => null, 'credit' => 0, 'debit' => 900]);
+    expect($posted->journalEntry->details->pluck('chart_of_account_id'))->toContain($own->id);
 
-    $unilever = $this->ledger->companyAccount($this->fixture['company']);
-    $daldaAccount = $this->ledger->companyAccount($dalda);
-
-    expect($unilever->account_name)->toBe('BR - Unilever')->and($daldaAccount->account_name)->toBe('BR - Dalda Foods')
-        ->and($unilever->id)->not->toBe($daldaAccount->id)
-        ->and(JournalEntryDetail::where('chart_of_account_id', $unilever->id)->sum('credit'))->toEqual(1000)
-        ->and(JournalEntryDetail::where('chart_of_account_id', $daldaAccount->id)->sum('debit'))->toEqual(400);
+    $unknown = BankEntryCategory::factory()->create(['name' => 'Misc', 'slug' => 'misc', 'type' => 'receipt']);
+    $suspense = postRegisterEntry($this->fixture, $this->maker, ['bank_entry_category_id' => $unknown->id, 'company_id' => null, 'credit' => 450, 'debit' => 0]);
+    expect($suspense->journalEntry->details->pluck('chart_of_account_id'))->toContain($this->accounts->account('suspense')->id)
+        ->and($this->accounts->account('suspense')->account_name)->toBe('Bank Suspense');
 });
 
-test('the register accounts are kept out of the Balance Sheet and the Income Statement', function () {
-    postRegisterEntry($this->fixture, $this->maker);
-    $type = AccountType::where('type_name', 'Bank Register')->firstOrFail();
+test('the former memo ledger is removed for good and its posted lines go back to the register', function () {
+    $memo = memoLedger($this->fixture);
+    $journal = memoJournal('BR-2026-27-000001', $memo['bank']->id, $memo['clearing']->id, 2500);
+    $reversal = memoJournal('REV-BR-2026-27-000001', $memo['clearing']->id, $memo['bank']->id, 2500);
+    DB::table('journal_entries')->where('id', $reversal->id)->update(['reverses_entry_id' => $journal->id]);
+    $live = memoJournal('SETTLE-1', $this->fixture['liveLedger']->id, $this->fixture['liveReceivable']->id, 9000);
 
-    expect($type->report_group)->not->toBeIn(['BalanceSheet', 'IncomeStatement']);
+    $entry = BankStatementEntry::factory()->create([
+        'bank_account_id' => $this->fixture['bank']->id, 'bank_entry_category_id' => $this->fixture['category']->id, 'credit' => 2500, 'debit' => 0,
+        'status' => BankStatementEntry::STATUS_POSTED, 'receipt_no' => 'BR-2026-27-000001', 'journal_entry_id' => $journal->id,
+        'journal_entry_detail_id' => $journal->details()->where('line_no', 1)->value('id'),
+    ]);
+    $reconciliation = BankReconciliation::create([
+        'bank_account_id' => $this->fixture['bank']->id, 'period_from' => now()->startOfMonth(), 'period_to' => now()->endOfMonth(),
+        'statement_date' => now()->endOfMonth(), 'statement_balance' => 0, 'opening_balance' => 0, 'book_balance' => 0, 'difference' => 0,
+        'status' => BankReconciliation::STATUS_IN_PROGRESS, 'created_by' => $this->maker->id,
+    ]);
+    BankReconciliationItem::create(['bank_reconciliation_id' => $reconciliation->id, 'bank_statement_entry_id' => $entry->id, 'journal_entry_detail_id' => $entry->journal_entry_detail_id, 'match_type' => 'auto', 'matched_by' => $this->maker->id, 'matched_at' => now()]);
 
-    foreach (['report-financial-balance-sheet', 'report-financial-income-statement'] as $permission) {
-        Permission::findOrCreate($permission);
-    }
-    $user = bankUser(['report-financial-balance-sheet', 'report-financial-income-statement']);
-    $this->actingAs($user);
+    $result = app(MemoLedgerRemoval::class)->run();
 
-    $this->get(route('reports.balance-sheet.index'))->assertOk()->assertDontSee('BR - Unilever')->assertDontSee('BR - HBL');
-    $this->get(route('reports.income-statement.index'))->assertOk()->assertDontSee('BR - Bank Charges');
+    expect($result)->toMatchArray(['accounts' => 3, 'journals' => 2, 'lines' => 4, 'entries_unposted' => 1, 'reconciliation_items' => 1])
+        ->and(ChartOfAccount::whereIn('id', [$memo['root']->id, $memo['bank']->id, $memo['clearing']->id])->exists())->toBeFalse()
+        ->and(AccountType::where('report_group', 'BankRegister')->exists())->toBeFalse()
+        ->and(JournalEntry::whereIn('id', [$journal->id, $reversal->id])->exists())->toBeFalse()
+        ->and(JournalEntry::find($live->id)->details)->toHaveCount(2)
+        ->and($entry->refresh()->status)->toBe(BankStatementEntry::STATUS_CLASSIFIED)
+        ->and($entry->receipt_no)->toBe('BR-2026-27-000001')
+        ->and($entry->journal_entry_id)->toBeNull();
+
+    // the journal guards are back: a posted journal still cannot be deleted
+    expect(fn () => JournalEntry::find($live->id)->forceDelete())->toThrow(Exception::class);
+});
+
+test('nothing is removed when a memo journal touches a live account', function () {
+    $memo = memoLedger($this->fixture);
+    $mixed = memoJournal('BR-2026-27-000009', $memo['bank']->id, $this->fixture['liveReceivable']->id, 100);
+
+    expect(fn () => app(MemoLedgerRemoval::class)->run())->toThrow(RuntimeException::class, 'outside the register')
+        ->and(JournalEntry::find($mixed->id))->not->toBeNull()
+        ->and(ChartOfAccount::find($memo['bank']->id))->not->toBeNull();
 });
 
 test('the live-gap report lists statement lines the live ledger has no entry for', function () {
@@ -140,14 +166,3 @@ test('the live-gap report lists statement lines the live ledger has no entry for
         ->and($report['notes'][0])->toContain('1 statement line(s) were found');
 });
 
-test('a category with its own account keeps using it and unknown categories without a company go to suspense', function () {
-    $own = ChartOfAccount::create(['account_type_id' => $this->fixture['bankLedger']->account_type_id, 'currency_id' => $this->fixture['bankLedger']->currency_id, 'account_code' => '6290', 'account_name' => 'BR - Rent', 'normal_balance' => 'debit', 'is_active' => true]);
-    $rent = BankEntryCategory::factory()->create(['name' => 'Rent', 'slug' => 'rent', 'type' => 'payment', 'default_chart_of_account_id' => $own->id]);
-
-    $posted = postRegisterEntry($this->fixture, $this->maker, ['bank_entry_category_id' => $rent->id, 'company_id' => null, 'credit' => 0, 'debit' => 900]);
-    expect($posted->journalEntry->details->pluck('chart_of_account_id'))->toContain($own->id);
-
-    $unknown = BankEntryCategory::factory()->create(['name' => 'Misc', 'slug' => 'misc', 'type' => 'receipt']);
-    $suspense = postRegisterEntry($this->fixture, $this->maker, ['bank_entry_category_id' => $unknown->id, 'company_id' => null, 'credit' => 450, 'debit' => 0]);
-    expect($suspense->journalEntry->details->pluck('chart_of_account_id'))->toContain($this->ledger->account('unidentified_receipts')->id);
-});

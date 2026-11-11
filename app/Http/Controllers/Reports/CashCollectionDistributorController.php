@@ -144,6 +144,8 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
         $clearings = SalesSettlementCheque::query()
             ->with('salesSettlement.employee:id,name,supplier_id,designation')
             ->where('status', 'cleared')
+            // a cheque the bank cleared brought no cash back
+            ->where(fn ($query) => $query->whereNull('cleared_via')->orWhere('cleared_via', 'cash'))
             ->whereDate('cleared_date', $date)
             ->whereHas('salesSettlement', fn ($query) => $scope($query))
             ->get()

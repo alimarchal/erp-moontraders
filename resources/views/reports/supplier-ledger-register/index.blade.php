@@ -168,7 +168,7 @@
     @endif
 
     {{-- Filter Section --}}
-    <x-filter-section :action="route('reports.ledger-register.index')" class="no-print">
+    <x-filter-section :action="route('reports.supplier-ledger-register.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
@@ -295,7 +295,7 @@
                         </button>
                     </div>
                     <div x-show="showOpeningBalance" x-cloak class="mt-4 border-t pt-4">
-                        <form :action="'/reports/ledger-register/opening-balance/' + selectedSupplierId" method="POST">
+                        <form :action="'/reports/supplier-ledger-register/opening-balance/' + selectedSupplierId" method="POST">
                             @csrf
                             @method('PUT')
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -483,7 +483,7 @@
                                             @else
                                                 @can('report-audit-ledger-register-post')
                                                     <button type="button"
-                                                        x-on:click="$dispatch('open-ledger-post-modal', { url: '{{ route('reports.ledger-register.post', $entry) }}' })"
+                                                        x-on:click="$dispatch('open-ledger-post-modal', { url: '{{ route('reports.supplier-ledger-register.post', $entry) }}' })"
                                                         class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                                                         title="Post to GL">
                                                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -519,7 +519,7 @@
                                                 @endcan
                                                 @can('report-audit-ledger-register-delete')
                                                     <form
-                                                        action="{{ route('reports.ledger-register.destroy', $entry) }}"
+                                                        action="{{ route('reports.supplier-ledger-register.destroy', $entry) }}"
                                                         method="POST"
                                                         onsubmit="return confirm('Are you sure you want to delete this entry?');">
                                                         @csrf
@@ -552,7 +552,7 @@
                         @can('report-audit-ledger-register-create')
                             <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
                                 <td colspan="12" class="p-0">
-                                    <form action="{{ route('reports.ledger-register.store') }}" method="POST">
+                                    <form action="{{ route('reports.supplier-ledger-register.store') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="supplier_id"
                                             value="{{ $selectedSupplier?->id ?? '' }}">
@@ -900,7 +900,7 @@
                     init() {
                         window.addEventListener('open-edit-modal', (e) => {
                             this.entry = e.detail;
-                            this.formAction = '{{ url("reports/ledger-register") }}/' + this.entry.id;
+                            this.formAction = '{{ url("reports/supplier-ledger-register") }}/' + this.entry.id;
                             this.open = true;
                         });
                     },

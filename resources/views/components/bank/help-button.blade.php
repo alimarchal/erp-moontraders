@@ -16,7 +16,7 @@
     ];
     $helpTopics = match (true) {
         request()->routeIs('bank-statement-entries.index') => $registerTabTopics[request()->input('filter.status')] ?? ['daily', 'register', 'filters', 'lifecycle'],
-        request()->routeIs('bank-statement-entries.create') => ['manual', 'attach'],
+        request()->routeIs('bank-statement-entries.create') => ['manual', 'opening', 'attach'],
         request()->routeIs('bank-statement-entries.edit') => ['classify', 'attach', 'maker'],
         request()->routeIs('bank-statement-entries.show') => ['register', 'maker', 'checker', 'reverse'],
         request()->routeIs('bank-statement-imports.*') => ['import', 'daily'],
@@ -29,11 +29,25 @@
         request()->routeIs('reports.bank.*') => ['reports', 'print'],
         default => ['what', 'daily', 'faq'],
     };
+    // The flow drawn at the end of the window (App\Support\HelpFlows).
+    $registerTabFlows = ['unclassified' => 'classify', 'classified' => 'approval', 'pending_approval' => 'approval', 'rejected' => 'approval', 'posted' => 'posting', 'reconciled' => 'recon', 'reversed' => 'reverse'];
+    $helpFlow = match (true) {
+        request()->routeIs('bank-statement-entries.index') => $registerTabFlows[request()->input('filter.status')] ?? 'register',
+        request()->routeIs('bank-statement-entries.create') => 'manual',
+        request()->routeIs('bank-statement-entries.edit') => 'classify',
+        request()->routeIs('bank-statement-entries.show') => 'posting',
+        request()->routeIs('bank-statement-imports.*') => 'import',
+        request()->routeIs('bank-receipt-scans.*') => 'scans',
+        request()->routeIs('bank-reconciliations.*') => 'recon',
+        request()->routeIs('bank-cheques.*', 'bank-entry-categories.*', 'bank-party-aliases.*', 'bank-entry-rules.*') => 'setup',
+        request()->routeIs('reports.bank.*') => 'reports',
+        default => 'register',
+    };
     $registerTab = request()->routeIs('bank-statement-entries.index') ? request()->input('filter.status') : null;
     $helpTitle = $registerTab ? $title.' › '.(['unclassified' => 'To classify', 'classified' => 'Ready to post', 'pending_approval' => 'Waiting for approval'][$registerTab] ?? \App\Models\BankStatementEntry::STATUSES[$registerTab] ?? $registerTab) : $title;
 @endphp
 
-<button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('bk-help', { topics: {{ \Illuminate\Support\Js::from($helpTopics) }}, title: {{ \Illuminate\Support\Js::from($helpTitle) }} })" aria-haspopup="dialog" title="How this screen works, in Urdu">
+<button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('bk-help', { topics: {{ \Illuminate\Support\Js::from($helpTopics) }}, title: {{ \Illuminate\Support\Js::from($helpTitle) }}, flow: {{ \Illuminate\Support\Js::from($helpFlow) }} })" aria-haspopup="dialog" title="How this screen works, in Urdu">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
     Help <span dir="rtl" lang="ur">(اردو)</span>
 </button>

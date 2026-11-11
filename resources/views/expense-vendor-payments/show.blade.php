@@ -18,6 +18,7 @@
         </div>
     </x-slot>
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     <style>
         .pv-grid { display:grid; gap:16px; grid-template-columns:1fr; } @media (min-width:900px){ .pv-grid { grid-template-columns: 3fr 2fr; } }
         .pv-pad { padding:18px 20px; } .pv-dl { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; margin:0; } .pv-dl dt { font-size:12px; text-transform:uppercase; color:var(--ak-muted); } .pv-dl dd { margin:2px 0 0; font-weight:600; }

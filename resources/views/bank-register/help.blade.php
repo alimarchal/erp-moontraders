@@ -8,11 +8,11 @@
     $shot = fn (string $file) => asset('icons-images/bank-register-help/'.$file.'.jpg').'?v='.(@filemtime(public_path('icons-images/bank-register-help/'.$file.'.jpg')) ?: 1);
     $sections = [
         'what' => 'بینک رجسٹر کیا ہے', 'screen' => 'سکرین کا نقشہ', 'lifecycle' => 'انٹری کی زندگی (لائف سائیکل)', 'roles' => 'کون کیا کرتا ہے',
-        'daily' => 'روزانہ کا آسان طریقہ', 'import' => 'سٹیٹمنٹ امپورٹ کرنا', 'manual' => 'ہاتھ سے انٹری شامل کرنا', 'scans' => 'رسیدوں کا اسکین ان باکس',
+        'daily' => 'روزانہ کا آسان طریقہ', 'import' => 'سٹیٹمنٹ امپورٹ کرنا', 'manual' => 'ہاتھ سے انٹری شامل کرنا', 'opening' => 'اوپننگ بیلنس', 'scans' => 'رسیدوں کا اسکین ان باکس',
         'register' => 'رجسٹر، ٹیب اور پاپ اپ', 'filters' => 'تمام فلٹر', 'classify' => 'کمپنی اور کیٹیگری لگانا', 'attach' => 'رسید اور اٹیچمنٹ',
-        'maker' => 'پوسٹ کرنا یا منظوری کے لیے بھیجنا', 'checker' => 'منظور یا مسترد کرنا', 'posting' => 'پوسٹنگ اور رجسٹر کے اکاؤنٹس',
+        'maker' => 'پوسٹ کرنا یا منظوری کے لیے بھیجنا', 'checker' => 'منظور یا مسترد کرنا', 'posting' => 'پوسٹنگ: رقم اصل کھاتوں میں',
         'reverse' => 'ریورس اور ڈیلیٹ', 'recon' => 'بینک ریکنسیلی ایشن', 'masters' => 'سیٹ اپ: کیٹیگری، الیاس، رولز، چیک', 'reports' => 'رپورٹس',
-        'env' => 'تمام سیٹنگز (.env)', 'print' => 'پرنٹ کرنا', 'faq' => 'عام سوالات اور مسائل',
+        'env' => 'تمام سیٹنگز (.env)', 'print' => 'پرنٹ کرنا', 'flows' => 'تمام فلو ایک نظر میں', 'faq' => 'عام سوالات اور مسائل',
     ];
 @endphp
 <x-app-layout>
@@ -156,6 +156,19 @@
                         <div class="note"><b>دوبارہ تو نہیں ڈل گئی؟</b> اسی اکاؤنٹ، تاریخ اور رقم کی انٹری پہلے سے ہو تو پیلا انتباہ آتا ہے اور موجودہ انٹری کا لنک ملتا ہے۔ واقعی الگ لین دین ہو تو <span class="en">save it anyway</span> پر ٹک لگا کر محفوظ کریں۔</div>
                     </section>
 
+                    <section id="opening">
+                        <h2>اوپننگ بیلنس</h2>
+                        <p>جس دن سے رجسٹر شروع کریں، اس دن بینک میں جتنی رقم تھی وہ ایک بار اوپننگ بیلنس کے طور پر لکھیں، تاکہ کتاب کا بیلنس بینک سٹیٹمنٹ سے ملے۔</p>
+                        <ol>
+                            <li><span class="en">+ Add entry</span> دبائیں، بینک اکاؤنٹ چنیں اور تاریخ وہ لکھیں جس دن کا بیلنس ہے (سٹیٹمنٹ کا اوپننگ بیلنس)۔</li>
+                            <li>بینک میں رقم ہو تو <span class="en">+ Received</span>؛ اوور ڈرافٹ (منفی بیلنس) ہو تو <span class="en">− Paid out</span>۔</li>
+                            <li>کیٹیگری <span class="en">Opening Balance</span> چنیں اور سٹیٹمنٹ کا صفحہ رسید کے طور پر لگائیں۔</li>
+                            <li><span class="en">Save &amp; submit</span> دبائیں۔ پوسٹ ہونے پر: بینک ڈیبٹ اور <span class="en">3300 Opening Balance Equity</span> کریڈٹ۔</li>
+                        </ol>
+                        <div class="note">ہر بینک کا اوپننگ بیلنس <b>ایک ہی بار</b> لگتا ہے؛ دوسرا بھیجیں تو سسٹم روک دیتا ہے۔ غلط ہو تو پہلے والا ریورس کریں، پھر درست لکھیں۔ اس انٹری کو "پہلے سے کتاب میں" والی جانچ نہیں روکتی۔</div>
+                        <div class="tip">ریکنسیلی ایشن کا <span class="en">Opening balance</span> خانہ صرف اس مدت کے حساب کے لیے ہے؛ کتاب میں رقم اسی انٹری سے آتی ہے۔</div>
+                    </section>
+
                     <section id="scans">
                         <h2>رسیدوں کا اسکین ان باکس</h2>
                         <p>رسید ملتے ہی فوٹو یا اسکین ان باکس میں ڈال دیں، چاہے انٹری ابھی نہ بنی ہو۔ اس طرح رسید کبھی گم نہیں ہوتی۔</p>
@@ -271,25 +284,30 @@
                     </section>
 
                     <section id="posting">
-                        <h2>پوسٹنگ اور رجسٹر کے اپنے اکاؤنٹس</h2>
-                        <p>پوسٹ ہوتے ہی نظام ایک متوازن <span class="en">Journal Entry</span> بناتا ہے (ڈیبٹ = کریڈٹ) اور انٹری کو رسید نمبر دیتا ہے: <span class="en">BR-2026-27-000001</span> (رقم آئی) یا <span class="en">BP-2026-27-000001</span> (رقم گئی)۔ مالی سال جولائی سے جون ہے۔</p>
-                        <p><b>رجسٹر کا حساب الگ ہے:</b> یہ صرف اپنے اکاؤنٹس (کوڈ <span class="en">6000</span> سے شروع) استعمال کرتا ہے، اس لیے <span class="en">Balance Sheet</span> اور <span class="en">Income Statement</span> میں شامل نہیں ہوتا۔ <span class="en">Account Balances</span>، <span class="en">Trial Balance</span> اور <span class="en">General Ledger</span> میں یہ اپنے الگ گروپ میں نظر آتے ہیں۔</p>
+                        <h2>پوسٹنگ: رقم اصل کھاتوں میں</h2>
+                        <p>رجسٹر کا کوئی الگ حساب نہیں۔ ہر انٹری اصل <span class="en">Chart of Accounts</span> میں جاتی ہے، اس لیے <span class="en">Trial Balance</span>، <span class="en">Balance Sheet</span> اور <span class="en">Income Statement</span> میں شامل ہوتی ہے۔ بینک کی طرف ہمیشہ اسی بینک کا اپنا اکاؤنٹ (مثلاً <span class="en">1171 HBL Main Account</span>) ہوتا ہے، وہی جس میں سیل سیٹلمنٹ، سپلائر ادائیگی اور تنخواہ جاتی ہے۔</p>
+                        <h3>ایک رقم دو بار نہیں: لنک یا پوسٹ</h3>
+                        <ol>
+                            <li><b>لنک</b> <span class="en">Link to book entry</span>: جو رقم کسی اور ماڈیول نے پہلے ہی کتاب میں لکھ دی (سیٹلمنٹ کا بینک ٹرانسفر، سلپ یا آن لائن ریکوری، سپلائر ادائیگی، تنخواہ)، اسے دوبارہ پوسٹ نہیں کیا جاتا۔ انٹری اس جرنل لائن سے جوڑ دی جاتی ہے؛ کوئی نیا جرنل نہیں بنتا۔</li>
+                            <li><b>پوسٹ</b>: جو رقم کہیں اور نہیں لکھی گئی (بینک چارجز، بینک کا کاٹا ہوا ٹیکس، مالک کی رقم، ایک بینک سے دوسرے میں منتقلی، نامعلوم رقم)، اس کا متوازن <span class="en">Journal Entry</span> بنتا ہے اور رسید نمبر ملتا ہے: <span class="en">BR-2026-27-000001</span> (رقم آئی) یا <span class="en">BP-2026-27-000001</span> (رقم گئی)۔ مالی سال جولائی سے جون ہے۔</li>
+                        </ol>
+                        <p class="warn">اگر بینک کے اکاؤنٹ میں اسی رقم اور اسی سمت کی لائن تین دن کے اندر پہلے سے موجود ہو تو نظام پوسٹ نہیں کرنے دیتا اور پاپ اپ میں <span class="en">Already in the books?</span> کی فہرست دکھاتا ہے: وہاں <span class="en">Link</span> دبائیں۔ اگر واقعی الگ لین دین ہے تو <span class="en">confirm it is different</span> میں وجہ لکھ کر آگے بڑھیں؛ وجہ انٹری پر محفوظ رہتی ہے۔</p>
+                        <h3>کیٹیگری کس کھاتے میں جاتی ہے</h3>
                         <table>
-                            <tr><th>کوڈ</th><th>اکاؤنٹ</th><th>کب استعمال ہوتا ہے</th></tr>
-                            <tr><td class="en-cell">6100+</td><td>ہر بینک / کیش / والٹ کا اپنا اکاؤنٹ</td><td>بینک کی طرف ہمیشہ یہی؛ ریکنسیلی ایشن کا کتابی بیلنس بھی اسی سے۔</td></tr>
-                            <tr><td class="en-cell">6300+</td><td>ہر کمپنی کا اپنا اکاؤنٹ</td><td>کسٹمر رسید، پرنسپل / سپلائر ادائیگی اور <span class="en">Other</span> میں، جب انٹری پر کمپنی لگی ہو۔</td></tr>
-                            <tr><td class="en-cell">6201 / 6202</td><td>کسٹمر رسیدیں / کیش جمع</td><td>کمپنی نہ لگی ہو تو۔</td></tr>
-                            <tr><td class="en-cell">6203 / 6210</td><td>نامعلوم آمد / نامعلوم ادائیگی</td><td>جہاں کیٹیگری کا اکاؤنٹ یا کمپنی طے نہیں۔</td></tr>
-                            <tr><td class="en-cell">6204 – 6209</td><td>مالک، سپلائر کلیئرنگ، تنخواہ، بینک چارجز، ٹیکس، منتقلی</td><td>متعلقہ کیٹیگری۔</td></tr>
+                            <tr><th>کیٹیگری</th><th>دوسری طرف کا کھاتہ</th></tr>
+                            <tr><td><span class="en">Customer Receipt</span></td><td class="en-cell">1111 Debtors</td></tr>
+                            <tr><td><span class="en">Principal / Supplier Payment</span></td><td class="en-cell">2111 Creditors</td></tr>
+                            <tr><td><span class="en">Cash Deposit</span></td><td class="en-cell">1121 Cash</td></tr>
+                            <tr><td><span class="en">Salary / Staff</span></td><td class="en-cell">5281 Salary</td></tr>
+                            <tr><td><span class="en">Bank Charges</span></td><td class="en-cell">Bank Charges (5200 کے نیچے)</td></tr>
+                            <tr><td><span class="en">Tax / Government</span></td><td class="en-cell">Advance Tax - Bank Deductions (1160 کے نیچے)</td></tr>
+                            <tr><td><span class="en">Inter-bank / Own Transfer</span></td><td class="en-cell">Bank Transfers in Transit (1100 کے نیچے)</td></tr>
+                            <tr><td><span class="en">Owner / Partner</span></td><td class="en-cell">Owner / Partner Current Account (3000 کے نیچے)</td></tr>
+                            <tr><td><span class="en">Other</span> اور نامعلوم</td><td class="en-cell">Bank Suspense (2100 کے نیچے)</td></tr>
                         </table>
-                        <table>
-                            <tr><th>معاملہ</th><th>ڈیبٹ</th><th>کریڈٹ</th></tr>
-                            <tr><td>کسٹمر سے رقم آئی</td><td>بینک کا رجسٹر اکاؤنٹ</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا کسٹمر رسیدیں)</td></tr>
-                            <tr><td>پرنسپل / سپلائر کو ادائیگی</td><td>کمپنی کا رجسٹر اکاؤنٹ (یا سپلائر کلیئرنگ)</td><td>بینک کا رجسٹر اکاؤنٹ</td></tr>
-                            <tr><td>کیش جمع کروایا</td><td>بینک</td><td>کیش جمع کلیئرنگ</td></tr>
-                            <tr><td>بینک چارجز / ٹیکس / تنخواہ</td><td>متعلقہ رجسٹر اکاؤنٹ</td><td>بینک</td></tr>
-                        </table>
-                        <figure><img src="{{ $shot('30-account-balances') }}" alt="اکاؤنٹ بیلنسز" loading="lazy"><figcaption><span class="en">Reports › Account Balances</span> میں رجسٹر کے اکاؤنٹس الگ گروپ میں</figcaption></figure>
+                        <p class="tip">یہ کھاتے <span class="en">Settings › Bank categories</span> میں ہر کیٹیگری پر بدلے جا سکتے ہیں۔ <span class="en">Bank Transfers in Transit</span> اور <span class="en">Bank Suspense</span> کا بیلنس مہینے کے آخر میں صفر ہونا چاہیے: ٹرانسفر کی دونوں طرف آ جائیں تو صفر، اور نامعلوم رقم پہچان کر صحیح کھاتے میں منتقل کریں۔</p>
+                        <h3>سیل سیٹلمنٹ کی بینک رقم</h3>
+                        <p>سیٹلمنٹ پوسٹ ہوتے ہی اس کی آن لائن ریکوری، بینک ٹرانسفر اور بینک سلپ رجسٹر میں <span class="en">Booked by settlement</span> بن کر آ جاتی ہیں، سیٹلمنٹ کے جرنل سے جڑی ہوئی۔ انہیں پوسٹ یا ریورس نہیں کیا جاتا؛ صرف بینک سٹیٹمنٹ سے ملایا (ریکنسائل) جاتا ہے۔ سٹیٹمنٹ امپورٹ میں وہی رقم آئے تو نئی لائن نہیں بنتی، یہی لائن تصدیق ہو جاتی ہے۔ سیٹلمنٹ ریورٹ ہو تو اس کی لائنیں بھی ریورس ہو جاتی ہیں؛ دوبارہ پوسٹ ہو تو نئے جرنل سے جڑ جاتی ہیں۔ چیک بینک کی رقم نہیں جب تک جمع نہ ہوں: وہ <span class="en">Cheques in Hand</span> میں رہتے ہیں اور <span class="en">Cheque Register</span> سے کلیئر ہوتے ہیں۔</p>
                     </section>
 
                     <section id="reverse">
@@ -311,6 +329,7 @@
 
                     <section id="recon">
                         <h2>بینک ریکنسیلی ایشن</h2>
+                        <p>کتابی بیلنس بینک کے اپنے اکاؤنٹ (مثلاً <span class="en">1171</span>) سے آتا ہے، جس میں سیٹلمنٹ، سپلائر ادائیگی، تنخواہ اور رجسٹر سب کی رقم ہے۔ سیٹلمنٹ ایک بینک کی ساری سلپیں ایک جرنل لائن میں لکھتا ہے، اس لیے کئی سٹیٹمنٹ لائنیں ایک جرنل لائن سے مل سکتی ہیں؛ جتنا حصہ ابھی نہیں ملا وہی <span class="en">Deposits in transit</span> میں گنا جاتا ہے۔</p>
                         <ol>
                             <li><span class="en">Menu › Reconciliation</span> کھولیں اور <span class="en">+ New reconciliation</span> دبائیں۔ بینک اکاؤنٹ، مدت، اور سٹیٹمنٹ کی <span class="en">Opening / Closing balance</span> لکھ کر <span class="en">Start</span> دبائیں۔</li>
                             <li>جو انٹریاں رجسٹر سے پوسٹ ہو چکی ہیں وہ خود جوڑ دی جاتی ہیں (<span class="en">Auto-match posted lines</span> سے دوبارہ بھی چلا سکتے ہیں)۔</li>
@@ -399,6 +418,14 @@
                         </ul>
                     </section>
 
+                    <section id="flows">
+                        <h2>تمام فلو ایک نظر میں</h2>
+                        <p>ہر سکرین کی <span class="en">Help</span> ونڈو کے آخر میں اسی سکرین کا فلو آتا ہے۔ یہاں سب ایک ساتھ ہیں۔</p>
+                        @foreach (array_keys(\App\Support\HelpFlows::all()) as $flowKey)
+                            <x-help-flow :flow="$flowKey" />
+                        @endforeach
+                    </section>
+
                     <section id="faq">
                         <h2>عام سوالات اور مسائل</h2>
                         <table>
@@ -411,9 +438,9 @@
                             <tr><td>ریورس کا بٹن نہیں، لکھا ہے کہ کوئی اور ریورس کرے</td><td>انٹری منظوری والی تھی اور آپ نے بھیجی تھی؛ کوئی دوسرا آدمی ریورس کرے گا۔</td></tr>
                             <tr><td>انٹری بدل نہیں سکتی</td><td>پوسٹ شدہ انٹری لاک ہے؛ پہلے ریورس کریں۔</td></tr>
                             <tr><td>انٹری دو بار بن گئی</td><td>جو پوسٹ نہیں ہوئی اسے <span class="en">Delete entry</span> سے حذف کریں؛ پوسٹ ہو چکی ہو تو ریورس کریں۔</td></tr>
-                            <tr><td>رجسٹر کی رقم باقی رپورٹوں میں نظر نہیں آتی</td><td>یہی اس کا ڈیزائن ہے: رجسٹر کا حساب الگ ہے۔ فرق رپورٹ <span class="en">Not yet in the live books</span> میں دیکھیں۔</td></tr>
+                            <tr><td>رجسٹر کہتا ہے یہ رقم پہلے سے کتاب میں ہے</td><td>وہی رقم ±3 دن میں کسی اور ماڈیول (سیٹلمنٹ، سپلائر پیمنٹ) سے بُک ہے؛ <span class="en">Link</span> کریں۔ واقعی الگ لین دین ہو تو وجہ لکھ کر پوسٹ کریں۔</td></tr>
                             <tr><td>ریکنسیلی ایشن مکمل نہیں ہو رہی</td><td>دیکھیں کہ کوئی سٹیٹمنٹ لائن بغیر جوڑ کے تو نہیں، اور <span class="en">Difference</span> صفر ہے۔</td></tr>
-                            <tr><td>پہلے <span class="en">Settings</span> یا <span class="en">Reports</span> میں بینک کا حصہ تھا، اب نہیں ملتا</td><td>سب کچھ <span class="en">Bank Register › Menu</span> میں آ گیا ہے۔</td></tr>
+                            <tr><td>کیٹیگری، الیاس یا رولز کہاں ہیں؟</td><td><span class="en">Settings › Bank Register Setup</span> میں؛ باقی سب <span class="en">Bank Register › Menu</span> میں۔</td></tr>
                             <tr><td>کوئی بٹن یا سکرین نظر نہیں آتی</td><td>اجازت نہیں ہوگی؛ ایڈمن سے <span class="en">Settings › Roles</span> میں اجازت دلوائیں۔</td></tr>
                         </table>
                     </section>

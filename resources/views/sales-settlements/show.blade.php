@@ -27,6 +27,10 @@
             <div class="ak-head-actions no-print">
                 <a href="{{ route('sales-settlements.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to Settlements</a>
                 <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh">Refresh</a>
+                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('ss-help')" aria-haspopup="dialog" title="How this settlement works, in Urdu">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+                    Help <span dir="rtl" lang="ur">(اردو)</span>
+                </button>
                 {{-- Print loads the printable sheet (layout=print2) in a hidden frame and opens the print dialog with it --}}
                 <button type="button" class="ak-btn ak-btn-outline" data-print-url="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2']) }}" onclick="ssPrintSheet(this)" title="Print the settlement sheet (A4, portrait or landscape)">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83c-.24.03-.48.06-.72.1m.72-.1a42.4 42.4 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.17c.24.03.48.06.72.1m-.72-.1L17.66 18m0 0 .23 2.5a1.13 1.13 0 0 1-1.12 1.24H7.23a1.13 1.13 0 0 1-1.12-1.24L6.34 18m11.32 0h1.09A2.25 2.25 0 0 0 21 15.75V9.46c0-1.08-.77-2.01-1.84-2.18a48 48 0 0 0-1.41-.2M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.46c0-1.08.77-2.01 1.84-2.18.47-.07.94-.14 1.41-.2m0 0a48.6 48.6 0 0 1 11.5 0m-11.5 0V3.38c0-.62.5-1.13 1.13-1.13h9.24c.63 0 1.13.5 1.13 1.13v3.7M18 10.5h.01" /></svg>
@@ -362,6 +366,7 @@
     @endphp
 
     @include('settings.partials.ui-style')
+    @include('sales-settlements.partials.help-modal')
     <style>
         .ss-summary { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
         .ss-strip { display: flex; flex-wrap: wrap; gap: 8px; }

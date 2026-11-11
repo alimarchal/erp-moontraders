@@ -2120,6 +2120,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $result = $distributionService->postSalesSettlement($salesSettlement);
 
         if ($result['success']) {
+            // posting raised the bank register lines; they open the settlement's own proof files
+            $this->linkBankRegisterAttachments($salesSettlement->fresh());
+
             return redirect()
                 ->route('sales-settlements.show', $salesSettlement->id)
                 ->with('success', $result['message']);

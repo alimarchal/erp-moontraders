@@ -32,13 +32,13 @@ beforeEach(function () {
 
 test('ledger register page loads for authenticated user', function () {
     $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index'))
+        ->get(route('reports.supplier-ledger-register.index'))
         ->assertSuccessful();
 });
 
 test('ledger register does not load a default supplier for unrestricted users', function () {
     $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index'))
+        ->get(route('reports.supplier-ledger-register.index'))
         ->assertSuccessful()
         ->assertViewHas('selectedSupplier', null);
 });
@@ -64,7 +64,7 @@ test('ledger register is scoped to authenticated users supplier', function () {
     $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
 
     $response = $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index'));
+        ->get(route('reports.supplier-ledger-register.index'));
 
     $response->assertSuccessful()
         ->assertSee('1,000.00')
@@ -80,14 +80,14 @@ test('ledger register blocks scoped users from filtering another supplier', func
     $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
 
     $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index', [
+        ->get(route('reports.supplier-ledger-register.index', [
             'filter' => ['supplier_id' => $otherSupplier->id],
         ]))
         ->assertForbidden();
 });
 
 test('ledger register requires authentication', function () {
-    $this->get(route('reports.ledger-register.index'))
+    $this->get(route('reports.supplier-ledger-register.index'))
         ->assertRedirect(route('login'));
 });
 
@@ -95,7 +95,7 @@ test('ledger register requires permission', function () {
     $userWithoutPermission = User::factory()->create();
 
     $this->actingAs($userWithoutPermission)
-        ->get(route('reports.ledger-register.index'))
+        ->get(route('reports.supplier-ledger-register.index'))
         ->assertForbidden();
 });
 
@@ -108,7 +108,7 @@ test('ledger register shows entries for selected supplier', function () {
     LedgerRegister::recalculateBalances($this->supplier->id);
 
     $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index', [
+        ->get(route('reports.supplier-ledger-register.index', [
             'filter' => ['supplier_id' => $this->supplier->id],
         ]))
         ->assertSuccessful()
@@ -128,7 +128,7 @@ test('ledger register filters by date range', function () {
     ]);
 
     $response = $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index', [
+        ->get(route('reports.supplier-ledger-register.index', [
             'filter' => [
                 'supplier_id' => $this->supplier->id,
                 'date_from' => '2026-02-01',
@@ -156,7 +156,7 @@ test('ledger register filters by document type', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index', [
+        ->get(route('reports.supplier-ledger-register.index', [
             'filter' => [
                 'supplier_id' => $this->supplier->id,
                 'document_type' => [DocumentType::Dz->value],
@@ -168,7 +168,7 @@ test('ledger register filters by document type', function () {
 
 test('can store a new ledger register entry', function () {
     $this->actingAs($this->user)
-        ->post(route('reports.ledger-register.store'), [
+        ->post(route('reports.supplier-ledger-register.store'), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-02',
             'document_type' => DocumentType::Dz->value,
@@ -192,7 +192,7 @@ test('can update a ledger register entry', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.update', $entry), [
+        ->put(route('reports.supplier-ledger-register.update', $entry), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-02',
             'document_type' => DocumentType::Dz->value,
@@ -212,7 +212,7 @@ test('can delete a ledger register entry', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->delete(route('reports.ledger-register.destroy', $entry))
+        ->delete(route('reports.supplier-ledger-register.destroy', $entry))
         ->assertRedirect();
 
     $this->assertSoftDeleted('supplier_ledger_registers', ['id' => $entry->id]);
@@ -221,7 +221,7 @@ test('can delete a ledger register entry', function () {
 test('balance recalculates correctly after store', function () {
     // First entry: Online 5M
     $this->actingAs($this->user)
-        ->post(route('reports.ledger-register.store'), [
+        ->post(route('reports.supplier-ledger-register.store'), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-01',
             'document_type' => DocumentType::Dz->value,
@@ -230,7 +230,7 @@ test('balance recalculates correctly after store', function () {
 
     // Second entry: Invoice 2M with ZA 10000
     $this->actingAs($this->user)
-        ->post(route('reports.ledger-register.store'), [
+        ->post(route('reports.supplier-ledger-register.store'), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-02',
             'document_type' => DocumentType::Dr->value,
@@ -266,7 +266,7 @@ test('balance recalculates correctly after update', function () {
 
     // Update first entry to 3M
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.update', $entry1), [
+        ->put(route('reports.supplier-ledger-register.update', $entry1), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-01',
             'document_type' => DocumentType::Dz->value,
@@ -303,7 +303,7 @@ test('balance recalculates correctly after delete', function () {
 
     // Delete middle entry
     $this->actingAs($this->user)
-        ->delete(route('reports.ledger-register.destroy', $entry2));
+        ->delete(route('reports.supplier-ledger-register.destroy', $entry2));
 
     $entry1->refresh();
     $entry3->refresh();
@@ -315,7 +315,7 @@ test('balance recalculates correctly after delete', function () {
 });
 
 test('store requires authentication', function () {
-    $this->post(route('reports.ledger-register.store'), [
+    $this->post(route('reports.supplier-ledger-register.store'), [
         'supplier_id' => $this->supplier->id,
         'transaction_date' => '2026-02-02',
         'document_type' => DocumentType::Dz->value,
@@ -328,7 +328,7 @@ test('store requires create permission', function () {
     $viewOnlyUser->givePermissionTo('report-audit-ledger-register');
 
     $this->actingAs($viewOnlyUser)
-        ->post(route('reports.ledger-register.store'), [
+        ->post(route('reports.supplier-ledger-register.store'), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-02',
             'document_type' => DocumentType::Dz->value,
@@ -339,13 +339,13 @@ test('store requires create permission', function () {
 
 test('store validates required fields', function () {
     $this->actingAs($this->user)
-        ->post(route('reports.ledger-register.store'), [])
+        ->post(route('reports.supplier-ledger-register.store'), [])
         ->assertSessionHasErrors(['supplier_id', 'transaction_date']);
 });
 
 test('can update supplier opening balance', function () {
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+        ->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), [
             'ledger_opening_balance' => 500000,
             'ledger_opening_balance_date' => '2026-01-01',
         ])
@@ -366,14 +366,14 @@ test('can update supplier opening balance', function () {
 
 test('opening balance is included in running balance calculation', function () {
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+        ->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), [
             'ledger_opening_balance' => 500000,
             'ledger_opening_balance_date' => '2026-01-01',
         ])
         ->assertRedirect();
 
     $this->actingAs($this->user)
-        ->post(route('reports.ledger-register.store'), [
+        ->post(route('reports.supplier-ledger-register.store'), [
             'supplier_id' => $this->supplier->id,
             'transaction_date' => '2026-02-01',
             'document_type' => DocumentType::Dz->value,
@@ -391,7 +391,7 @@ test('opening balance is included in running balance calculation', function () {
 
 test('opening balance shows on ledger register page', function () {
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+        ->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), [
             'ledger_opening_balance' => 250000,
             'ledger_opening_balance_date' => '2026-01-01',
         ])
@@ -405,7 +405,7 @@ test('opening balance shows on ledger register page', function () {
     LedgerRegister::recalculateBalances($this->supplier->id);
 
     $this->actingAs($this->user)
-        ->get(route('reports.ledger-register.index', [
+        ->get(route('reports.supplier-ledger-register.index', [
             'filter' => [
                 'supplier_id' => $this->supplier->id,
                 'date_from' => '2026-02-01',
@@ -421,7 +421,7 @@ test('opening balance requires set opening balance permission', function () {
     $viewOnlyUser->givePermissionTo('report-audit-ledger-register');
 
     $this->actingAs($viewOnlyUser)
-        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+        ->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), [
             'ledger_opening_balance' => 500000,
         ])
         ->assertForbidden();
@@ -433,7 +433,7 @@ test('scoped users cannot store entries for another supplier', function () {
     $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
 
     $this->actingAs($this->user)
-        ->post(route('reports.ledger-register.store'), [
+        ->post(route('reports.supplier-ledger-register.store'), [
             'supplier_id' => $otherSupplier->id,
             'transaction_date' => '2026-02-02',
             'document_type' => DocumentType::Dz->value,
@@ -444,13 +444,13 @@ test('scoped users cannot store entries for another supplier', function () {
 
 test('opening balance validates required fields', function () {
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [])
+        ->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), [])
         ->assertSessionHasErrors(['ledger_opening_balance']);
 });
 
 test('negative opening balance works correctly', function () {
     $this->actingAs($this->user)
-        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+        ->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), [
             'ledger_opening_balance' => -200000,
         ])
         ->assertRedirect();
@@ -465,4 +465,9 @@ test('negative opening balance works correctly', function () {
         'online_amount' => 0,
         'invoice_amount' => 0,
     ]);
+});
+
+test('the old ledger register address moves to the supplier ledger register', function () {
+    $this->actingAs(User::factory()->create())->get('/reports/ledger-register?filter%5Bsupplier_id%5D=6')
+        ->assertRedirect('/reports/supplier-ledger-register?filter%5Bsupplier_id%5D=6');
 });

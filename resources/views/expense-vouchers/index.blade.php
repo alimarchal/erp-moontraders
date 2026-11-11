@@ -81,6 +81,7 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
         .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; margin-inline-start: 8px; }

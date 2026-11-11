@@ -109,9 +109,9 @@
                             <div class="ak-muted">{{ $detail->journalEntry->entry_date->format('d-m-Y') }} · {{ $detail->description }}</div>
                         </div>
                         @if ((float) $detail->debit > 0)
-                            <b class="bk-num bk-in" title="Deposit in transit">+{{ number_format($detail->debit, 2) }}</b>
+                            <b class="bk-num bk-in" title="Deposit in transit">+{{ number_format($detail->open_amount, 2) }}</b>@if ($detail->open_amount < (float) $detail->debit)<span class="ak-muted"> of {{ number_format($detail->debit, 2) }}</span>@endif
                         @else
-                            <b class="bk-num bk-out" title="Outstanding payment">−{{ number_format($detail->credit, 2) }}</b>
+                            <b class="bk-num bk-out" title="Outstanding payment">−{{ number_format($detail->open_amount, 2) }}</b>@if ($detail->open_amount < (float) $detail->credit)<span class="ak-muted"> of {{ number_format($detail->credit, 2) }}</span>@endif
                         @endif
                     </div>
                 @empty

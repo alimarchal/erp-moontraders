@@ -99,6 +99,19 @@ class ClaimRegisterService
                 throw new \Exception('Claim is already posted.');
             }
 
+            // The recovery is in the books through the Supplier Ledger Register's claim adjustment (Dr Creditors /
+            // Cr Pending Claims); a journal here too would take the same claim off twice.
+            if ($claim->isLedgerAdjustment()) {
+                $claim->update(['posted_at' => now(), 'posted_by' => auth()->id()]);
+                DB::commit();
+
+                return [
+                    'success' => true,
+                    'data' => $claim->fresh(),
+                    'message' => 'Recovery recorded. It reaches the books through the claim adjustment in the Supplier Ledger Register, so no second journal is made.',
+                ];
+            }
+
             // Both GL accounts must be set
             if (! $claim->debit_account_id || ! $claim->credit_account_id) {
                 throw new \Exception('Debit and Credit accounts must be set before posting.');
@@ -283,6 +296,52 @@ class ClaimRegisterService
     }
 
     /**
+     * Recoveries posted before claims were settled through the Supplier Ledger Register each booked the money into
+     * HBL Main as if it had come into the bank, while the ledger register's claim adjustment took the same claim off
+     * again. Their journals are reversed on their own date; the claim register and the ledger register (and so every
+     * closing balance) stay as they are. Running it again reverses nothing twice.
+     *
+     * @return array{recoveries: int, amount: float}
+     */
+    public function settleRecoveriesThroughLedger(): array
+    {
+        $result = ['recoveries' => 0, 'amount' => 0.0];
+
+        // Posted claim rows are immutable in the database, so only their journals are reversed; the rows stay as entered.
+        $recoveries = ClaimRegister::query()
+            ->where('transaction_type', 'recovery')
+            ->whereNotNull('journal_entry_id')
+            ->orderBy('transaction_date')->orderBy('id')
+            ->get();
+
+        foreach ($recoveries as $recovery) {
+            DB::transaction(function () use ($recovery, &$result) {
+                $journalId = $recovery->journal_entry_id;
+
+                if ($journalId && JournalEntry::whereKey($journalId)->where('status', 'posted')->exists()
+                    && ! JournalEntry::where('reverses_entry_id', $journalId)->exists()) {
+                    $reversal = $this->accountingService->reverseJournalEntry(
+                        (int) $journalId,
+                        "REVERSAL: claim recovery {$recovery->reference_number} is settled through the Supplier Ledger Register claim adjustment, not received in the bank",
+                        Carbon::parse($recovery->transaction_date)->toDateString(),
+                    );
+
+                    if (! $reversal['success']) {
+                        throw new \RuntimeException($reversal['message']);
+                    }
+
+                    $result['amount'] += (float) $recovery->credit;
+                    $result['recoveries']++;
+                }
+            });
+        }
+
+        $result['amount'] = round($result['amount'], 2);
+
+        return $result;
+    }
+
+    /**
      * Turns the single amount into debit/credit and fills the default accounts, exactly as the claim
      * register screens do before saving.
      *
@@ -327,8 +386,8 @@ class ClaimRegisterService
             }
         }
 
-        // Default payment method
-        $data['payment_method'] = 'bank_transfer';
+        // A recovery is the claim adjusted in the supplier's ledger; the Supplier Ledger Register books it.
+        $data['payment_method'] = ($data['transaction_type'] ?? 'claim') === 'recovery' ? ClaimRegister::PAYMENT_LEDGER_ADJUSTMENT : 'bank_transfer';
 
         return $data;
     }

@@ -6,6 +6,9 @@
     $isOwnSubmission = (int) $entry->submitted_by === (int) auth()->id() && ! config('bank.maker_checker.allow_self_approval');
     $canDelete = $canEdit && $entry->status !== 'pending_approval';
     $canAttach = auth()->user()->can('bank-statement-entry-attach');
+    $bookingLabel = $entry->bookingLabel();
+    $byRegister = $bookingLabel === 'Posted by register';
+    $bookCandidates ??= collect();
     $fileSize = fn (?int $bytes): string => ($bytes ?? 0) >= 1048576 ? number_format($bytes / 1048576, 1).' MB' : number_format(($bytes ?? 0) / 1024, 1).' KB';
 @endphp
 <div class="bk-stack" data-bk-title="Transaction #{{ $entry->id }}@if ($entry->receipt_no) · {{ $entry->receipt_no }}@endif">
@@ -14,6 +17,7 @@
         <div class="bk-row">
             <x-bank.status-badge :status="$entry->status" />
             @if ($entry->needs_review)<span class="ak-status ak-status-amber"><i aria-hidden="true"></i>Needs review</span>@endif
+            @if ($bookingLabel)<span class="ak-status ak-status-blue"><i aria-hidden="true"></i>{{ $bookingLabel }}</span>@endif
             @if ($entry->receipt_no)<span class="ak-mono"><b>{{ $entry->receipt_no }}</b></span>@endif
         </div>
         <p class="bk-amount {{ $isIn ? 'bk-in' : 'bk-out' }}">{{ $isIn ? '+' : '−' }} PKR {{ number_format($entry->amount, 2) }}</p>
@@ -29,14 +33,17 @@
             <tr><th>Party on statement</th><td dir="auto">{{ $entry->party_name_in_statement ?? '—' }}</td><th>Company / principal</th><td dir="auto">{{ $entry->company?->supplier_name ?? '—' }}</td></tr>
             <tr><th>Category</th><td>{{ $entry->category?->name ?? '—' }}</td><th>Reference</th><td>{{ $entry->reference ?? '—' }}</td></tr>
             <tr><th>Narration</th><td colspan="3" dir="auto">{{ $entry->narration ?? '—' }}</td></tr>
+            @if ($entry->not_in_books_reason)
+                <tr><th>Not in books because</th><td colspan="3" dir="auto">{{ $entry->not_in_books_reason }}</td></tr>
+            @endif
             @if ($entry->salesSettlement)
                 <tr><th>Raised from</th><td colspan="3"><a href="{{ route('sales-settlements.show', $entry->salesSettlement) }}" class="ak-primary-link">Sales Settlement {{ $entry->salesSettlement->settlement_number }}</a>
                     · {{ \App\Services\SettlementAttachmentService::SECTION_LABELS[$entry->settlement_section] ?? $entry->settlement_section }} · settlement is {{ $entry->salesSettlement->status }}</td></tr>
             @endif
             <tr><th>Note</th><td colspan="3" dir="auto">{{ $entry->description ?: '—' }}</td></tr>
             @if ($entry->journalEntry)
-                <tr><th>Journal entry</th><td><a href="{{ route('journal-entries.show', $entry->journalEntry) }}" class="ak-primary-link">#{{ $entry->journalEntry->id }} · {{ $entry->journalEntry->reference }}</a></td>
-                    <th>Posted</th><td>{{ $entry->posted_at?->format('d-m-Y H:i') }} · {{ $entry->poster?->name }}</td></tr>
+                <tr><th>In the books</th><td><a href="{{ route('journal-entries.show', $entry->journalEntry) }}" class="ak-primary-link">#{{ $entry->journalEntry->id }} · {{ $entry->journalEntry->reference }}</a>@if ($bookingLabel) <span class="ak-muted">({{ $bookingLabel }})</span>@endif</td>
+                    <th>{{ $byRegister ? 'Posted' : 'Linked' }}</th><td>{{ $entry->posted_at?->format('d-m-Y H:i') }} · {{ $entry->poster?->name }}</td></tr>
             @endif
         </tbody>
     </table>
@@ -139,6 +146,44 @@
         <p class="bk-note"><b>Rejected</b> by {{ $entry->rejecter?->name }}: {{ $entry->rejection_reason }}</p>
     @endif
 
+    {{-- Money another module already booked is linked, never posted twice --}}
+    @if ($bookCandidates->isNotEmpty())
+        @can('bank-statement-entry-submit')
+            <table class="bk-t bank-noprint">
+                <thead>
+                    <tr class="cap"><th colspan="5">Already in the books? <small>{{ $isIn ? 'Money in' : 'Money out' }} of {{ number_format($entry->amount, 2) }} on {{ $entry->bankAccount->account_name }}, within {{ \App\Services\BankRegister\BankEntryPostingService::MATCH_DAYS }} days</small></th></tr>
+                    <tr><th>Date</th><th>Journal</th><th>Description</th><th class="n">Not linked yet</th><th class="c"><span class="sr-only">Link</span></th></tr>
+                </thead>
+                <tbody>
+                    @foreach ($bookCandidates as $candidate)
+                        <tr>
+                            <td>{{ $candidate->journalEntry->entry_date?->format('d-m-Y') }}</td>
+                            <td><a href="{{ route('journal-entries.show', $candidate->journal_entry_id) }}" class="ak-primary-link" target="_blank" rel="noopener">#{{ $candidate->journal_entry_id }} · {{ $candidate->journalEntry->reference }}</a></td>
+                            <td dir="auto">{{ \Illuminate\Support\Str::limit($candidate->description, 90) }}</td>
+                            <td class="n">{{ number_format($candidate->unlinked, 2) }}</td>
+                            <td class="c">
+                                <form method="POST" action="{{ route('bank-statement-entries.link', $entry) }}">@csrf
+                                    <input type="hidden" name="journal_entry_detail_id" value="{{ $candidate->id }}">
+                                    <button class="ak-btn ak-btn-primary ak-btn-sm" title="This statement line is that money. Nothing new is posted.">Link</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @unless ($entry->not_in_books_reason)
+                <div class="bk-row ak-muted bank-noprint">This line cannot be posted while it looks already booked. Link it above, or, if it really is a different transaction,
+                    <x-bank.action-modal title="A different transaction" sub="The entry will be posted as new money in the books." tone="green"
+                        :action="route('bank-statement-entries.not-in-books', $entry)" trigger="confirm it is different" trigger-class="ak-btn ak-btn-ghost ak-btn-sm" confirm="Confirm">
+                        @include('bank-statement-entries.partials.summary')
+                        <div><label for="not-in-books-{{ $entry->id }}">Why is it not the same money? <span class="uf-req">*</span></label>
+                            <textarea id="not-in-books-{{ $entry->id }}" name="reason" rows="3" required maxlength="500" dir="auto" placeholder="e.g. two separate deposits of the same amount"></textarea></div>
+                    </x-bank.action-modal>
+                </div>
+            @endunless
+        @endcan
+    @endif
+
     {{-- Actions --}}
     <div class="bank-noprint bk-stack bk-actions">
         <div class="bk-row">
@@ -146,7 +191,7 @@
                 @if ($canEdit)<a href="{{ route('bank-statement-entries.edit', $entry) }}" class="ak-btn ak-btn-outline">Edit / classify</a>@endif
             @endcan
             @can('bank-statement-entry-submit')
-                @if (in_array($entry->status, ['classified', 'rejected', 'reversed'], true))
+                @if (in_array($entry->status, ['classified', 'rejected', 'reversed'], true) && ($bookCandidates->isEmpty() || $entry->not_in_books_reason))
                     <form method="POST" action="{{ route('bank-statement-entries.submit', $entry) }}">@csrf
                         <button class="ak-btn ak-btn-success">{{ $level === 0 ? 'Post now' : 'Submit for approval' }}</button>
                     </form>
@@ -179,7 +224,14 @@
             @endcan
 
             @can('bank-statement-entry-reverse')
-                @if ($entry->status === 'posted' && ! $rules->reversalNeedsSecondPerson($entry, auth()->user()))
+                @if ($entry->status === 'posted' && ! $entry->sales_settlement_id && ! $byRegister)
+                    <x-bank.action-modal title="Unlink from book entry" sub="The line goes back to the register. The journal it was linked to is not changed."
+                        :action="route('bank-statement-entries.reverse', $entry)" trigger="Unlink" confirm="Unlink">
+                        @include('bank-statement-entries.partials.summary')
+                        <div><label for="unlink-reason-{{ $entry->id }}">Reason <span class="uf-req">*</span></label>
+                            <textarea id="unlink-reason-{{ $entry->id }}" name="reason" rows="3" required maxlength="500" dir="auto" placeholder="Why the link was wrong"></textarea></div>
+                    </x-bank.action-modal>
+                @elseif ($entry->status === 'posted' && $byRegister && ! $rules->reversalNeedsSecondPerson($entry, auth()->user()))
                     <x-bank.action-modal title="Reverse entry" sub="A reversing journal entry is posted. The line can then be corrected and posted again."
                         :action="route('bank-statement-entries.reverse', $entry)" trigger="Reverse entry" confirm="Reverse entry">
                         @include('bank-statement-entries.partials.summary')
@@ -204,8 +256,12 @@
             <p class="ak-muted">You submitted this entry, so a different person has to approve it.</p>
         @endif
 
+        @if ($entry->sales_settlement_id && in_array($entry->status, ['posted', 'reconciled'], true))
+            <p class="ak-muted">Booked by its sales settlement. To take it back, revert the settlement; this line is reversed with it.</p>
+        @endif
+
         @can('bank-statement-entry-reverse')
-            @if ($entry->status === 'posted' && $rules->reversalNeedsSecondPerson($entry, auth()->user()))
+            @if ($entry->status === 'posted' && $byRegister && $rules->reversalNeedsSecondPerson($entry, auth()->user()))
                 <p class="ak-muted">This entry needed approval, so a different person has to reverse it.</p>
             @endif
         @endcan

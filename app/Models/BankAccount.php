@@ -19,7 +19,6 @@ class BankAccount extends Model
         'iban',
         'swift_code',
         'chart_of_account_id',
-        'register_chart_of_account_id',
         'is_active',
         'description',
     ];
@@ -36,13 +35,5 @@ class BankAccount extends Model
     public function chartOfAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class);
-    }
-
-    /**
-     * The Bank Register's own ledger for this account (the live ledger is chartOfAccount).
-     */
-    public function registerLedger(): BelongsTo
-    {
-        return $this->belongsTo(ChartOfAccount::class, 'register_chart_of_account_id');
     }
 }

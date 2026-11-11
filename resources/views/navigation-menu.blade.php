@@ -11,12 +11,13 @@
         'opening-customer-balances.*', 'employees.*', 'company-targets.*', 'promotional-campaigns.*', 'products.*',
         'product-categories.*', 'categories.*', 'uoms.*', 'warehouses.*', 'warehouse-types.*', 'vehicles.*',
         'stock-adjustments.*', 'product-recalls.*', 'claim-registers.*',
+        'bank-entry-categories.*', 'bank-party-aliases.*', 'bank-entry-rules.*',
     ];
     $isSettingsSection = request()->routeIs($settingsRoutePatterns) || request()->is('settings', 'settings/*');
     // Expense records are managed from the Expense Detail report, so they belong to the Reports menu item.
-    // Every Bank Register screen, its setup lists and its reports keep the "Bank Register" menu item highlighted.
+    // Every Bank Register screen and its reports keep the "Bank Register" menu item highlighted (its setup lists are under Settings).
     $isBankSection = request()->routeIs('bank-statement-*', 'bank-approvals.*', 'bank-reconciliations.*', 'bank-receipt-scans.*', 'bank-cheques.*',
-        'bank-entry-categories.*', 'bank-party-aliases.*', 'bank-entry-rules.*', 'bank-register.*', 'reports.bank.*');
+        'bank-register.*', 'reports.bank.*');
     $isReportsSection = request()->routeIs('reports.*', 'expense-details.*') && ! $isBankSection;
 @endphp
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 print:hidden">

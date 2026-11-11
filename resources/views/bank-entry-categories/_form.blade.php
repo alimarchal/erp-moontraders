@@ -16,14 +16,14 @@
 </div>
 
 <div class="uf-field">
-    <label for="default_chart_of_account_id">Own ledger account (optional)</label>
-    <select data-placeholder="Use the register's own account (recommended)" id="default_chart_of_account_id" name="default_chart_of_account_id" class="select2 bank-select">
-        <option value="">Use the register's own account (recommended)</option>
+    <label for="default_chart_of_account_id">Account in the books</label>
+    <select data-placeholder="Bank Suspense (until you choose)" id="default_chart_of_account_id" name="default_chart_of_account_id" class="select2 bank-select">
+        <option value="">Bank Suspense (until you choose)</option>
         @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" @selected((int) old('default_chart_of_account_id', $category?->default_chart_of_account_id) === $account->id)>{{ $account->account_code }} — {{ $account->account_name }}</option>
         @endforeach
     </select>
-    <p class="ak-muted" style="margin:4px 0 0">Leave empty: the register posts to its own accounts (6000 onwards), one per company where the entry has a company, and never to live accounts such as Debtors or Creditors. Pick an account only if this category must go to a specific one.</p>
+    <p class="ak-muted" style="margin:4px 0 0">The other side of the bank when an entry of this category is posted, e.g. Bank Charges or Creditors. Money another module already booked (settlement, supplier payment, payroll) is linked instead and never posted twice.</p>
 </div>
 
 <div class="uf-fields">

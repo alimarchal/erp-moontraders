@@ -98,17 +98,19 @@ test('masters respect the delete permission', function () {
     $this->get(route('bank-entry-categories.create'))->assertForbidden();
 });
 
-test('the bank register setup lists are reached from the bank register menu, not from the settings page', function () {
+test('the bank register setup lists live under Settings and old addresses still work', function () {
     Permission::findOrCreate('setting-view');
     $this->actingAs(bankUser(['setting-view', 'bank-entry-category-list', 'bank-statement-entry-list']));
 
-    $this->get(route('settings.index'))->assertOk()->assertDontSee('Bank Entry Categories');
-
-    $this->get(route('bank-statement-entries.index'))
+    $this->get(route('settings.index'))
         ->assertOk()
+        ->assertSee('Bank Register Setup')
         ->assertSee(route('bank-entry-categories.index'), false)
         ->assertDontSee(route('bank-party-aliases.index'), false);
 
-    expect(route('bank-entry-categories.index'))->toContain('/bank-register/')
+    $this->get(route('bank-entry-categories.create'))->assertForbidden();
+    $this->get('/bank-register/bank-entry-categories')->assertRedirect('/settings/bank-entry-categories');
+
+    expect(route('bank-entry-categories.index'))->toContain('/settings/')
         ->and(route('reports.bank.show', 'entries'))->toContain('/bank-register/reports/');
 });

@@ -14,7 +14,7 @@
     $ledgerStatus = $ledger ? ($ledger->isPosted() ? 'posted' : 'draft') : null;
     $ledgerTone = ['draft' => 'ak-status-amber', 'posted' => 'ak-status-green'];
     $ledgerUrl = $ledger && auth()->user()->can('report-audit-ledger-register')
-        ? route('reports.ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'date_from' => $ledger->transaction_date?->copy()->startOfMonth()->toDateString(), 'date_to' => $ledger->transaction_date?->copy()->endOfMonth()->toDateString()]])
+        ? route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'date_from' => $ledger->transaction_date?->copy()->startOfMonth()->toDateString(), 'date_to' => $ledger->transaction_date?->copy()->endOfMonth()->toDateString()]])
         : null;
     $itemsTotalWithTax = (float) ($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total);
     $rs = fn ($value) => number_format((float) $value, 2);
@@ -52,7 +52,7 @@
 
     $links = array_filter([
         ['GRNs from '.$grn->supplier->supplier_name, route('goods-receipt-notes.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'receipt_date_from' => $since, 'receipt_date_to' => $today]])],
-        $user->can('report-audit-ledger-register') ? ['Supplier ledger register', route('reports.ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'date_from' => $grn->receipt_date?->copy()->startOfMonth()->toDateString(), 'date_to' => $grn->receipt_date?->copy()->endOfMonth()->toDateString()]])] : null,
+        $user->can('report-audit-ledger-register') ? ['Supplier ledger register', route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'date_from' => $grn->receipt_date?->copy()->startOfMonth()->toDateString(), 'date_to' => $grn->receipt_date?->copy()->endOfMonth()->toDateString()]])] : null,
         $grn->journal_entry_id && $user->can('journal-entry-list') ? ['Journal entry #'.$grn->journal_entry_id, route('journal-entries.show', $grn->journal_entry_id)] : null,
     ]);
 @endphp
@@ -405,7 +405,7 @@
                             <p class="ak-muted" style="margin:6px 0 0">No second draft row was raised for this GRN because the invoice is already there.</p>
                         @endif
                         @if (! $ledgerUrl && auth()->user()->can('report-audit-ledger-register'))
-                            <p style="margin:8px 0 0"><a href="{{ route('reports.ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'document_number' => $grn->supplier_invoice_number, 'date_from' => '2020-01-01', 'date_to' => now()->toDateString()]]) }}" style="color:var(--ak-navy)">Open in Ledger Register →</a></p>
+                            <p style="margin:8px 0 0"><a href="{{ route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $grn->supplier_id, 'document_number' => $grn->supplier_invoice_number, 'date_from' => '2020-01-01', 'date_to' => now()->toDateString()]]) }}" style="color:var(--ak-navy)">Open in Ledger Register →</a></p>
                         @endif
                     @endif
                 </div>

@@ -11,6 +11,7 @@
         </div>
     </x-slot>
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     <style>
         .xs-t { width:100%; border-collapse:collapse; font-size:13.5px; } .xs-t th { text-align:left; background:#f8fafc; padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ak-muted); border-bottom:1px solid var(--ak-border); } .xs-t td { padding:9px 12px; border-bottom:1px solid var(--ak-line); } .xs-t .n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; } .xs-t tfoot td { font-weight:800; background:#f8fafc; border-top:2px solid var(--ak-border); }
         .xs-kpis { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); } .xs-kpi { padding:14px 18px; } .xs-kpi small { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--ak-muted); } .xs-kpi b { display:block; margin-top:3px; font-size:22px; font-variant-numeric:tabular-nums; }

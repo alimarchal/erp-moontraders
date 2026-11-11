@@ -86,6 +86,7 @@ class BankStatementEntry extends Model
         'rejected_by',
         'rejected_at',
         'rejection_reason',
+        'not_in_books_reason',
         'posted_by',
         'posted_at',
         'created_by',
@@ -144,6 +145,37 @@ class BankStatementEntry extends Model
     public function isLocked(): bool
     {
         return in_array($this->status, [self::STATUS_POSTED, self::STATUS_RECONCILED], true);
+    }
+
+    /**
+     * The journal of this line was created by the register (it carries the line's receipt number). Otherwise the line
+     * is only linked to money another module booked: a sales settlement, a supplier payment, payroll...
+     */
+    public function isBookedByRegister(): bool
+    {
+        if (! $this->journal_entry_id || ! $this->receipt_no || $this->sales_settlement_id) {
+            return false;
+        }
+
+        $reference = $this->relationLoaded('journalEntry') ? $this->journalEntry?->reference : $this->journalEntry()->value('reference');
+
+        return $reference === $this->receipt_no;
+    }
+
+    /**
+     * Short wording of how the line is in the books, for the register screens.
+     */
+    public function bookingLabel(): ?string
+    {
+        if (! in_array($this->status, [self::STATUS_POSTED, self::STATUS_RECONCILED], true) || ! $this->journal_entry_id) {
+            return null;
+        }
+
+        if ($this->sales_settlement_id) {
+            return 'Booked by settlement';
+        }
+
+        return $this->isBookedByRegister() ? 'Posted by register' : 'Linked to book entry';
     }
 
     public function bankAccount(): BelongsTo

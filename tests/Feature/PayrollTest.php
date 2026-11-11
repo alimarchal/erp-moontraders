@@ -8,9 +8,11 @@ use App\Models\PayrollRun;
 use App\Models\PayrollSlip;
 use App\Models\PayrollSlipLine;
 use App\Models\SalaryComponent;
+use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\PayrollService;
+use App\Services\SalesSettlementRevertService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -348,4 +350,41 @@ it('filters the payroll list by payroll number, month range and status', functio
     $this->get(route('payroll.index', ['filter' => ['month_from' => $this->month->copy()->addMonth()->format('Y-m')]]))->assertOk()->assertDontSee($run->run_number);
     $this->get(route('payroll.index', ['filter' => ['month_from' => $this->month->format('Y-m'), 'month_to' => $this->month->format('Y-m'), 'status' => 'draft']]))->assertOk()->assertSee($run->run_number);
     $this->get(route('payroll.index', ['filter' => ['status' => 'paid']]))->assertOk()->assertDontSee($run->run_number);
+});
+
+it('pays a salesman his settlement excess with the salary and takes his advance out of it (worked example)', function () {
+    // Imran: basic = days x 1,000 and house rent 6,000. In the month his settlements came 1,000 and 500 over
+    // (Rs 1,500 he handed in above what was due), and he took a 5,000 advance to be recovered in full.
+    $excessAccount = seedSettlementExcessAccount();
+    foreach ([1000, 500] as $i => $excess) {
+        $settlement = SalesSettlement::factory()->create([
+            'employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'posted', 'settlement_date' => $this->month->copy()->addDays(4 + $i),
+        ]);
+        $settlement->excessAmounts()->create(['amount' => $excess, 'description' => 'Cash Excess']);
+    }
+    $draft = SalesSettlement::factory()->create(['employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'draft', 'settlement_date' => $this->month->copy()->addDays(9)]);
+    $draft->excessAmounts()->create(['amount' => 999, 'description' => 'not posted']);
+    ($this->advance)(5000);
+
+    $run = ($this->build)();
+    $slip = $run->slips()->with('lines')->first();
+    $earnings = $this->days * 1000 + 6000;
+
+    expect($slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_EXCESS)->label)->toBe('Settlement excess (2 settlements)')
+        ->and((float) $slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_EXCESS)->amount)->toBe(1500.0)
+        ->and((float) $slip->total_earnings)->toBe((float) $earnings + 1500)
+        ->and((float) $slip->total_deductions)->toBe(5000.0)
+        ->and((float) $slip->net_pay)->toBe((float) $earnings + 1500 - 5000);
+
+    $this->actingAs($this->maker)->post(route('payroll.submit', $run));
+    $this->actingAs($this->checker)->post(route('payroll.approve', $run))->assertSessionHas('success');
+
+    // Dr Salary (basic + rent), Dr 4250 1,500 (the excess leaves company income) / Cr 1131 5,000, Cr 2112 net pay.
+    expect((float) DB::table('journal_entry_details')->where('chart_of_account_id', $excessAccount->id)->sum('debit'))->toBe(1500.0)
+        ->and(($this->balanceOf)('5281'))->toBe((float) $earnings)
+        ->and(($this->balanceOf)('1131'))->toBe(-5000.0)
+        ->and(($this->balanceOf)('2112'))->toBe(-((float) $earnings + 1500 - 5000));
+
+    $paidSettlement = SalesSettlement::where('status', 'posted')->first()->forceFill(['journal_entry_id' => DB::table('journal_entries')->value('id')]);
+    expect(app(SalesSettlementRevertService::class)->performPreChecks($paidSettlement)['message'])->toContain('already in the approved payroll');
 });

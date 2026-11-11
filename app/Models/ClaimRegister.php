@@ -14,6 +14,21 @@ class ClaimRegister extends Model
     /** @use HasFactory<ClaimRegisterFactory> */
     use HasFactory, SoftDeletes, UserTracking;
 
+    /**
+     * A recovery the supplier settles by adjusting the claim in its ledger with us. The Supplier Ledger Register's
+     * claim adjustment books it (Dr Creditors / Cr Pending Claims), so the recovery here posts no journal of its own.
+     */
+    public const PAYMENT_LEDGER_ADJUSTMENT = 'ledger_adjustment';
+
+    /**
+     * Every recovery is a ledger adjustment: the screens never offered another way to receive a claim, and the
+     * recoveries entered before carry the old "bank_transfer" default only.
+     */
+    public function isLedgerAdjustment(): bool
+    {
+        return $this->transaction_type === 'recovery';
+    }
+
     protected $fillable = [
         'supplier_id',
         'transaction_date',

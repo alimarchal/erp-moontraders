@@ -281,7 +281,7 @@
             if (opener && document.contains(opener)) { opener.focus(); }
             opener = null;
         }
-        function open(topics, label) {
+        function open(topics, label, flow) {
             opener = document.activeElement;
             title.textContent = label ? 'Help: ' + label : 'Help';
             full.setAttribute('href', guideUrl + (topics.length ? '#' + topics[0] : ''));
@@ -300,6 +300,15 @@
                     if (copy.tagName !== 'SECTION') { var card = document.createElement('section'); card.appendChild(copy); copy = card; }
                     body.appendChild(copy);
                 });
+                // the screen's step-by-step flow closes the window
+                var flowBlock = flow ? doc.getElementById('flow-' + flow) : null;
+                if (flowBlock && body.children.length) {
+                    var flowCard = document.createElement('section');
+                    var flowCopy = document.importNode(flowBlock, true);
+                    flowCopy.id = 'bk-help-flow-' + flow;
+                    flowCard.appendChild(flowCopy);
+                    body.appendChild(flowCard);
+                }
                 if (!body.children.length) { body.innerHTML = '<p>اس سکرین کی مدد ابھی موجود نہیں۔ <a href="' + guideUrl + '" target="_blank" rel="noopener">پوری گائیڈ کھولیں</a></p>'; }
                 body.parentNode.parentNode.scrollTop = 0;
             }).catch(function () {
@@ -307,7 +316,7 @@
             });
         }
 
-        window.addEventListener('bk-help', function (e) { open((e.detail && e.detail.topics) || [], e.detail && e.detail.title); });
+        window.addEventListener('bk-help', function (e) { open((e.detail && e.detail.topics) || [], e.detail && e.detail.title, e.detail && e.detail.flow); });
         modal.addEventListener('click', function (e) { if (e.target.closest('[data-bk-help-close]')) { close(); } });
         document.addEventListener('keydown', function (e) {
             if (!isOpen()) { return; }

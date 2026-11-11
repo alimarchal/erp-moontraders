@@ -16,6 +16,7 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     @include('expense-vouchers._form-styles')
 
     <div class="ak-page">

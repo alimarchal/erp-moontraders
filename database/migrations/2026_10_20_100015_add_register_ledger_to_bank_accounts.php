@@ -1,6 +1,5 @@
 <?php
 
-use App\Services\BankRegister\BankRegisterLedger;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -28,9 +27,8 @@ return new class extends Migration
 
         $this->allowRegisterReportGroup();
 
-        // On a database that already has a chart of accounts, create the register accounts now
-        // (new unique codes, existing accounts untouched). On an empty one they are created on first use.
-        app(BankRegisterLedger::class)->ensureAll();
+        // The register accounts were created here; the register now posts to the live chart of accounts and
+        // 2026_11_11_112037_remove_bank_register_memo_ledger removes them, the account type and this column.
     }
 
     /**

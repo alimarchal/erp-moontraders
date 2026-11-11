@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreClaimRegisterRequest;
 use App\Http\Requests\UpdateClaimRegisterRequest;
 use App\Models\ClaimRegister;
+use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use App\Services\ClaimRegisterService;
 use Illuminate\Http\Request;
@@ -143,6 +144,16 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $closingBalance = $openingBalance + $totals['net_balance'];
 
         $selectedSupplier = $supplierId ? Supplier::find($supplierId) : null;
+
+        // Recoveries here and claim adjustments in the Supplier Ledger Register are the same money: they must agree.
+        $ledgerMatch = null;
+        if ($supplierId) {
+            $recovered = (float) ClaimRegister::where('supplier_id', $supplierId)->where('transaction_type', 'recovery')
+                ->when($dateTo, fn ($query) => $query->whereDate('transaction_date', '<=', $dateTo))->sum('credit');
+            $adjusted = (float) LedgerRegister::where('supplier_id', $supplierId)
+                ->when($dateTo, fn ($query) => $query->whereDate('transaction_date', '<=', $dateTo))->sum('claim_adjust_amount');
+            $ledgerMatch = ['recovered' => $recovered, 'adjusted' => $adjusted, 'difference' => round($recovered - $adjusted, 2)];
+        }
         $claimRegisterDateEditable = filter_var(env('CLAIM_REGISTER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
 
         return view('reports.claim-register.index', compact(
@@ -164,7 +175,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             'totals',
             'perPage',
             'claimRegisterDateEditable',
-            'canViewAllSuppliers'
+            'canViewAllSuppliers',
+            'ledgerMatch'
         ));
     }
 

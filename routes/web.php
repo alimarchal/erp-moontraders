@@ -721,6 +721,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('bank-statement-entries/{bankStatementEntry}/flag', [BankStatementEntryController::class, 'flag'])->name('bank-statement-entries.flag');
     Route::post('bank-statement-entries/{bankStatementEntry}/submit', [BankStatementEntryController::class, 'submit'])->name('bank-statement-entries.submit');
     Route::post('bank-statement-entries/{bankStatementEntry}/reverse', [BankStatementEntryController::class, 'reverse'])->name('bank-statement-entries.reverse');
+    Route::post('bank-statement-entries/{bankStatementEntry}/link', [BankStatementEntryController::class, 'link'])->name('bank-statement-entries.link');
+    Route::post('bank-statement-entries/{bankStatementEntry}/not-in-books', [BankStatementEntryController::class, 'notInBooks'])->name('bank-statement-entries.not-in-books');
     Route::post('bank-statement-entries/{bankStatementEntry}/attachments', [BankEntryAttachmentController::class, 'store'])->name('bank-statement-entries.attachments.store');
     Route::resource('bank-statement-entries', BankStatementEntryController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
@@ -742,13 +744,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('bank-reconciliations/{bankReconciliation}/complete', [BankReconciliationController::class, 'complete'])->name('bank-reconciliations.complete');
     Route::post('bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])->name('bank-reconciliations.cancel');
 
-    // Setup lists and reports live under the Bank Register too (not under Settings / Reports); the route names are unchanged.
+    // The cheque register and the reports live under the Bank Register; its setup lists (categories, party aliases,
+    // auto-classify rules) are master data under Settings. Route names are unchanged, old addresses redirect.
     Route::prefix('bank-register')->group(function () {
-        Route::get('bank-entry-categories/export/{format}', [BankEntryCategoryController::class, 'export'])->name('bank-entry-categories.export');
-        Route::resource('bank-entry-categories', BankEntryCategoryController::class)->except(['show'])->parameters(['bank-entry-categories' => 'bankEntryCategory']);
-        Route::resource('bank-party-aliases', BankPartyAliasController::class)->except(['show'])->parameters(['bank-party-aliases' => 'bankPartyAlias']);
-        Route::resource('bank-entry-rules', BankEntryRuleController::class)->except(['show'])->parameters(['bank-entry-rules' => 'bankEntryRule']);
         Route::resource('bank-cheques', BankChequeController::class)->except(['show'])->parameters(['bank-cheques' => 'bankCheque']);
+        Route::get('{setup}/{rest?}', fn (string $setup, ?string $rest = null) => redirect('/settings/'.$setup.($rest ? '/'.$rest : ''), 301))
+            ->whereIn('setup', ['bank-entry-categories', 'bank-party-aliases', 'bank-entry-rules'])->where('rest', '.*');
     });
 
     Route::prefix('bank-register/reports')->name('reports.bank.')->group(function () {
@@ -777,6 +778,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('currencies', CurrencyController::class);
         Route::resource('cost-centers', CostCenterController::class);
         Route::resource('bank-accounts', BankAccountController::class);
+
+        /* Bank Register setup */
+        Route::get('bank-entry-categories/export/{format}', [BankEntryCategoryController::class, 'export'])->name('bank-entry-categories.export');
+        Route::resource('bank-entry-categories', BankEntryCategoryController::class)->except(['show'])->parameters(['bank-entry-categories' => 'bankEntryCategory']);
+        Route::resource('bank-party-aliases', BankPartyAliasController::class)->except(['show'])->parameters(['bank-party-aliases' => 'bankPartyAlias']);
+        Route::resource('bank-entry-rules', BankEntryRuleController::class)->except(['show'])->parameters(['bank-entry-rules' => 'bankEntryRule']);
 
         /* Tax Configuration */
         Route::resource('tax-codes', TaxCodeController::class);
@@ -952,6 +959,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         /* Cheque Register */
         Route::prefix('cheque-register')->name('cheque-register.')->group(function () {
             Route::get('/', [ChequeRegisterController::class, 'index'])->name('index');
+            Route::post('/bulk-clear', [ChequeRegisterController::class, 'bulkClear'])->name('bulk-clear');
             Route::post('/{cheque}/update-status', [ChequeRegisterController::class, 'updateStatus'])->name('update-status');
             Route::get('/{cheque}/history', [ChequeRegisterController::class, 'history'])->name('history');
         });
@@ -964,7 +972,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         });
 
         /* Supplier Ledger Register */
-        Route::prefix('ledger-register')->name('ledger-register.')->group(function () {
+        // the old address keeps working for bookmarks
+        Route::get('ledger-register', fn (\Illuminate\Http\Request $request) => redirect()->to('/reports/supplier-ledger-register'.($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301));
+        Route::prefix('supplier-ledger-register')->name('supplier-ledger-register.')->group(function () {
             Route::get('/', [LedgerRegisterController::class, 'index'])->name('index');
             Route::post('/', [LedgerRegisterController::class, 'store'])->name('store');
             Route::put('/{ledgerRegister}', [LedgerRegisterController::class, 'update'])->name('update');

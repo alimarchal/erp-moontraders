@@ -1,14 +1,18 @@
 <?php
 
 use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\ClaimRegister;
 use App\Models\Currency;
 use App\Models\JournalEntry;
+use App\Models\JournalEntryDetail;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\AccountingService;
+use App\Services\ClaimRegisterService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
@@ -421,4 +425,48 @@ test('users without permission cannot post', function () {
     $claim = ClaimRegister::factory()->create();
 
     $this->post(route('claim-registers.post', $claim), ['password' => 'password'])->assertForbidden();
+});
+
+// ── Recovery: one booking only ────────────────────────────────────
+
+test('a recovery is posted without a journal, because the supplier ledger claim adjustment books it', function () {
+    $recovery = ClaimRegister::factory()->recovery()->create();
+
+    $this->mock(AccountingService::class, fn ($mock) => $mock->shouldNotReceive('createJournalEntry'));
+
+    $this->post(route('claim-registers.post', $recovery), ['password' => 'password'])->assertSessionHas('success');
+
+    $recovery->refresh();
+    expect($recovery->posted_at)->not->toBeNull()
+        ->and($recovery->journal_entry_id)->toBeNull();
+});
+
+test('a new recovery is saved as a ledger adjustment', function () {
+    $data = app(ClaimRegisterService::class)->withDefaultAccounts(['transaction_type' => 'recovery', 'amount' => 500]);
+
+    expect($data['payment_method'])->toBe(ClaimRegister::PAYMENT_LEDGER_ADJUSTMENT)
+        ->and($data['credit'])->toEqual(500.0);
+});
+
+test('recoveries booked into the bank before are reversed once, and the registers stay as they are', function () {
+    $ledger = seedExpenseLedger();
+    $type = AccountType::firstOrCreate(['type_name' => 'Assets'], ['report_group' => 'BalanceSheet', 'category' => 'Asset']);
+    $claims = ChartOfAccount::firstOrCreate(['account_code' => '1112'], ['account_type_id' => $type->id, 'currency_id' => $ledger['1121']->currency_id, 'account_name' => 'Pending Claims Debtors', 'normal_balance' => 'debit', 'is_active' => true]);
+    $bankJournal = app(AccountingService::class)->createJournalEntry([
+        'entry_date' => now()->toDateString(), 'reference' => 'CLM-1', 'description' => 'Recovery', 'auto_post' => true,
+        'lines' => [
+            ['account_id' => $ledger['1171']->id, 'debit' => 2500, 'credit' => 0, 'description' => 'Recovery', 'cost_center_id' => 1],
+            ['account_id' => $claims->id, 'debit' => 0, 'credit' => 2500, 'description' => 'Recovery', 'cost_center_id' => 1],
+        ],
+    ])['data'];
+    $recovery = ClaimRegister::factory()->recovery()->create(['credit' => 2500, 'transaction_date' => now()->toDateString(), 'journal_entry_id' => $bankJournal->id, 'posted_at' => now()]);
+
+    $service = app(ClaimRegisterService::class);
+    $balance = fn (ChartOfAccount $account) => (float) JournalEntryDetail::where('chart_of_account_id', $account->id)->sum(DB::raw('debit - credit'));
+
+    expect($service->settleRecoveriesThroughLedger())->toBe(['recoveries' => 1, 'amount' => 2500.0])
+        ->and($balance($ledger['1171']))->toBe(0.0)
+        ->and($balance($claims))->toBe(0.0)
+        ->and($service->settleRecoveriesThroughLedger()['recoveries'])->toBe(0)
+        ->and((float) $recovery->fresh()->credit)->toBe(2500.0);
 });

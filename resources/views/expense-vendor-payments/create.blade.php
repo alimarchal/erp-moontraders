@@ -10,6 +10,7 @@
         </div>
     </x-slot>
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     @include('expense-vouchers._form-styles')
     <style>
         .vp-table { width:100%; border-collapse:collapse; font-size:13.5px; } .vp-table th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ak-muted); padding:8px; border-bottom:1px solid var(--ak-border); } .vp-table td { padding:8px; border-bottom:1px solid var(--ak-line); } .vp-table .n { text-align:right; font-variant-numeric:tabular-nums; }

@@ -8,8 +8,8 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryDetail;
 use App\Services\BankRegister\BankEntryApprovalService;
 use App\Services\BankRegister\BankEntryPostingService;
+use App\Services\BankRegister\BankRegisterAccounts;
 use App\Services\BankRegister\BankRegisterException;
-use App\Services\BankRegister\BankRegisterLedger;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
@@ -25,6 +25,19 @@ beforeEach(function () {
     $this->senior = bankUser(['bank-statement-entry-list', 'bank-statement-entry-approve', 'bank-statement-entry-approve-high-value'], 'Senior');
     $this->approvals = app(BankEntryApprovalService::class);
 });
+
+/**
+ * Money another module booked on the bank (a settlement slip, a supplier payment): a posted, balanced journal.
+ */
+function bookedElsewhere(array $fixture, float $debit, string $date, string $reference = 'SETTLE-1'): JournalEntryDetail
+{
+    $journal = JournalEntry::create(['currency_id' => $fixture['liveLedger']->currency_id, 'entry_date' => $date, 'reference' => $reference, 'description' => 'Bank Deposit (Slip)', 'status' => 'draft']);
+    $bankLine = $journal->details()->create(['chart_of_account_id' => $fixture['liveLedger']->id, 'line_no' => 1, 'debit' => $debit, 'credit' => 0, 'description' => 'Bank Deposit (Slip)']);
+    $journal->details()->create(['chart_of_account_id' => $fixture['liveReceivable']->id, 'line_no' => 2, 'debit' => 0, 'credit' => $debit]);
+    $journal->update(['status' => 'posted']);
+
+    return $bankLine;
+}
 
 function classifiedEntry(array $fixture, float $amount, string $direction = 'credit'): BankStatementEntry
 {
@@ -53,7 +66,7 @@ test('an entry below the first limit is posted by the maker straight away with a
     expect($lines)->toHaveCount(2)
         ->and((float) $lines->sum('debit'))->toBe((float) $lines->sum('credit'))
         ->and($lines->firstWhere('chart_of_account_id', $this->fixture['bankLedger']->id)->debit)->toBe('250000.00')
-        ->and($lines->firstWhere('chart_of_account_id', app(BankRegisterLedger::class)->companyAccount($this->fixture['company'])->id)->credit)->toBe('250000.00')
+        ->and($lines->firstWhere('chart_of_account_id', app(BankRegisterAccounts::class)->account('debtors')->id)->credit)->toBe('250000.00')
         ->and($posted->journalEntryDetail->chart_of_account_id)->toBe($this->fixture['bankLedger']->id);
 });
 
@@ -65,7 +78,7 @@ test('a payment debits the company payable and credits the bank, with a BP recei
     $lines = $posted->journalEntry->details;
     expect($posted->receipt_no)->toStartWith('BP-')
         ->and($lines->firstWhere('chart_of_account_id', $this->fixture['bankLedger']->id)->credit)->toBe('40000.00')
-        ->and($lines->firstWhere('chart_of_account_id', app(BankRegisterLedger::class)->companyAccount($this->fixture['company'])->id)->debit)->toBe('40000.00');
+        ->and($lines->firstWhere('chart_of_account_id', app(BankRegisterAccounts::class)->account('debtors')->id)->debit)->toBe('40000.00');
 });
 
 test('receipt numbers run in sequence per kind', function () {
@@ -96,7 +109,7 @@ test('a category without an account of its own and an entry without a company go
 
     $posted = $this->approvals->submit($entry, $this->maker);
 
-    $suspense = app(BankRegisterLedger::class)->account('unidentified_payments');
+    $suspense = app(BankRegisterAccounts::class)->account('suspense');
     $line = $posted->journalEntry->details->firstWhere('chart_of_account_id', $suspense->id);
     expect($line->debit)->toBe('9000.00')
         ->and($line->description)->toBe($posted->receipt_no.' | LANDLORD | CHQ 777 | October rent')
@@ -104,7 +117,7 @@ test('a category without an account of its own and an entry without a company go
         ->and($posted->journalEntry->reference)->toBe($posted->receipt_no);
 });
 
-test('well known categories use their own register account', function () {
+test('well known categories post to their live account', function () {
     $charges = BankStatementEntry::factory()->create([
         'bank_account_id' => $this->fixture['bank']->id, 'bank_entry_category_id' => BankEntryCategory::where('slug', 'bank-charges')->value('id'),
         'posting_date' => now()->toDateString(), 'credit' => 0, 'debit' => 1250, 'status' => 'classified',
@@ -112,17 +125,61 @@ test('well known categories use their own register account', function () {
 
     $posted = $this->approvals->submit($charges, $this->maker);
 
-    expect($posted->journalEntry->details->pluck('chart_of_account_id'))->toContain(app(BankRegisterLedger::class)->account('bank_charges')->id);
+    expect($posted->journalEntry->details->pluck('chart_of_account_id'))->toContain(app(BankRegisterAccounts::class)->account('bank_charges')->id);
 });
 
-test('the live ledgers are never touched by a register journal', function () {
+test('a register journal posts to the bank account\'s own live ledger, so it is in the trial balance', function () {
     $this->approvals->submit(classifiedEntry($this->fixture, 250000), $this->maker);
     $this->approvals->submit(classifiedEntry($this->fixture, 80000, 'debit'), $this->maker);
 
-    $live = [$this->fixture['liveLedger']->id, $this->fixture['liveReceivable']->id, $this->fixture['livePayable']->id];
+    $bankLines = JournalEntryDetail::where('chart_of_account_id', $this->fixture['liveLedger']->id);
 
-    expect(JournalEntryDetail::whereIn('chart_of_account_id', $live)->count())->toBe(0)
+    expect((float) $bankLines->sum('debit'))->toBe(250000.0)
+        ->and((float) JournalEntryDetail::where('chart_of_account_id', $this->fixture['liveLedger']->id)->sum('credit'))->toBe(80000.0)
         ->and(JournalEntryDetail::count())->toBe(4);
+});
+
+test('money another module already booked on the bank cannot be posted again, only linked', function () {
+    $bankLine = bookedElsewhere($this->fixture, 300000, now()->subDay()->toDateString());
+    $settlementJournal = $bankLine->journalEntry;
+    $entry = classifiedEntry($this->fixture, 300000);
+
+    expect(fn () => $this->approvals->submit($entry, $this->maker))->toThrow(BankRegisterException::class, 'already booked');
+
+    $linked = app(BankEntryPostingService::class)->link($entry, $bankLine, $this->maker);
+
+    expect($linked->status)->toBe(BankStatementEntry::STATUS_POSTED)
+        ->and($linked->journal_entry_id)->toBe($settlementJournal->id)
+        ->and($linked->receipt_no)->toBeNull()
+        ->and($linked->bookingLabel())->toBe('Linked to book entry')
+        ->and(JournalEntry::count())->toBe(1);
+
+    // unlinking leaves the other module's journal alone
+    $unlinked = app(BankEntryPostingService::class)->reverse($linked, $this->maker, 'Wrong deposit');
+    expect($unlinked->status)->toBe(BankStatementEntry::STATUS_CLASSIFIED)
+        ->and($unlinked->journal_entry_id)->toBeNull()
+        ->and(JournalEntry::count())->toBe(1);
+});
+
+test('one journal line carrying several deposits can be linked until its amount is used up', function () {
+    $line = bookedElsewhere($this->fixture, 1000, now()->toDateString());
+    $posting = app(BankEntryPostingService::class);
+
+    $posting->link(classifiedEntry($this->fixture, 600), $line, $this->maker);
+    $posting->link(classifiedEntry($this->fixture, 400), $line, $this->maker);
+
+    expect($posting->unlinkedAmount($line))->toBe(0.0)
+        ->and(fn () => $posting->link(classifiedEntry($this->fixture, 1), $line, $this->maker))->toThrow(BankRegisterException::class, 'left that is not linked');
+});
+
+test('a look-alike that really is a different transaction is posted once the reason is given', function () {
+    bookedElsewhere($this->fixture, 5000, now()->toDateString());
+    $entry = classifiedEntry($this->fixture, 5000);
+    $entry->update(['not_in_books_reason' => 'Two separate deposits of the same amount']);
+
+    $posted = $this->approvals->submit($entry, $this->maker);
+
+    expect($posted->status)->toBe(BankStatementEntry::STATUS_POSTED)->and($posted->bookingLabel())->toBe('Posted by register');
 });
 
 test('an entry at the first limit waits for a checker and the maker cannot approve it', function () {
@@ -315,4 +372,31 @@ test('ticked entries are approved together from the register', function () {
 
     expect($first->fresh()->status)->toBe(BankStatementEntry::STATUS_POSTED)
         ->and($second->fresh()->status)->toBe(BankStatementEntry::STATUS_POSTED);
+});
+
+test('an opening balance posts the bank against Opening Balance Equity, once per bank account', function () {
+    $currency = $this->fixture['liveLedger']->currency_id;
+    $equity = ChartOfAccount::create(['account_type_id' => $this->fixture['liveLedger']->account_type_id, 'currency_id' => $currency, 'account_code' => '3300', 'account_name' => 'Opening Balance Equity', 'normal_balance' => 'credit', 'is_active' => true]);
+    // the migration adds the category; on a fresh database it has no account yet, so 3300 is found by its code
+    $opening = BankEntryCategory::where('slug', 'opening-balance')->firstOrFail();
+    $opening->update(['default_chart_of_account_id' => null]);
+    // a booked deposit of the same amount on the same day must not be mistaken for the opening balance
+    bookedElsewhere($this->fixture, 500000, now()->toDateString());
+
+    $first = classifiedEntry($this->fixture, 500000);
+    $first->update(['bank_entry_category_id' => $opening->id]);
+
+    expect(app(BankEntryPostingService::class)->bookCandidates($first->fresh()))->toBeEmpty();
+
+    $posted = $this->approvals->submit($first->fresh(), $this->maker);
+    $lines = JournalEntryDetail::where('journal_entry_id', $posted->journal_entry_id)->get();
+
+    expect($posted->status)->toBe(BankStatementEntry::STATUS_POSTED)
+        ->and((float) $lines->firstWhere('chart_of_account_id', $this->fixture['liveLedger']->id)->debit)->toBe(500000.0)
+        ->and((float) $lines->firstWhere('chart_of_account_id', $equity->id)->credit)->toBe(500000.0);
+
+    $second = classifiedEntry($this->fixture, 1000);
+    $second->update(['bank_entry_category_id' => $opening->id]);
+
+    expect(fn () => $this->approvals->submit($second->fresh(), $this->maker))->toThrow(BankRegisterException::class, 'already has an opening balance');
 });

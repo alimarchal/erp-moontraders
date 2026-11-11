@@ -3,11 +3,13 @@
 namespace App\Services\BankRegister;
 
 use App\Models\BankAccount;
+use App\Models\BankEntryAuditLog;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use League\Flysystem\Local\LocalFilesystemAdapter;
@@ -78,8 +80,9 @@ class BankStatementImportService
         }
 
         $inserted = 0;
+        $merged = 0;
 
-        DB::transaction(function () use ($import, $analysis, $user, &$inserted) {
+        DB::transaction(function () use ($import, $analysis, $user, &$inserted, &$merged) {
             foreach (array_chunk($analysis['entries'], 500) as $chunk) {
                 $existing = BankStatementEntry::withTrashed()
                     ->whereIn('dedupe_hash', array_column($chunk, 'dedupe_hash'))
@@ -91,6 +94,13 @@ class BankStatementImportService
 
                 foreach ($chunk as $row) {
                     if (isset($existing[$row['dedupe_hash']])) {
+                        continue;
+                    }
+
+                    // money a settlement already booked: the statement confirms that register line, no second line
+                    if ($this->confirmSettlementLine($import, $row, $user)) {
+                        $merged++;
+
                         continue;
                     }
 
@@ -129,11 +139,56 @@ class BankStatementImportService
 
         $import->update([
             'status' => 'imported',
-            'imported_rows' => $inserted,
-            'skipped_rows' => $analysis['valid_rows'] - $inserted,
+            'imported_rows' => $inserted + $merged,
+            'skipped_rows' => $analysis['valid_rows'] - $inserted - $merged,
         ]);
 
         return $import;
+    }
+
+    /**
+     * A statement row that is a deposit already booked by a sales settlement (same bank, same amount, within three
+     * days) is written onto that register line instead of becoming a second line for the same money.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function confirmSettlementLine(BankStatementImport $import, array $row, User $user): bool
+    {
+        if ((float) $row['credit'] <= 0) {
+            return false;
+        }
+
+        $date = Carbon::parse($row['posting_date']);
+
+        $entry = BankStatementEntry::query()
+            ->where('bank_account_id', $import->bank_account_id)
+            ->whereNotNull('sales_settlement_id')
+            ->whereNull('import_id')
+            ->where('status', BankStatementEntry::STATUS_POSTED)
+            ->where('credit', $row['credit'])
+            ->whereDate('posting_date', '>=', $date->copy()->subDays(BankEntryPostingService::MATCH_DAYS))
+            ->whereDate('posting_date', '<=', $date->copy()->addDays(BankEntryPostingService::MATCH_DAYS))
+            ->lockForUpdate()
+            ->get()
+            ->sortBy(fn (BankStatementEntry $candidate) => abs($candidate->posting_date->diffInDays($date)))
+            ->first();
+
+        if (! $entry) {
+            return false;
+        }
+
+        $entry->forceFill([
+            'import_id' => $import->id,
+            'statement_ref_no' => $row['statement_ref_no'],
+            'value_date' => $row['value_date'] ?? $entry->value_date,
+            'running_balance' => $row['running_balance'],
+            'pdf_page' => $row['pdf_page'],
+            'updated_by' => $user->id,
+        ])->save();
+
+        BankEntryAuditLog::record($entry, 'confirmed_by_statement', null, ['import_id' => $import->id, 'statement_ref_no' => $row['statement_ref_no']], $user->id);
+
+        return true;
     }
 
     /**

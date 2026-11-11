@@ -15,6 +15,7 @@ use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
+use App\Services\BankRegister\SettlementBankRegisterSync;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -992,6 +993,10 @@ class DistributionService
                 'total_cogs' => $totalCOGS,
                 'cash_sales_amount' => $freshCashSalesAmount,
             ]);
+
+            // The settlement's bank money (online recoveries, bank transfers, slips) is now in the bank ledger:
+            // its register lines are linked to this journal so they can be reconciled, never posted again.
+            app(SettlementBankRegisterSync::class)->sync($settlement->fresh(), auth()->id());
 
             // Release the vehicle lock on the linked Goods Issue. The settlement
             // workflow is now complete, so the vehicle is free for the next GI.

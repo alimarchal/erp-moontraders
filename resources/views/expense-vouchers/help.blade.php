@@ -19,6 +19,7 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         .gh-wrap { display: flex; flex-direction: column; gap: 20px; }

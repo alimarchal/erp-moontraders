@@ -19,6 +19,9 @@ class PayrollSlipLine extends Model
 
     public const SOURCE_ADJUSTMENT = 'adjustment';
 
+    /** Cash a salesman handed in above what his settlements expected: his own money, paid with the salary. */
+    public const SOURCE_EXCESS = 'excess';
+
     protected $fillable = ['payroll_slip_id', 'salary_component_id', 'employee_advance_id', 'payroll_adjustment_id', 'kind', 'source', 'label', 'amount'];
 
     protected function casts(): array

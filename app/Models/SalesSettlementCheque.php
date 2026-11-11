@@ -28,6 +28,8 @@ class SalesSettlementCheque extends Model
         'status',
         'cleared_date',
         'cleared_amount',
+        'cleared_via',
+        'cleared_bank_account_id',
         'cleared_denom_5000', 'cleared_denom_1000', 'cleared_denom_500', 'cleared_denom_100', 'cleared_denom_50', 'cleared_denom_20', 'cleared_denom_10', 'cleared_denom_coins',
         'notes',
         'created_by',
@@ -64,6 +66,21 @@ class SalesSettlementCheque extends Model
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);
+    }
+
+    public function clearedBankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class, 'cleared_bank_account_id');
+    }
+
+    public function clearingJournalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'clearing_journal_entry_id');
+    }
+
+    public function isClearedByBank(): bool
+    {
+        return $this->isCleared() && $this->cleared_via === 'bank';
     }
 
     public function histories(): HasMany

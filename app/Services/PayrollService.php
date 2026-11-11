@@ -32,6 +32,9 @@ class PayrollService
 
     public const ADVANCES_ACCOUNT = '1131';
 
+    /** Settlement Excess Income: the settlement books a cash excess here until payroll hands it to the salesman. */
+    public const EXCESS_ACCOUNT = '4250';
+
     public function __construct(private AccountingService $accounting, private DocumentNumberService $numbers) {}
 
     /**
@@ -127,7 +130,7 @@ class PayrollService
         $employee ??= $slip->employee()->with(['salary', 'salaryComponents.component'])->first();
         $salary = $employee->salary ?? new EmployeeSalary(['salary_type' => 'basic', 'basic_salary' => 0]);
 
-        $slip->lines()->whereIn('source', [PayrollSlipLine::SOURCE_BASIC, PayrollSlipLine::SOURCE_ALLOWANCE, PayrollSlipLine::SOURCE_ABSENT, PayrollSlipLine::SOURCE_ADVANCE, PayrollSlipLine::SOURCE_ADJUSTMENT])->delete();
+        $slip->lines()->whereIn('source', [PayrollSlipLine::SOURCE_BASIC, PayrollSlipLine::SOURCE_ALLOWANCE, PayrollSlipLine::SOURCE_ABSENT, PayrollSlipLine::SOURCE_ADVANCE, PayrollSlipLine::SOURCE_ADJUSTMENT, PayrollSlipLine::SOURCE_EXCESS])->delete();
 
         $basic = (float) $salary->basic_salary;
         $slip->update(['salary_type' => $salary->salary_type, 'basic_salary' => $basic]);
@@ -156,6 +159,7 @@ class PayrollService
         }
 
         $this->addAdjustmentLines($slip, $employee);
+        $this->addExcessLine($slip, $employee);
         $this->addAdvanceLines($slip, $employee);
 
         return $this->refreshSlipTotals($slip);
@@ -185,6 +189,30 @@ class PayrollService
                 'label' => $adjustment->component->name.($adjustment->note ? ' - '.$adjustment->note : ''),
                 'amount' => $adjustment->amount,
             ]);
+        }
+    }
+
+    /**
+     * The cash excess of the employee's posted settlements in the month is his earning. The settlement booked it to
+     * Settlement Excess Income (4250); approving the payroll moves it from there to the salary payable.
+     */
+    private function addExcessLine(PayrollSlip $slip, Employee $employee): void
+    {
+        $month = $slip->run->period_month;
+
+        $excess = DB::table('sales_settlement_excess_amounts as excess')
+            ->join('sales_settlements as settlements', 'settlements.id', '=', 'excess.sales_settlement_id')
+            ->where('settlements.employee_id', $employee->id)
+            ->where('settlements.status', 'posted')
+            ->whereNull('settlements.deleted_at')
+            ->whereBetween('settlements.settlement_date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->selectRaw('COALESCE(SUM(excess.amount), 0) as total, COUNT(DISTINCT settlements.id) as settlements')
+            ->first();
+
+        $total = round((float) $excess->total, 2);
+
+        if ($total > 0) {
+            $this->addLine($slip, 'earning', PayrollSlipLine::SOURCE_EXCESS, 'Settlement excess ('.$excess->settlements.' '.str('settlement')->plural((int) $excess->settlements).')', $total);
         }
     }
 
@@ -388,11 +416,19 @@ class PayrollService
             $payableId = $this->accountId(self::PAYABLE_ACCOUNT, 'Payroll Payable (2112)');
             $advancesId = $this->accountId(self::ADVANCES_ACCOUNT, 'Employee Advances (1131)');
 
+            $excessId = $run->slips->flatMap->lines->contains('source', PayrollSlipLine::SOURCE_EXCESS)
+                ? $this->accountId(self::EXCESS_ACCOUNT, 'Settlement Excess Income (4250)')
+                : null;
+
             $debits = [];
             $credits = [];
 
             foreach ($run->slips->flatMap->lines as $line) {
-                $account = $line->source === PayrollSlipLine::SOURCE_ADVANCE ? $advancesId : ($line->component?->account_id ?: $salaryId);
+                $account = match ($line->source) {
+                    PayrollSlipLine::SOURCE_ADVANCE => $advancesId,
+                    PayrollSlipLine::SOURCE_EXCESS => $excessId,
+                    default => $line->component?->account_id ?: $salaryId,
+                };
 
                 if ($line->kind === 'earning') {
                     $debits[$account] = ($debits[$account] ?? 0) + (float) $line->amount;

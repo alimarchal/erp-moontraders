@@ -307,6 +307,7 @@
                                         <td class="ak-num bk-out" data-label="Paid out">@if ((float) $entry->debit > 0){{ number_format($entry->debit, 2) }}@endif</td>
                                         <td data-label="Status">
                                             <x-bank.status-badge :status="$entry->status" />
+                                            @if ($bookingLabel = $entry->bookingLabel())<div class="ak-muted">{{ $bookingLabel }}</div>@endif
                                             @if ($entry->needs_review)<div class="ak-muted"><b>Review</b></div>@endif
                                             @if (isset($approvals[$entry->id]))
                                                 @php($given = $approvals[$entry->id]['approved'])

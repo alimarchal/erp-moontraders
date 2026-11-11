@@ -14,6 +14,7 @@ use App\Models\BankPartyAlias;
 use App\Models\BankReceiptScan;
 use App\Models\BankStatementEntry;
 use App\Models\BankStatementImport;
+use App\Models\JournalEntryDetail;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\BankRegister\BankApprovalRules;
@@ -45,7 +46,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             new Middleware('can:bank-statement-entry-edit', only: ['edit', 'update']),
             new Middleware('can:bank-statement-entry-delete', only: ['destroy']),
             new Middleware('can:bank-statement-entry-classify', only: ['bulkClassify', 'autoClassify', 'flag']),
-            new Middleware('can:bank-statement-entry-submit', only: ['submit', 'bulkSubmit']),
+            new Middleware('can:bank-statement-entry-submit', only: ['submit', 'bulkSubmit', 'link', 'notInBooks']),
             new Middleware('can:bank-statement-entry-reverse', only: ['reverse']),
         ];
     }
@@ -55,7 +56,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
         $filters = (array) $request->input('filter', []);
 
         $entries = $search->query($filters)
-            ->with(['company', 'category', 'bankAccount', 'submitter', 'attachments'])
+            ->with(['company', 'category', 'bankAccount', 'submitter', 'attachments', 'journalEntry:id,reference'])
             ->withCount('attachments')
             ->orderByDesc('posting_date')
             ->orderByDesc('id')
@@ -422,7 +423,42 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Entry reversed. A reversing journal entry was posted and the line can be corrected and submitted again.');
+        return back()->with('success', $bankStatementEntry->fresh()->status === BankStatementEntry::STATUS_REVERSED
+            ? 'Entry reversed. A reversing journal entry was posted and the line can be corrected and submitted again.'
+            : 'Entry unlinked from the book entry. That journal was not changed.');
+    }
+
+    /**
+     * Link the line to a journal line another module already booked (no journal is created).
+     */
+    public function link(Request $request, BankStatementEntry $bankStatementEntry, BankEntryPostingService $posting): RedirectResponse
+    {
+        $validated = $request->validate(['journal_entry_detail_id' => ['required', 'integer', 'exists:journal_entry_details,id']]);
+
+        try {
+            $posting->link($bankStatementEntry, JournalEntryDetail::query()->findOrFail($validated['journal_entry_detail_id']), $request->user());
+        } catch (BankRegisterException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Linked to the book entry. Nothing new was posted; the line is ready to reconcile.');
+    }
+
+    /**
+     * The person confirms the line is a different transaction from the look-alike already in the books, so it may be posted.
+     */
+    public function notInBooks(Request $request, BankStatementEntry $bankStatementEntry): RedirectResponse
+    {
+        $validated = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+
+        if ($bankStatementEntry->isLocked()) {
+            return back()->with('error', 'This entry is already in the books.');
+        }
+
+        $bankStatementEntry->forceFill(['not_in_books_reason' => $validated['reason'], 'updated_by' => $request->user()->id])->save();
+        BankEntryAuditLog::record($bankStatementEntry, 'confirmed_not_in_books', null, ['reason' => $validated['reason']], $request->user()->id);
+
+        return back()->with('success', 'Noted. The entry can now be submitted and posted.');
     }
 
     /**
@@ -525,10 +561,14 @@ class BankStatementEntryController extends Controller implements HasMiddleware
             'approvals.user', 'auditLogs.user', 'submitter', 'approver', 'rejecter', 'poster', 'reconciliation',
         ]);
 
+        $bookable = ! $entry->isLocked() && $entry->status !== BankStatementEntry::STATUS_PENDING_APPROVAL;
+
         return [
             'entry' => $entry,
             'requiredLevel' => $rules->requiredLevel($entry),
             'approvedCount' => $rules->approvedLevels($entry)->count(),
+            // money that may already be in the books (settlement, supplier payment, payroll...) for "Link to book entry"
+            'bookCandidates' => $bookable ? app(BankEntryPostingService::class)->bookCandidates($entry) : collect(),
         ];
     }
 

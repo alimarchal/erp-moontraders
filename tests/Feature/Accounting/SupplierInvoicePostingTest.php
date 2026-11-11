@@ -360,7 +360,7 @@ it('raises an editable draft Ledger Register invoice entry when a GRN is posted'
     Permission::firstOrCreate(['name' => 'report-audit-ledger-register-edit', 'guard_name' => 'web']);
     $this->user->givePermissionTo('report-audit-ledger-register-edit');
 
-    $this->put(route('reports.ledger-register.update', $entry), [
+    $this->put(route('reports.supplier-ledger-register.update', $entry), [
         'supplier_id' => $this->supplier->id,
         'transaction_date' => $entry->transaction_date->toDateString(),
         'document_type' => 'DR',
@@ -380,7 +380,7 @@ it('refuses to edit or delete a ledger register entry that is already posted', f
 
     $entry = postSupplierInvoice($this, 10000);
 
-    $this->put(route('reports.ledger-register.update', $entry), [
+    $this->put(route('reports.supplier-ledger-register.update', $entry), [
         'supplier_id' => $this->supplier->id,
         'transaction_date' => now()->toDateString(),
         'document_type' => DocumentType::Dr->value,
@@ -392,7 +392,7 @@ it('refuses to edit or delete a ledger register entry that is already posted', f
         'claim_adjust_amount' => 0,
     ])->assertSessionHas('error');
 
-    $this->delete(route('reports.ledger-register.destroy', $entry))->assertSessionHas('error');
+    $this->delete(route('reports.supplier-ledger-register.destroy', $entry))->assertSessionHas('error');
 
     expect((float) $entry->fresh()->invoice_amount)->toBe(10000.0)
         ->and(LedgerRegister::whereKey($entry->id)->exists())->toBeTrue();

@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\BankRegister\BankEntryApprovalService;
 use App\Services\BankRegister\BankReconciliationService;
 use App\Services\BankRegister\BankRegisterException;
-use App\Services\BankRegister\BankRegisterLedger;
 
 beforeEach(function () {
     $this->fixture = bankRegisterFixture();
@@ -77,7 +76,7 @@ test('outstanding cheques and deposits in transit are carried to the reconciliat
     $currencyId = Currency::value('id');
     $journal = JournalEntry::create(['currency_id' => $currencyId, 'entry_date' => $this->today, 'reference' => 'SLIP-1', 'description' => 'slip', 'status' => 'draft']);
     $journal->details()->create(['chart_of_account_id' => $this->fixture['bankLedger']->id, 'line_no' => 1, 'debit' => 400, 'credit' => 0]);
-    $journal->details()->create(['chart_of_account_id' => app(BankRegisterLedger::class)->account('customer_receipts')->id, 'line_no' => 2, 'debit' => 0, 'credit' => 400]);
+    $journal->details()->create(['chart_of_account_id' => $this->fixture['liveReceivable']->id, 'line_no' => 2, 'debit' => 0, 'credit' => 400]);
     $journal->update(['status' => 'posted']);
 
     $rec = $this->service->start($this->fixture['bank'], now()->startOfMonth(), now()->endOfMonth(), 1000, 0, null, $this->user);
@@ -96,7 +95,7 @@ test('an unposted statement line can be matched with an existing book line of th
     $currencyId = Currency::value('id');
     $journal = JournalEntry::create(['currency_id' => $currencyId, 'entry_date' => $this->today, 'reference' => 'SLIP-2', 'description' => 'slip', 'status' => 'draft']);
     $bankLine = $journal->details()->create(['chart_of_account_id' => $this->fixture['bankLedger']->id, 'line_no' => 1, 'debit' => 250, 'credit' => 0]);
-    $journal->details()->create(['chart_of_account_id' => app(BankRegisterLedger::class)->account('customer_receipts')->id, 'line_no' => 2, 'debit' => 0, 'credit' => 250]);
+    $journal->details()->create(['chart_of_account_id' => $this->fixture['liveReceivable']->id, 'line_no' => 2, 'debit' => 0, 'credit' => 250]);
     $journal->update(['status' => 'posted']);
 
     $entry = BankStatementEntry::factory()->create([
@@ -109,7 +108,7 @@ test('an unposted statement line can be matched with an existing book line of th
     $rec = $this->service->start($this->fixture['bank'], now()->startOfMonth(), now()->endOfMonth(), 250, 0, null, $this->user);
     expect($this->service->suggestions($rec, $entry))->toHaveCount(1);
 
-    expect(fn () => $this->service->match($rec, $wrong, $bankLine, $this->user))->toThrow(BankRegisterException::class, 'same amount and direction');
+    expect(fn () => $this->service->match($rec, $wrong, $bankLine, $this->user))->toThrow(BankRegisterException::class, 'other way');
 
     $this->service->match($rec, $entry, $bankLine, $this->user);
     expect($entry->fresh()->status)->toBe(BankStatementEntry::STATUS_POSTED)

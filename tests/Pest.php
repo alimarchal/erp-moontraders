@@ -9,7 +9,6 @@ use App\Models\CostCenter;
 use App\Models\Currency;
 use App\Models\Supplier;
 use App\Models\User;
-use App\Services\BankRegister\BankRegisterLedger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -142,6 +141,7 @@ function seedExpenseLedger(): array
 
     $definitions = [
         '1121' => ['Cash', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
+        '1122' => ['Cheques in Hand', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
         '1131' => ['Employee Advances', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
         '1132' => ['Employee Loans', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
         '1171' => ['HBL Main Account', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
@@ -167,11 +167,24 @@ function seedExpenseLedger(): array
 }
 
 /**
+ * Settlement Excess Income (4250), where a settlement books cash handed in above what was due.
+ */
+function seedSettlementExcessAccount(): ChartOfAccount
+{
+    $type = AccountType::firstOrCreate(['type_name' => 'Income'], ['report_group' => 'IncomeStatement', 'category' => 'Income']);
+
+    return ChartOfAccount::firstOrCreate(['account_code' => '4250'], [
+        'account_type_id' => $type->id, 'currency_id' => Currency::where('is_base_currency', true)->value('id'), 'account_name' => 'Settlement Excess Income',
+        'normal_balance' => 'credit', 'is_active' => true,
+    ]);
+}
+
+/**
  * Everything a Bank Statement Register test needs to post a journal: a base currency, an open
  * accounting period, a bank account linked to a ledger, and a company with receivable/payable ledgers.
  *
- * The "live" accounts (bank ledger, receivable, payable) stand for the ones GRN, settlement and the rest use; the
- * register must never post to them. `bankLedger` is the register's own ledger for the bank account.
+ * The register posts to the live chart: `bankLedger` (= `liveLedger`) is the bank account's own ledger, the one
+ * settlement and the rest use too.
  *
  * @return array{bank: BankAccount, company: Supplier, category: BankEntryCategory, bankLedger: ChartOfAccount, liveLedger: ChartOfAccount, liveReceivable: ChartOfAccount, livePayable: ChartOfAccount}
  */
@@ -218,7 +231,7 @@ function bankRegisterFixture(): array
         'bank' => $bank,
         'company' => Supplier::factory()->create(['supplier_name' => 'Unilever', 'disabled' => false]),
         'category' => BankEntryCategory::query()->where('slug', 'customer-receipt')->firstOrFail(),
-        'bankLedger' => app(BankRegisterLedger::class)->ledgerForBank($bank),
+        'bankLedger' => $liveLedger,
         'liveLedger' => $liveLedger,
         'liveReceivable' => $receivable,
         'livePayable' => $payable,

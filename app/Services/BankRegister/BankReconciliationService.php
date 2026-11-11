@@ -15,14 +15,20 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Period reconciliation of a bank account: statement lines are matched with journal lines on the
- * bank's ledger account; when everything is matched and the difference is zero the period is locked.
- * The match lives in bank_reconciliation_items: posted journal lines are immutable (database trigger),
- * so their own reconciliation_status column is deliberately left alone.
+ * Period reconciliation of a bank account: statement lines are matched with journal lines on the bank's own live
+ * ledger (the one settlement, supplier payments, payroll and the register post to); when everything is matched and
+ * the difference is zero the period is locked. The match lives in bank_reconciliation_items: posted journal lines are
+ * immutable (database trigger), so their own reconciliation_status column is deliberately left alone.
+ *
+ * A settlement books all its deposits into one bank account as one journal line, so several statement lines can be
+ * matched with one journal line; only the part of a journal line not matched yet counts as in transit / outstanding.
  */
 class BankReconciliationService
 {
-    public function __construct(private readonly BankRegisterLedger $ledger) {}
+    public function __construct(
+        private readonly BankRegisterAccounts $accounts,
+        private readonly BankEntryPostingService $posting,
+    ) {}
 
     public function start(
         BankAccount $account,
@@ -96,37 +102,25 @@ class BankReconciliationService
     }
 
     /**
-     * Match an unposted statement line with a journal line already in the books (e.g. a settlement bank slip).
+     * Match a statement line with a journal line already in the books (e.g. a settlement bank slip). A line that is not
+     * booked yet is linked to that journal line first; no journal is created.
      */
     public function match(BankReconciliation $reconciliation, BankStatementEntry $entry, JournalEntryDetail $detail, User $user): void
     {
         $this->assertOpen($reconciliation);
 
-        $debitsBank = (float) $detail->debit > 0;
-        $detailAmount = $debitsBank ? (float) $detail->debit : (float) $detail->credit;
-
-        if ($debitsBank !== ($entry->direction === 'credit') || abs($detailAmount - $entry->amount) >= 0.01) {
-            throw new BankRegisterException('The journal line must have the same amount and direction as the statement line.');
-        }
-
-        if ($detail->chart_of_account_id !== $this->ledger->ledgerForBank($reconciliation->bankAccount)->id) {
-            throw new BankRegisterException('The journal line is not on this account\'s register ledger.');
+        if ($detail->chart_of_account_id !== $this->ledgerId($reconciliation)) {
+            throw new BankRegisterException('The journal line is not on this account\'s ledger.');
         }
 
         DB::transaction(function () use ($reconciliation, $entry, $detail, $user) {
-            $this->createItem($reconciliation, $entry, $detail->id, 'manual', $user);
-
             if ($entry->status !== BankStatementEntry::STATUS_POSTED) {
-                $entry->forceFill([
-                    'status' => BankStatementEntry::STATUS_POSTED,
-                    'journal_entry_id' => $detail->journal_entry_id,
-                    'journal_entry_detail_id' => $detail->id,
-                    'posted_by' => $user->id,
-                    'posted_at' => now(),
-                ])->save();
-                BankEntryAuditLog::record($entry, 'linked_to_book', null, ['journal_entry_detail_id' => $detail->id], $user->id);
+                $entry = $this->posting->link($entry, $detail, $user);
+            } elseif ((int) $entry->journal_entry_detail_id !== $detail->id) {
+                throw new BankRegisterException('This statement line is already booked on another journal line.');
             }
 
+            $this->createItem($reconciliation, $entry, $detail->id, 'manual', $user);
             $this->refreshTotals($reconciliation);
         });
     }
@@ -138,8 +132,8 @@ class BankReconciliationService
         DB::transaction(function () use ($reconciliation, $item, $user) {
             $entry = $item->entry;
 
-            // A manual link to an existing journal line is undone completely; lines posted by the register stay posted.
-            if ($item->match_type === 'manual' && ! $entry->receipt_no) {
+            // A manual link to an existing journal line is undone completely; posted and settlement lines stay booked.
+            if ($item->match_type === 'manual' && ! $entry->receipt_no && ! $entry->sales_settlement_id) {
                 $entry->forceFill([
                     'status' => $entry->bank_entry_category_id ? BankStatementEntry::STATUS_CLASSIFIED : BankStatementEntry::STATUS_UNCLASSIFIED,
                     'journal_entry_id' => null,
@@ -225,24 +219,17 @@ class BankReconciliationService
      */
     public function refreshTotals(BankReconciliation $reconciliation): array
     {
-        $ledgerId = $this->ledger->ledgerForBank($reconciliation->bankAccount()->first())->id;
+        $ledgerId = $this->ledgerId($reconciliation);
 
         $bookBalance = (float) JournalEntryDetail::query()
             ->where('chart_of_account_id', $ledgerId)
             ->whereHas('journalEntry', fn (Builder $q) => $q->where('status', 'posted')->whereDate('entry_date', '<=', $reconciliation->period_to))
             ->sum(DB::raw('debit - credit'));
 
-        $matchedDetailIds = BankReconciliationItem::query()->whereNotNull('journal_entry_detail_id')->pluck('journal_entry_detail_id');
+        $unmatchedBookLines = $this->openBookLines($reconciliation, $ledgerId);
 
-        $unmatchedBookLines = JournalEntryDetail::query()
-            ->with('journalEntry')
-            ->where('chart_of_account_id', $ledgerId)
-            ->whereNotIn('id', $matchedDetailIds)
-            ->whereHas('journalEntry', fn (Builder $q) => $q->where('status', 'posted')->whereDate('entry_date', '<=', $reconciliation->period_to))
-            ->get();
-
-        $depositsInTransit = (float) $unmatchedBookLines->sum('debit');
-        $outstandingPayments = (float) $unmatchedBookLines->sum('credit');
+        $depositsInTransit = round((float) $unmatchedBookLines->where('debit', '>', 0)->sum('open_amount'), 2);
+        $outstandingPayments = round((float) $unmatchedBookLines->where('credit', '>', 0)->sum('open_amount'), 2);
         $adjustedStatement = round((float) $reconciliation->statement_balance + $depositsInTransit - $outstandingPayments, 2);
         $difference = round($adjustedStatement - $bookBalance, 2);
 
@@ -271,25 +258,54 @@ class BankReconciliationService
     }
 
     /**
-     * Book lines that could be the other half of a statement line (same amount, direction, within 3 days).
+     * Book lines that could be the other half of a statement line (same direction, enough unmatched amount, within 3 days).
      *
      * @return Collection<int, JournalEntryDetail>
      */
     public function suggestions(BankReconciliation $reconciliation, BankStatementEntry $entry): Collection
     {
-        $matchedDetailIds = BankReconciliationItem::query()->whereNotNull('journal_entry_detail_id')->pluck('journal_entry_detail_id');
-        $column = $entry->direction === 'credit' ? 'debit' : 'credit';
+        return $this->posting->bookCandidates($entry);
+    }
+
+    /**
+     * Journal lines on the ledger, from the first reconciled period of the account to the end of this one, whose amount
+     * is not fully matched with statement lines yet. Each carries the part still open as "open_amount".
+     *
+     * @return Collection<int, JournalEntryDetail>
+     */
+    private function openBookLines(BankReconciliation $reconciliation, int $ledgerId): Collection
+    {
+        $from = BankReconciliation::query()
+            ->where('bank_account_id', $reconciliation->bank_account_id)
+            ->where('status', '!=', BankReconciliation::STATUS_CANCELLED)
+            ->min('period_from') ?? $reconciliation->period_from;
+
+        $matched = BankReconciliationItem::query()
+            ->join('bank_statement_entries as e', 'e.id', '=', 'bank_reconciliation_items.bank_statement_entry_id')
+            ->whereNotNull('bank_reconciliation_items.journal_entry_detail_id')
+            ->groupBy('bank_reconciliation_items.journal_entry_detail_id')
+            ->selectRaw('bank_reconciliation_items.journal_entry_detail_id as detail_id, SUM(e.credit + e.debit) as amount')
+            ->pluck('amount', 'detail_id');
 
         return JournalEntryDetail::query()
             ->with('journalEntry')
-            ->where('chart_of_account_id', $this->ledger->ledgerForBank($reconciliation->bankAccount)->id)
-            ->where($column, $entry->amount)
-            ->whereNotIn('id', $matchedDetailIds)
-            ->whereHas('journalEntry', fn (Builder $q) => $q
-                ->where('status', 'posted')
-                ->whereDate('entry_date', '>=', $entry->posting_date->copy()->subDays(3))
-                ->whereDate('entry_date', '<=', $entry->posting_date->copy()->addDays(3)))
-            ->get();
+            ->where('chart_of_account_id', $ledgerId)
+            ->whereHas('journalEntry', fn (Builder $q) => $q->where('status', 'posted')
+                ->whereDate('entry_date', '>=', $from)
+                ->whereDate('entry_date', '<=', $reconciliation->period_to))
+            ->get()
+            ->map(function (JournalEntryDetail $detail) use ($matched) {
+                $detail->setAttribute('open_amount', round(max((float) $detail->debit, (float) $detail->credit) - (float) ($matched[$detail->id] ?? 0), 2));
+
+                return $detail;
+            })
+            ->filter(fn (JournalEntryDetail $detail) => $detail->open_amount > 0.009)
+            ->values();
+    }
+
+    private function ledgerId(BankReconciliation $reconciliation): int
+    {
+        return $this->accounts->bankLedger($reconciliation->bankAccount()->firstOrFail())->id;
     }
 
     /**
@@ -301,6 +317,8 @@ class BankReconciliationService
             ->where('bank_account_id', $reconciliation->bank_account_id)
             ->whereDate('posting_date', '>=', $reconciliation->period_from)
             ->whereDate('posting_date', '<=', $reconciliation->period_to)
+            // a settlement line reversed with its settlement is no money in the bank, unless a statement showed it
+            ->where(fn (Builder $q) => $q->whereNull('sales_settlement_id')->orWhere('status', '!=', BankStatementEntry::STATUS_REVERSED)->orWhereNotNull('import_id'))
             ->whereDoesntHave('reconciliationItems');
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\HtmlString;
+
 /**
  * The step-by-step flows shown at the end of each Help window (and together in the full Bank Register guide).
  * Each step is [Urdu title, Urdu note, English screen word or null]. Written once here so the guide, the Bank
@@ -89,6 +91,22 @@ class HelpFlows
                 ['دیکھیں', 'سکرین پر جانچ', null],
                 ['پرنٹ یا ایکسپورٹ', 'PDF یا Excel', 'Print'],
             ]],
+            'claims' => ['title' => 'کلیم کا فلو', 'steps' => [
+                ['کلیم بنا', 'سکیم، ایکسپائری، ٹریڈ آفر یا ڈیمج کا کلیم', 'Claim Register'],
+                ['انٹری', 'Add Entry سے Claim (DR) لکھیں', 'Add Entry'],
+                ['پوسٹ', 'Pending Claims بمقابلہ کلیم کی آمدن', 'Post'],
+                ['کمپنی نے ایڈجسٹ کیا', 'لیجر میں DG / DZ کلیم ایڈجسٹ', 'Supplier Ledger'],
+                ['ریکوری', 'یہاں Recovery (CR) لکھیں؛ کتاب میں نہیں جاتی', 'Recovery'],
+                ['ملان', 'دونوں رجسٹر کی رقم برابر ہو', 'Reconciled'],
+            ]],
+            'supplier-ledger' => ['title' => 'سپلائر لیجر کا فلو', 'steps' => [
+                ['GRN', 'مال آیا، انوائس کی ڈرافٹ لائن خود بن گئی', 'GRN'],
+                ['انوائس', 'کمپنی کا بل: Invoice (DR)', 'Invoice'],
+                ['آن لائن ادائیگی', 'ہم نے بینک سے بھیجا: Online (DZ)', 'Online'],
+                ['کٹوتیاں', 'Expenses، ZA 0.5%، کلیم ایڈجسٹ', 'Claim Adjust'],
+                ['پوسٹ', 'ہر رقم Creditors کے مقابل کتاب میں', 'Post'],
+                ['بیلنس', '+ ہمارا کمپنی پر، − ہم نے دینا ہے', 'Balance'],
+            ]],
             'settlement' => ['title' => 'سیل سیٹلمنٹ کا فلو', 'steps' => [
                 ['گڈز ایشو', 'گاڑی پر مال نکلا', 'Goods Issue'],
                 ['سیٹلمنٹ', 'سیل، واپسی، کیش، چیک، سلپ، آن لائن، ریکوری', 'Draft'],
@@ -99,6 +117,23 @@ class HelpFlows
                 ['ریورس', 'جرنل اور رجسٹر کی لائنیں واپس؛ کلیئر چیک یا منظور تنخواہ ہو تو نہیں', 'Revert'],
             ]],
         ];
+    }
+
+    /**
+     * Urdu text with English words, codes and numbers in it, ready for an RTL page: each Latin or numeric run is
+     * isolated as left-to-right (<bdi dir="ltr">), so "Invoice (DR)" or "0.5%" never come out reversed or with
+     * their brackets flipped. Everything else is escaped.
+     */
+    public static function bidi(string $text): HtmlString
+    {
+        $parts = preg_split('/([A-Za-z0-9](?:[A-Za-z0-9 .,%&\/+\-]*[A-Za-z0-9%])?(?:\s?\([A-Za-z0-9 .%\/]+\))?)/u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $html = '';
+
+        foreach ($parts as $index => $part) {
+            $html .= $index % 2 === 1 ? '<bdi class="lt" dir="ltr">'.e($part).'</bdi>' : e($part);
+        }
+
+        return new HtmlString($html);
     }
 
     /**

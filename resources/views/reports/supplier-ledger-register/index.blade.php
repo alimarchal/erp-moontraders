@@ -1,7 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Supplier Ledger Register" :createRoute="null" createLabel="" :showSearch="true"
-            :showRefresh="true" backRoute="reports.index" />
+            :showRefresh="true" backRoute="reports.index">
+            <x-slot name="actions">
+                <x-register-header-actions page="ledger" />
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @push('header')
@@ -71,7 +75,7 @@
             @media print {
                 @page {
                     margin: 15mm 10mm 20mm 10mm;
-                    size: landscape;
+                    /* no fixed size: the print dialog offers portrait and landscape */
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -138,17 +142,21 @@
         </style>
     @endpush
 
+    <x-apple-skin />
+    <x-register-apple-style />
+    <x-register-help page="ledger" :has-supplier="(bool) $selectedSupplier" />
+
     {{-- Status Messages --}}
     @if (session('success'))
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
-            <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+            <div class="rg-flash rg-flash-ok bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg" role="status">
                 {{ session('success') }}
             </div>
         </div>
     @endif
     @if (session('error'))
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
-            <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <div class="rg-flash rg-flash-err bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
                 {{ session('error') }}
             </div>
         </div>
@@ -157,7 +165,7 @@
     {{-- Validation Errors --}}
     @if ($errors->any())
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
-            <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            <div class="rg-flash rg-flash-err bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg" role="alert">
                 <ul class="list-disc list-inside">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -172,9 +180,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
-                <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
+                <select id="filter_supplier_id" name="filter[supplier_id]" data-placeholder="Choose a supplier"
+                    class="select2 rg-supplier-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value=""></option>
                     @foreach ($suppliers as $supplier)
                         <option value="{{ $supplier->id }}"
                             {{ (string) request('filter.supplier_id', $selectedSupplier?->id) === (string) $supplier->id ? 'selected' : '' }}>
@@ -201,8 +209,8 @@
 
             <div>
                 <x-label for="filter_document_type" value="Document Type" />
-                <select id="filter_document_type" name="filter[document_type][]" multiple
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                <select id="filter_document_type" name="filter[document_type][]" multiple data-placeholder="All document types"
+                    class="select2 rg-multi-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     @foreach ($documentTypes as $type)
                         <option value="{{ $type->value }}"
                             {{ in_array($type->value, (array) request('filter.document_type', [])) ? 'selected' : '' }}>
@@ -215,19 +223,19 @@
             <div>
                 <x-label for="filter_document_number" value="Document Number" />
                 <x-input id="filter_document_number" name="filter[document_number]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.document_number')" placeholder="Search doc #..." />
+                    class="mt-1 block w-full" :value="request('filter.document_number')" placeholder="e.g. 5610117227" />
             </div>
 
             <div>
                 <x-label for="filter_sap_code" value="SAP Code" />
                 <x-input id="filter_sap_code" name="filter[sap_code]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.sap_code')" placeholder="Search SAP code..." />
+                    :value="request('filter.sap_code')" placeholder="e.g. 110045" />
             </div>
 
             <div>
                 <x-label for="sort" value="Sort Order" />
                 <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="rg-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="asc" {{ request('sort', 'asc') === 'asc' ? 'selected' : '' }}>Date (Oldest First)
                     </option>
                     <option value="desc" {{ request('sort') === 'desc' ? 'selected' : '' }}>Date (Newest First)</option>
@@ -237,7 +245,7 @@
             <div>
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="rg-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50</option>
@@ -249,26 +257,27 @@
         </div>
     </x-filter-section>
 
+    @if ($selectedSupplier)
     {{-- Summary Cards --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+            <div class="rg-kpi bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
                 <div class="text-sm text-gray-500">Total Online Amount</div>
                 <div class="text-2xl font-bold text-green-700">
                     {{ number_format($totals->total_online ?? 0, 2) }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+            <div class="rg-kpi bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
                 <div class="text-sm text-gray-500">Total Invoice Amount</div>
                 <div class="text-2xl font-bold text-red-700">
                     {{ number_format($totals->total_invoice ?? 0, 2) }}</div>
             </div>
-            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+            <div class="rg-kpi bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
                 <div class="text-sm text-gray-500">Total Expenses</div>
                 <div class="text-2xl font-bold text-orange-700">
                     {{ number_format($totals->total_expenses ?? 0, 2) }}</div>
             </div>
             <div
-                class="bg-white rounded-lg shadow p-4 border-l-4 {{ $currentBalance >= 0 ? 'border-blue-500' : 'border-red-500' }}">
+                class="rg-kpi bg-white rounded-lg shadow p-4 border-l-4 {{ $currentBalance >= 0 ? 'border-blue-500' : 'border-red-500' }}">
                 <div class="text-sm text-gray-500">Current Balance</div>
                 <div class="text-2xl font-bold {{ $currentBalance >= 0 ? 'text-blue-700' : 'text-red-700' }}">
                     {{ number_format($currentBalance, 2) }}</div>
@@ -276,20 +285,23 @@
         </div>
     </div>
 
+    @endif
+
     {{-- Main Report --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
 
         {{-- Opening Balance Setting (only shows when suppliers without opening balance exist) --}}
         @can('report-audit-ledger-register-set-opening-balance')
             @if ($suppliersWithoutOpeningBalance->count() > 0)
-                <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 no-print" x-data="{ showOpeningBalance: false, selectedSupplierId: '' }">
+                <div class="rg-card bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 no-print" x-data="{ showOpeningBalance: false, selectedSupplierId: '' }">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <h3 class="text-sm font-semibold text-gray-700">Set Supplier Opening Balance</h3>
-                            <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">{{ $suppliersWithoutOpeningBalance->count() }} remaining</span>
+                            <h3 class="text-sm font-semibold text-gray-700">Opening balances</h3>
+                            <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'opening' })" aria-label="How opening balances work" title="How opening balances work">i</button>
+                            <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">{{ $suppliersWithoutOpeningBalance->count() }} {{ str('supplier')->plural($suppliersWithoutOpeningBalance->count()) }} without one</span>
                         </div>
                         <button type="button" @click="showOpeningBalance = !showOpeningBalance"
-                            class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors"
+                            class="rg-pill rg-pill-sm inline-flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors"
                             :class="showOpeningBalance ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'">
                             <span x-text="showOpeningBalance ? 'Cancel' : 'Set Opening Balance'"></span>
                         </button>
@@ -302,8 +314,8 @@
                                 <div>
                                     <x-label for="ob_supplier_id" value="Supplier" />
                                     <select id="ob_supplier_id" x-model="selectedSupplierId"
-                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
-                                        <option value="">-- Select Supplier --</option>
+                                        class="rg-select border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
+                                        <option value="">Choose a supplier</option>
                                         @foreach ($suppliersWithoutOpeningBalance as $sup)
                                             <option value="{{ $sup->id }}">
                                                 {{ $sup->supplier_name }}
@@ -324,23 +336,24 @@
                                 </div>
                                 <div>
                                     <button type="submit" :disabled="!selectedSupplierId"
-                                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        class="rg-pill rg-pill-green inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                         Save
                                     </button>
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">+ve = supplier owes you, -ve = you owe supplier. An entry will be created in the table below — post it to GL from the Actions column.</p>
+                            <p class="text-xs text-gray-500 mt-2">A positive amount means the supplier owes us; a negative amount means we owe the supplier. The balance is added as a draft line below. Post it to the general ledger from Actions.</p>
                         </form>
                     </div>
                 </div>
             @endif
         @endcan
 
-        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
+        @if ($selectedSupplier)
+        <div class="rg-card bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 {{-- Report Header (Excel-style) --}}
                 <div class="mb-4">
-                    <table class="w-full border-collapse border border-black text-sm">
+                    <table class="rg-paper w-full border-collapse border border-black text-sm">
                         <tr>
                             <td class="border border-black px-3 py-1 font-extrabold" style="width: 35%;">LEDGER TO THE
                                 COMPANY</td>
@@ -358,7 +371,7 @@
                         </tr>
                         <tr>
                             <td class="border border-black px-3 py-1 font-extrabold">
-                                {{ $selectedSupplier?->supplier_name ?? 'All Suppliers' }}</td>
+                                {{ $selectedSupplier?->supplier_name }}</td>
                             <td class="border border-black px-3 py-1 text-center">
                                 {{ $entries->first()?->sap_code ?? '-' }}</td>
                             <td class="border border-black px-3 py-1 text-center">-</td>
@@ -384,20 +397,20 @@
 
                 {{-- Data Table --}}
                 <div x-data="ledgerRegister()">
-                <table class="report-table">
+                <table class="report-table rg-table">
                     <thead>
                         <tr>
                             <th style="width: 35px;">Sr#</th>
                             <th class="text-center" style="width: 90px;">Date</th>
                             <th style="width: 55px;">Type</th>
-                            <th style="width: 100px;">Document #</th>
-                            <th style="width: 100px;">Online Amount</th>
-                            <th style="width: 110px;">Opening Balance</th>
-                            <th style="width: 110px;">Invoice Amount</th>
-                            <th style="width: 90px;">Expenses</th>
-                            <th style="width: 90px;">ZA(0.5%)</th>
-                            <th style="width: 90px;">Claim Adjust</th>
-                            <th style="width: 110px;">Balance</th>
+                            <th class="rg-text" style="width: 120px;">Document #</th>
+                            <th style="width: 100px;">Online Amount<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-online' })" aria-label="What Online Amount means" title="What Online Amount means">i</button></th>
+                            <th style="width: 110px;">Opening Balance<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-opening' })" aria-label="What Opening Balance means" title="What Opening Balance means">i</button></th>
+                            <th style="width: 110px;">Invoice Amount<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-invoice' })" aria-label="What Invoice Amount means" title="What Invoice Amount means">i</button></th>
+                            <th style="width: 90px;">Expenses<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-expenses' })" aria-label="What Expenses means" title="What Expenses means">i</button></th>
+                            <th style="width: 90px;">ZA(0.5%)<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-za' })" aria-label="What ZA(0.5%) means" title="What ZA(0.5%) means">i</button></th>
+                            <th style="width: 90px;">Claim Adjust<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-claim' })" aria-label="What Claim Adjust means" title="What Claim Adjust means">i</button></th>
+                            <th style="width: 110px;">Balance<button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'col-balance' })" aria-label="What Balance means" title="What Balance means">i</button></th>
                             <th style="width: 70px;" class="no-print">Actions</th>
                         </tr>
                     </thead>
@@ -436,8 +449,8 @@
                                         -
                                     @endif
                                 </td>
-                                <td class="font-mono text-xs" style="vertical-align: middle;">
-                                    {{ $entry->document_number ?? '-' }}</td>
+                                <td class="rg-text font-mono text-xs" style="vertical-align: middle;">
+                                    <span class="rg-clamp" title="{{ $entry->document_number }}">{{ $entry->document_number ?? '-' }}</span></td>
                                 @php
                                     $entryOpeningBalance = (float) $entry->opening_balance;
 
@@ -484,7 +497,7 @@
                                                 @can('report-audit-ledger-register-post')
                                                     <button type="button"
                                                         x-on:click="$dispatch('open-ledger-post-modal', { url: '{{ route('reports.supplier-ledger-register.post', $entry) }}' })"
-                                                        class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                                        class="rg-icon rg-green inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                                                         title="Post to GL">
                                                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                                                             <path d="M8 5v14l11-7z" />
@@ -507,7 +520,7 @@
                                                             'claim_adjust_amount' => $entry->claim_adjust_amount,
                                                             'remarks' => $entry->remarks,
                                                         ]) }})"
-                                                        class="inline-flex items-center px-1.5 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                                        class="rg-icon rg-blue inline-flex items-center px-1.5 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                                                         title="Edit">
                                                         <svg class="w-3 h-3" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -525,7 +538,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit"
-                                                            class="inline-flex items-center px-1.5 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                                            class="rg-icon rg-red inline-flex items-center px-1.5 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                                                             title="Delete">
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor"
                                                                 viewBox="0 0 24 24">
@@ -569,7 +582,7 @@
                                                         class="inline-input" required>
                                                 </td>
                                                 <td style="width: 55px; padding: 4px;">
-                                                    <select name="document_type" class="inline-select">
+                                                    <select name="document_type" class="rg-select inline-select">
                                                         <option value="">-</option>
                                                         @foreach ($documentTypes as $type)
                                                             <option value="{{ $type->value }}"
@@ -618,7 +631,7 @@
                                                 </td>
                                                 <td style="width: 70px; padding: 4px; text-align: center;">
                                                     <button type="submit"
-                                                        class="inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 font-semibold">
+                                                        class="rg-pill rg-pill-green inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 font-semibold">
                                                         Save
                                                     </button>
                                                 </td>
@@ -679,9 +692,9 @@
 
                 {{-- Add Entry Toggle Button --}}
                 @can('report-audit-ledger-register-create')
-                    <div class="mt-3 no-print">
+                    <div class="mt-3 no-print flex items-center gap-2">
                         <button type="button" @click="showAddRow = !showAddRow"
-                            class="inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
+                            class="rg-pill inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
                             :class="showAddRow ? 'bg-gray-500 hover:bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -689,6 +702,7 @@
                             </svg>
                             <span x-text="showAddRow ? 'Cancel' : 'Add Entry'"></span>
                         </button>
+                        <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'entry' })" aria-label="How entries are added and posted" title="How entries are added and posted">i</button>
                     </div>
                 @endcan
                 </div>
@@ -696,24 +710,24 @@
                 {{-- Company Ledger Detail Summary --}}
                 @if ($selectedSupplier)
                     <div class="mt-4 flex justify-end">
-                        <div class="border border-black rounded-lg overflow-hidden" style="min-width: 280px;">
-                            <div class="bg-gray-800 text-white text-center py-1.5 font-bold text-sm">
-                                Company Ledger Detail
+                        <div class="rg-summary border border-black rounded-lg overflow-hidden" style="min-width: 280px;">
+                            <div class="rg-summary-head bg-gray-800 text-white text-center py-1.5 font-bold text-sm">
+                                Ledger summary
                             </div>
                             <table class="w-full text-sm">
                                 <tr class="border-b border-gray-300">
-                                    <td class="px-3 py-1.5 font-semibold">Online:-</td>
+                                    <td class="px-3 py-1.5 font-semibold">Online payments</td>
                                     <td class="px-3 py-1.5 text-right font-mono font-bold text-green-700">
                                         {{ number_format($totals->total_online ?? 0, 2) }}</td>
                                 </tr>
                                 <tr class="border-b border-gray-300">
-                                    <td class="px-3 py-1.5 font-semibold">Invoicing:-</td>
+                                    <td class="px-3 py-1.5 font-semibold">Invoices</td>
                                     <td class="px-3 py-1.5 text-right font-mono font-bold text-blue-700">
                                         {{ number_format($totals->total_invoice ?? 0, 2) }}</td>
                                 </tr>
                                 <tr
                                     class="{{ $currentBalance >= 0 ? 'bg-green-50' : 'bg-red-50' }}">
-                                    <td class="px-3 py-1.5 font-semibold">Balance:-</td>
+                                    <td class="px-3 py-1.5 font-semibold">Balance</td>
                                     <td
                                         class="px-3 py-1.5 text-right font-mono font-extrabold {{ $currentBalance >= 0 ? 'text-green-700' : 'text-red-700' }}">
                                         {{ number_format($currentBalance, 2) }}</td>
@@ -725,12 +739,13 @@
 
                 {{-- Document Type Legend --}}
                 <div class="mt-4 no-print">
-                    <div class="text-xs font-semibold text-gray-600 mb-1">Document Types:</div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="text-xs font-semibold text-gray-600 mb-1">Document types <span class="font-normal text-gray-400">· tap one to see what it means</span></div>
+                    <div class="rg-legend flex flex-wrap gap-2">
                         @foreach ($documentTypes as $type)
-                            <span class="doc-badge {{ $type->badgeColor() }}">
-                                {{ $type->value }} = {{ $type->label() }}
-                            </span>
+                            <button type="button" class="doc-badge rg-type-btn {{ $type->badgeColor() }}" x-data
+                                @click="$dispatch('rg-help', { topic: 'type-{{ $type->value }}' })" title="What {{ $type->value }} means">
+                                <b>{{ $type->value }}</b> {{ $type->label() }}
+                            </button>
                         @endforeach
                     </div>
                 </div>
@@ -743,7 +758,21 @@
                 @endif
             </div>
         </div>
+        @else
+            {{-- Nothing is chosen for the user: the ledger stays empty until a supplier is picked --}}
+            <div class="no-print">
+                <div class="rg-empty">
+            <span class="rg-empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
+            </span>
+            <h2>Choose a supplier to open its ledger</h2>
+            <p>Online payments, supplier invoices, expenses and claim adjustments are listed with a running balance for the selected supplier and period.</p>
+            <button type="button" class="rg-pill bg-indigo-600 text-white" onclick="event.stopPropagation(); rgOpenFilters()">Choose supplier</button>
+        </div>
+            </div>
+        @endif
     </div>
+
 
     {{-- Edit Modal with Backdrop Blur --}}
     @can('report-audit-ledger-register-edit')
@@ -759,25 +788,25 @@
                 x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all"
+                class="rg-scrim fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all"
                 @click="close()">
             </div>
 
             {{-- Modal Panel --}}
             <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
                 <div x-show="open"
-                    x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter="duration-300 [transition-timing-function:cubic-bezier(.23,1,.32,1)]"
+                    x-transition:enter-start="opacity-0 translate-y-3 scale-[.97]"
                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave="ease-in duration-200"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl"
+                    class="rg-sheet relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl"
                     @click.outside="close()">
 
-                    <div class="bg-gray-800 text-white px-6 py-3 rounded-t-xl flex justify-between items-center">
+                    <div class="rg-sheet-head bg-gray-800 text-white px-6 py-3 rounded-t-xl flex justify-between items-center">
                         <h3 class="text-lg font-bold" id="edit-modal-title">Edit Ledger Entry</h3>
-                        <button @click="close()" class="text-gray-300 hover:text-white">
+                        <button type="button" @click="close()" class="rg-close text-gray-300 hover:text-white" aria-label="Close">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12" />
@@ -802,7 +831,7 @@
                             <div>
                                 <x-label value="Document Type" />
                                 <select name="document_type" x-model="entry.document_type"
-                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    class="rg-select mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                     <option value="">-</option>
                                     @foreach ($documentTypes as $type)
                                         <option value="{{ $type->value }}">{{ $type->value }} -
@@ -855,11 +884,11 @@
 
                         <div class="flex justify-end gap-3 mt-6">
                             <button type="button" @click="close()"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm font-medium">
+                                class="rg-pill rg-pill-grey px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm font-medium">
                                 Cancel
                             </button>
                             <button type="submit"
-                                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium">
+                                class="rg-pill px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium">
                                 Update Entry
                             </button>
                         </div>
@@ -871,12 +900,14 @@
 
 
     @can('report-audit-ledger-register-post')
+        <div class="rg-confirm">
         <x-alpine-confirmation-modal eventName="open-ledger-post-modal" title="Post to General Ledger"
             confirmButtonText="Post to GL" confirmButtonClass="bg-green-600 hover:bg-green-700">
             <p class="text-sm text-gray-700">
-                Are you sure you want to post this entry to the General Ledger? This action cannot be reversed.
+                Post this entry to the general ledger? Each amount is booked against Creditors. Once posted, the entry can no longer be edited or deleted; a correction needs a reversing entry.
             </p>
         </x-alpine-confirmation-modal>
+        </div>
     @endcan
 
     @push('scripts')
@@ -900,6 +931,7 @@
                     init() {
                         window.addEventListener('open-edit-modal', (e) => {
                             this.entry = e.detail;
+                            this.$nextTick(() => window.rgSyncSelects && window.rgSyncSelects(this.$el));
                             this.formAction = '{{ url("reports/supplier-ledger-register") }}/' + this.entry.id;
                             this.open = true;
                         });

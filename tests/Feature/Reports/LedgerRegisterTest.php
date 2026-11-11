@@ -471,3 +471,62 @@ test('the old ledger register address moves to the supplier ledger register', fu
     $this->actingAs(User::factory()->create())->get('/reports/ledger-register?filter%5Bsupplier_id%5D=6')
         ->assertRedirect('/reports/supplier-ledger-register?filter%5Bsupplier_id%5D=6');
 });
+
+test('the ledger lists nothing until a supplier is chosen', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    LedgerRegister::factory()->create(['supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString()]);
+
+    $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index'))
+        ->assertSuccessful()
+        ->assertSee('Choose a supplier to open its ledger')
+        ->assertViewHas('entries', fn ($entries) => $entries->total() === 0);
+
+    $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $this->supplier->id]]))
+        ->assertViewHas('entries', fn ($entries) => $entries->total() === 1)
+        ->assertDontSee('Choose a supplier to open its ledger');
+});
+
+test('the ledger downloads as an A4 PDF, portrait by default, and asks for a supplier first', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    LedgerRegister::factory()->create(['supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString()]);
+
+    $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index', ['format' => 'pdf']))
+        ->assertRedirect()->assertSessionHas('error');
+
+    $response = $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $this->supplier->id], 'format' => 'pdf']));
+    $response->assertOk()->assertHeader('content-type', 'application/pdf');
+    expect($response->headers->get('content-disposition'))->toContain('supplier-ledger-nestle');
+
+    $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $this->supplier->id], 'format' => 'pdf', 'orientation' => 'landscape']))
+        ->assertOk()->assertHeader('content-type', 'application/pdf');
+});
+
+test('only suppliers with nothing running are offered an opening balance', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $fresh = Supplier::factory()->create(['supplier_name' => 'New Company', 'disabled' => false, 'ledger_opening_balance' => 0]);
+    $this->supplier->update(['ledger_opening_balance' => 0]);
+    LedgerRegister::factory()->create(['supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'document_type' => DocumentType::Dr]);
+
+    $offered = $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index'))->viewData('suppliersWithoutOpeningBalance');
+    expect($offered->pluck('id')->all())->toContain($fresh->id)->not->toContain($this->supplier->id);
+
+    $this->actingAs($this->user)->put(route('reports.supplier-ledger-register.opening-balance.update', $this->supplier), ['ledger_opening_balance' => 5000])
+        ->assertSessionHas('error');
+    expect(LedgerRegister::where('supplier_id', $this->supplier->id)->where('document_type', DocumentType::Ob->value)->count())->toBe(0);
+});
+
+test('the opening balances card is only for users allowed to set them', function () {
+    $viewer = User::factory()->create();
+    $viewer->givePermissionTo('report-audit-ledger-register');
+    Supplier::factory()->create(['disabled' => false, 'ledger_opening_balance' => 0]);
+
+    $this->actingAs($viewer)->get(route('reports.supplier-ledger-register.index'))->assertDontSee('without one');
+    $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index'))->assertSee('without one');
+});
+
+test('the ledger page carries its Urdu help with the ledger flow', function () {
+    $this->actingAs($this->user)->get(route('reports.supplier-ledger-register.index'))
+        ->assertSee('Help: Supplier Ledger Register')
+        ->assertSee('flow-supplier-ledger', false)
+        ->assertSee('data-topic="opening"', false);
+});

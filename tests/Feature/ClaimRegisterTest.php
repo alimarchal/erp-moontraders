@@ -470,3 +470,26 @@ test('recoveries booked into the bank before are reversed once, and the register
         ->and($service->settleRecoveriesThroughLedger()['recoveries'])->toBe(0)
         ->and((float) $recovery->fresh()->credit)->toBe(2500.0);
 });
+
+test('the add page offers claim or recovery and explains what each books', function () {
+    $this->get(route('claim-registers.create'))
+        ->assertSuccessful()
+        ->assertSee('Entry type')
+        ->assertSee('Save claim')
+        ->assertSee('It is recorded here only')
+        ->assertSee('Help: Claim Register');
+});
+
+test('a draft recovery is shown with its amount and the record action, and the list says when nothing matches', function () {
+    $recovery = ClaimRegister::factory()->recovery()->create(['credit' => 2500, 'reference_number' => 'REC-77']);
+
+    $this->get(route('claim-registers.show', $recovery))
+        ->assertSuccessful()
+        ->assertSee('Rs 2,500.00')
+        ->assertSee('Record recovery')
+        ->assertSee('Draft');
+
+    $this->get(route('claim-registers.index', ['filter' => ['reference_number' => 'NO-SUCH-REF']]))
+        ->assertSuccessful()
+        ->assertSee('No claims match these filters');
+});

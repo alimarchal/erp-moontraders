@@ -181,3 +181,34 @@ test('claim can be posted from claim register report', function () {
     expect($claim->posted_by)->toBe($this->user->id);
     expect($claim->journal_entry_id)->toBe($mockJournalEntry->id);
 });
+
+test('the claim register opens with no supplier chosen and lists nothing until one is', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $nestle = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan', 'short_name' => 'Nestle', 'disabled' => false]);
+    ClaimRegister::factory()->create(['supplier_id' => $nestle->id, 'transaction_date' => now()->toDateString(), 'reference_number' => 'NES-1']);
+
+    $this->get(route('reports.claim-register.index'))
+        ->assertSuccessful()
+        ->assertViewHas('supplierId', null)
+        ->assertSee('Choose a supplier to open its claim register')
+        ->assertDontSee('NES-1');
+
+    $this->get(route('reports.claim-register.index', ['supplier_id' => $nestle->id]))
+        ->assertSee('NES-1');
+});
+
+test('the claim register downloads as an A4 PDF for the chosen supplier and carries its Urdu help', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $supplier = Supplier::factory()->create(['supplier_name' => 'Lipton Pakistan', 'short_name' => 'Lipton', 'disabled' => false]);
+    ClaimRegister::factory()->create(['supplier_id' => $supplier->id, 'transaction_date' => now()->toDateString()]);
+
+    $this->get(route('reports.claim-register.index', ['format' => 'pdf']))->assertRedirect()->assertSessionHas('error');
+
+    $response = $this->get(route('reports.claim-register.index', ['supplier_id' => $supplier->id, 'format' => 'pdf']));
+    $response->assertOk()->assertHeader('content-type', 'application/pdf');
+    expect($response->headers->get('content-disposition'))->toContain('claim-register-lipton');
+
+    $this->get(route('reports.claim-register.index'))
+        ->assertSee('Help: Claim Register')
+        ->assertSee('flow-claims', false);
+});

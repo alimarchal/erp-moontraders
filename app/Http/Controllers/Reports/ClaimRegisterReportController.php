@@ -9,6 +9,7 @@ use App\Models\ClaimRegister;
 use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use App\Services\ClaimRegisterService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -35,12 +36,16 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $perPage = $request->input('per_page', 50);
         $perPage = \in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
 
+        // The PDF is the whole register for the chosen supplier and period, A4, portrait unless asked otherwise.
+        $isPdf = $request->query('format') === 'pdf';
+        $perPage = $isPdf ? 'all' : $perPage;
+
         $canViewAllSuppliers = $this->canViewAllSuppliers();
         $userSupplierId = $this->getUserSupplierScope();
         $this->authorizeRequestedSupplier((int) $request->input('supplier_id'));
 
-        $defaultSupplier = Supplier::where('short_name', 'Nestle')->first();
-        $supplierId = $userSupplierId ?? ($canViewAllSuppliers ? $request->input('supplier_id', $defaultSupplier?->id) : null);
+        // Nothing is chosen for the user: the register opens empty until a supplier is picked.
+        $supplierId = $userSupplierId ?? ($canViewAllSuppliers ? ($request->input('supplier_id') ?: null) : null);
 
         // Date range defaults: current month
         $dateFrom = $request->input('date_from', now()->startOfMonth()->toDateString());
@@ -67,7 +72,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             if ($supplierId) {
                 $openingQuery->where('supplier_id', $supplierId);
-            } elseif (! $canViewAllSuppliers) {
+            } else {
                 $openingQuery->whereRaw('1 = 0');
             }
 
@@ -89,7 +94,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);
-        } elseif (! $canViewAllSuppliers) {
+        } else {
             $query->whereRaw('1 = 0');
         }
 
@@ -155,6 +160,18 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             $ledgerMatch = ['recovered' => $recovered, 'adjusted' => $adjusted, 'difference' => round($recovered - $adjusted, 2)];
         }
         $claimRegisterDateEditable = filter_var(env('CLAIM_REGISTER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
+
+        if ($isPdf) {
+            if (! $supplierId) {
+                return redirect()->route('reports.claim-register.index', $request->except(['format', 'orientation']))->with('error', 'Choose a supplier before downloading the PDF.');
+            }
+
+            $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+            return Pdf::loadView('reports.claim-register.pdf', compact('claims', 'selectedSupplier', 'dateFrom', 'dateTo', 'openingBalance', 'totals', 'closingBalance', 'orientation'))
+                ->setPaper('a4', $orientation)
+                ->download('claim-register-'.str($selectedSupplier->short_name ?? $selectedSupplier->supplier_name)->slug().'-'.$dateFrom.'-to-'.$dateTo.'.pdf');
+        }
 
         return view('reports.claim-register.index', compact(
             'claims',

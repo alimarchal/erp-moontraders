@@ -9,6 +9,8 @@ use App\Http\Requests\UpdateLedgerRegisterRequest;
 use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use App\Services\LedgerRegisterService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -38,6 +40,10 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         $perPage = $request->input('per_page', 50);
         $perPage = \in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
 
+        // The PDF is the whole ledger for the chosen supplier and period, A4, portrait unless asked otherwise.
+        $isPdf = $request->query('format') === 'pdf';
+        $perPage = $isPdf ? 'all' : $perPage;
+
         $userSupplierId = $this->getUserSupplierScope();
         $requestedSupplierId = $request->input('filter.supplier_id');
 
@@ -51,9 +57,10 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         $dateFrom = $request->input('filter.date_from', now()->startOfMonth()->toDateString());
         $dateTo = $request->input('filter.date_to', now()->endOfMonth()->toDateString());
 
+        // Nothing is chosen for the user: the register opens empty until a supplier is picked.
         $query = LedgerRegister::query()
             ->with('supplier')
-            ->when($supplierId, fn ($q) => $q->forSupplier($supplierId))
+            ->when($supplierId, fn ($q) => $q->forSupplier($supplierId), fn ($q) => $q->whereRaw('1 = 0'))
             ->dateRange($dateFrom, $dateTo);
 
         if ($request->filled('filter.document_type')) {
@@ -86,7 +93,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
         // Calculate running balance considering entries before the current page
         $allFilteredQuery = LedgerRegister::query()
-            ->when($supplierId, fn ($q) => $q->forSupplier($supplierId))
+            ->when($supplierId, fn ($q) => $q->forSupplier($supplierId), fn ($q) => $q->whereRaw('1 = 0'))
             ->dateRange($dateFrom, $dateTo);
 
         if ($request->filled('filter.document_type')) {
@@ -185,15 +192,24 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
             ->orderBy('supplier_name')
             ->get();
-        $suppliersWithoutOpeningBalance = Supplier::where('disabled', false)
+        $suppliersWithoutOpeningBalance = $this->suppliersNeedingOpeningBalance()
             ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
-            ->where(function ($q) {
-                $q->where('ledger_opening_balance', 0)->orWhereNull('ledger_opening_balance');
-            })
             ->orderBy('supplier_name')
             ->get();
         $selectedSupplier = $supplierId ? Supplier::find($supplierId) : null;
         $supplierLedgerDateEditable = filter_var(env('SUPPLIER_LEDGER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
+
+        if ($isPdf) {
+            if (! $selectedSupplier) {
+                return redirect()->route('reports.supplier-ledger-register.index', $request->except(['format', 'orientation']))->with('error', 'Choose a supplier before downloading the PDF.');
+            }
+
+            $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+            return Pdf::loadView('reports.supplier-ledger-register.pdf', compact('entries', 'totals', 'openingBalance', 'currentBalance', 'selectedSupplier', 'dateFrom', 'dateTo', 'orientation'))
+                ->setPaper('a4', $orientation)
+                ->download('supplier-ledger-'.str($selectedSupplier->short_name ?? $selectedSupplier->supplier_name)->slug().'-'.$dateFrom.'-to-'.$dateTo.'.pdf');
+        }
 
         return view('reports.supplier-ledger-register.index', [
             'entries' => $entries,
@@ -309,6 +325,10 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             'ledger_opening_balance_date' => ['nullable', 'date'],
         ]);
 
+        if (! $this->suppliersNeedingOpeningBalance()->whereKey($supplier->id)->exists()) {
+            return redirect()->back()->with('error', "{$supplier->supplier_name} already has a running ledger (an opening balance, ledger entries, GRNs or stock), so an opening balance cannot be set again.");
+        }
+
         $amount = (float) $validated['ledger_opening_balance'];
         $date = $validated['ledger_opening_balance_date'] ?? now()->toDateString();
 
@@ -339,6 +359,25 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
             return redirect()->back()->with('error', 'Failed to set opening balance. Please try again.');
         }
+    }
+
+    /**
+     * Suppliers that still need an opening balance: active, with none set, and nothing running yet: no ledger
+     * entries (an opening balance line included), no GRNs and no stock. A supplier already trading started its
+     * ledger from those, so it is never offered again.
+     */
+    private function suppliersNeedingOpeningBalance(): Builder
+    {
+        return Supplier::query()
+            ->where('disabled', false)
+            ->where(fn ($query) => $query->where('ledger_opening_balance', 0)->orWhereNull('ledger_opening_balance'))
+            ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('supplier_ledger_registers')
+                ->whereColumn('supplier_ledger_registers.supplier_id', 'suppliers.id')->whereNull('supplier_ledger_registers.deleted_at'))
+            ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('goods_receipt_notes')
+                ->whereColumn('goods_receipt_notes.supplier_id', 'suppliers.id'))
+            ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('current_stock')
+                ->join('products', 'products.id', '=', 'current_stock.product_id')
+                ->whereColumn('products.supplier_id', 'suppliers.id')->where('current_stock.quantity_on_hand', '>', 0));
     }
 
     private function getUserSupplierScope(): ?int

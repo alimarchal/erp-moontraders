@@ -33,6 +33,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use App\Services\BankRegister\SettlementBankRegisterSync;
 use App\Services\DistributionService;
 use App\Services\SalesSettlementRevertService;
 use App\Services\SettlementAttachmentService;
@@ -740,8 +741,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             $this->recalcSettlementFinancials($settlement);
 
+            app(SettlementBankRegisterSync::class)->sync($settlement, auth()->id());
+
             DB::commit();
             $this->finalizeUploads($settlement);
+            $this->linkBankRegisterAttachments($settlement);
 
             $redirect = redirect()
                 ->route('sales-settlements.show', $settlement)
@@ -1135,6 +1139,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             DB::commit();
             $this->finalizeUploads($salesSettlement);
+            $this->linkBankRegisterAttachments($salesSettlement);
 
             $redirect = redirect()
                 ->route('sales-settlements.show', $salesSettlement)
@@ -1261,6 +1266,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         $this->recalcSettlementFinancials($salesSettlement);
 
+        app(SettlementBankRegisterSync::class)->sync($salesSettlement, auth()->id());
+
         return ['payment_breakdown_warning' => $paymentBreakdownWarning];
     }
 
@@ -1282,6 +1289,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $settlementNumber = $salesSettlement->settlement_number;
 
             $attachmentPaths = $this->collectAttachmentPaths($salesSettlement);
+
+            app(SettlementBankRegisterSync::class)->withdrawAll($salesSettlement, auth()->id());
 
             // Force delete all related records to allow settlement_number reuse
             foreach ($salesSettlement->items as $item) {
@@ -1535,6 +1544,19 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         DB::table($table)->where('id', $row->id)->update(['attachment' => $final]);
                     }
                 });
+        }
+    }
+
+    /**
+     * Link each bank register line to the proof on its settlement line. The settlement is already saved, so a
+     * failure here is reported and never undoes it; the next save of the settlement links the file again.
+     */
+    private function linkBankRegisterAttachments(SalesSettlement $settlement): void
+    {
+        try {
+            app(SettlementBankRegisterSync::class)->linkAttachments($settlement, auth()->id());
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 
@@ -2413,6 +2435,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             DB::commit();
             $this->finalizeUploads($salesSettlement);
+            $this->linkBankRegisterAttachments($salesSettlement);
 
             Log::info('Sales settlement special edit applied (reverted, corrected, re-posted)', [
                 'settlement_id' => $salesSettlement->id,

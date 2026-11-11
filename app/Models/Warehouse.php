@@ -89,4 +89,40 @@ class Warehouse extends Model
     {
         return $this->belongsTo(ChartOfAccount::class, 'account_id');
     }
+
+    /**
+     * Stock rows held in this warehouse, one per product.
+     */
+    public function currentStocks(): HasMany
+    {
+        return $this->hasMany(CurrentStock::class);
+    }
+
+    /**
+     * Units still on hand in this warehouse, over every product.
+     */
+    public function stockOnHand(): float
+    {
+        return (float) $this->currentStocks()->sum('quantity_on_hand');
+    }
+
+    /**
+     * A warehouse that still holds stock cannot be deactivated: the stock would become unreachable.
+     */
+    public function hasStock(): bool
+    {
+        return $this->currentStocks()->where('quantity_on_hand', '>', 0)->exists()
+            || CurrentStockByBatch::where('warehouse_id', $this->id)->where('quantity_on_hand', '>', 0)->exists();
+    }
+
+    /**
+     * Sentence shown when deactivation is refused because of remaining stock.
+     */
+    public function stockBlocksDeactivationMessage(): string
+    {
+        $products = $this->currentStocks()->where('quantity_on_hand', '>', 0)->count();
+        $units = rtrim(rtrim(number_format($this->stockOnHand(), 2), '0'), '.');
+
+        return "Warehouse '{$this->warehouse_name}' still holds stock ({$units} units across {$products} product(s)). Transfer or issue all of it first; a warehouse can only be deactivated when its inventory is empty.";
+    }
 }

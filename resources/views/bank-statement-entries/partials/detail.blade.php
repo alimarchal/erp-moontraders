@@ -27,6 +27,10 @@
             <tr><th>Party on statement</th><td dir="auto">{{ $entry->party_name_in_statement ?? '—' }}</td><th>Company / principal</th><td dir="auto">{{ $entry->company?->supplier_name ?? '—' }}</td></tr>
             <tr><th>Category</th><td>{{ $entry->category?->name ?? '—' }}</td><th>Reference</th><td>{{ $entry->reference ?? '—' }}</td></tr>
             <tr><th>Narration</th><td colspan="3" dir="auto">{{ $entry->narration ?? '—' }}</td></tr>
+            @if ($entry->salesSettlement)
+                <tr><th>Raised from</th><td colspan="3"><a href="{{ route('sales-settlements.show', $entry->salesSettlement) }}" class="ak-primary-link">Sales Settlement {{ $entry->salesSettlement->settlement_number }}</a>
+                    · {{ \App\Services\SettlementAttachmentService::SECTION_LABELS[$entry->settlement_section] ?? $entry->settlement_section }} · settlement is {{ $entry->salesSettlement->status }}</td></tr>
+            @endif
             <tr><th>Note</th><td colspan="3" dir="auto">{{ $entry->description ?: '—' }}</td></tr>
             @if ($entry->journalEntry)
                 <tr><th>Journal entry</th><td><a href="{{ route('journal-entries.show', $entry->journalEntry) }}" class="ak-primary-link">#{{ $entry->journalEntry->id }} · {{ $entry->journalEntry->reference }}</a></td>

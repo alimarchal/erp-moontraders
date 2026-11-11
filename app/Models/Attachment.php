@@ -32,6 +32,15 @@ class Attachment extends Model
 
     public const LABELS = ['receipt' => 'Receipt', 'cheque' => 'Cheque', 'slip' => 'Deposit slip', 'statement' => 'Statement', 'other' => 'Other'];
 
+    /**
+     * True when the file belongs to a sales settlement and is only linked here: it lives on the settlement's disk
+     * and must never be deleted from this side.
+     */
+    public function isSettlementFile(): bool
+    {
+        return str_starts_with((string) $this->file_path, config('settlement_attachments.root_folder').'/');
+    }
+
     // Relationships
     public function journalEntry()
     {

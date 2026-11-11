@@ -7,6 +7,7 @@ use App\Models\Attachment;
 use App\Models\BankEntryAuditLog;
 use App\Models\BankStatementEntry;
 use App\Services\BankRegister\BankEntryAttachmentService;
+use App\Services\SettlementAttachmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -44,7 +45,8 @@ class BankEntryAttachmentController extends Controller implements HasMiddleware
     {
         abort_unless($attachment->attachable_type === BankStatementEntry::class, 404);
 
-        $disk = Storage::disk(config('bank.attachments.disk'));
+        // a proof linked from a sales settlement stays on the settlement's own disk
+        $disk = Storage::disk($attachment->isSettlementFile() ? SettlementAttachmentService::disk() : config('bank.attachments.disk'));
         abort_unless($disk->exists($attachment->file_path), 404);
 
         // ?inline=1 opens an image or PDF in the browser so an approver can check the receipt without saving it
@@ -63,7 +65,11 @@ class BankEntryAttachmentController extends Controller implements HasMiddleware
             return back()->with('error', 'This entry is reconciled, so its attachments are locked.');
         }
 
-        Storage::disk(config('bank.attachments.disk'))->delete($attachment->file_path);
+        // unlinking a settlement's proof only removes the link; the file still belongs to the settlement
+        if (! $attachment->isSettlementFile()) {
+            Storage::disk(config('bank.attachments.disk'))->delete($attachment->file_path);
+        }
+
         $attachment->delete();
         BankEntryAuditLog::record($entry, 'attachment_removed', ['file_name' => $attachment->file_name]);
 

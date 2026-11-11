@@ -47,6 +47,9 @@ class BankStatementEntry extends Model
     protected $fillable = [
         'bank_account_id',
         'import_id',
+        'sales_settlement_id',
+        'settlement_section',
+        'settlement_row_id',
         'bank_reconciliation_id',
         'statement_ref_no',
         'posting_date',
@@ -151,6 +154,14 @@ class BankStatementEntry extends Model
     public function import(): BelongsTo
     {
         return $this->belongsTo(BankStatementImport::class, 'import_id');
+    }
+
+    /**
+     * The sales settlement this line was raised from, when it did not come from a statement or a manual entry.
+     */
+    public function salesSettlement(): BelongsTo
+    {
+        return $this->belongsTo(SalesSettlement::class);
     }
 
     public function reconciliation(): BelongsTo

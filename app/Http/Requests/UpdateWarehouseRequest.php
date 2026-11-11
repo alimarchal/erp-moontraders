@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateWarehouseRequest extends FormRequest
 {
@@ -40,6 +41,24 @@ class UpdateWarehouseRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:255'],
             'pin' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    /**
+     * A warehouse that still holds stock cannot be switched to disabled.
+     *
+     * @return array<int, \Closure(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $warehouse = $this->route('warehouse');
+
+                if ($this->boolean('disabled') && ! $warehouse->disabled && $warehouse->hasStock()) {
+                    $validator->errors()->add('disabled', $warehouse->stockBlocksDeactivationMessage());
+                }
+            },
         ];
     }
 }

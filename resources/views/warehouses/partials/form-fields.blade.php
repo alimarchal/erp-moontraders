@@ -88,15 +88,18 @@ $warehouse = $warehouse ?? null;
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
     <div class="flex items-center space-x-2 mt-6">
-        <x-checkbox id="is_group" name="is_group" :checked="old('is_group', optional($warehouse)->is_group)" />
+        <input type="hidden" name="is_group" value="0">
+        <x-checkbox id="is_group" name="is_group" value="1" :checked="old('is_group', optional($warehouse)->is_group)" />
         <x-label for="is_group" value="Is Group" />
     </div>
     <div class="flex items-center space-x-2 mt-6">
-        <x-checkbox id="disabled" name="disabled" :checked="old('disabled', optional($warehouse)->disabled)" />
-        <x-label for="disabled" value="Disabled" />
+        <input type="hidden" name="disabled" value="0">
+        <x-checkbox id="disabled" name="disabled" value="1" :checked="old('disabled', optional($warehouse)->disabled)" />
+        <x-label for="disabled" value="Disabled (inactive)" />
     </div>
     <div class="flex items-center space-x-2 mt-6">
-        <x-checkbox id="is_rejected_warehouse" name="is_rejected_warehouse"
+        <input type="hidden" name="is_rejected_warehouse" value="0">
+        <x-checkbox id="is_rejected_warehouse" name="is_rejected_warehouse" value="1"
             :checked="old('is_rejected_warehouse', optional($warehouse)->is_rejected_warehouse)" />
         <x-label for="is_rejected_warehouse" value="Is Rejected Warehouse" />
     </div>

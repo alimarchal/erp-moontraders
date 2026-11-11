@@ -1,22 +1,22 @@
-# Graph Report - moontraders  (2026-11-06)
+# Graph Report - moontraders  (2026-11-11)
 
 ## Corpus Check
-- 1417 files · ~1,278,749 words
+- 1643 files · ~1,444,834 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6911 nodes · 15878 edges · 892 communities (259 shown, 226 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 418 edges (avg confidence: 0.84)
+- 7988 nodes · 19119 edges · 975 communities (286 shown, 250 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 447 edges (avg confidence: 0.84)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `743d0213`
+- Built from commit: `11678d4f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - User
-- Illuminate\Support\Facades\DB
+- Illuminate\Routing\Controllers\HasMiddleware
 - Illuminate\Database\Eloquent\Relations\BelongsTo
 - StockBatch
 - Illuminate\Database\Eloquent\Model
@@ -25,12 +25,12 @@
 - SalesSettlement
 - moment.min.js
 - jquery-3.7.1.min.js
-- InventoryService
+- GoodsReceiptNote
 - CurrencyController
-- Illuminate\Database\Migrations\Migration
-- Illuminate\Database\Seeder
+- Spatie\Permission\PermissionRegistrar
+- Illuminate\Support\Facades\DB
 - ExpenseVoucher
-- Supplier
+- EmployeeController
 - Illuminate\Foundation\Http\FormRequest
 - Product
 - Illuminate\Database\Eloquent\Factories\Factory
@@ -38,13 +38,12 @@
 - Dashboard
 - ClaimRegister
 - Illuminate\Database\Eloquent\Relations\HasMany
-- Illuminate\Validation\Rule
+- StoreProfitCategoryDetailRequest
 - Illuminate\Database\Schema\Blueprint
-- Illuminate\Support\Facades\Schema
 - Illuminate\Database\Eloquent\Builder
 - Company
 - StoreInvestmentOpeningBalanceRequest
-- InventoryGlAdjustmentService
+- GrnCostDriftService
 - TicketService
 - Permission
 - package.json
@@ -58,38 +57,38 @@
 - Cloud CLI
 - Cloud CLI
 - AGENTS.md
-- SalesSettlementController.php
+- SalesSettlementRecovery
 - CLAUDE.md
 - b
 - ExpenseDetail
 - Illuminate\Notifications\Messages\MailMessage
 - Maatwebsite\Excel\Concerns\WithHeadings
-- JournalEntryDetail
+- JournalEntryDetailController
 - TaxCode
 - TaxTransaction
 - Laravel Boost Guidelines
-- Illuminate\Console\Command
+- SettlementBankRegisterSync.php
 - CompanyTarget
 - InventoryLedgerEntry
 - Attachment
 - ProductController
 - ProductRecall
-- GoodsReceiptNote
+- GoodsReceiptNoteController
 - Laravel Boost Guidelines
 - CustomerEmployeeAccount
 - WarehouseType
 - RebuildDailyInventorySnapshots
-- GoodsIssueController
+- .response
 - SalesSettlementController
 - LedgerRegister
 - Category
-- JournalEntryController
-- StockValuationService
-- Illuminate\Support\Collection
+- StoreJournalEntryRequest
+- BankStatementEntry
+- VerifyInventoryConsistency
 - LedgerService
 - RevenueCategory
 - GoodsReceiptNoteItemsImport
-- StoreAccountTypeRequest
+- PayrollRun
 - BankAccount
 - v
 - SupplierLedgerReportController.php
@@ -101,17 +100,17 @@
 - apexcharts.js
 - MCP Database Server Setup
 - ProductTaxMapping
-- SalesSettlementAmrPowder
-- ChequeRegisterController
+- AmrDisposeRegisterController
+- BankReconciliation
 - GoodsIssueStockCheck
 - BatchRecostService
-- Illuminate\Http\Request
-- RevenueDetail
-- Symfony\Component\HttpFoundation\Response
+- CreditorsLedgerController
+- .log
+- bootstrap/app.php
 - Laravel Fortify Development
 - Livewire Development
 - SupplierController
-- Illuminate\Contracts\Validation\ValidationRule
+- StoreVehicleRequest
 - Laravel Fortify Development
 - Livewire Development
 - Livewire\Livewire
@@ -120,26 +119,26 @@
 - Livewire Development
 - PDFGenerator
 - domManip
-- RepostSupplierInvoices
+- ExpenseVendorPayment
 - SyncDatabaseObjects
-- SvgChart
-- StoreRevenueCategoryRequest
+- BankReportService
+- BankEntryCategory
 - TicketRequest
 - CustomerImport
-- GrnCostDriftService
-- AppServiceProvider.php
+- MigrationHelpers
+- Illuminate\Support\ServiceProvider
 - Nestlé Pakistan Supplier
-- UpdateUserProfileInformation.php
-- CompanyController
+- PasswordValidationRules
+- ClaimRegisterController
 - GeneralLedgerController
-- self
+- Illuminate\Support\Str
 - ProfitCategory
-- CompanyTargetSummaryController.php
+- SvgChart
 - ExpenseVoucherController
 - ProfitCategoryDetail
 - CustomerAccountStatementController
 - ProductImport
-- StockLedgerEntry
+- BankPartyAlias
 - require
 - Laravel Backup
 - UomController
@@ -149,9 +148,9 @@
 - done
 - GoodsIssueExport
 - ExpenseVoucherAttachmentService
-- StoreRevenueDetailRequest
-- SalesSettlementAdvanceTax
-- ProductPricingService
+- RevenueDetailReportController
+- .createChildRecords
+- ProductPriceChangeLog
 - Do Things the Laravel Way
 - Detection Checklist
 - Process
@@ -161,8 +160,8 @@
 - Tailwind CSS Development
 - TicketType
 - PromotionalCampaign
-- CashCollectionDistributorController
-- StockAvailabilityReportController
+- Illuminate\Support\Collection
+- Role
 - Migration: Add AMR Dispose Register Permission
 - Detection Checklist
 - Process
@@ -181,9 +180,9 @@
 - Tailwind CSS Development
 - matcherFromTokens
 - UpdateAccountTypeRequest
-- StoreEmployeeRequest
-- LedgerRegisterService
-- .response
+- Illuminate\Contracts\Validation\ValidationRule
+- SettlementBankRegisterSync
+- Illuminate\Validation\Rule
 - UpdateOpeningCustomerBalanceRequest
 - SalesmanLedger
 - TicketSubmitted
@@ -194,9 +193,9 @@
 - Migration Best Practices
 - Queue and Job Best Practices
 - LedgerRegisterFactory
-- LedgerRegisterController
+- BankEntryRuleController
 - StoreSupplierRequest
-- Illuminate\Support\Str
+- Illuminate\Database\Migrations\Migration
 - Advanced Query Best Practices
 - Events and Notifications Best Practices
 - Migration Best Practices
@@ -206,27 +205,27 @@
 - Migration Best Practices
 - Queue and Job Best Practices
 - Caching Best Practices
-- Database Performance Best Practices
+- Database performance best practices
 - Eloquent Best Practices
 - FortifyServiceProvider.php
-- ProductPriceChangeLogController.php
+- ExpenseVoucherService
 - Illuminate\Http\RedirectResponse
 - Karpathy Guidelines
 - Caching Best Practices
-- Database Performance Best Practices
+- Database performance best practices
 - Eloquent Best Practices
 - require-dev
 - scripts
 - Caching Best Practices
-- Database Performance Best Practices
+- Database performance best practices
 - Eloquent Best Practices
 - Blade and View Best Practices
 - Error Handling Best Practices
 - Task Scheduling Best Practices
 - Endpoint Tests
-- CashCollectionDistributorController.php
+- Illuminate\Http\Request
 - Illuminate\View\View
-- UpdateRevenueCategoryRequest
+- SettlementAttachmentService
 - DailyInventorySnapshot
 - Blade and View Best Practices
 - Error Handling Best Practices
@@ -241,27 +240,27 @@
 - Mail Best Practices
 - Routing and Controller Best Practices
 - Convention and Style Best Practices
-- Validation and Forms Best Practices
+- Validation and forms best practices
 - Assertions
 - .agents/skills/testing-best-practices/SKILL.md
 - Fakes, Mocks, and Determinism
 - Test Suite Performance
 - Reviewing Tests
 - CorrectGoodsIssueDate
-- UpdateChartOfAccountRequest
-- ImportCustomerRequest
-- UpdateLedgerRegisterRequest
+- ChartOfAccountController
+- BankStatementImport
+- RuntimeException
 - Karpathy Guidelines
 - UserFactory.php
-- StoreCategoryRequest
-- StoreSchemeReceivedRequest
+- OpeningCustomerBalanceController
+- AppServiceProvider.php
 - UpdateTaxRateRequest
 - Collection Best Practices
 - HTTP Client Best Practices
 - Mail Best Practices
 - Routing and Controller Best Practices
 - Convention and Style Best Practices
-- Validation and Forms Best Practices
+- Validation and forms best practices
 - Assertions
 - .claude/skills/testing-best-practices/SKILL.md
 - Fakes, Mocks, and Determinism
@@ -278,19 +277,19 @@
 - Mail Best Practices
 - Routing and Controller Best Practices
 - Convention and Style Best Practices
-- Validation and Forms Best Practices
+- Validation and forms best practices
 - Assertions
 - .github/skills/testing-best-practices/SKILL.md
 - Fakes, Mocks, and Determinism
 - Test Suite Performance
 - Reviewing Tests
 - Naming and Structure
-- UpdateTaxTransactionRequest
+- ProductWiseSalesExport
 - DeleteUser
-- StoreCustomerRequest
-- StoreChartOfAccountRequest
+- AttachmentImageOptimizer
+- AuditTrailTest
 - StoreProductRequest
-- Controller
+- StoreManualOpeningCustomerBalanceRequest
 - UpdateInvoiceSummaryRequest
 - StoreOpeningStockRequest
 - UpdateCustomerRequest
@@ -309,24 +308,24 @@
 - RepairJournalRounding
 - StoreAccountingPeriodRequest
 - UpdateAccountingPeriodRequest
-- StoreProfitCategoryRequest
+- BankStatementEntryFactory
 - Development Workflows
 - getWidthOrHeight
-- StorePaymentRequest
+- UpdateUserProfileInformation.php
 - UpdateWarehouseRequest
 - UpdateDeliveryNoteRequest
 - PostGoodsReceiptNoteRequest
-- StoreCompanyRequest
-- UpdateEmployeeSalaryRequest
+- CompanyTargetSummaryExport
+- StoreInvoiceSummaryRequest
 - UpdateStockReceiptRequest
 - StoreSalesSettlementRequest
-- CartonConversionService
+- UpdateVehicleRequest
 - UpdateCompanyRequest
-- NetProfitSort
+- UpdateSalesSettlementRequest
 - UpdateProductRequest
 - Laravel 12
 - AttachmentFactory.php
-- EmployeeFactory
+- BankStatementImportRequest
 - Audits Icon
 - Branches
 - Factories and Test Data
@@ -336,8 +335,8 @@
 - sanctum.php
 - CurrencyFactory
 - ExpenseDetailFactory.php
-- ExpenseVoucherFactory.php
-- JournalEntryDetailFactory
+- StoreTaxCodeRequest
+- StoreTaxTransactionRequest
 - herd
 - Livewire 3
 - Key Conventions
@@ -350,24 +349,26 @@
 - suppliers/edit.blade.php
 - tickets/create.blade.php
 - tickets/edit.blade.php
-- StoreProductTaxMappingRequest
+- StoreWarehouseRequest
 - UpdateProductTaxMappingRequest
 - ProductFactory.php
-- web.php
+- Controller
 - TaxRateFactory.php
 - TaxTransactionFactory.php
-- UpdateTaxCodeRequest
-- StoreSaleItemRequest
+- StoreWarehouseTypeRequest
+- BankBulkClassifyRequest
+- ImportGoodsReceiptNoteRequest
 - StoreStockReceiptItemRequest
+- ImportProductRequest
 - StoreTaxRateRequest
-- CompanyTargetFactory.php
+- StoreBankAccountRequest
 - Deposit Action
 - logout-other-browser-sessions-form.blade.php
 - delete-user-form.blade.php
 - GoodsReceiptNoteItemFactory
 - 2026_10_02_153534_add_reverses_transaction_id_to_customer_employee_account_transactions_table.php
 - 2026_10_18_100000_create_company_targets_module.php
-- CustomerSeeder
+- UpdateBankAccountRequest
 - daterangepicker.min.js
 - expectSync
 - customers/create.blade.php
@@ -385,13 +386,34 @@
 - Bank of Azad Jammu & Kashmir (BAJK) Logo
 - extra
 - confirms-password.blade.php
-- ProductTaxMappingFactory.php
+- Illuminate\Support\Facades\Schema
+- AuditsAccountingChanges
 - WarehouseTypeFactory
-- 2026_04_10_121359_add_active_vehicle_lock_to_goods_issues_table.php
+- 2026_10_20_100015_add_register_ledger_to_bank_accounts.php
+- StoreEmployeeSalaryRequest
+- StoreExpenseRequest
+- StoreSaleRequest
+- UpdateVehicleExpenseRequest
+- 2026_11_08_110000_add_expense_module_indexes.php
+- expense-vendors/create.blade.php
+- expense-vendors/edit.blade.php
+- adjustments.blade.php
+- payroll/index.blade.php
+- salaries/edit.blade.php
+- salaries/index.blade.php
+- payroll/show.blade.php
+- slip.blade.php
+- slips-print.blade.php
+- General
+- CategoryFactory.php
+- InvoiceSummaryFactory.php
+- JournalEntryFactory
+- SalesSettlementItemFactory.php
+- TaxCodeFactory.php
+- UomFactory.php
 - Pest 4
 - PHP
 - Tailwind CSS
-- Illuminate\Support\Facades\Artisan
 - livewire/dashboard.blade.php
 - Account Holder (User with Location Pin)
 - Financial Background Image
@@ -498,32 +520,61 @@
 - mcp-mysql.sh
 - mcp-postgres.sh
 - Blade Component: cheque-payment-modal
+- daily-sales/product-wise.blade.php
+- tickets/form.blade.php
+- warehouses/index.blade.php
 - buildParams
 - on
+- expense-vendor-payments/create.blade.php
+- expense-vendor-payments/index.blade.php
+- expense-vendors/index.blade.php
+- components.blade.php
+- payroll/create.blade.php
+- index.md
+- bank-statement-entries.partials.detail
+- bank-statement-entries.partials.summary
+- bank-cheques/create.blade.php
+- bank-cheques/edit.blade.php
+- bank-entry-categories/create.blade.php
+- bank-entry-categories/edit.blade.php
+- bank-entry-rules/create.blade.php
+- bank-entry-rules/edit.blade.php
+- bank-party-aliases/create.blade.php
+- bank-party-aliases/edit.blade.php
+- print-styles.blade.php
+- expense-categories/index.blade.php
+- expense-vendor-payments/show.blade.php
+- expense-vendors/show.blade.php
+- expense-vouchers/summary.blade.php
+- payroll/help.blade.php
+- run.blade.php
+- runs.blade.php
+- slips.blade.php
+- pdf/product-wise.blade.php
 
 ## God Nodes (most connected - your core abstractions)
-1. `User` - 542 edges
-2. `Supplier` - 330 edges
-3. `Product` - 241 edges
-4. `Employee` - 214 edges
-5. `SalesSettlement` - 201 edges
-6. `ChartOfAccount` - 172 edges
-7. `Warehouse` - 171 edges
-8. `GoodsIssue` - 158 edges
-9. `Controller` - 146 edges
-10. `Vehicle` - 141 edges
+1. `User` - 626 edges
+2. `Supplier` - 364 edges
+3. `Product` - 250 edges
+4. `Employee` - 245 edges
+5. `SalesSettlement` - 221 edges
+6. `ChartOfAccount` - 198 edges
+7. `Warehouse` - 179 edges
+8. `GoodsIssue` - 169 edges
+9. `Controller` - 166 edges
+10. `Vehicle` - 144 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `grnReversalPermission()` --calls--> `Permission`  [INFERRED]
+  tests/Feature/GoodsReceiptNoteAccountingTest.php → app/Models/Permission.php
+- `statementEntry()` --calls--> `BankStatementEntry`  [EXTRACTED]
+  tests/Feature/BankRegister/BankClassificationTest.php → app/Models/BankStatementEntry.php
+- `stockLedgerBalance()` --calls--> `ChartOfAccount`  [EXTRACTED]
+  tests/Feature/Accounting/StockLedgerStaysInStepTest.php → app/Models/ChartOfAccount.php
 - `moveLineToLegacyAccount()` --calls--> `ChartOfAccount`  [EXTRACTED]
   tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/ChartOfAccount.php
-- `dropJournalEntry()` --references--> `GoodsReceiptNote`  [EXTRACTED]
-  tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/GoodsReceiptNote.php
-- `postPurchaseGrn()` --calls--> `GoodsReceiptNote`  [EXTRACTED]
-  tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/GoodsReceiptNote.php
-- `postSupplierInvoice()` --calls--> `LedgerRegister`  [EXTRACTED]
-  tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/LedgerRegister.php
-- `createDashboardPermissions()` --calls--> `Permission`  [INFERRED]
-  tests/Feature/DashboardTest.php → app/Models/Permission.php
+- `ensureLedgerPostingAccounts()` --calls--> `ChartOfAccount`  [EXTRACTED]
+  tests/Feature/GoodsReceiptNoteAccountingTest.php → app/Models/ChartOfAccount.php
 
 ## Import Cycles
 - None detected.
@@ -533,39 +584,35 @@
 - **Opening Balance Seeding Subsystem** — database_seeders_data_ledger_registers_supplier_ledger, database_seeders_data_transactions_customer_transaction, database_seeders_data_ledger_registers_ob_document_type, database_seeders_data_transactions_opening_balance_type [INFERRED 0.85]
 - **Customer Accounts Receivable Subsystem** — database_seeders_data_customers_customer, database_seeders_data_accounts_customer_employee_account, database_seeders_data_transactions_customer_transaction, database_seeders_data_employee_list_employee [INFERRED 0.88]
 
-## Communities (892 total, 226 thin omitted)
+## Communities (975 total, 250 thin omitted)
 
 ### Community 0 - "User"
 Cohesion: 0.02
-Nodes (26): User, EmployeePolicy, GoodsIssuePolicy, ProductPolicy, RolePolicy, SupplierPolicy, UomPolicy, UserPolicy (+18 more)
+Nodes (37): Supplier, User, EmployeePolicy, GoodsIssuePolicy, ProductPolicy, RolePolicy, SupplierPolicy, UomPolicy (+29 more)
 
-### Community 1 - "Illuminate\Support\Facades\DB"
-Cohesion: 0.09
-Nodes (15): Illuminate\Database\QueryException, Illuminate\Routing\Controllers\HasMiddleware, Illuminate\Routing\Controllers\Middleware, Illuminate\Support\Arr, Illuminate\Support\Facades\Cache, Illuminate\Support\Facades\DB, Illuminate\Support\Facades\Hash, Illuminate\Support\Facades\Log (+7 more)
+### Community 1 - "Illuminate\Routing\Controllers\HasMiddleware"
+Cohesion: 0.11
+Nodes (14): BatchTransferController, Illuminate\Database\QueryException, Illuminate\Routing\Controllers\HasMiddleware, Illuminate\Routing\Controllers\Middleware, Illuminate\Support\Arr, Illuminate\Support\Facades\Cache, Illuminate\Support\Facades\Hash, Illuminate\Support\Facades\Log (+6 more)
 
 ### Community 2 - "Illuminate\Database\Eloquent\Relations\BelongsTo"
 Cohesion: 0.02
-Nodes (7): CompanyTargetLine, ProductPriceChangeLog, ProductRecallItem, SalesSettlementChequeHistory, SalesSettlementExcessAmount, TicketHistory, Illuminate\Database\Eloquent\Relations\BelongsTo
+Nodes (13): EmployeeAdvanceRecovery, EmployeeSalaryComponent, ExpenseVendorPaymentAllocation, ProductRecallItem, SalesSettlementAmrLiquid, SalesSettlementAmrPowder, SalesSettlementBankSlip, SalesSettlementChequeHistory (+5 more)
 
 ### Community 3 - "StockBatch"
-Cohesion: 0.05
-Nodes (30): CurrentStock, CurrentStockByBatch, StockBatch, StockMovement, StockValuationLayer, VanStockBalance, VanStockBatch, BatchTransferService (+22 more)
+Cohesion: 0.04
+Nodes (39): CurrentStockController, CurrentStock, CurrentStockByBatch, StockBatch, StockMovement, StockValuationLayer, VanStockBalance, VanStockBatch (+31 more)
 
 ### Community 4 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.06
-Nodes (11): AccountBalance, BalanceSheetAccount, IncomeStatementAccount, InvoiceSummary, SchemeReceived, UserTracking, Database\Factories\InvestmentOpeningBalanceFactory, Illuminate\Database\Eloquent\Factories\HasFactory (+3 more)
-
-### Community 5 - "Customer"
-Cohesion: 0.09
-Nodes (3): Customer, CustomerPolicy, Illuminate\Database\Eloquent\Relations\HasManyThrough
+Cohesion: 0.04
+Nodes (18): AccountBalance, BalanceSheetAccount, IncomeStatementAccount, InvoiceSummary, PayrollAdjustment, RevenueDetail, SalesSettlementAdvanceTax, SalesSettlementAdvanceTaxIncome (+10 more)
 
 ### Community 6 - "ChartOfAccount"
 Cohesion: 0.03
-Nodes (35): ChartOfAccountController, AccountingPeriod, AccountType, ChartOfAccount, Currency, JournalEntry, SalesSettlementExpense, AccountingPeriodPolicy (+27 more)
+Nodes (36): AccountingPeriod, AccountType, ChartOfAccount, Currency, JournalEntry, SalesSettlementExpense, AccountingPeriodPolicy, AccountTypePolicy (+28 more)
 
 ### Community 7 - "SalesSettlement"
-Cohesion: 0.07
-Nodes (11): SalesSettlement, SalesSettlementPolicy, SalesSettlementRevertService, allEntriesWithKeys(), allFiles(), attachmentPayload(), storeSettlementWithAttachments(), updatePayload() (+3 more)
+Cohesion: 0.05
+Nodes (20): SalesSettlement, SalesSettlementCashDenomination, SalesSettlementPolicy, SalesSettlementRevertService, Illuminate\Console\Scheduling\Event, createAmrLiquidForSupplier(), createAmrPowderForSupplier(), draftSettlementBy() (+12 more)
 
 ### Community 8 - "moment.min.js"
 Cohesion: 0.06
@@ -575,33 +622,29 @@ Nodes (81): de(), aa(), ac(), b(), ba(), bb(), bc(), ca() (+73 more)
 Cohesion: 0.07
 Nodes (49): O(), ve(), Ae(), B(), Be(), c(), $e(), ee() (+41 more)
 
-### Community 10 - "InventoryService"
-Cohesion: 0.11
-Nodes (9): DatabaseTriggerGuard, InventoryService, LedgerDriftException, RuntimeException, dropJournalEntry(), moveLineToLegacyAccount(), postPurchaseGrn(), postSupplierInvoice() (+1 more)
+### Community 10 - "GoodsReceiptNote"
+Cohesion: 0.05
+Nodes (15): GoodsReceiptNote, GoodsReceiptNotePolicy, CartonConversionService, InventoryService, GoodsReceiptNoteFactory, DomainException, stockLedgerBalance(), dropJournalEntry() (+7 more)
 
 ### Community 11 - "CurrencyController"
 Cohesion: 0.12
 Nodes (3): CurrencyController, StoreCurrencyRequest, UpdateCurrencyRequest
 
-### Community 13 - "Illuminate\Database\Seeder"
-Cohesion: 0.04
-Nodes (27): AccountingPeriodSeeder, AccountTypeSeeder, AttachmentSeeder, BankAccountSeeder, ChartOfAccountSeeder, ClaimRegisterSeeder, CostCenterSeeder, CurrencySeeder (+19 more)
-
-### Community 15 - "Supplier"
-Cohesion: 0.04
-Nodes (18): CreditSalesReportController, EmployeeController, QueryBuilder, AdvanceTaxReportController, AdvanceTaxSalesRegisterController, CustomSettlementReportController, InventoryLedgerReportController, PercentageExpenseReportController (+10 more)
+### Community 13 - "Illuminate\Support\Facades\DB"
+Cohesion: 0.03
+Nodes (36): CheckJournalBalance, SnapshotInventory, BackfillRevaluationValues, AdvanceTaxReportController, AdvanceTaxSalesRegisterController, GoodsIssueReportController, RoiReportController, SalesmanStockRegisterController (+28 more)
 
 ### Community 16 - "Illuminate\Foundation\Http\FormRequest"
 Cohesion: 0.03
-Nodes (18): AppendGoodsIssueItemsRequest, ImportGoodsReceiptNoteRequest, StoreEmployeeSalaryRequest, StoreExpenseRequest, StoreInvoiceSummaryRequest, StoreSaleRequest, StoreVehicleExpenseRequest, UpdateCategoryRequest (+10 more)
+Nodes (21): AppendGoodsIssueItemsRequest, BankReceiptScanRequest, BankReconciliationRequest, BankStatementEntryRequest, StoreCategoryRequest, StoreDeliveryNoteRequest, StorePaymentRequest, StoreSaleItemRequest (+13 more)
 
 ### Community 17 - "Product"
-Cohesion: 0.06
-Nodes (38): GoodsIssue, GoodsIssueItem, GoodsReceiptNoteItem, Product, SalesSettlementItem, Uom, Vehicle, Warehouse (+30 more)
+Cohesion: 0.05
+Nodes (37): Employee, GoodsIssue, GoodsIssueItem, GoodsReceiptNoteItem, Product, SalesSettlementItem, Uom, Vehicle (+29 more)
 
 ### Community 18 - "Illuminate\Database\Eloquent\Factories\Factory"
 Cohesion: 0.05
-Nodes (17): AccountingPeriodFactory, AccountTypeFactory, BankAccountFactory, CategoryFactory, CompanyFactory, CustomerFactory, GoodsIssueItemFactory, InvoiceSummaryFactory (+9 more)
+Nodes (19): AccountingPeriodFactory, AccountTypeFactory, BankEntryCategoryFactory, BankPartyAliasFactory, BankReceiptScanFactory, CompanyFactory, CompanyTargetFactory, CustomerFactory (+11 more)
 
 ### Community 19 - "jquery-3.6.0.min.js"
 Cohesion: 0.07
@@ -612,28 +655,28 @@ Cohesion: 0.13
 Nodes (3): Dashboard, Carbon, Livewire\Component
 
 ### Community 21 - "ClaimRegister"
-Cohesion: 0.07
-Nodes (5): ClaimRegisterController, ClaimRegisterReportController, ClaimRegister, ClaimRegisterPolicy, ClaimRegisterService
-
-### Community 23 - "Illuminate\Validation\Rule"
-Cohesion: 0.04
-Nodes (10): ImportProductRequest, StoreBankAccountRequest, StoreExpenseDetailRequest, StoreProfitCategoryDetailRequest, UpdateBankAccountRequest, UpdateCostCenterRequest, UpdateExpenseDetailRequest, UpdateProfitCategoryDetailRequest (+2 more)
+Cohesion: 0.11
+Nodes (3): ClaimRegisterReportController, ClaimRegister, ClaimRegisterPolicy
 
 ### Community 26 - "Illuminate\Database\Eloquent\Builder"
-Cohesion: 0.09
-Nodes (9): CustomerExport, EmployeeExport, GeneralLedgerExport, OpeningCustomerBalanceExport, ProductExport, VehicleExport, Illuminate\Database\Eloquent\Builder, Maatwebsite\Excel\Concerns\FromQuery (+1 more)
+Cohesion: 0.06
+Nodes (14): BankEntriesExport, CustomerExport, EmployeeExport, GeneralLedgerExport, OpeningCustomerBalanceExport, ProductExport, VehicleExport, BankStatementSearch (+6 more)
 
 ### Community 27 - "Company"
-Cohesion: 0.09
-Nodes (3): Company, CompanyPolicy, CompanySeeder
+Cohesion: 0.07
+Nodes (4): CompanyController, Company, CompanyPolicy, CompanySeeder
+
+### Community 30 - "GrnCostDriftService"
+Cohesion: 0.11
+Nodes (4): ReconcileStockGl, RepairGrnCostDrift, GrnCostDriftService, InventoryGlAdjustmentService
 
 ### Community 31 - "TicketService"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (3): TicketStatus, TicketItem, TicketService
 
 ### Community 32 - "Permission"
-Cohesion: 0.06
-Nodes (15): PermissionController, RoleController, LogOptions, Permission, LogOptions, LogOptions, Role, LogOptions (+7 more)
+Cohesion: 0.09
+Nodes (9): UserController, LogOptions, Permission, LogOptions, LogOptions, LogOptions, Spatie\Activitylog\LogOptions, Spatie\Activitylog\Traits\LogsActivity (+1 more)
 
 ### Community 33 - "package.json"
 Cohesion: 0.06
@@ -644,132 +687,128 @@ Cohesion: 0.06
 Nodes (10): computeStyleTests(), dataAttr(), finalPropName(), getData(), NOTE: This can be skipped if there are no unmatched elements (i.e.,…, TODO: Now that all calls to _data and _removeData have been replaced, TODO: identify versions, TODO: identify versions (+2 more)
 
 ### Community 37 - "CostCenter"
-Cohesion: 0.08
-Nodes (7): CostCenterController, StoreCostCenterRequest, CostCenter, CostCenterPolicy, clearingBalance(), post(), up()
+Cohesion: 0.05
+Nodes (12): ClearStockReceivedNotBilled, RepostSupplierInvoices, CostCenterController, StoreCostCenterRequest, UpdateCostCenterRequest, CostCenter, CostCenterPolicy, StockReceivedNotBilledService (+4 more)
 
-### Community 39 - "CustomerEmployeeAccountTransaction"
-Cohesion: 0.09
-Nodes (6): OpeningCustomerBalanceController, QueryBuilder, StoreManualOpeningCustomerBalanceRequest, CustomerEmployeeAccountTransaction, creditAccount(), ledgerLine()
+### Community 38 - "Ticket"
+Cohesion: 0.11
+Nodes (4): TicketController, Ticket, TicketFactory, Illuminate\Database\Eloquent\Concerns\HasUuids
 
 ### Community 40 - "Cloud CLI"
 Cohesion: 0.06
-Nodes (30): Adding a cache to an existing environment, Adding a database to an existing environment, Checklists for Multi-Step Operations, Custom domain setup, Full environment setup (app + database + cache + domain), New app from scratch, Application Setup, Billing and Usage (+22 more)
+Nodes (32): Adding a cache to an existing environment, Adding a database to an existing environment, Checklists for Multi-Step Operations, Custom domain setup, Full environment setup (app + database + cache + domain), New app from scratch, Sending email with Resend, Application Setup (+24 more)
 
 ### Community 41 - "Cloud CLI"
 Cohesion: 0.06
-Nodes (30): Adding a cache to an existing environment, Adding a database to an existing environment, Checklists for Multi-Step Operations, Custom domain setup, Full environment setup (app + database + cache + domain), New app from scratch, Application Setup, Billing and Usage (+22 more)
+Nodes (32): Adding a cache to an existing environment, Adding a database to an existing environment, Checklists for Multi-Step Operations, Custom domain setup, Full environment setup (app + database + cache + domain), New app from scratch, Sending email with Resend, Application Setup (+24 more)
 
 ### Community 42 - "Cloud CLI"
 Cohesion: 0.06
-Nodes (30): Adding a cache to an existing environment, Adding a database to an existing environment, Checklists for Multi-Step Operations, Custom domain setup, Full environment setup (app + database + cache + domain), New app from scratch, Application Setup, Billing and Usage (+22 more)
+Nodes (32): Adding a cache to an existing environment, Adding a database to an existing environment, Checklists for Multi-Step Operations, Custom domain setup, Full environment setup (app + database + cache + domain), New app from scratch, Sending email with Resend, Application Setup (+24 more)
 
 ### Community 43 - "AGENTS.md"
-Cohesion: 0.06
-Nodes (30): APIs & Eloquent Resources, Application Structure & Architecture, Artisan, Conventions, Deployment, Do Things the Laravel Way, Documentation Files, Foundational Context (+22 more)
+Cohesion: 0.07
+Nodes (28): APIs & Eloquent Resources, Application Structure & Architecture, Artisan, Conventions, Deployment, Do Things the Laravel Way, Documentation Files, Foundational Context (+20 more)
 
-### Community 44 - "SalesSettlementController.php"
-Cohesion: 0.05
-Nodes (9): SalesSettlementBankSlip, SalesSettlementBankTransfer, SalesSettlementCashDenomination, SalesSettlementCheque, SalesSettlementCreditSale, SalesSettlementItemBatch, SalesSettlementPercentageExpense, SalesSettlementRecovery (+1 more)
+### Community 44 - "SalesSettlementRecovery"
+Cohesion: 0.10
+Nodes (4): SalesSettlementBankTransfer, SalesSettlementCreditSale, SalesSettlementRecovery, HasSettlementAttachment
 
 ### Community 45 - "CLAUDE.md"
-Cohesion: 0.06
-Nodes (30): APIs & Eloquent Resources, Application Structure & Architecture, Artisan, Conventions, Deployment, Do Things the Laravel Way, Documentation Files, Foundational Context (+22 more)
+Cohesion: 0.07
+Nodes (28): APIs & Eloquent Resources, Application Structure & Architecture, Artisan, Conventions, Deployment, Do Things the Laravel Way, Documentation Files, Foundational Context (+20 more)
 
 ### Community 46 - "b"
 Cohesion: 0.24
 Nodes (24): b(), g(), c(), d(), c(), e(), f(), g() (+16 more)
 
 ### Community 47 - "ExpenseDetail"
-Cohesion: 0.07
-Nodes (4): ExpenseDetailController, ExpenseDetailReportController, ExpenseDetail, ExpenseDetailService
+Cohesion: 0.06
+Nodes (6): ExpenseDetailController, ExpenseDetailReportController, StoreExpenseDetailRequest, UpdateExpenseDetailRequest, ExpenseDetail, ExpenseDetailService
 
 ### Community 48 - "Illuminate\Notifications\Messages\MailMessage"
-Cohesion: 0.10
-Nodes (11): VerifyGrnCosts, GrnCostDriftDetected, MailMessage, InventoryConsistencyMismatch, MailMessage, MailMessage, SnapshotRebuildSkippedProducts, MailMessage (+3 more)
+Cohesion: 0.08
+Nodes (13): VerifyGrnCosts, GrnCostDriftDetected, MailMessage, InventoryConsistencyMismatch, MailMessage, PendingSettlementsNotice, MailMessage, MailMessage (+5 more)
 
 ### Community 49 - "Maatwebsite\Excel\Concerns\WithHeadings"
-Cohesion: 0.11
-Nodes (10): CompanyTargetSummaryExport, CustomerImportTemplateExport, GoodsReceiptNoteTemplateExport, OpeningStockTemplateExport, ProductImportTemplateExport, Illuminate\Contracts\View\View, Maatwebsite\Excel\Concerns\FromArray, Maatwebsite\Excel\Concerns\FromView (+2 more)
+Cohesion: 0.08
+Nodes (12): BankReportExport, CustomerImportTemplateExport, GoodsReceiptNoteTemplateExport, OpeningStockTemplateExport, PayrollRunExport, PayrollRunsExport, ProductImportTemplateExport, Maatwebsite\Excel\Concerns\FromArray (+4 more)
 
-### Community 50 - "JournalEntryDetail"
-Cohesion: 0.09
-Nodes (5): JournalEntryDetailController, StoreJournalEntryDetailRequest, UpdateJournalEntryDetailRequest, JournalEntryDetail, JournalEntryDetailPolicy
+### Community 50 - "JournalEntryDetailController"
+Cohesion: 0.13
+Nodes (3): JournalEntryDetailController, StoreJournalEntryDetailRequest, UpdateJournalEntryDetailRequest
 
 ### Community 51 - "TaxCode"
-Cohesion: 0.12
+Cohesion: 0.11
 Nodes (3): TaxCodeController, TaxCode, TaxCodePolicy
 
 ### Community 52 - "TaxTransaction"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (3): TaxTransactionController, TaxTransaction, TaxTransactionPolicy
 
 ### Community 53 - "Laravel Boost Guidelines"
 Cohesion: 0.07
 Nodes (27): APIs & Eloquent Resources, Application Structure & Architecture, Artisan, Conventions, Do Things the Laravel Way, Documentation Files, Foundational Context, Frontend Bundling (+19 more)
 
-### Community 54 - "Illuminate\Console\Command"
-Cohesion: 0.16
-Nodes (7): CheckJournalBalance, ClearStockReceivedNotBilled, SchedulerHeartbeat, BackfillRevaluationValues, Illuminate\Console\Attributes\Description, Illuminate\Console\Attributes\Signature, Illuminate\Console\Command
+### Community 54 - "SettlementBankRegisterSync.php"
+Cohesion: 0.20
+Nodes (5): NotifyPendingSettlements, SchedulerHeartbeat, Illuminate\Console\Attributes\Description, Illuminate\Console\Attributes\Signature, Illuminate\Support\Carbon
 
 ### Community 55 - "CompanyTarget"
 Cohesion: 0.11
 Nodes (3): CompanyTargetController, StoreCompanyTargetRequest, CompanyTarget
 
-### Community 56 - "InventoryLedgerEntry"
-Cohesion: 0.07
-Nodes (3): SnapshotInventory, InventoryLedgerEntry, InventoryLedgerService
-
 ### Community 57 - "Attachment"
-Cohesion: 0.10
-Nodes (5): AttachmentController, StoreAttachmentRequest, UpdateAttachmentRequest, Attachment, AttachmentPolicy
+Cohesion: 0.06
+Nodes (7): AttachmentController, BankAttachmentRequest, StoreAttachmentRequest, StoreBankStatementEntryRequest, UpdateAttachmentRequest, Attachment, AttachmentPolicy
 
 ### Community 59 - "ProductRecall"
-Cohesion: 0.08
-Nodes (4): ProductRecall, StockAdjustmentItem, ProductRecallService, Illuminate\Database\Eloquent\Collection
-
-### Community 60 - "GoodsReceiptNote"
-Cohesion: 0.08
-Nodes (5): GoodsReceiptNoteController, GoodsReceiptNote, GoodsReceiptNotePolicy, postedGrnForReversal(), postReversibleGrn()
+Cohesion: 0.10
+Nodes (4): Collection, ProductRecall, ProductRecallService, Illuminate\Database\Eloquent\Collection
 
 ### Community 61 - "Laravel Boost Guidelines"
 Cohesion: 0.08
 Nodes (25): Application Structure & Architecture, Artisan, Available Search Syntax, Comments, Conventions, Documentation Files, Enums, Foundational Context (+17 more)
 
 ### Community 62 - "CustomerEmployeeAccount"
-Cohesion: 0.16
-Nodes (4): CustomerEmployeeAccount, createReportTransaction(), createStatementAccount(), createStatementTransaction()
+Cohesion: 0.15
+Nodes (3): CustomerEmployeeAccount, createReportTransaction(), createStatementTransaction()
 
 ### Community 63 - "WarehouseType"
-Cohesion: 0.14
-Nodes (4): WarehouseTypeController, WarehouseType, WarehouseTypePolicy, WarehouseTypeSeeder
+Cohesion: 0.10
+Nodes (5): WarehouseController, WarehouseTypeController, WarehouseType, WarehouseTypePolicy, WarehouseTypeSeeder
+
+### Community 65 - ".response"
+Cohesion: 0.07
+Nodes (5): CustomerEmployeeAccountController, GoodsIssueController, ChequeRegisterController, TransactionController, SalesSettlementCheque
 
 ### Community 67 - "LedgerRegister"
-Cohesion: 0.12
-Nodes (3): Collection, LedgerRegister, LedgerRegisterPolicy
+Cohesion: 0.08
+Nodes (6): LedgerRegisterController, LedgerRegister, LedgerRegisterPolicy, LedgerRegisterService, LedgerRegisterSeeder, postSupplierInvoice()
 
 ### Community 68 - "Category"
-Cohesion: 0.13
-Nodes (5): CategoryController, SalesmanStockRegisterController, SkuRatesController, Category, CategorySeeder
+Cohesion: 0.17
+Nodes (4): CategoryController, SkuRatesController, Category, CategorySeeder
 
-### Community 69 - "JournalEntryController"
-Cohesion: 0.11
-Nodes (3): JournalEntryController, StoreJournalEntryRequest, UpdateJournalEntryRequest
-
-### Community 71 - "Illuminate\Support\Collection"
-Cohesion: 0.15
-Nodes (5): VerifyInventoryConsistency, FmrAmrComparisonController, CustomerCreditAging, Illuminate\Database\Query\Builder, Illuminate\Support\Collection
+### Community 70 - "BankStatementEntry"
+Cohesion: 0.04
+Nodes (17): BankApprovalController, BankStatementEntryController, BankEntryApproval, BankEntryAuditLog, self, BankReceiptScan, BankStatementEntry, BankApprovalRules (+9 more)
 
 ### Community 73 - "RevenueCategory"
-Cohesion: 0.14
-Nodes (5): CategoryRevenueController, RevenueCategory, RevenueCategoryFactory, RevenueDetailFactory, createRevenueCategoryFixture()
+Cohesion: 0.11
+Nodes (5): CategoryRevenueController, StoreRevenueCategoryRequest, UpdateRevenueCategoryRequest, RevenueCategory, RevenueDetailFactory
 
 ### Community 74 - "GoodsReceiptNoteItemsImport"
-Cohesion: 0.13
-Nodes (6): GoodsReceiptNoteItemsImport, OpeningStockImport, Maatwebsite\Excel\Concerns\ToCollection, Maatwebsite\Excel\Concerns\WithHeadingRow, Maatwebsite\Excel\Concerns\WithValidation, PhpOffice\PhpSpreadsheet\Shared\Date
+Cohesion: 0.10
+Nodes (7): GoodsReceiptNoteItemsImport, OpeningStockImport, Maatwebsite\Excel\Concerns\ToArray, Maatwebsite\Excel\Concerns\ToCollection, Maatwebsite\Excel\Concerns\WithHeadingRow, Maatwebsite\Excel\Concerns\WithValidation, PhpOffice\PhpSpreadsheet\Shared\Date
+
+### Community 75 - "PayrollRun"
+Cohesion: 0.06
+Nodes (6): PayrollRunController, EmployeeSalary, PayrollRun, PayrollSlip, PayrollSlipLine, PayrollService
 
 ### Community 76 - "BankAccount"
-Cohesion: 0.17
-Nodes (3): BankAccountController, BankAccount, SalesSettlementBankTransferFactory
+Cohesion: 0.11
+Nodes (6): BankAccountController, BankAccount, BankAccountFactory, BankChequeFactory, BankReconciliationFactory, SalesSettlementBankTransferFactory
 
 ### Community 77 - "v"
 Cohesion: 0.12
@@ -787,9 +826,13 @@ Nodes (3): StockAdjustmentController, StockAdjustment, StockAdjustmentService
 Cohesion: 0.16
 Nodes (3): TaxRateController, TaxRate, TaxRatePolicy
 
+### Community 81 - "AccountingService"
+Cohesion: 0.14
+Nodes (3): PeriodClosingService, AccountingService, DocumentNumberService
+
 ### Community 83 - "Illuminate\Http\UploadedFile"
-Cohesion: 0.11
-Nodes (19): Illuminate\Http\UploadedFile, PhpOffice\PhpSpreadsheet\Spreadsheet, PhpOffice\PhpSpreadsheet\Writer\Xlsx, customerCsv(), UploadedFile, runCustomerImport(), createTestExcelFile(), UploadedFile (+11 more)
+Cohesion: 0.08
+Nodes (20): BankEntryAttachmentService, Illuminate\Http\UploadedFile, UploadedFile, statementFile(), customerCsv(), UploadedFile, runCustomerImport(), createTestExcelFile() (+12 more)
 
 ### Community 84 - "apexcharts.js"
 Cohesion: 0.33
@@ -803,21 +846,21 @@ Nodes (19): Alternative MySQL MCP Servers, Available Scripts, Claude Code Config
 Cohesion: 0.15
 Nodes (3): ProductTaxMappingController, ProductTaxMapping, ProductTaxMappingPolicy
 
-### Community 87 - "SalesSettlementAmrPowder"
-Cohesion: 0.16
-Nodes (3): AmrDisposeRegisterController, SalesSettlementAmrLiquid, SalesSettlementAmrPowder
+### Community 88 - "BankReconciliation"
+Cohesion: 0.06
+Nodes (9): BankReconciliationController, BankReconciliation, BankReconciliationItem, CompanyTargetLine, JournalEntryDetail, JournalEntryDetailPolicy, BankReceiptNumberGenerator, BankReconciliationService (+1 more)
 
 ### Community 89 - "GoodsIssueStockCheck"
 Cohesion: 0.16
 Nodes (4): StoreGoodsIssueRequest, UpdateGoodsIssueRequest, GoodsIssueStockCheck, Illuminate\Contracts\Validation\Validator
 
-### Community 91 - "Illuminate\Http\Request"
-Cohesion: 0.08
-Nodes (8): CurrentStockController, CreditorsLedgerController, DailySalesReportController, ShopListController, VehicleReportController, UserController, Illuminate\Http\Request, LengthAwarePaginator
+### Community 91 - "CreditorsLedgerController"
+Cohesion: 0.20
+Nodes (4): CreditorsLedgerController, CustomerCreditAging, Illuminate\Database\Query\Builder, LengthAwarePaginator
 
-### Community 93 - "Symfony\Component\HttpFoundation\Response"
-Cohesion: 0.11
-Nodes (13): CheckUserStatus, SetDatabaseAuditContext, AuditsAccountingChanges, Closure, Illuminate\Foundation\Application, Illuminate\Foundation\Configuration\Exceptions, Illuminate\Foundation\Configuration\Middleware, Illuminate\Support\Facades\Auth (+5 more)
+### Community 93 - "bootstrap/app.php"
+Cohesion: 0.12
+Nodes (8): PhpLimits, Illuminate\Foundation\Application, Illuminate\Foundation\Configuration\Exceptions, Illuminate\Foundation\Configuration\Middleware, Illuminate\Http\Exceptions\PostTooLargeException, Spatie\Permission\Middleware\PermissionMiddleware, Spatie\Permission\Middleware\RoleMiddleware, Spatie\Permission\Middleware\RoleOrPermissionMiddleware
 
 ### Community 94 - "Laravel Fortify Development"
 Cohesion: 0.12
@@ -825,11 +868,7 @@ Nodes (16): Available Features, Best Practices, Custom Authentication Logic, Doc
 
 ### Community 95 - "Livewire Development"
 Cohesion: 0.12
-Nodes (16): Alpine Integration, Basic Usage, Best Practices, Common Pitfalls, Component Structure, Creating Components, Documentation, Fundamental Concepts (+8 more)
-
-### Community 97 - "Illuminate\Contracts\Validation\ValidationRule"
-Cohesion: 0.05
-Nodes (10): StoreDeliveryNoteRequest, StoreStockReceiptRequest, StoreTaxCodeRequest, StoreTaxTransactionRequest, StoreVehicleRequest, StoreWarehouseRequest, StoreWarehouseTypeRequest, UpdateVehicleRequest (+2 more)
+Nodes (16): Alpine integration, Basic usage, Best practices, Common pitfalls, Component structure, Creating components, Documentation, Fundamental concepts (+8 more)
 
 ### Community 98 - "Laravel Fortify Development"
 Cohesion: 0.12
@@ -837,7 +876,7 @@ Nodes (16): Available Features, Best Practices, Custom Authentication Logic, Doc
 
 ### Community 99 - "Livewire Development"
 Cohesion: 0.12
-Nodes (16): Alpine Integration, Basic Usage, Best Practices, Common Pitfalls, Component Structure, Creating Components, Documentation, Fundamental Concepts (+8 more)
+Nodes (16): Alpine integration, Basic usage, Best practices, Common pitfalls, Component structure, Creating components, Documentation, Fundamental concepts (+8 more)
 
 ### Community 100 - "Livewire\Livewire"
 Cohesion: 0.15
@@ -853,39 +892,63 @@ Nodes (16): Available Features, Best Practices, Custom Authentication Logic, Doc
 
 ### Community 103 - "Livewire Development"
 Cohesion: 0.12
-Nodes (16): Alpine Integration, Basic Usage, Best Practices, Common Pitfalls, Component Structure, Creating Components, Documentation, Fundamental Concepts (+8 more)
+Nodes (16): Alpine integration, Basic usage, Best practices, Common pitfalls, Component structure, Creating components, Documentation, Fundamental concepts (+8 more)
 
 ### Community 105 - "domManip"
 Cohesion: 0.31
 Nodes (9): buildFragment(), cloneCopyEvent(), disableScript(), DOMEval(), domManip(), getAll(), remove(), restoreScript() (+1 more)
 
-### Community 113 - "AppServiceProvider.php"
-Cohesion: 0.10
-Nodes (12): AppServiceProvider, FortifyServiceProvider, JetstreamServiceProvider, UserTrackingServiceProvider, Google\Client, Google\Service\Drive, Illuminate\Filesystem\FilesystemAdapter, Illuminate\Support\Facades\Gate (+4 more)
+### Community 106 - "ExpenseVendorPayment"
+Cohesion: 0.09
+Nodes (3): ExpenseVendorPaymentController, ExpenseVendorPayment, ExpenseVendorPaymentService
+
+### Community 108 - "BankReportService"
+Cohesion: 0.16
+Nodes (5): BankRegisterPermissions, BankReportService, down(), up(), RoleAndPermissionSeeder
+
+### Community 109 - "BankEntryCategory"
+Cohesion: 0.13
+Nodes (5): BankEntryCategoryController, QueryBuilder, BankEntryCategoryRequest, BankEntryCategory, BankEntryRuleFactory
+
+### Community 112 - "MigrationHelpers"
+Cohesion: 0.14
+Nodes (11): MigrationHelpers, down(), up(), down(), up(), down(), up(), down() (+3 more)
+
+### Community 113 - "Illuminate\Support\ServiceProvider"
+Cohesion: 0.18
+Nodes (5): FortifyServiceProvider, JetstreamServiceProvider, UserTrackingServiceProvider, Illuminate\Support\ServiceProvider, Laravel\Jetstream\Jetstream
 
 ### Community 114 - "Nestlé Pakistan Supplier"
 Cohesion: 0.16
 Nodes (16): Customer Employee Account, Customer Channel Type (General Store, Pharmacy, Wholesale), Customer Record, Employee Record, Nestlé Pakistan Supplier, Journal Entry Reference in Ledger, Opening Balance Document Type (OB), Supplier Ledger Register (+8 more)
 
-### Community 115 - "UpdateUserProfileInformation.php"
-Cohesion: 0.12
-Nodes (11): PasswordValidationRules, ResetUserPassword, UpdateUserPassword, UpdateUserProfileInformation, Illuminate\Contracts\Auth\MustVerifyEmail, Illuminate\Contracts\Validation\Rule, Illuminate\Support\Facades\Validator, Illuminate\Validation\Rules\Password (+3 more)
+### Community 115 - "PasswordValidationRules"
+Cohesion: 0.25
+Nodes (5): PasswordValidationRules, UpdateUserPassword, Illuminate\Contracts\Validation\Rule, Illuminate\Validation\Rules\Password, Laravel\Fortify\Contracts\UpdatesUserPasswords
 
 ### Community 117 - "GeneralLedgerController"
 Cohesion: 0.36
 Nodes (3): GeneralLedgerController, QueryBuilder, GeneralLedgerEntry
 
-### Community 118 - "self"
+### Community 118 - "Illuminate\Support\Str"
 Cohesion: 0.08
-Nodes (3): FileStorageHelper, SettlementAttachmentService, self
+Nodes (4): FileStorageHelper, StoreProfitCategoryRequest, UpdateProfitCategoryRequest, Illuminate\Support\Str
 
 ### Community 119 - "ProfitCategory"
-Cohesion: 0.13
-Nodes (6): ProfitCategoryController, ProfitCategory, ProfitCategoryDetailFactory, ProfitCategoryFactory, createProfitCategoryFixture(), createProfitAfterCategoryFixture()
+Cohesion: 0.16
+Nodes (4): ProfitCategoryController, ProfitCategory, ProfitCategoryDetailFactory, ProfitCategoryFactory
 
-### Community 120 - "CompanyTargetSummaryController.php"
-Cohesion: 0.17
-Nodes (5): CompanyTargetSummaryController, OpeningCustomerBalanceReportController, CompanyTargetService, Carbon\CarbonInterface, Symfony\Component\HttpFoundation\BinaryFileResponse
+### Community 120 - "SvgChart"
+Cohesion: 0.04
+Nodes (16): ReportPdf, SvgChart, AdvanceTaxCustomerSummaryController, BankReportController, CompanyTargetSummaryController, OpeningCustomerBalanceReportController, StockAvailabilityReportController, CheckUserStatus (+8 more)
+
+### Community 122 - "ProfitCategoryDetail"
+Cohesion: 0.13
+Nodes (4): ProfitAfterCategoryReportController, UpdateProfitCategoryDetailRequest, ProfitCategoryDetail, ProfitCategoryDetailService
+
+### Community 125 - "BankPartyAlias"
+Cohesion: 0.07
+Nodes (7): BankCheque, BankEntryRule, BankPartyAlias, BankEntryClassifier, self, Illuminate\Database\Eloquent\Relations\MorphTo, statementEntry()
 
 ### Community 126 - "require"
 Cohesion: 0.13
@@ -912,8 +975,20 @@ Cohesion: 0.14
 Nodes (15): adoptValue(), ajaxConvert(), ajaxHandleResponses(), Animation(), camelCase(), createFxNow(), createTween(), defaultPrefilter() (+7 more)
 
 ### Community 133 - "GoodsIssueExport"
-Cohesion: 0.23
-Nodes (6): GoodsIssueExport, Maatwebsite\Excel\Concerns\WithCustomValueBinder, PhpOffice\PhpSpreadsheet\Cell\Cell, PhpOffice\PhpSpreadsheet\Cell\DataType, PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder, PhpOffice\PhpSpreadsheet\IOFactory
+Cohesion: 0.24
+Nodes (5): GoodsIssueExport, Maatwebsite\Excel\Concerns\WithCustomValueBinder, PhpOffice\PhpSpreadsheet\Cell\Cell, PhpOffice\PhpSpreadsheet\Cell\DataType, PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder
+
+### Community 135 - "RevenueDetailReportController"
+Cohesion: 0.13
+Nodes (3): RevenueDetailReportController, StoreRevenueDetailRequest, UpdateRevenueDetailRequest
+
+### Community 136 - ".createChildRecords"
+Cohesion: 0.16
+Nodes (3): SalesSettlementPercentageExpense, BankStatementParser, Carbon
+
+### Community 137 - "ProductPriceChangeLog"
+Cohesion: 0.17
+Nodes (3): ProductPriceChangeLog, CustomerCodeGenerator, ProductPricingService
 
 ### Community 138 - "Do Things the Laravel Way"
 Cohesion: 0.18
@@ -921,31 +996,39 @@ Nodes (11): APIs & Eloquent Resources, Authentication & Authorization, Configura
 
 ### Community 139 - "Detection Checklist"
 Cohesion: 0.17
-Nodes (11): A. Validation & HTTP input, B. Controllers & routing, C. Authorization, D. Eloquent & models, Detection Checklist, E. Architecture & organization, F. Frontend & views, G. Database & migrations (+3 more)
+Nodes (11): A. Validation & HTTP input, B. Controllers & routing, C. Authorization, D. Eloquent & models, Detection checklist, E. Architecture & organization, F. Frontend & views, G. Database & migrations (+3 more)
 
 ### Community 140 - "Process"
 Cohesion: 0.17
-Nodes (11): Edge cases, Glob mapping, Ground Rules (read before you start), Infer Conventions, Process, Step 0: Orient, Step 1: Predefined sweep, Step 2: Open-ended pass (+3 more)
+Nodes (11): Edge cases, Glob mapping, Ground rules (read before you start), Infer conventions, Process, Step 0: Orient, Step 1: Predefined sweep, Step 2: Open-ended pass (+3 more)
 
 ### Community 141 - "Architecture Best Practices"
 Cohesion: 0.17
-Nodes (11): Architecture Best Practices, Depend on Contracts at Boundaries, Extract Focused Business Operations, Follow Framework Conventions, Inject Required Dependencies, Specify a Deterministic Sort Order, Use Atomic Locks for Race Conditions, Use `Concurrency::run()` for Parallel Execution (+3 more)
+Nodes (11): Architecture best practices, Depend on contracts at boundaries, Extract focused business operations, Follow framework conventions, Inject required dependencies, Specify a deterministic sort order, Use atomic locks for race conditions, Use `Concurrency::run()` for parallel execution (+3 more)
 
 ### Community 142 - ".agents/skills/laravel-best-practices/SKILL.md"
 Cohesion: 0.17
-Nodes (10): Configuration Best Practices, Name Repeated Domain Values, Protect Production Secrets, Read Environment Variables in Configuration Files, Use `App::environment()` for Environment Checks, Consistency First, Decision Rules, How to Apply (+2 more)
+Nodes (10): Configuration best practices, Name repeated domain values, Protect production secrets, Read environment variables in configuration files, Use `App::environment()` for environment checks, Consistency first, Decision rules, How to apply (+2 more)
 
 ### Community 143 - "Security Best Practices"
 Cohesion: 0.17
-Nodes (11): Apply Cross-Site Request Forgery Protection, Audit Dependencies, Authorize Protected Actions, Bind Query Parameters, Control Mass Assignment, Encrypt Sensitive Attributes When Appropriate, Escape Output in Its Context, Keep Secrets Out of Application Code (+3 more)
+Nodes (11): Apply cross-site request forgery protection, Audit dependencies, Authorize protected actions, Bind query parameters, Control mass assignment, Encrypt sensitive attributes when appropriate, Escape output in its context, Keep secrets out of application code (+3 more)
 
 ### Community 144 - "Tailwind CSS Development"
 Cohesion: 0.17
-Nodes (11): Basic Usage, Common Patterns, Common Pitfalls, Dark Mode, Documentation, Flexbox Layout, Grid Layout, Spacing (+3 more)
+Nodes (11): Basic usage, Common patterns, Common pitfalls, Dark mode, Documentation, Flexbox layout, Grid layout, Spacing (+3 more)
 
 ### Community 145 - "TicketType"
 Cohesion: 0.10
 Nodes (5): DocumentType, TicketType, StoreClaimRegisterRequest, StoreLedgerRegisterRequest, TicketEntryForms
+
+### Community 147 - "Illuminate\Support\Collection"
+Cohesion: 0.12
+Nodes (4): CashCollectionDistributorController, FmrAmrComparisonController, PermissionCatalog, Illuminate\Support\Collection
+
+### Community 148 - "Role"
+Cohesion: 0.20
+Nodes (4): RoleController, Role, RecallPermissionsSeeder, UserSeeder
 
 ### Community 149 - "Migration: Add AMR Dispose Register Permission"
 Cohesion: 0.32
@@ -953,27 +1036,27 @@ Nodes (8): Migration: Add AMR Dispose Register Permission, Migration: Add Suppli
 
 ### Community 150 - "Detection Checklist"
 Cohesion: 0.17
-Nodes (11): A. Validation & HTTP input, B. Controllers & routing, C. Authorization, D. Eloquent & models, Detection Checklist, E. Architecture & organization, F. Frontend & views, G. Database & migrations (+3 more)
+Nodes (11): A. Validation & HTTP input, B. Controllers & routing, C. Authorization, D. Eloquent & models, Detection checklist, E. Architecture & organization, F. Frontend & views, G. Database & migrations (+3 more)
 
 ### Community 151 - "Process"
 Cohesion: 0.17
-Nodes (11): Edge cases, Glob mapping, Ground Rules (read before you start), Infer Conventions, Process, Step 0: Orient, Step 1: Predefined sweep, Step 2: Open-ended pass (+3 more)
+Nodes (11): Edge cases, Glob mapping, Ground rules (read before you start), Infer conventions, Process, Step 0: Orient, Step 1: Predefined sweep, Step 2: Open-ended pass (+3 more)
 
 ### Community 152 - "Architecture Best Practices"
 Cohesion: 0.17
-Nodes (11): Architecture Best Practices, Depend on Contracts at Boundaries, Extract Focused Business Operations, Follow Framework Conventions, Inject Required Dependencies, Specify a Deterministic Sort Order, Use Atomic Locks for Race Conditions, Use `Concurrency::run()` for Parallel Execution (+3 more)
+Nodes (11): Architecture best practices, Depend on contracts at boundaries, Extract focused business operations, Follow framework conventions, Inject required dependencies, Specify a deterministic sort order, Use atomic locks for race conditions, Use `Concurrency::run()` for parallel execution (+3 more)
 
 ### Community 153 - ".claude/skills/laravel-best-practices/SKILL.md"
 Cohesion: 0.17
-Nodes (10): Configuration Best Practices, Name Repeated Domain Values, Protect Production Secrets, Read Environment Variables in Configuration Files, Use `App::environment()` for Environment Checks, Consistency First, Decision Rules, How to Apply (+2 more)
+Nodes (10): Configuration best practices, Name repeated domain values, Protect production secrets, Read environment variables in configuration files, Use `App::environment()` for environment checks, Consistency first, Decision rules, How to apply (+2 more)
 
 ### Community 154 - "Security Best Practices"
 Cohesion: 0.17
-Nodes (11): Apply Cross-Site Request Forgery Protection, Audit Dependencies, Authorize Protected Actions, Bind Query Parameters, Control Mass Assignment, Encrypt Sensitive Attributes When Appropriate, Escape Output in Its Context, Keep Secrets Out of Application Code (+3 more)
+Nodes (11): Apply cross-site request forgery protection, Audit dependencies, Authorize protected actions, Bind query parameters, Control mass assignment, Encrypt sensitive attributes when appropriate, Escape output in its context, Keep secrets out of application code (+3 more)
 
 ### Community 155 - "Tailwind CSS Development"
 Cohesion: 0.17
-Nodes (11): Basic Usage, Common Patterns, Common Pitfalls, Dark Mode, Documentation, Flexbox Layout, Grid Layout, Spacing (+3 more)
+Nodes (11): Basic usage, Common patterns, Common pitfalls, Dark mode, Documentation, Flexbox layout, Grid layout, Spacing (+3 more)
 
 ### Community 156 - "composer.json"
 Cohesion: 0.17
@@ -989,35 +1072,39 @@ Nodes (11): Architecture, Common Pitfalls, Core Accounting Engine, Database Audi
 
 ### Community 159 - "Detection Checklist"
 Cohesion: 0.17
-Nodes (11): A. Validation & HTTP input, B. Controllers & routing, C. Authorization, D. Eloquent & models, Detection Checklist, E. Architecture & organization, F. Frontend & views, G. Database & migrations (+3 more)
+Nodes (11): A. Validation & HTTP input, B. Controllers & routing, C. Authorization, D. Eloquent & models, Detection checklist, E. Architecture & organization, F. Frontend & views, G. Database & migrations (+3 more)
 
 ### Community 160 - "Process"
 Cohesion: 0.17
-Nodes (11): Edge cases, Glob mapping, Ground Rules (read before you start), Infer Conventions, Process, Step 0: Orient, Step 1: Predefined sweep, Step 2: Open-ended pass (+3 more)
+Nodes (11): Edge cases, Glob mapping, Ground rules (read before you start), Infer conventions, Process, Step 0: Orient, Step 1: Predefined sweep, Step 2: Open-ended pass (+3 more)
 
 ### Community 161 - "Architecture Best Practices"
 Cohesion: 0.17
-Nodes (11): Architecture Best Practices, Depend on Contracts at Boundaries, Extract Focused Business Operations, Follow Framework Conventions, Inject Required Dependencies, Specify a Deterministic Sort Order, Use Atomic Locks for Race Conditions, Use `Concurrency::run()` for Parallel Execution (+3 more)
+Nodes (11): Architecture best practices, Depend on contracts at boundaries, Extract focused business operations, Follow framework conventions, Inject required dependencies, Specify a deterministic sort order, Use atomic locks for race conditions, Use `Concurrency::run()` for parallel execution (+3 more)
 
 ### Community 162 - ".github/skills/laravel-best-practices/SKILL.md"
 Cohesion: 0.17
-Nodes (10): Configuration Best Practices, Name Repeated Domain Values, Protect Production Secrets, Read Environment Variables in Configuration Files, Use `App::environment()` for Environment Checks, Consistency First, Decision Rules, How to Apply (+2 more)
+Nodes (10): Configuration best practices, Name repeated domain values, Protect production secrets, Read environment variables in configuration files, Use `App::environment()` for environment checks, Consistency first, Decision rules, How to apply (+2 more)
 
 ### Community 163 - "Security Best Practices"
 Cohesion: 0.17
-Nodes (11): Apply Cross-Site Request Forgery Protection, Audit Dependencies, Authorize Protected Actions, Bind Query Parameters, Control Mass Assignment, Encrypt Sensitive Attributes When Appropriate, Escape Output in Its Context, Keep Secrets Out of Application Code (+3 more)
+Nodes (11): Apply cross-site request forgery protection, Audit dependencies, Authorize protected actions, Bind query parameters, Control mass assignment, Encrypt sensitive attributes when appropriate, Escape output in its context, Keep secrets out of application code (+3 more)
 
 ### Community 164 - "Tailwind CSS Development"
 Cohesion: 0.17
-Nodes (11): Basic Usage, Common Patterns, Common Pitfalls, Dark Mode, Documentation, Flexbox Layout, Grid Layout, Spacing (+3 more)
+Nodes (11): Basic usage, Common patterns, Common pitfalls, Dark mode, Documentation, Flexbox layout, Grid layout, Spacing (+3 more)
 
 ### Community 165 - "matcherFromTokens"
 Cohesion: 0.23
 Nodes (12): addCombinator(), condense(), createPositionalPseudo(), elementMatcher(), markFunction(), matcherFromGroupMatchers(), matcherFromTokens(), multipleContexts() (+4 more)
 
-### Community 169 - ".response"
-Cohesion: 0.23
-Nodes (3): CustomerEmployeeAccountController, TransactionController, Illuminate\Http\JsonResponse
+### Community 167 - "Illuminate\Contracts\Validation\ValidationRule"
+Cohesion: 0.04
+Nodes (12): StoreAccountTypeRequest, StoreCompanyRequest, StoreCustomerRequest, StoreEmployeeRequest, StoreProductTaxMappingRequest, UpdateEmployeeRequest, UpdatePaymentRequest, UpdateStockReceiptItemRequest (+4 more)
+
+### Community 169 - "Illuminate\Validation\Rule"
+Cohesion: 0.10
+Nodes (5): ExpenseVendorController, ExpenseVendor, Illuminate\Http\JsonResponse, Illuminate\Validation\Rule, Illuminate\Validation\ValidationException
 
 ### Community 173 - "Laravel\Fortify\Features"
 Cohesion: 0.22
@@ -1029,67 +1116,71 @@ Nodes (7): Datasets, Mocking, Pest, Pest Assertions, Pest Tests, Running Tests, 
 
 ### Community 175 - "Advanced Query Best Practices"
 Cohesion: 0.20
-Nodes (9): Advanced Query Best Practices, Combine Related Counts with Conditional Aggregates, Compare `whereHas()` with an `IN` Subquery, Consider a Correlated Subquery for Has-Many Ordering, Create Dynamic Relationships with a Subquery Foreign Key, Design Composite Indexes for the Query, Measure Two Simple Queries Against One Complex Query, Reuse Loaded Parent Models with `setRelation()` (+1 more)
+Nodes (9): Advanced query best practices, Combine related counts with conditional aggregates, Compare `whereHas()` with an `IN` subquery, Consider a correlated subquery for has-many ordering, Create dynamic relationships with a subquery foreign key, Design composite indexes for the query, Measure two simple queries against one complex query, Reuse loaded parent models with `setRelation()` (+1 more)
 
 ### Community 176 - "Events and Notifications Best Practices"
 Cohesion: 0.20
-Nodes (9): Cache Event Discovery During Production Deployment, Dispatch Queued Notifications After Commit, Events and Notifications Best Practices, Implement `HasLocalePreference` on Notifiable Models, Queue Slow Notifications, Rely on Event Discovery, Route Notification Channels to Dedicated Queues, Use On-Demand Notifications for Non-User Recipients (+1 more)
+Nodes (9): Cache event discovery during production deployment, Dispatch queued notifications after commit, Events and notifications best practices, Implement `HasLocalePreference` on notifiable models, Queue slow notifications, Rely on event discovery, Route notification channels to dedicated queues, Use on-demand notifications for non-user recipients (+1 more)
 
 ### Community 177 - "Migration Best Practices"
 Cohesion: 0.20
-Nodes (9): Define Foreign-Key Constraints Deliberately, Design Indexes for Real Queries, Generate Migrations with Artisan, Keep Migrations Focused, Make Rollbacks Honest, Migration Best Practices, Mirror Defaults Only When Unsaved Models Need Them, Stage Changes That Affect Existing Rows (+1 more)
+Nodes (9): Define foreign-key constraints deliberately, Design indexes for real queries, Generate migrations with Artisan, Keep migrations focused, Make rollbacks honest, Migration best practices, Mirror defaults only when unsaved models need them, Stage changes that affect existing rows (+1 more)
 
 ### Community 178 - "Queue and Job Best Practices"
 Cohesion: 0.20
-Nodes (9): Back Off Transient Failures, Batch Jobs for Group Coordination, Configure Time-Based Retry Limits Deliberately, Handle Terminal Failure When Needed, Keep Reservation Time Longer Than Execution Time, Queue and Job Best Practices, Rate Limit External Calls, Use Horizon for Redis Queue Operations (+1 more)
+Nodes (9): Back off transient failures, Batch jobs for group coordination, Configure time-based retry limits deliberately, Handle terminal failure when needed, Keep reservation time longer than execution time, Queue and job best practices, Rate limit external calls, Use Horizon for Redis queue operations (+1 more)
 
 ### Community 183 - "Advanced Query Best Practices"
 Cohesion: 0.20
-Nodes (9): Advanced Query Best Practices, Combine Related Counts with Conditional Aggregates, Compare `whereHas()` with an `IN` Subquery, Consider a Correlated Subquery for Has-Many Ordering, Create Dynamic Relationships with a Subquery Foreign Key, Design Composite Indexes for the Query, Measure Two Simple Queries Against One Complex Query, Reuse Loaded Parent Models with `setRelation()` (+1 more)
+Nodes (9): Advanced query best practices, Combine related counts with conditional aggregates, Compare `whereHas()` with an `IN` subquery, Consider a correlated subquery for has-many ordering, Create dynamic relationships with a subquery foreign key, Design composite indexes for the query, Measure two simple queries against one complex query, Reuse loaded parent models with `setRelation()` (+1 more)
 
 ### Community 184 - "Events and Notifications Best Practices"
 Cohesion: 0.20
-Nodes (9): Cache Event Discovery During Production Deployment, Dispatch Queued Notifications After Commit, Events and Notifications Best Practices, Implement `HasLocalePreference` on Notifiable Models, Queue Slow Notifications, Rely on Event Discovery, Route Notification Channels to Dedicated Queues, Use On-Demand Notifications for Non-User Recipients (+1 more)
+Nodes (9): Cache event discovery during production deployment, Dispatch queued notifications after commit, Events and notifications best practices, Implement `HasLocalePreference` on notifiable models, Queue slow notifications, Rely on event discovery, Route notification channels to dedicated queues, Use on-demand notifications for non-user recipients (+1 more)
 
 ### Community 185 - "Migration Best Practices"
 Cohesion: 0.20
-Nodes (9): Define Foreign-Key Constraints Deliberately, Design Indexes for Real Queries, Generate Migrations with Artisan, Keep Migrations Focused, Make Rollbacks Honest, Migration Best Practices, Mirror Defaults Only When Unsaved Models Need Them, Stage Changes That Affect Existing Rows (+1 more)
+Nodes (9): Define foreign-key constraints deliberately, Design indexes for real queries, Generate migrations with Artisan, Keep migrations focused, Make rollbacks honest, Migration best practices, Mirror defaults only when unsaved models need them, Stage changes that affect existing rows (+1 more)
 
 ### Community 186 - "Queue and Job Best Practices"
 Cohesion: 0.20
-Nodes (9): Back Off Transient Failures, Batch Jobs for Group Coordination, Configure Time-Based Retry Limits Deliberately, Handle Terminal Failure When Needed, Keep Reservation Time Longer Than Execution Time, Queue and Job Best Practices, Rate Limit External Calls, Use Horizon for Redis Queue Operations (+1 more)
+Nodes (9): Back off transient failures, Batch jobs for group coordination, Configure time-based retry limits deliberately, Handle terminal failure when needed, Keep reservation time longer than execution time, Queue and job best practices, Rate limit external calls, Use Horizon for Redis queue operations (+1 more)
 
 ### Community 187 - "Advanced Query Best Practices"
 Cohesion: 0.20
-Nodes (9): Advanced Query Best Practices, Combine Related Counts with Conditional Aggregates, Compare `whereHas()` with an `IN` Subquery, Consider a Correlated Subquery for Has-Many Ordering, Create Dynamic Relationships with a Subquery Foreign Key, Design Composite Indexes for the Query, Measure Two Simple Queries Against One Complex Query, Reuse Loaded Parent Models with `setRelation()` (+1 more)
+Nodes (9): Advanced query best practices, Combine related counts with conditional aggregates, Compare `whereHas()` with an `IN` subquery, Consider a correlated subquery for has-many ordering, Create dynamic relationships with a subquery foreign key, Design composite indexes for the query, Measure two simple queries against one complex query, Reuse loaded parent models with `setRelation()` (+1 more)
 
 ### Community 188 - "Events and Notifications Best Practices"
 Cohesion: 0.20
-Nodes (9): Cache Event Discovery During Production Deployment, Dispatch Queued Notifications After Commit, Events and Notifications Best Practices, Implement `HasLocalePreference` on Notifiable Models, Queue Slow Notifications, Rely on Event Discovery, Route Notification Channels to Dedicated Queues, Use On-Demand Notifications for Non-User Recipients (+1 more)
+Nodes (9): Cache event discovery during production deployment, Dispatch queued notifications after commit, Events and notifications best practices, Implement `HasLocalePreference` on notifiable models, Queue slow notifications, Rely on event discovery, Route notification channels to dedicated queues, Use on-demand notifications for non-user recipients (+1 more)
 
 ### Community 189 - "Migration Best Practices"
 Cohesion: 0.20
-Nodes (9): Define Foreign-Key Constraints Deliberately, Design Indexes for Real Queries, Generate Migrations with Artisan, Keep Migrations Focused, Make Rollbacks Honest, Migration Best Practices, Mirror Defaults Only When Unsaved Models Need Them, Stage Changes That Affect Existing Rows (+1 more)
+Nodes (9): Define foreign-key constraints deliberately, Design indexes for real queries, Generate migrations with Artisan, Keep migrations focused, Make rollbacks honest, Migration best practices, Mirror defaults only when unsaved models need them, Stage changes that affect existing rows (+1 more)
 
 ### Community 190 - "Queue and Job Best Practices"
 Cohesion: 0.20
-Nodes (9): Back Off Transient Failures, Batch Jobs for Group Coordination, Configure Time-Based Retry Limits Deliberately, Handle Terminal Failure When Needed, Keep Reservation Time Longer Than Execution Time, Queue and Job Best Practices, Rate Limit External Calls, Use Horizon for Redis Queue Operations (+1 more)
+Nodes (9): Back off transient failures, Batch jobs for group coordination, Configure time-based retry limits deliberately, Handle terminal failure when needed, Keep reservation time longer than execution time, Queue and job best practices, Rate limit external calls, Use Horizon for Redis queue operations (+1 more)
 
 ### Community 191 - "Caching Best Practices"
 Cohesion: 0.22
-Nodes (8): Caching Best Practices, Configure Failover Cache Stores in Production, Consider `Cache::flexible()` for Stale-While-Revalidate, Use `Cache::add()` for Atomic Conditional Writes, Use `Cache::memo()` to Avoid Redundant Hits Within an Execution, Use `Cache::remember()` for Cache-Aside Reads, Use Cache Tags to Invalidate Related Groups, Use `once()` for In-Process Memoization
+Nodes (8): Caching best practices, Configure failover cache stores in production, Consider `Cache::flexible()` for stale-while-revalidate, Use `Cache::add()` for atomic conditional writes, Use `Cache::memo()` to avoid redundant hits within an execution, Use `Cache::remember()` for cache-aside reads, Use cache tags to invalidate related groups, Use `once()` for in-process memoization
 
-### Community 192 - "Database Performance Best Practices"
+### Community 192 - "Database performance best practices"
 Cohesion: 0.22
-Nodes (8): Add Indexes for Measured Query Patterns, Count Relationships Without Loading Them, Database Performance Best Practices, Eager Load Relationships Before Iterating, Keep Queries Out of Blade Templates, Prevent Lazy Loading in Development, Process Large Data Sets Incrementally, Select Only Needed Columns
+Nodes (8): Add indexes for measured query patterns, Count relationships without loading them, Database performance best practices, Eager load relationships before iterating, Keep queries out of Blade templates, Prevent lazy loading in development, Process large data sets incrementally, Select only the columns you need
 
 ### Community 193 - "Eloquent Best Practices"
 Cohesion: 0.22
-Nodes (8): Apply Global Scopes Sparingly, Cast Date and Time Attributes, Define Attribute Casts, Define Precise Relationship Types, Eloquent Best Practices, Keep Application Queries Model-Aware, Use Local Scopes for Reusable Queries, Use `whereBelongsTo()` for Relationship Queries
+Nodes (8): Apply global scopes sparingly, Cast date and time attributes, Define attribute casts, Define precise relationship types, Eloquent best practices, Keep application queries model-aware, Use local scopes for reusable queries, Use `whereBelongsTo()` for relationship queries
 
 ### Community 194 - "FortifyServiceProvider.php"
-Cohesion: 0.25
-Nodes (6): CreateNewUser, Illuminate\Cache\RateLimiting\Limit, Illuminate\Support\Facades\RateLimiter, Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable, Laravel\Fortify\Contracts\CreatesNewUsers, Laravel\Fortify\Fortify
+Cohesion: 0.16
+Nodes (9): CreateNewUser, ResetUserPassword, Illuminate\Cache\RateLimiting\Limit, Illuminate\Support\Facades\RateLimiter, Illuminate\Support\Facades\Validator, Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable, Laravel\Fortify\Contracts\CreatesNewUsers, Laravel\Fortify\Contracts\ResetsUserPasswords (+1 more)
+
+### Community 196 - "Illuminate\Http\RedirectResponse"
+Cohesion: 0.07
+Nodes (9): BankEntryAttachmentController, BankReceiptScanController, BankStatementImportController, ExpenseCategoryController, SchemeReceivedReportController, Illuminate\Http\RedirectResponse, Illuminate\Support\Facades\Storage, League\Flysystem\Local\LocalFilesystemAdapter (+1 more)
 
 ### Community 197 - "Karpathy Guidelines"
 Cohesion: 0.33
@@ -1097,15 +1188,15 @@ Nodes (5): 1. Think Before Coding, 2. Simplicity First, 3. Surgical Changes, 4. 
 
 ### Community 198 - "Caching Best Practices"
 Cohesion: 0.22
-Nodes (8): Caching Best Practices, Configure Failover Cache Stores in Production, Consider `Cache::flexible()` for Stale-While-Revalidate, Use `Cache::add()` for Atomic Conditional Writes, Use `Cache::memo()` to Avoid Redundant Hits Within an Execution, Use `Cache::remember()` for Cache-Aside Reads, Use Cache Tags to Invalidate Related Groups, Use `once()` for In-Process Memoization
+Nodes (8): Caching best practices, Configure failover cache stores in production, Consider `Cache::flexible()` for stale-while-revalidate, Use `Cache::add()` for atomic conditional writes, Use `Cache::memo()` to avoid redundant hits within an execution, Use `Cache::remember()` for cache-aside reads, Use cache tags to invalidate related groups, Use `once()` for in-process memoization
 
-### Community 199 - "Database Performance Best Practices"
+### Community 199 - "Database performance best practices"
 Cohesion: 0.22
-Nodes (8): Add Indexes for Measured Query Patterns, Count Relationships Without Loading Them, Database Performance Best Practices, Eager Load Relationships Before Iterating, Keep Queries Out of Blade Templates, Prevent Lazy Loading in Development, Process Large Data Sets Incrementally, Select Only Needed Columns
+Nodes (8): Add indexes for measured query patterns, Count relationships without loading them, Database performance best practices, Eager load relationships before iterating, Keep queries out of Blade templates, Prevent lazy loading in development, Process large data sets incrementally, Select only the columns you need
 
 ### Community 200 - "Eloquent Best Practices"
 Cohesion: 0.22
-Nodes (8): Apply Global Scopes Sparingly, Cast Date and Time Attributes, Define Attribute Casts, Define Precise Relationship Types, Eloquent Best Practices, Keep Application Queries Model-Aware, Use Local Scopes for Reusable Queries, Use `whereBelongsTo()` for Relationship Queries
+Nodes (8): Apply global scopes sparingly, Cast date and time attributes, Define attribute casts, Define precise relationship types, Eloquent best practices, Keep application queries model-aware, Use local scopes for reusable queries, Use `whereBelongsTo()` for relationship queries
 
 ### Community 201 - "require-dev"
 Cohesion: 0.22
@@ -1117,115 +1208,127 @@ Nodes (9): scripts, dev, post-autoload-dump, post-create-project-cmd, post-root-
 
 ### Community 203 - "Caching Best Practices"
 Cohesion: 0.22
-Nodes (8): Caching Best Practices, Configure Failover Cache Stores in Production, Consider `Cache::flexible()` for Stale-While-Revalidate, Use `Cache::add()` for Atomic Conditional Writes, Use `Cache::memo()` to Avoid Redundant Hits Within an Execution, Use `Cache::remember()` for Cache-Aside Reads, Use Cache Tags to Invalidate Related Groups, Use `once()` for In-Process Memoization
+Nodes (8): Caching best practices, Configure failover cache stores in production, Consider `Cache::flexible()` for stale-while-revalidate, Use `Cache::add()` for atomic conditional writes, Use `Cache::memo()` to avoid redundant hits within an execution, Use `Cache::remember()` for cache-aside reads, Use cache tags to invalidate related groups, Use `once()` for in-process memoization
 
-### Community 204 - "Database Performance Best Practices"
+### Community 204 - "Database performance best practices"
 Cohesion: 0.22
-Nodes (8): Add Indexes for Measured Query Patterns, Count Relationships Without Loading Them, Database Performance Best Practices, Eager Load Relationships Before Iterating, Keep Queries Out of Blade Templates, Prevent Lazy Loading in Development, Process Large Data Sets Incrementally, Select Only Needed Columns
+Nodes (8): Add indexes for measured query patterns, Count relationships without loading them, Database performance best practices, Eager load relationships before iterating, Keep queries out of Blade templates, Prevent lazy loading in development, Process large data sets incrementally, Select only the columns you need
 
 ### Community 205 - "Eloquent Best Practices"
 Cohesion: 0.22
-Nodes (8): Apply Global Scopes Sparingly, Cast Date and Time Attributes, Define Attribute Casts, Define Precise Relationship Types, Eloquent Best Practices, Keep Application Queries Model-Aware, Use Local Scopes for Reusable Queries, Use `whereBelongsTo()` for Relationship Queries
+Nodes (8): Apply global scopes sparingly, Cast date and time attributes, Define attribute casts, Define precise relationship types, Eloquent best practices, Keep application queries model-aware, Use local scopes for reusable queries, Use `whereBelongsTo()` for relationship queries
 
 ### Community 206 - "Blade and View Best Practices"
 Cohesion: 0.25
-Nodes (7): Blade and View Best Practices, Prefer Components for Explicit Interfaces, Return Blade Fragments for Partial Rendering, Share Compatible View Data with a View Composer, Share Parent Component Props with `@aware`, Use `$attributes->merge()` in Component Templates, Use `@pushOnce` for Per-Component Scripts
+Nodes (7): Blade and view best practices, Prefer components for explicit interfaces, Return Blade fragments for partial rendering, Share compatible view data with a view composer, Share parent component props with `@aware`, Use `$attributes->merge()` in component templates, Use `@pushOnce` for per-component scripts
 
 ### Community 207 - "Error Handling Best Practices"
 Cohesion: 0.25
-Nodes (7): Add Context to Exception Classes, Choose Where to Report and Render Exceptions, Define JSON Rendering for API Routes, Error Handling Best Practices, Mark Exceptions the Handler Should Not Report, Prevent Duplicate Reports of One Exception Instance, Throttle High-Volume Exception Reports
+Nodes (7): Add context to exception classes, Choose where to report and render exceptions, Define JSON rendering for API routes, Error handling best practices, Mark exceptions the handler should not report, Prevent duplicate reports of one exception instance, Throttle high-volume exception reports
 
 ### Community 208 - "Task Scheduling Best Practices"
 Cohesion: 0.25
-Nodes (7): Bound Work Inside the Task, Group Shared Configuration, Prevent Unwanted Overlap, Restrict Tasks by Environment, Run a Task on One Server, Run Eligible Commands in the Background, Task Scheduling Best Practices
+Nodes (7): Bound work inside the task, Group shared configuration, Prevent unwanted overlap, Restrict tasks by environment, Run a task on one server, Run eligible commands in the background, Task scheduling best practices
 
 ### Community 209 - "Endpoint Tests"
 Cohesion: 0.25
-Nodes (7): Endpoint Coverage, Endpoint Tests, How to Write the Test, Tenant Isolation, Test Authorization at the Policy Level, Testing Validation, Which Layer Owns Which Case
+Nodes (7): Endpoint coverage, Endpoint tests, How to write the test, Tenant isolation, Test authorization at the policy level, Testing validation, Which layer owns which case
 
-### Community 210 - "CashCollectionDistributorController.php"
-Cohesion: 0.12
-Nodes (6): ReportPdf, AdvanceTaxCustomerSummaryController, CashDetailController, Barryvdh\DomPDF\Facade\Pdf, Barryvdh\DomPDF\PDF, Illuminate\Http\Response
+### Community 210 - "Illuminate\Http\Request"
+Cohesion: 0.05
+Nodes (13): CreditSalesReportController, EmployeeSalaryController, JournalEntryController, PayrollAdjustmentController, PermissionController, CashDetailController, DailySalesReportController, SupplierLedgerReportController (+5 more)
 
 ### Community 211 - "Illuminate\View\View"
-Cohesion: 0.08
-Nodes (11): DailyStockRegisterController, Carbon, SummaryRoiReportController, TtsSummaryReportController, ReportsController, SettingsController, SettingsController, AppLayout (+3 more)
+Cohesion: 0.05
+Nodes (15): BankChequeController, BankPartyAliasController, BankRegisterHelpController, DailyStockRegisterController, Carbon, SummaryRoiReportController, TtsSummaryReportController, SettingsController (+7 more)
+
+### Community 213 - "DailyInventorySnapshot"
+Cohesion: 0.15
+Nodes (3): DailyInventorySnapshot, self, recordSnapshot()
 
 ### Community 214 - "Blade and View Best Practices"
 Cohesion: 0.25
-Nodes (7): Blade and View Best Practices, Prefer Components for Explicit Interfaces, Return Blade Fragments for Partial Rendering, Share Compatible View Data with a View Composer, Share Parent Component Props with `@aware`, Use `$attributes->merge()` in Component Templates, Use `@pushOnce` for Per-Component Scripts
+Nodes (7): Blade and view best practices, Prefer components for explicit interfaces, Return Blade fragments for partial rendering, Share compatible view data with a view composer, Share parent component props with `@aware`, Use `$attributes->merge()` in component templates, Use `@pushOnce` for per-component scripts
 
 ### Community 215 - "Error Handling Best Practices"
 Cohesion: 0.25
-Nodes (7): Add Context to Exception Classes, Choose Where to Report and Render Exceptions, Define JSON Rendering for API Routes, Error Handling Best Practices, Mark Exceptions the Handler Should Not Report, Prevent Duplicate Reports of One Exception Instance, Throttle High-Volume Exception Reports
+Nodes (7): Add context to exception classes, Choose where to report and render exceptions, Define JSON rendering for API routes, Error handling best practices, Mark exceptions the handler should not report, Prevent duplicate reports of one exception instance, Throttle high-volume exception reports
 
 ### Community 216 - "Task Scheduling Best Practices"
 Cohesion: 0.25
-Nodes (7): Bound Work Inside the Task, Group Shared Configuration, Prevent Unwanted Overlap, Restrict Tasks by Environment, Run a Task on One Server, Run Eligible Commands in the Background, Task Scheduling Best Practices
+Nodes (7): Bound work inside the task, Group shared configuration, Prevent unwanted overlap, Restrict tasks by environment, Run a task on one server, Run eligible commands in the background, Task scheduling best practices
 
 ### Community 217 - "Endpoint Tests"
 Cohesion: 0.25
-Nodes (7): Endpoint Coverage, Endpoint Tests, How to Write the Test, Tenant Isolation, Test Authorization at the Policy Level, Testing Validation, Which Layer Owns Which Case
+Nodes (7): Endpoint coverage, Endpoint tests, How to write the test, Tenant isolation, Test authorization at the policy level, Testing validation, Which layer owns which case
 
 ### Community 218 - "Blade and View Best Practices"
 Cohesion: 0.25
-Nodes (7): Blade and View Best Practices, Prefer Components for Explicit Interfaces, Return Blade Fragments for Partial Rendering, Share Compatible View Data with a View Composer, Share Parent Component Props with `@aware`, Use `$attributes->merge()` in Component Templates, Use `@pushOnce` for Per-Component Scripts
+Nodes (7): Blade and view best practices, Prefer components for explicit interfaces, Return Blade fragments for partial rendering, Share compatible view data with a view composer, Share parent component props with `@aware`, Use `$attributes->merge()` in component templates, Use `@pushOnce` for per-component scripts
 
 ### Community 219 - "Error Handling Best Practices"
 Cohesion: 0.25
-Nodes (7): Add Context to Exception Classes, Choose Where to Report and Render Exceptions, Define JSON Rendering for API Routes, Error Handling Best Practices, Mark Exceptions the Handler Should Not Report, Prevent Duplicate Reports of One Exception Instance, Throttle High-Volume Exception Reports
+Nodes (7): Add context to exception classes, Choose where to report and render exceptions, Define JSON rendering for API routes, Error handling best practices, Mark exceptions the handler should not report, Prevent duplicate reports of one exception instance, Throttle high-volume exception reports
 
 ### Community 220 - "Task Scheduling Best Practices"
 Cohesion: 0.25
-Nodes (7): Bound Work Inside the Task, Group Shared Configuration, Prevent Unwanted Overlap, Restrict Tasks by Environment, Run a Task on One Server, Run Eligible Commands in the Background, Task Scheduling Best Practices
+Nodes (7): Bound work inside the task, Group shared configuration, Prevent unwanted overlap, Restrict tasks by environment, Run a task on one server, Run eligible commands in the background, Task scheduling best practices
 
 ### Community 221 - "Endpoint Tests"
 Cohesion: 0.25
-Nodes (7): Endpoint Coverage, Endpoint Tests, How to Write the Test, Tenant Isolation, Test Authorization at the Policy Level, Testing Validation, Which Layer Owns Which Case
+Nodes (7): Endpoint coverage, Endpoint tests, How to write the test, Tenant isolation, Test authorization at the policy level, Testing validation, Which layer owns which case
 
 ### Community 222 - "Collection Best Practices"
 Cohesion: 0.29
-Nodes (6): Choose Between `cursor()` and `lazy()`, Collection Best Practices, Use `#[CollectedBy]` for Custom Collection Classes, Use Higher-Order Messages for Simple Operations, Use `lazyById()` When Updating Records While Iterating, Use `toQuery()` for Bulk Operations on Collections
+Nodes (6): Choose between `cursor()` and `lazy()`, Collection best practices, Use `#[CollectedBy]` for custom collection classes, Use higher-order messages for simple operations, Use `lazyById()` when updating records while iterating, Use `toQuery()` for bulk operations on collections
 
 ### Community 223 - "HTTP Client Best Practices"
 Cohesion: 0.29
-Nodes (6): Fake HTTP Requests in Tests, Handle Errors Explicitly, HTTP Client Best Practices, Pool Independent Requests, Retry Only Safe Operations, Set Explicit Timeouts
+Nodes (6): Fake HTTP requests in tests, Handle errors explicitly, HTTP client best practices, Pool independent requests, Retry only safe operations, Set explicit timeouts
 
 ### Community 224 - "Mail Best Practices"
 Cohesion: 0.29
-Nodes (6): Assert the Delivery Mode, Dispatch Queued Mail After Commit, Mail Best Practices, Queue Slow Mail Delivery, Separate Content and Delivery Tests, Use Markdown Mailables When They Fit
+Nodes (6): Assert the delivery mode, Dispatch queued mail after commit, Mail best practices, Queue slow mail delivery, Separate content and delivery tests, Use Markdown mailables when they fit
 
 ### Community 225 - "Routing and Controller Best Practices"
 Cohesion: 0.29
-Nodes (6): Keep Controllers Focused on HTTP Concerns, Organize Controllers Around Resources, Routing and Controller Best Practices, Scope Nested Bindings, Use Implicit Route Model Binding, Use Resource Routes for Resourceful Actions
+Nodes (6): Keep controllers focused on HTTP concerns, Organize controllers around resources, Routing and controller best practices, Scope nested bindings, Use implicit route model binding, Use resource routes for resourceful actions
 
 ### Community 226 - "Convention and Style Best Practices"
 Cohesion: 0.29
-Nodes (6): Convention and Style Best Practices, Follow Project Naming Conventions, Keep Presentation Code Maintainable, Prefer Clear, Idiomatic Syntax, Use Utilities When They Clarify Intent, Write Comments That Explain Why
+Nodes (6): Convention and style best practices, Follow project naming conventions, Keep presentation code maintainable, Prefer clear, idiomatic syntax, Use utilities when they clarify intent, Write comments that explain why
 
-### Community 227 - "Validation and Forms Best Practices"
+### Community 227 - "Validation and forms best practices"
 Cohesion: 0.29
-Nodes (6): Add Cross-Field Validation After Base Rules, Express Conditional Rules Clearly, Extract Validation When It Improves the Boundary, Prefer Readable Rule Syntax, Use Only Intended Validated Data, Validation and Forms Best Practices
+Nodes (6): Add cross-field validation after base rules, Express conditional rules clearly, Extract validation when it improves the boundary, Prefer readable rule syntax, Use only the validated data you intend, Validation and forms best practices
 
 ### Community 228 - "Assertions"
 Cohesion: 0.29
-Nodes (6): Arrange, Act, Assert, Assert a Known Value, Assert the Complete Result, Assertions, How to Find the Correct Assertion, Named Response Assertions
+Nodes (6): Arrange, act, assert, Assert a known value, Assert the complete result, Assertions, How to find the correct assertion, Named response assertions
 
 ### Community 229 - ".agents/skills/testing-best-practices/SKILL.md"
 Cohesion: 0.29
-Nodes (3): Built-in Laravel Assertion Methods, How to Find Test Framework Features, Security Tests
+Nodes (3): Built-in Laravel assertion methods, How to find test framework features, Security tests
 
 ### Community 230 - "Fakes, Mocks, and Determinism"
 Cohesion: 0.29
-Nodes (7): Database, Fakes, Mocks, and Determinism, Framework Fakes, How to Isolate a Dependency, Mocking, Outbound HTTP Testing, Time and Randomness
+Nodes (7): Database, Fakes, mocks, and determinism, Framework fakes, How to isolate a dependency, Mocking, Outbound HTTP testing, Time and randomness
 
 ### Community 231 - "Test Suite Performance"
 Cohesion: 0.29
-Nodes (6): Common Errors, Global Fakes, How to Find a Slow Test, How to Run the Suite in Parallel, Test Environment, Test Suite Performance
+Nodes (6): Common errors, Global fakes, How to find a slow test, How to run the suite in parallel, Test environment, Test suite performance
 
 ### Community 232 - "Reviewing Tests"
 Cohesion: 0.29
-Nodes (6): Assertions, Coverage, Data and Determinism, Names and Structure, Reviewing Tests, Test Value
+Nodes (6): Assertions, Coverage, Data and determinism, Names and structure, Reviewing tests, Test value
+
+### Community 234 - "ChartOfAccountController"
+Cohesion: 0.12
+Nodes (3): ChartOfAccountController, StoreChartOfAccountRequest, UpdateChartOfAccountRequest
+
+### Community 236 - "RuntimeException"
+Cohesion: 0.22
+Nodes (4): DatabaseTriggerGuard, LedgerDriftException, RuntimeException, Throwable
 
 ### Community 237 - "Karpathy Guidelines"
 Cohesion: 0.33
@@ -1235,49 +1338,53 @@ Nodes (5): 1. Think Before Coding, 2. Simplicity First, 3. Surgical Changes, 4. 
 Cohesion: 0.38
 Nodes (3): App\Models\Team, static, UserFactory
 
+### Community 240 - "AppServiceProvider.php"
+Cohesion: 0.20
+Nodes (7): AppServiceProvider, Google\Client, Google\Service\Drive, Illuminate\Filesystem\FilesystemAdapter, Illuminate\Support\Facades\Gate, League\Flysystem\Filesystem, Masbug\Flysystem\GoogleDriveAdapter
+
 ### Community 242 - "Collection Best Practices"
 Cohesion: 0.29
-Nodes (6): Choose Between `cursor()` and `lazy()`, Collection Best Practices, Use `#[CollectedBy]` for Custom Collection Classes, Use Higher-Order Messages for Simple Operations, Use `lazyById()` When Updating Records While Iterating, Use `toQuery()` for Bulk Operations on Collections
+Nodes (6): Choose between `cursor()` and `lazy()`, Collection best practices, Use `#[CollectedBy]` for custom collection classes, Use higher-order messages for simple operations, Use `lazyById()` when updating records while iterating, Use `toQuery()` for bulk operations on collections
 
 ### Community 243 - "HTTP Client Best Practices"
 Cohesion: 0.29
-Nodes (6): Fake HTTP Requests in Tests, Handle Errors Explicitly, HTTP Client Best Practices, Pool Independent Requests, Retry Only Safe Operations, Set Explicit Timeouts
+Nodes (6): Fake HTTP requests in tests, Handle errors explicitly, HTTP client best practices, Pool independent requests, Retry only safe operations, Set explicit timeouts
 
 ### Community 244 - "Mail Best Practices"
 Cohesion: 0.29
-Nodes (6): Assert the Delivery Mode, Dispatch Queued Mail After Commit, Mail Best Practices, Queue Slow Mail Delivery, Separate Content and Delivery Tests, Use Markdown Mailables When They Fit
+Nodes (6): Assert the delivery mode, Dispatch queued mail after commit, Mail best practices, Queue slow mail delivery, Separate content and delivery tests, Use Markdown mailables when they fit
 
 ### Community 245 - "Routing and Controller Best Practices"
 Cohesion: 0.29
-Nodes (6): Keep Controllers Focused on HTTP Concerns, Organize Controllers Around Resources, Routing and Controller Best Practices, Scope Nested Bindings, Use Implicit Route Model Binding, Use Resource Routes for Resourceful Actions
+Nodes (6): Keep controllers focused on HTTP concerns, Organize controllers around resources, Routing and controller best practices, Scope nested bindings, Use implicit route model binding, Use resource routes for resourceful actions
 
 ### Community 246 - "Convention and Style Best Practices"
 Cohesion: 0.29
-Nodes (6): Convention and Style Best Practices, Follow Project Naming Conventions, Keep Presentation Code Maintainable, Prefer Clear, Idiomatic Syntax, Use Utilities When They Clarify Intent, Write Comments That Explain Why
+Nodes (6): Convention and style best practices, Follow project naming conventions, Keep presentation code maintainable, Prefer clear, idiomatic syntax, Use utilities when they clarify intent, Write comments that explain why
 
-### Community 247 - "Validation and Forms Best Practices"
+### Community 247 - "Validation and forms best practices"
 Cohesion: 0.29
-Nodes (6): Add Cross-Field Validation After Base Rules, Express Conditional Rules Clearly, Extract Validation When It Improves the Boundary, Prefer Readable Rule Syntax, Use Only Intended Validated Data, Validation and Forms Best Practices
+Nodes (6): Add cross-field validation after base rules, Express conditional rules clearly, Extract validation when it improves the boundary, Prefer readable rule syntax, Use only the validated data you intend, Validation and forms best practices
 
 ### Community 248 - "Assertions"
 Cohesion: 0.29
-Nodes (6): Arrange, Act, Assert, Assert a Known Value, Assert the Complete Result, Assertions, How to Find the Correct Assertion, Named Response Assertions
+Nodes (6): Arrange, act, assert, Assert a known value, Assert the complete result, Assertions, How to find the correct assertion, Named response assertions
 
 ### Community 249 - ".claude/skills/testing-best-practices/SKILL.md"
 Cohesion: 0.29
-Nodes (3): Built-in Laravel Assertion Methods, How to Find Test Framework Features, Security Tests
+Nodes (3): Built-in Laravel assertion methods, How to find test framework features, Security tests
 
 ### Community 250 - "Fakes, Mocks, and Determinism"
 Cohesion: 0.29
-Nodes (7): Database, Fakes, Mocks, and Determinism, Framework Fakes, How to Isolate a Dependency, Mocking, Outbound HTTP Testing, Time and Randomness
+Nodes (7): Database, Fakes, mocks, and determinism, Framework fakes, How to isolate a dependency, Mocking, Outbound HTTP testing, Time and randomness
 
 ### Community 251 - "Test Suite Performance"
 Cohesion: 0.29
-Nodes (6): Common Errors, Global Fakes, How to Find a Slow Test, How to Run the Suite in Parallel, Test Environment, Test Suite Performance
+Nodes (6): Common errors, Global fakes, How to find a slow test, How to run the suite in parallel, Test environment, Test suite performance
 
 ### Community 252 - "Reviewing Tests"
 Cohesion: 0.29
-Nodes (6): Assertions, Coverage, Data and Determinism, Names and Structure, Reviewing Tests, Test Value
+Nodes (6): Assertions, Coverage, Data and determinism, Names and structure, Reviewing tests, Test value
 
 ### Community 253 - "config"
 Cohesion: 0.29
@@ -1297,55 +1404,55 @@ Nodes (7): Code Quality, File Generation, Front-End Patterns, Laravel 11+ Archit
 
 ### Community 259 - "Collection Best Practices"
 Cohesion: 0.29
-Nodes (6): Choose Between `cursor()` and `lazy()`, Collection Best Practices, Use `#[CollectedBy]` for Custom Collection Classes, Use Higher-Order Messages for Simple Operations, Use `lazyById()` When Updating Records While Iterating, Use `toQuery()` for Bulk Operations on Collections
+Nodes (6): Choose between `cursor()` and `lazy()`, Collection best practices, Use `#[CollectedBy]` for custom collection classes, Use higher-order messages for simple operations, Use `lazyById()` when updating records while iterating, Use `toQuery()` for bulk operations on collections
 
 ### Community 260 - "HTTP Client Best Practices"
 Cohesion: 0.29
-Nodes (6): Fake HTTP Requests in Tests, Handle Errors Explicitly, HTTP Client Best Practices, Pool Independent Requests, Retry Only Safe Operations, Set Explicit Timeouts
+Nodes (6): Fake HTTP requests in tests, Handle errors explicitly, HTTP client best practices, Pool independent requests, Retry only safe operations, Set explicit timeouts
 
 ### Community 261 - "Mail Best Practices"
 Cohesion: 0.29
-Nodes (6): Assert the Delivery Mode, Dispatch Queued Mail After Commit, Mail Best Practices, Queue Slow Mail Delivery, Separate Content and Delivery Tests, Use Markdown Mailables When They Fit
+Nodes (6): Assert the delivery mode, Dispatch queued mail after commit, Mail best practices, Queue slow mail delivery, Separate content and delivery tests, Use Markdown mailables when they fit
 
 ### Community 262 - "Routing and Controller Best Practices"
 Cohesion: 0.29
-Nodes (6): Keep Controllers Focused on HTTP Concerns, Organize Controllers Around Resources, Routing and Controller Best Practices, Scope Nested Bindings, Use Implicit Route Model Binding, Use Resource Routes for Resourceful Actions
+Nodes (6): Keep controllers focused on HTTP concerns, Organize controllers around resources, Routing and controller best practices, Scope nested bindings, Use implicit route model binding, Use resource routes for resourceful actions
 
 ### Community 263 - "Convention and Style Best Practices"
 Cohesion: 0.29
-Nodes (6): Convention and Style Best Practices, Follow Project Naming Conventions, Keep Presentation Code Maintainable, Prefer Clear, Idiomatic Syntax, Use Utilities When They Clarify Intent, Write Comments That Explain Why
+Nodes (6): Convention and style best practices, Follow project naming conventions, Keep presentation code maintainable, Prefer clear, idiomatic syntax, Use utilities when they clarify intent, Write comments that explain why
 
-### Community 264 - "Validation and Forms Best Practices"
+### Community 264 - "Validation and forms best practices"
 Cohesion: 0.29
-Nodes (6): Add Cross-Field Validation After Base Rules, Express Conditional Rules Clearly, Extract Validation When It Improves the Boundary, Prefer Readable Rule Syntax, Use Only Intended Validated Data, Validation and Forms Best Practices
+Nodes (6): Add cross-field validation after base rules, Express conditional rules clearly, Extract validation when it improves the boundary, Prefer readable rule syntax, Use only the validated data you intend, Validation and forms best practices
 
 ### Community 265 - "Assertions"
 Cohesion: 0.29
-Nodes (6): Arrange, Act, Assert, Assert a Known Value, Assert the Complete Result, Assertions, How to Find the Correct Assertion, Named Response Assertions
+Nodes (6): Arrange, act, assert, Assert a known value, Assert the complete result, Assertions, How to find the correct assertion, Named response assertions
 
 ### Community 266 - ".github/skills/testing-best-practices/SKILL.md"
 Cohesion: 0.29
-Nodes (3): Built-in Laravel Assertion Methods, How to Find Test Framework Features, Security Tests
+Nodes (3): Built-in Laravel assertion methods, How to find test framework features, Security tests
 
 ### Community 267 - "Fakes, Mocks, and Determinism"
 Cohesion: 0.29
-Nodes (7): Database, Fakes, Mocks, and Determinism, Framework Fakes, How to Isolate a Dependency, Mocking, Outbound HTTP Testing, Time and Randomness
+Nodes (7): Database, Fakes, mocks, and determinism, Framework fakes, How to isolate a dependency, Mocking, Outbound HTTP testing, Time and randomness
 
 ### Community 268 - "Test Suite Performance"
 Cohesion: 0.29
-Nodes (6): Common Errors, Global Fakes, How to Find a Slow Test, How to Run the Suite in Parallel, Test Environment, Test Suite Performance
+Nodes (6): Common errors, Global fakes, How to find a slow test, How to run the suite in parallel, Test environment, Test suite performance
 
 ### Community 269 - "Reviewing Tests"
 Cohesion: 0.29
-Nodes (6): Assertions, Coverage, Data and Determinism, Names and Structure, Reviewing Tests, Test Value
+Nodes (6): Assertions, Coverage, Data and determinism, Names and structure, Reviewing tests, Test value
 
 ### Community 270 - "Naming and Structure"
 Cohesion: 0.33
-Nodes (5): File Layout, Grouping, Naming and Structure, Naming Tests, Test Function
+Nodes (5): File layout, Grouping, Naming and structure, Naming tests, Test function
 
-### Community 276 - "Controller"
-Cohesion: 0.08
-Nodes (13): Controller, GoodsIssueReportController, InvestmentSummaryController, ProfitAfterCategoryReportController, RevenueDetailReportController, RoiReportController, SchemeReceivedReportController, VanStockBatchReportController (+5 more)
+### Community 271 - "ProductWiseSalesExport"
+Cohesion: 0.36
+Nodes (3): ProductWiseSalesExport, Maatwebsite\Excel\Concerns\WithStyles, PhpOffice\PhpSpreadsheet\Worksheet\Worksheet
 
 ### Community 282 - "Moon Traders Application"
 Cohesion: 0.40
@@ -1353,7 +1460,7 @@ Nodes (6): Moon Traders Application, Human Resources Module, User Management Mod
 
 ### Community 283 - "Naming and Structure"
 Cohesion: 0.33
-Nodes (5): File Layout, Grouping, Naming and Structure, Naming Tests, Test Function
+Nodes (5): File layout, Grouping, Naming and structure, Naming tests, Test function
 
 ### Community 288 - "2026_10_06_100000_create_tickets_module.php"
 Cohesion: 0.53
@@ -1361,15 +1468,15 @@ Nodes (5): createCompanyRole(), down(), dropCompanyRole(), seedPermissions(), up
 
 ### Community 290 - "Naming and Structure"
 Cohesion: 0.33
-Nodes (5): File Layout, Grouping, Naming and Structure, Naming Tests, Test Function
+Nodes (5): File layout, Grouping, Naming and structure, Naming tests, Test function
 
 ### Community 291 - "Factories and Test Data"
 Cohesion: 0.40
-Nodes (4): Datasets, Each Test Makes Its Own Data, Factories and Test Data, Record Construction
+Nodes (4): Datasets, Each test makes its own data, Factories and test data, Record construction
 
 ### Community 292 - "Testing Best Practices"
 Cohesion: 0.40
-Nodes (5): Consistency First, How to Apply, Rule Index, Testing Best Practices, What to Test
+Nodes (5): Consistency first, How to apply, Rule index, Testing best practices, What to test
 
 ### Community 297 - "Development Workflows"
 Cohesion: 0.40
@@ -1378,6 +1485,14 @@ Nodes (5): Creating Journal Entries, Database Migrations, Development Workflows,
 ### Community 298 - "getWidthOrHeight"
 Cohesion: 0.40
 Nodes (5): boxModelAdjustment(), curCSS(), getWidthOrHeight(), manipulationTarget(), nodeName()
+
+### Community 299 - "UpdateUserProfileInformation.php"
+Cohesion: 0.47
+Nodes (3): UpdateUserProfileInformation, Illuminate\Contracts\Auth\MustVerifyEmail, Laravel\Fortify\Contracts\UpdatesUserProfileInformation
+
+### Community 303 - "CompanyTargetSummaryExport"
+Cohesion: 0.53
+Nodes (3): CompanyTargetSummaryExport, Illuminate\Contracts\View\View, Maatwebsite\Excel\Concerns\FromView
 
 ### Community 311 - "Laravel 12"
 Cohesion: 0.50
@@ -1393,11 +1508,11 @@ Nodes (5): Bank Deposit, Branches, Permission / Access Control, Report (Financia
 
 ### Community 316 - "Factories and Test Data"
 Cohesion: 0.40
-Nodes (4): Datasets, Each Test Makes Its Own Data, Factories and Test Data, Record Construction
+Nodes (4): Datasets, Each test makes its own data, Factories and test data, Record construction
 
 ### Community 317 - "Testing Best Practices"
 Cohesion: 0.40
-Nodes (5): Consistency First, How to Apply, Rule Index, Testing Best Practices, What to Test
+Nodes (5): Consistency first, How to apply, Rule index, Testing best practices, What to test
 
 ### Community 318 - "psr-4"
 Cohesion: 0.40
@@ -1425,11 +1540,11 @@ Nodes (5): Authorization, File Storage, Key Conventions, Models & Relationships,
 
 ### Community 328 - "Factories and Test Data"
 Cohesion: 0.40
-Nodes (4): Datasets, Each Test Makes Its Own Data, Factories and Test Data, Record Construction
+Nodes (4): Datasets, Each test makes its own data, Factories and test data, Record construction
 
 ### Community 329 - "Testing Best Practices"
 Cohesion: 0.40
-Nodes (5): Consistency First, How to Apply, Rule Index, Testing Best Practices, What to Test
+Nodes (5): Consistency first, How to apply, Rule index, Testing best practices, What to test
 
 ### Community 330 - "expense-vouchers/create.blade.php"
 Cohesion: 0.40
@@ -1459,9 +1574,9 @@ Nodes (4): settings.partials.ui-style, tickets.form, tickets.partials.flash, tic
 Cohesion: 0.40
 Nodes (4): settings.partials.ui-style, tickets.form, tickets.partials.flash, tickets.partials.style
 
-### Community 340 - "web.php"
-Cohesion: 0.04
-Nodes (13): AccountingPeriodController, AccountTypeController, BatchTransferController, OpeningStockController, AccountBalancesController, BalanceSheetController, IncomeStatementController, InvoiceSummaryReportController (+5 more)
+### Community 340 - "Controller"
+Cohesion: 0.03
+Nodes (24): AccountingPeriodController, AccountTypeController, Controller, OpeningStockController, AccountBalancesController, BalanceSheetController, CustomSettlementReportController, IncomeStatementController (+16 more)
 
 ### Community 353 - "Deposit Action"
 Cohesion: 0.83
@@ -1516,8 +1631,8 @@ Cohesion: 0.50
 Nodes (3): settings.partials.ui-style, tickets.partials.flash, tickets.partials.style
 
 ### Community 373 - "tickets/show.blade.php"
-Cohesion: 0.50
-Nodes (3): settings.partials.ui-style, tickets.partials.flash, tickets.partials.style
+Cohesion: 0.40
+Nodes (4): settings.partials.ui-style, tickets.partials.code-check, tickets.partials.flash, tickets.partials.style
 
 ### Community 374 - "Bank of Azad Jammu & Kashmir (BAJK) Logo"
 Cohesion: 1.00
@@ -1526,6 +1641,50 @@ Nodes (3): Bank of Azad Jammu & Kashmir (BAJK) Logo, Circular Refresh/Sync Icon,
 ### Community 375 - "extra"
 Cohesion: 0.67
 Nodes (3): extra, laravel, dont-discover
+
+### Community 385 - "2026_10_20_100015_add_register_ledger_to_bank_accounts.php"
+Cohesion: 0.70
+Nodes (4): allowRegisterReportGroup(), down(), replaceReportGroupCheck(), up()
+
+### Community 398 - "2026_11_08_110000_add_expense_module_indexes.php"
+Cohesion: 0.83
+Nodes (3): down(), up(), wanted()
+
+### Community 406 - "expense-vendors/create.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vendors._form, expense-vouchers._form-styles, settings.partials.ui-style
+
+### Community 407 - "expense-vendors/edit.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vendors._form, expense-vouchers._form-styles, settings.partials.ui-style
+
+### Community 408 - "adjustments.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+
+### Community 409 - "payroll/index.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+
+### Community 410 - "salaries/edit.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+
+### Community 415 - "salaries/index.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+
+### Community 417 - "payroll/show.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+
+### Community 418 - "slip.blade.php"
+Cohesion: 0.50
+Nodes (3): payroll._slip, payroll._slip-styles, settings.partials.ui-style
+
+### Community 425 - "slips-print.blade.php"
+Cohesion: 0.50
+Nodes (3): payroll._slip, payroll._slip-styles, settings.partials.ui-style
 
 ### Community 454 - "Pest 4"
 Cohesion: 0.67
@@ -1538,10 +1697,6 @@ Nodes (3): Constructors, PHP, Type Declarations
 ### Community 456 - "Tailwind CSS"
 Cohesion: 0.67
 Nodes (3): Dark Mode, Spacing, Tailwind CSS
-
-### Community 457 - "Illuminate\Support\Facades\Artisan"
-Cohesion: 0.40
-Nodes (3): Illuminate\Foundation\Inspiring, Illuminate\Support\Facades\Artisan, Illuminate\Support\Facades\Schedule
 
 ### Community 459 - "Account Holder (User with Location Pin)"
 Cohesion: 1.00
@@ -1567,29 +1722,33 @@ Nodes (3): Dispatch Module, Reports Module, Stationary Module
 Cohesion: 1.00
 Nodes (3): Identity(), resolve(), Thrower()
 
+### Community 791 - "daily-sales/product-wise.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+
 ### Community 890 - "buildParams"
 Cohesion: 1.00
 Nodes (3): buildParams(), isArrayLike(), toType()
 
 ## Knowledge Gaps
-- **1209 isolated node(s):** `SITE_PATH`, `$schema`, `name`, `type`, `description` (+1204 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2790 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **226 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1277 isolated node(s):** `SITE_PATH`, `$schema`, `name`, `type`, `description` (+1272 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3106 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **250 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `User` connect `User` to `Illuminate\Support\Facades\DB`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `StockBatch`, `Illuminate\Database\Eloquent\Model`, `Customer`, `ChartOfAccount`, `SalesSettlement`, `GoodsIssueExport`, `InventoryService`, `ExpenseVoucher`, `Supplier`, `DeleteUser`, `Product`, `Illuminate\Database\Eloquent\Factories\Factory`, `Dashboard`, `ClaimRegister`, `Illuminate\Database\Eloquent\Builder`, `Company`, `TicketService`, `Permission`, `CustomerController`, `CostCenter`, `Ticket`, `CustomerEmployeeAccountTransaction`, `SalesSettlementController.php`, `Laravel\Fortify\Features`, `TicketSubmitted`, `JournalEntryDetail`, `TaxCode`, `TaxTransaction`, `Attachment`, `GoodsReceiptNote`, `CustomerEmployeeAccount`, `WarehouseType`, `FortifyServiceProvider.php`, `ProductPriceChangeLogController.php`, `LedgerRegister`, `ExpenseDetailFactory.php`, `RevenueCategory`, `GoodsReceiptNoteItemsImport`, `BankAccount`, `TaxRate`, `Illuminate\Http\UploadedFile`, `ProductTaxMapping`, `Illuminate\Http\Request`, `Symfony\Component\HttpFoundation\Response`, `Livewire\Livewire`, `UserFactory.php`, `CustomerImport`, `AppServiceProvider.php`, `UpdateUserProfileInformation.php`, `self`, `ProfitCategory`, `ExpenseVoucherController`?**
-  _High betweenness centrality (0.058) - this node is a cross-community bridge._
-- **Why does `Supplier` connect `Supplier` to `User`, `Illuminate\Support\Facades\DB`, `InvestmentOpeningBalance`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `Illuminate\Database\Eloquent\Model`, `GoodsIssueExport`, `ChartOfAccount`, `StockBatch`, `InventoryService`, `Illuminate\Database\Seeder`, `Product`, `TicketType`, `CashCollectionDistributorController`, `Controller`, `ClaimRegister`, `StockAvailabilityReportController`, `Dashboard`, `Illuminate\Database\Eloquent\Relations\HasMany`, `Illuminate\Database\Eloquent\Factories\Factory`, `ClaimRegisterFactory`, `ProductRecallFactory`, `TicketService`, `Permission`, `ProductRecallController`, `Ticket`, `CustomerEmployeeAccountTransaction`, `SalesSettlementController.php`, `TicketSubmitted`, `Maatwebsite\Excel\Concerns\WithHeadings`, `LedgerRegisterFactory`, `LedgerRegisterController`, `StoreSupplierRequest`, `CompanyTarget`, `ProductController`, `GoodsReceiptNote`, `CustomerEmployeeAccount`, `GoodsIssueController`, `SalesSettlementController`, `ProductPriceChangeLogController.php`, `Category`, `ExpenseDetailFactory.php`, `ExpenseVoucherFactory.php`, `Illuminate\Support\Collection`, `RevenueCategory`, `GoodsReceiptNoteItemsImport`, `BankAccount`, `SupplierLedgerReportController.php`, `StockAdjustment`, `CashCollectionDistributorController.php`, `Illuminate\View\View`, `web.php`, `Illuminate\Http\UploadedFile`, `ChequeRegisterController`, `Illuminate\Http\Request`, `SupplierController`, `CompanyTargetFactory.php`, `ProfitCategory`, `CompanyTargetSummaryController.php`, `ExpenseVoucherController`, `CustomerAccountStatementController`, `ProductImport`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
-- **Why does `ChartOfAccount` connect `ChartOfAccount` to `User`, `Illuminate\Support\Facades\DB`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `StockBatch`, `Illuminate\Database\Eloquent\Model`, `SalesSettlement`, `InventoryService`, `Illuminate\Database\Seeder`, `ExpenseVoucher`, `Product`, `StoreChartOfAccountRequest`, `ClaimRegister`, `Illuminate\Database\Eloquent\Relations\HasMany`, `InventoryGlAdjustmentService`, `CustomerController`, `ProductRecallController`, `RepairJournalRounding`, `CostCenter`, `CustomerEmployeeAccountTransaction`, `LedgerRegisterService`, `UpdateOpeningCustomerBalanceRequest`, `SalesSettlementController.php`, `ExpenseDetail`, `StoreSalesSettlementRequest`, `TaxCode`, `Illuminate\Console\Command`, `GoodsIssueController`, `SalesSettlementController`, `ExpenseVoucherFactory.php`, `LedgerService`, `BankAccount`, `StockAdjustment`, `Illuminate\Http\UploadedFile`, `web.php`, `RepostSupplierInvoices`, `UpdateChartOfAccountRequest`, `CompanyController`, `GeneralLedgerController`, `ExpenseVoucherController`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `User` connect `User` to `Illuminate\Routing\Controllers\HasMiddleware`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `StockBatch`, `Illuminate\Database\Eloquent\Model`, `Customer`, `ChartOfAccount`, `SalesSettlement`, `GoodsReceiptNote`, `ExpenseVoucher`, `DeleteUser`, `Product`, `TicketType`, `AuditTrailTest`, `Dashboard`, `ClaimRegister`, `Role`, `Illuminate\Database\Eloquent\Builder`, `Company`, `TicketService`, `Permission`, `CustomerController`, `CostCenter`, `Ticket`, `Illuminate\Validation\Rule`, `UpdateUserProfileInformation.php`, `TicketSubmitted`, `Laravel\Fortify\Features`, `TaxCode`, `TaxTransaction`, `SettlementBankRegisterSync.php`, `Attachment`, `GoodsReceiptNoteController`, `WarehouseType`, `FortifyServiceProvider.php`, `LedgerRegister`, `Illuminate\Http\RedirectResponse`, `ExpenseVoucherService`, `BankStatementEntry`, `ExpenseDetailFactory.php`, `GoodsReceiptNoteItemsImport`, `PayrollRun`, `TaxRate`, `Illuminate\Http\UploadedFile`, `Controller`, `ProductTaxMapping`, `BankReconciliation`, `.log`, `Livewire\Livewire`, `ExpenseVendorPayment`, `BankStatementImport`, `RuntimeException`, `BankReportService`, `UserFactory.php`, `CustomerImport`, `Illuminate\Support\ServiceProvider`, `PasswordValidationRules`, `SvgChart`, `ExpenseVoucherController`?**
+  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+- **Why does `Supplier` connect `User` to `Illuminate\Routing\Controllers\HasMiddleware`, `InvestmentOpeningBalance`, `StockBatch`, `Illuminate\Database\Eloquent\Model`, `Customer`, `ChartOfAccount`, `SalesSettlement`, `RevenueDetailReportController`, `.createChildRecords`, `GoodsReceiptNote`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `ProductPriceChangeLog`, `Illuminate\Support\Facades\DB`, `Product`, `Illuminate\Database\Eloquent\Factories\Factory`, `Illuminate\Support\Collection`, `Dashboard`, `ClaimRegister`, `Illuminate\Database\Eloquent\Relations\HasMany`, `Illuminate\Database\Eloquent\Builder`, `ClaimRegisterFactory`, `ProductRecallFactory`, `TicketService`, `Permission`, `ProductRecallController`, `CostCenter`, `Ticket`, `Illuminate\Validation\Rule`, `TicketSubmitted`, `Maatwebsite\Excel\Concerns\WithHeadings`, `InvoiceSummaryFactory.php`, `BankEntryRuleController`, `StoreSupplierRequest`, `LedgerRegisterFactory`, `CompanyTarget`, `ProductController`, `GoodsReceiptNoteController`, `.response`, `SalesSettlementController`, `LedgerRegister`, `Illuminate\Http\RedirectResponse`, `Category`, `BankStatementEntry`, `ExpenseDetailFactory.php`, `RevenueCategory`, `GoodsReceiptNoteItemsImport`, `PayrollRun`, `SupplierLedgerReportController.php`, `StockAdjustment`, `Illuminate\Http\Request`, `Illuminate\View\View`, `Controller`, `InvestmentSummaryService`, `AmrDisposeRegisterController`, `CreditorsLedgerController`, `SupplierController`, `OpeningCustomerBalanceController`, `ClaimRegisterController`, `ProfitCategory`, `SvgChart`, `ExpenseVoucherController`, `ProfitCategoryDetail`, `CustomerAccountStatementController`, `ProductImport`, `BankPartyAlias`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **Why does `ChartOfAccount` connect `ChartOfAccount` to `User`, `Illuminate\Routing\Controllers\HasMiddleware`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `StockBatch`, `Illuminate\Database\Eloquent\Model`, `Customer`, `SalesSettlement`, `.createChildRecords`, `GoodsReceiptNote`, `Illuminate\Support\Facades\DB`, `Product`, `Illuminate\Database\Eloquent\Relations\HasMany`, `Company`, `GrnCostDriftService`, `CustomerController`, `ProductRecallController`, `RepairJournalRounding`, `CostCenter`, `Illuminate\Validation\Rule`, `ExpenseDetail`, `StoreSalesSettlementRequest`, `TaxCode`, `UpdateSalesSettlementRequest`, `WarehouseType`, `.response`, `SalesSettlementController`, `ExpenseVoucherService`, `Illuminate\Http\RedirectResponse`, `LedgerRegister`, `BankStatementEntry`, `LedgerService`, `PayrollRun`, `BankAccount`, `StockAdjustment`, `Illuminate\Http\Request`, `Controller`, `.log`, `ChartOfAccountController`, `ExpenseVendorPayment`, `RuntimeException`, `BankEntryCategory`, `OpeningCustomerBalanceController`, `GeneralLedgerController`, `SvgChart`, `ExpenseVoucherController`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
 - **What connects `SITE_PATH`, `$schema`, `name` to the rest of the system?**
-  _1209 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1277 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `User` be split into smaller, more focused modules?**
-  _Cohesion score 0.01991125270224144 - nodes in this community are weakly interconnected._
-- **Should `Illuminate\Support\Facades\DB` be split into smaller, more focused modules?**
-  _Cohesion score 0.09150889271371199 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.019472387185391668 - nodes in this community are weakly interconnected._
+- **Should `Illuminate\Routing\Controllers\HasMiddleware` be split into smaller, more focused modules?**
+  _Cohesion score 0.106544901065449 - nodes in this community are weakly interconnected._
 - **Should `Illuminate\Database\Eloquent\Relations\BelongsTo` be split into smaller, more focused modules?**
-  _Cohesion score 0.02043114543114543 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.01567858892699657 - nodes in this community are weakly interconnected._

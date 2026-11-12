@@ -561,86 +561,6 @@
                             </tr>
                         @endforelse
 
-                        {{-- Inline Add Form Row --}}
-                        @can('report-audit-ledger-register-create')
-                            <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
-                                <td colspan="12" class="p-0">
-                                    <form action="{{ route('reports.supplier-ledger-register.store') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="supplier_id"
-                                            value="{{ $selectedSupplier?->id ?? '' }}">
-                                        <table class="w-full border-collapse">
-                                            <tr>
-                                                <td style="width: 35px; text-align: center; padding: 4px;">
-                                                    <span class="text-indigo-600 font-bold">+</span>
-                                                </td>
-                                                <td style="width: 90px; padding: 4px;">
-                                                    <input type="date" name="transaction_date"
-                                                        value="{{ old('transaction_date', now()->format('Y-m-d')) }}"
-                                                        max="{{ now()->format('Y-m-d') }}"
-                                                        @if(!$supplierLedgerDateEditable) min="{{ now()->format('Y-m-d') }}" @endif
-                                                        class="inline-input" required>
-                                                </td>
-                                                <td style="width: 55px; padding: 4px;">
-                                                    <select name="document_type" class="rg-select inline-select">
-                                                        <option value="">-</option>
-                                                        @foreach ($documentTypes as $type)
-                                                            <option value="{{ $type->value }}"
-                                                                {{ old('document_type') === $type->value ? 'selected' : '' }}>
-                                                                {{ $type->value }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </td>
-                                                <td style="width: 100px; padding: 4px;">
-                                                    <input type="text" name="document_number"
-                                                        value="{{ old('document_number') }}" class="inline-input"
-                                                        placeholder="Doc #">
-                                                </td>
-                                                <td style="width: 100px; padding: 4px;">
-                                                    <input type="number" name="online_amount" step="0.01"
-                                                        min="0" value="{{ old('online_amount') }}"
-                                                        class="inline-input" placeholder="0.00">
-                                                </td>
-                                                <td style="width: 110px; padding: 4px;">
-                                                    <span class="text-xs text-gray-500">Use OB button</span>
-                                                </td>
-                                                <td style="width: 110px; padding: 4px;">
-                                                    <input type="number" name="invoice_amount" step="0.01"
-                                                        min="0" value="{{ old('invoice_amount') }}"
-                                                        class="inline-input" placeholder="0.00">
-                                                </td>
-                                                <td style="width: 90px; padding: 4px;">
-                                                    <input type="number" name="expenses_amount" step="0.01"
-                                                        min="0" value="{{ old('expenses_amount') }}"
-                                                        class="inline-input" placeholder="0.00">
-                                                </td>
-                                                <td style="width: 90px; padding: 4px;">
-                                                    <input type="number" name="za_point_five_percent_amount"
-                                                        step="0.01" min="0"
-                                                        value="{{ old('za_point_five_percent_amount') }}"
-                                                        class="inline-input" placeholder="0.00">
-                                                </td>
-                                                <td style="width: 90px; padding: 4px;">
-                                                    <input type="number" name="claim_adjust_amount" step="0.01"
-                                                        min="0" value="{{ old('claim_adjust_amount') }}"
-                                                        class="inline-input" placeholder="0.00">
-                                                </td>
-                                                <td style="width: 110px; padding: 4px; text-align: center;">
-                                                    <span class="text-xs text-gray-500">Auto</span>
-                                                </td>
-                                                <td style="width: 70px; padding: 4px; text-align: center;">
-                                                    <button type="submit"
-                                                        class="rg-pill rg-pill-green inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 font-semibold">
-                                                        Save
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </form>
-                                </td>
-                            </tr>
-                        @endcan
                     </tbody>
 
                     {{-- Footer Totals --}}
@@ -693,15 +613,11 @@
                 {{-- Add Entry Toggle Button --}}
                 @can('report-audit-ledger-register-create')
                     <div class="mt-3 no-print flex items-center gap-2">
-                        <button type="button" @click="showAddRow = !showAddRow"
-                            class="rg-pill inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
-                            :class="showAddRow ? 'bg-gray-500 hover:bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            <span x-text="showAddRow ? 'Cancel' : 'Add Entry'"></span>
-                        </button>
+                        <button type="button" x-data @click="$dispatch('rg-add-entry')"
+                                class="rg-pill inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md bg-indigo-600 hover:bg-indigo-700" aria-haspopup="dialog">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6" /></svg>
+                                Add Entry
+                            </button>
                         <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'entry' })" aria-label="How entries are added and posted" title="How entries are added and posted">i</button>
                     </div>
                 @endcan
@@ -773,6 +689,74 @@
         @endif
     </div>
 
+
+    @if ($selectedSupplier)
+    @can('report-audit-ledger-register-create')
+    {{-- Add entry: a wide sheet with every field on one line, so a long register never hides the form --}}
+    <div x-data="{ open: @js($errors->any() && old('_form') === 'add') }" x-on:rg-add-entry.window="open = true; $nextTick(() => { window.rgSyncSelects && window.rgSyncSelects($el); $el.querySelector('input[type=date]')?.focus(); })"
+        x-on:keydown.escape.window="open = false" class="no-print">
+        <div x-show="open" x-cloak class="rg-scrim fixed inset-0 z-50" x-transition.opacity.duration.200ms @click="open = false"></div>
+        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="rg-add-title"
+            x-transition:enter="duration-300 [transition-timing-function:cubic-bezier(.23,1,.32,1)]" x-transition:enter-start="opacity-0 translate-y-3 scale-[.98]" x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="duration-150 ease-out" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <form action="{{ route('reports.supplier-ledger-register.store') }}" method="POST" class="rg-sheet rg-add-sheet relative w-full max-w-7xl bg-white" @click.outside="open = false">
+                @csrf
+                <input type="hidden" name="_form" value="add">
+                <input type="hidden" name="supplier_id" value="{{ $selectedSupplier?->id }}">
+                <div class="rg-sheet-head flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold" id="rg-add-title">Add ledger entry · {{ $selectedSupplier?->short_name ?? $selectedSupplier?->supplier_name }}</h3>
+                        <p class="rg-add-sub">Save adds a draft line; post it from the register.</p>
+                    </div>
+                    <button type="button" @click="open = false" class="rg-close" aria-label="Close">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                @if ($errors->any() && old('_form') === 'add')
+                    <div class="rg-flash rg-flash-err mx-6 mt-4" role="alert"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+                @endif
+                <div class="rg-add-row rg-add-ledger" x-data="{ online: @js(old('online_amount', '')), invoice: @js(old('invoice_amount', '')), expenses: @js(old('expenses_amount', '')), za: @js(old('za_point_five_percent_amount', '')), claim: @js(old('claim_adjust_amount', '')),
+                        get net() { return (+this.online || 0) + (+this.za || 0) + (+this.claim || 0) - (+this.invoice || 0) - (+this.expenses || 0); } }">
+                    <div><label for="add_lr_date">Date</label>
+                        <input id="add_lr_date" type="date" name="transaction_date" value="{{ old('transaction_date', now()->format('Y-m-d')) }}" max="{{ now()->format('Y-m-d') }}"
+                            @if(!$supplierLedgerDateEditable) min="{{ now()->format('Y-m-d') }}" @endif required></div>
+                    <div><label for="add_lr_type">Type</label>
+                        <select id="add_lr_type" name="document_type" class="rg-select">
+                            <option value="">None</option>
+                            @foreach ($documentTypes as $type)
+                                @continue($type->value === 'OB')
+                                <option value="{{ $type->value }}" {{ old('document_type') === $type->value ? 'selected' : '' }}>{{ $type->value }} · {{ $type->label() }}</option>
+                            @endforeach
+                        </select></div>
+                    <div><label for="add_lr_doc">Document #</label>
+                        <input id="add_lr_doc" type="text" name="document_number" value="{{ old('document_number') }}" placeholder="e.g. 5610117227"></div>
+                    <div><label for="add_lr_online">Online</label>
+                        <input id="add_lr_online" type="number" name="online_amount" step="0.01" min="0" inputmode="decimal" value="{{ old('online_amount') }}" placeholder="0.00" class="rg-amount" x-model="online"></div>
+                    <div><label for="add_lr_invoice">Invoice</label>
+                        <input id="add_lr_invoice" type="number" name="invoice_amount" step="0.01" min="0" inputmode="decimal" value="{{ old('invoice_amount') }}" placeholder="0.00" class="rg-amount" x-model="invoice"></div>
+                    <div><label for="add_lr_expenses">Expenses</label>
+                        <input id="add_lr_expenses" type="number" name="expenses_amount" step="0.01" min="0" inputmode="decimal" value="{{ old('expenses_amount') }}" placeholder="0.00" class="rg-amount" x-model="expenses"></div>
+                    <div><label for="add_lr_za">ZA (0.5%)</label>
+                        <input id="add_lr_za" type="number" name="za_point_five_percent_amount" step="0.01" min="0" inputmode="decimal" value="{{ old('za_point_five_percent_amount') }}" placeholder="0.00" class="rg-amount" x-model="za"></div>
+                    <div><label for="add_lr_claim">Claim adjust</label>
+                        <input id="add_lr_claim" type="number" name="claim_adjust_amount" step="0.01" min="0" inputmode="decimal" value="{{ old('claim_adjust_amount') }}" placeholder="0.00" class="rg-amount" x-model="claim"></div>
+                    <div class="rg-add-effect" aria-live="polite">
+                        <span>Effect on balance</span>
+                        <b :class="net < 0 ? 'text-red-700' : 'text-green-700'"
+                            x-text="(net >= 0 ? '+' : '') + net.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></b>
+                        <small>Balance after: <span x-text="({{ (float) $currentBalance }} + net).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span></small>
+                    </div>
+                </div>
+                <p class="rg-add-note">Online, ZA and claim adjust raise the balance; invoice and expenses lower it. Opening balances are set from the Opening balances card. Post the line from the register after saving.</p>
+                <div class="rg-add-foot">
+                    <button type="button" @click="open = false" class="rg-pill rg-pill-grey">Cancel</button>
+                    <button type="submit" class="rg-pill rg-pill-green">Save entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endcan
+    @endif
 
     {{-- Edit Modal with Backdrop Blur --}}
     @can('report-audit-ledger-register-edit')

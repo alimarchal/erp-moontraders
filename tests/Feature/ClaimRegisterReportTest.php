@@ -212,3 +212,18 @@ test('the claim register downloads as an A4 PDF for the chosen supplier and carr
         ->assertSee('Help: Claim Register')
         ->assertSee('flow-claims', false);
 });
+
+test('claims are added from the wide sheet with the chosen supplier filled in', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $supplier = Supplier::factory()->create(['supplier_name' => 'Lipton Pakistan', 'short_name' => 'Lipton', 'disabled' => false]);
+
+    $this->get(route('reports.claim-register.index', ['supplier_id' => $supplier->id]))
+        ->assertSee('Add claim entry')
+        ->assertSee('id="add_claim_supplier"', false);
+
+    $this->post(route('reports.claim-register.store'), [
+        '_form' => 'add', 'supplier_id' => $supplier->id, 'transaction_date' => now()->toDateString(), 'transaction_type' => 'claim', 'amount' => 1500, 'description' => 'Trade offer',
+    ])->assertRedirect();
+
+    expect(ClaimRegister::where('supplier_id', $supplier->id)->where('debit', 1500)->exists())->toBeTrue();
+});

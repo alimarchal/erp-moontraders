@@ -36,7 +36,7 @@
         <div class="rgh-box" @click.outside="open = false">
             <div class="rgh-head">
                 <div>
-                    <h3 id="rgh-title">Help: {{ $isClaims ? 'Claim Register' : 'Supplier Ledger Register' }}</h3>
+                    <h3 id="rgh-title">Help: {{ $isClaims ? 'Claim Register' : ($page === 'goods-issues' ? 'Goods Issues' : 'Supplier Ledger Register') }}</h3>
                     <p>How this register works, in Urdu</p>
                 </div>
                 <button type="button" class="rgh-close" x-ref="close" @click="open = false" aria-label="Close">
@@ -124,6 +124,95 @@
                                 <p>پرنٹ کے بٹن سے براؤزر میں <span class="en">Portrait</span> یا <span class="en">Landscape</span> چن سکتے ہیں۔ ڈاؤن لوڈ کے بٹن سے پوری مدت کی <bdi class="lt" dir="ltr">A4 PDF</bdi> بنتی ہے ؛ عام طور پر <span class="en">Portrait</span>۔</p>
                             </section>
                             <section data-topic="flow"><x-help-flow flow="claims" /></section>
+                        @elseif ($page === 'goods-issues')
+                            <section data-topic="what">
+                                <h2>گڈز ایشو کیا ہے؟</h2>
+                                <p>گودام سے سیلز مین کی گاڑی پر جو مال لادا گیا، اس کا ریکارڈ۔ شام کو اسی ایشو کی <span class="en">Sales Settlement</span> بنتی ہے جس میں بکا، واپس آیا اور پیسہ لکھا جاتا ہے۔</p>
+                            </section>
+                            <section data-topic="start">
+                                <h2>شروع کیسے کریں</h2>
+                                <ol>
+                                    <li>اوپر فلٹر کا بٹن دبائیں: تلاش (<bdi class="lt" dir="ltr">GI</bdi> نمبر، گاڑی یا سیلز مین)، تاریخیں، سپلائر اور ایک صفحے پر کتنی لائنیں۔</li>
+                                    <li><span class="en">More filters</span> سے سیلز مین، گاڑی، گودام اور سیٹلمنٹ کی حالت۔</li>
+                                    <li><span class="en">Quick dates</span> سے آج، کل، یہ ہفتہ یا یہ مہینہ ایک کلک میں۔ <span class="en">Apply</span> دبائیں۔</li>
+                                </ol>
+                            </section>
+                            <section data-topic="tabs">
+                                <h2>ٹیب</h2>
+                                <div class="rgh-col" data-topic="tab-all">
+                                    <div class="rgh-col-head"><span class="en">All</span><b>سب</b></div>
+                                    <p>چنی ہوئی تاریخوں کے تمام ایشو۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="tab-draft">
+                                    <div class="rgh-col-head"><span class="en">Draft</span><b>ڈرافٹ</b></div>
+                                    <p>ابھی جاری نہیں ہوا: سٹاک نہیں ہلا، کتاب میں کچھ نہیں گیا۔ ترمیم یا حذف ہو سکتا ہے۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="tab-issued">
+                                    <div class="rgh-col-head"><span class="en">Issued</span><b>جاری</b></div>
+                                    <p>مال گاڑی پر چلا گیا: گودام کا سٹاک کم، گاڑی کا سٹاک زیادہ، اور کتاب میں جرنل بن گیا۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="tab-pending">
+                                    <div class="rgh-col-head"><span class="en">Not settled</span><b>سیٹلمنٹ باقی</b></div>
+                                    <p>جاری ہو چکا مگر اس کی سیٹلمنٹ ابھی تصدیق یا پوسٹ نہیں ہوئی۔ ساتھ لکھا ہوتا ہے مال کتنے دن سے گاڑی پر ہے؛ دو دن یا زیادہ ہو تو سرخ۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="tab-reversed">
+                                    <div class="rgh-col-head"><span class="en">Reversed</span><b>ریورس</b></div>
+                                    <p>ایشو واپس لیا گیا: مال گودام میں واپس اور جرنل الٹا۔</p>
+                                </div>
+                            </section>
+                            <section data-topic="columns">
+                                <h2>ہر کالم کا مطلب</h2>
+                                <div class="rgh-col" data-topic="col-issue">
+                                    <div class="rgh-col-head"><span class="en">Issue</span><b>ایشو نمبر</b></div>
+                                    <p><bdi class="lt" dir="ltr">GI</bdi> نمبر اور کس نے بنایا۔ ساتھ کا بٹن اس ایشو کی پروڈکٹس کی لائنیں کھولتا ہے۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-salesman">
+                                    <div class="rgh-col-head"><span class="en">Salesman · vehicle</span><b>سیلز مین اور گاڑی</b></div>
+                                    <p>جس کو مال دیا، اس کی گاڑی کا نمبر اور گودام۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-value">
+                                    <div class="rgh-col-head"><span class="en">Value (Rs)</span><b>قیمت</b></div>
+                                    <p>سب لائنوں کا جوڑ: مقدار × فروخت کی قیمت۔ کتاب میں البتہ مال لاگت (<bdi class="lt" dir="ltr">cost</bdi>) پر جاتا ہے۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-stage">
+                                    <div class="rgh-col-head"><span class="en">Stage</span><b>مرحلہ</b></div>
+                                    <p>ایک ہی کیپسول بتاتا ہے ایشو کہاں ہے: <span class="en">Draft</span> (ابھی جاری نہیں)، <span class="en">On van</span> (مال گاڑی پر، سیٹلمنٹ باقی؛ ساتھ دن، دو دن یا زیادہ ہو تو سرخ)، <span class="en">Settlement draft</span> (سیٹلمنٹ بنی مگر تصدیق نہیں)، <span class="en">Settled</span> (سیٹلمنٹ تصدیق یا پوسٹ ہو گئی)، <span class="en">Reversed</span> (واپس)۔ نیچے سیٹلمنٹ کا نمبر؛ کلک سے کھلتی ہے۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-products">
+                                    <div class="rgh-col-head"><span class="en">Products</span><b>پروڈکٹس</b></div>
+                                    <p>پہلی دو پروڈکٹس اور مقدار، باقی کی گنتی۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-qty">
+                                    <div class="rgh-col-head"><span class="en">Qty</span><b>مقدار</b></div>
+                                    <p>کل جاری شدہ یونٹ۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-supplier">
+                                    <div class="rgh-col-head"><span class="en">Supplier</span><b>سپلائر</b></div>
+                                    <p>کس کمپنی کا مال۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="col-date">
+                                    <div class="rgh-col-head"><span class="en">Date</span><b>تاریخ</b></div>
+                                    <p>ایشو کی تاریخ اور کس وقت جاری (پوسٹ) ہوا؛ پورا سال اور دن اوپر لے جانے پر دکھتا ہے۔</p>
+                                </div>
+                            </section>
+                            <section data-topic="books">
+                                <h2>کتاب میں کیا جاتا ہے</h2>
+                                <p>ایشو جاری ہوتے ہی لاگت پر ایک جرنل: <bdi dir="ltr" class="rgh-gl"><span class="en">Dr 1155 Van Stock</span> / <span class="en">Cr 1151 Stock In Hand</span></bdi>۔ بعد میں لائنیں جوڑیں تو ہر بار ایک الگ "<bdi class="lt" dir="ltr">Supplementary Goods Issue</bdi>" جرنل۔ ریورس ہو تو یہی جرنل الٹا۔</p>
+                                <div class="tip">آمدن اور خرچ یہاں نہیں بنتے؛ وہ سیٹلمنٹ پوسٹ ہونے پر بنتے ہیں۔</div>
+                            </section>
+                            <section data-topic="actions">
+                                <h2>بٹن</h2>
+                                <ul>
+                                    <li><span class="en">View</span>: ایشو کا پورا صفحہ، وہیں سے ریورس یا لائنیں جوڑنا۔</li>
+                                    <li><span class="en">Edit</span> اور <span class="en">Delete</span>: صرف ڈرافٹ پر۔</li>
+                                    <li><span class="en">Comfortable</span> / <span class="en">Compact</span>: لائنوں کی اونچائی۔</li>
+                                </ul>
+                            </section>
+                            <section data-topic="print">
+                                <h2>پرنٹ، <bdi class="lt" dir="ltr">PDF</bdi> اور <bdi class="lt" dir="ltr">Excel</bdi></h2>
+                                <p>اوپر کے بٹن: <span class="en">Excel</span> فلٹر شدہ فہرست؛ ڈاؤن لوڈ سے <bdi class="lt" dir="ltr">A4 PDF</bdi> عام طور پر <span class="en">Portrait</span> یا <span class="en">Landscape</span>؛ پرنٹ کے بٹن سے براؤزر میں دونوں رخ۔</p>
+                            </section>
+                            <section data-topic="flow"><x-help-flow flow="goods-issues" /></section>
                         @else
                             <section data-topic="what">
                                 <h2>سپلائر لیجر رجسٹر کیا ہے؟</h2>

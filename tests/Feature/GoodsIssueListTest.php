@@ -4,7 +4,6 @@ use App\Exports\GoodsIssueExport;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\SalesSettlement;
-use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
 use Maatwebsite\Excel\Facades\Excel;
@@ -117,4 +116,52 @@ it('opens the goods issue list on Issued and shows everything on the All tab', f
 
     $all = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['status' => 'all']]))->viewData('goodsIssues')->pluck('id')->all();
     expect($all)->toContain($issued->id)->toContain($draft->id);
+});
+
+it('downloads the filtered list as an A4 PDF, portrait by default and landscape on request', function () {
+    GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now(), 'total_value' => 1500]);
+    $filter = ['filter' => ['status' => 'all', 'issue_date_from' => now()->toDateString(), 'issue_date_to' => now()->toDateString()]];
+
+    $portrait = $this->actingAs($this->user)->get(route('goods-issues.index', $filter + ['format' => 'pdf']));
+    $portrait->assertOk()->assertHeader('content-type', 'application/pdf');
+    expect($portrait->headers->get('content-disposition'))->toContain('goods-issues-');
+
+    $this->actingAs($this->user)->get(route('goods-issues.index', $filter + ['format' => 'pdf', 'orientation' => 'landscape']))
+        ->assertOk()->assertHeader('content-type', 'application/pdf');
+});
+
+it('keeps its own filter menu with searchable dropdowns and adds the header download and Excel buttons', function () {
+    $this->actingAs($this->user)->get(route('goods-issues.index'))
+        ->assertSuccessful()
+        ->assertSee('id="gl-filter-panel"', false)
+        ->assertSee('More filters')
+        ->assertSee('Download as PDF (A4)')
+        ->assertSee('Export Excel')
+        ->assertSee('All salesmen');
+});
+
+it('carries an Urdu help window with every tab, column and the goods issue flow', function () {
+    $this->actingAs($this->user)->get(route('goods-issues.index'))
+        ->assertSee('Help: Goods Issues')
+        ->assertSee('data-topic="tab-pending"', false)
+        ->assertSee('data-topic="col-stage"', false)
+        ->assertSee('flow-goods-issues', false);
+});
+
+it('shows one stage per issue: draft, on van, settlement draft, settled or reversed', function () {
+    GoodsIssue::factory()->create(['status' => 'draft', 'issue_date' => now()]);
+    GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now()]);
+    $draftSettlement = GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now()]);
+    $settled = GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now()]);
+    GoodsIssue::factory()->create(['status' => 'cancelled', 'issue_date' => now()]);
+    SalesSettlement::factory()->create(['goods_issue_id' => $draftSettlement->id, 'status' => 'draft']);
+    SalesSettlement::factory()->create(['goods_issue_id' => $settled->id, 'status' => 'posted']);
+
+    $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['status' => 'all']]));
+
+    $response->assertSee('gl-stage-grey', false)->assertSee('On van · today')
+        ->assertSee('Settlement draft')->assertSee('gl-stage-green', false)->assertSee('Reversed')
+        ->assertSee('2 on vans, not settled')
+        ->assertSee('aria-current="page"', false)
+        ->assertDontSee('role="tablist"', false);
 });

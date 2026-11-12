@@ -530,3 +530,22 @@ test('the ledger page carries its Urdu help with the ledger flow', function () {
         ->assertSee('flow-supplier-ledger', false)
         ->assertSee('data-topic="opening"', false);
 });
+
+test('entries are added from a wide sheet that reopens with the typed values when something is wrong', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $page = route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $this->supplier->id]]);
+
+    $this->actingAs($this->user)->get($page)
+        ->assertSee('Add ledger entry')
+        ->assertSee('Effect on balance')
+        ->assertSee('open: false', false);
+
+    $this->actingAs($this->user)->from($page)->post(route('reports.supplier-ledger-register.store'), [
+        '_form' => 'add', 'supplier_id' => $this->supplier->id, 'transaction_date' => now()->toDateString(), 'online_amount' => 250000, 'document_type' => 'DZ',
+    ])->assertRedirect($page);
+    expect(LedgerRegister::where('supplier_id', $this->supplier->id)->where('online_amount', 250000)->exists())->toBeTrue();
+
+    $this->actingAs($this->user)->from($page)->post(route('reports.supplier-ledger-register.store'), ['_form' => 'add', 'supplier_id' => $this->supplier->id])
+        ->assertSessionHasErrors('transaction_date');
+    $this->actingAs($this->user)->get($page)->assertSee('open: true', false);
+});

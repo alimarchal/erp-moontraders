@@ -509,80 +509,6 @@
                                 </tr>
                             @endforelse
 
-                            {{-- Inline Add Form Row --}}
-                            @can('claim-register-create')
-                                <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
-                                    <td colspan="11" class="p-0">
-                                        <form action="{{ route('reports.claim-register.store') }}" method="POST">
-                                            @csrf
-                                            <table class="w-full border-collapse">
-                                                <tr>
-                                                    <td style="width: 35px; text-align: center; padding: 4px;">
-                                                        <span class="text-indigo-600 font-bold">+</span>
-                                                    </td>
-                                                    <td style="width: 90px; padding: 4px;">
-                                                        <input type="date" name="transaction_date"
-                                                            value="{{ old('transaction_date', now()->format('Y-m-d')) }}"
-                                                            max="{{ now()->format('Y-m-d') }}"
-                                                            @if(!$claimRegisterDateEditable) min="{{ now()->format('Y-m-d') }}" @endif
-                                                            class="inline-input" required>
-                                                    </td>
-                                                    <td style="width: 120px; padding: 4px;">
-                                                        <select name="supplier_id" class="rg-select inline-select" required>
-                                                            <option value="">Supplier</option>
-                                                            @foreach ($suppliers as $supplier)
-                                                                <option value="{{ $supplier->id }}"
-                                                                    {{ old('supplier_id', $supplierId) == $supplier->id ? 'selected' : '' }}>
-                                                                    {{ $supplier->short_name ?? $supplier->supplier_name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </td>
-                                                    <td style="width: 90px; padding: 4px;">
-                                                        <input type="text" name="reference_number"
-                                                            value="{{ old('reference_number') }}" class="inline-input"
-                                                            placeholder="e.g. ST-26-014">
-                                                    </td>
-                                                    <td style="width: 140px; padding: 4px;">
-                                                        <input type="text" name="description"
-                                                            value="{{ old('description') }}" class="inline-input"
-                                                            placeholder="Description">
-                                                    </td>
-                                                    <td style="width: 90px; padding: 4px;">
-                                                        <input type="text" name="claim_month"
-                                                            value="{{ old('claim_month') }}" class="inline-input"
-                                                            placeholder="e.g. Oct 2026">
-                                                    </td>
-                                                    <td style="width: 120px; padding: 4px;">
-                                                        <select name="transaction_type" class="rg-select inline-select" required>
-                                                            @foreach ($transactionTypeOptions as $value => $label)
-                                                                <option value="{{ $value }}"
-                                                                    {{ old('transaction_type', 'claim') === $value ? 'selected' : '' }}>
-                                                                    {{ $value === 'claim' ? 'DR (Claim)' : 'CR (Recovery)' }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </td>
-                                                    <td colspan="2" style="padding: 4px;">
-                                                        <input type="number" name="amount" step="0.01"
-                                                            min="0" value="{{ old('amount') }}"
-                                                            class="inline-input" placeholder="Amount" required>
-                                                    </td>
-                                                    <td style="width: 120px; padding: 4px; text-align: center;">
-                                                        <span class="text-xs text-gray-400">-</span>
-                                                    </td>
-                                                    <td style="width: 70px; padding: 4px; text-align: center;">
-                                                        <button type="submit"
-                                                            class="rg-pill rg-pill-green inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 font-semibold">
-                                                            Save
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endcan
                         </tbody>
 
                         {{-- Footer Totals --}}
@@ -608,14 +534,10 @@
                     {{-- Add Entry Toggle Button --}}
                     @can('claim-register-create')
                         <div class="mt-3 no-print flex items-center gap-2">
-                            <button type="button" @click="showAddRow = !showAddRow"
-                                class="rg-pill inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
-                                :class="showAddRow ? 'bg-gray-500 hover:bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                <span x-text="showAddRow ? 'Cancel' : 'Add Entry'"></span>
+                            <button type="button" x-data @click="$dispatch('rg-add-entry')"
+                                class="rg-pill inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md bg-indigo-600 hover:bg-indigo-700" aria-haspopup="dialog">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6" /></svg>
+                                Add Entry
                             </button>
                             <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'entry' })" aria-label="How entries are added and posted" title="How entries are added and posted">i</button>
                         </div>
@@ -671,6 +593,65 @@
         </div>
     </div>
     @endif
+
+    @can('claim-register-create')
+    {{-- Add entry: a wide sheet with every field on one line, so a long register never hides the form --}}
+    <div x-data="{ open: @js($errors->any() && old('_form') === 'add') }" x-on:rg-add-entry.window="open = true; $nextTick(() => { window.rgSyncSelects && window.rgSyncSelects($el); $el.querySelector('input[type=date]')?.focus(); })"
+        x-on:keydown.escape.window="open = false" class="no-print">
+        <div x-show="open" x-cloak class="rg-scrim fixed inset-0 z-50" x-transition.opacity.duration.200ms @click="open = false"></div>
+        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="rg-add-title"
+            x-transition:enter="duration-300 [transition-timing-function:cubic-bezier(.23,1,.32,1)]" x-transition:enter-start="opacity-0 translate-y-3 scale-[.98]" x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="duration-150 ease-out" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <form action="{{ route('reports.claim-register.store') }}" method="POST" class="rg-sheet rg-add-sheet relative w-full max-w-7xl bg-white" @click.outside="open = false">
+                @csrf
+                <input type="hidden" name="_form" value="add">
+                <div class="rg-sheet-head flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold" id="rg-add-title">Add claim entry</h3>
+                        <p class="rg-add-sub">Save adds a draft line; post it from the register.</p>
+                    </div>
+                    <button type="button" @click="open = false" class="rg-close" aria-label="Close">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                @if ($errors->any() && old('_form') === 'add')
+                    <div class="rg-flash rg-flash-err mx-6 mt-4" role="alert"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+                @endif
+                <div class="rg-add-row rg-add-claim">
+                    <div><label for="add_claim_date">Date</label>
+                        <input id="add_claim_date" type="date" name="transaction_date" value="{{ old('transaction_date', now()->format('Y-m-d')) }}" max="{{ now()->format('Y-m-d') }}"
+                            @if(!$claimRegisterDateEditable) min="{{ now()->format('Y-m-d') }}" @endif required></div>
+                    <div><label for="add_claim_supplier">Supplier</label>
+                        <select id="add_claim_supplier" name="supplier_id" class="rg-select" required>
+                            <option value="">Choose…</option>
+                            @foreach ($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}" {{ (string) old('supplier_id', $supplierId) === (string) $supplier->id ? 'selected' : '' }}>{{ $supplier->short_name ?? $supplier->supplier_name }}</option>
+                            @endforeach
+                        </select></div>
+                    <div><label for="add_claim_type">Type</label>
+                        <select id="add_claim_type" name="transaction_type" class="rg-select" required>
+                            @foreach ($transactionTypeOptions as $value => $label)
+                                <option value="{{ $value }}" {{ old('transaction_type', 'claim') === $value ? 'selected' : '' }}>{{ $value === 'claim' ? 'DR · Claim' : 'CR · Recovery' }}</option>
+                            @endforeach
+                        </select></div>
+                    <div><label for="add_claim_ref">Reference</label>
+                        <input id="add_claim_ref" type="text" name="reference_number" value="{{ old('reference_number') }}" placeholder="e.g. ST-26-014"></div>
+                    <div class="rg-add-wide"><label for="add_claim_desc">Description</label>
+                        <input id="add_claim_desc" type="text" name="description" value="{{ old('description') }}" placeholder="e.g. Trade offer, October"></div>
+                    <div><label for="add_claim_month">Claim month</label>
+                        <input id="add_claim_month" type="text" name="claim_month" value="{{ old('claim_month') }}" placeholder="e.g. Oct 2026"></div>
+                    <div><label for="add_claim_amount">Amount (Rs)</label>
+                        <input id="add_claim_amount" type="number" name="amount" step="0.01" min="0.01" inputmode="decimal" value="{{ old('amount') }}" placeholder="0.00" class="rg-amount" required></div>
+                </div>
+                <p class="rg-add-note">A claim posts to Pending Claims against claim income. A recovery is recorded here only; the Supplier Ledger Register books it. Post from the row after saving.</p>
+                <div class="rg-add-foot">
+                    <button type="button" @click="open = false" class="rg-pill rg-pill-grey">Cancel</button>
+                    <button type="submit" class="rg-pill rg-pill-green">Save entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endcan
 
     {{-- Edit Modal with Backdrop Blur --}}
     @can('claim-register-edit')

@@ -90,7 +90,7 @@
         html.apl-on #filters { border-radius: 20px !important; background: #fff; }
         html.apl-on #filters > .p-6 { padding: 22px 24px !important; }
         html.apl-on #filters label { font-size: 13px !important; font-weight: 500 !important; color: var(--apl-label-2, #6e6e73) !important; letter-spacing: -.005em; margin-bottom: 2px; }
-        html.apl-on #filters input[type=text], html.apl-on #filters input[type=date], html.apl-on #filters input[type=number], html.apl-on #filters select:not(.select2-hidden-accessible) {
+        html.apl-on #filters input[type=text], html.apl-on #filters input[type=search], html.apl-on #filters input[type=date], html.apl-on #filters input[type=number], html.apl-on #filters select:not(.select2-hidden-accessible) {
             height: 40px; border: 0 !important; border-radius: 11px !important; background-color: rgba(118,118,128,.12) !important; box-shadow: none !important;
             padding: 0 12px !important; font-size: 15px !important; color: #1d1d1f; transition: box-shadow .15s ease, background-color .15s ease; }
         html.apl-on #filters select:not(.select2-hidden-accessible) { -webkit-appearance: none; appearance: none; padding-right: 36px !important; cursor: pointer;
@@ -276,7 +276,8 @@
 
         /* text that fits: words left-aligned, at most two lines then "…" (full text on hover); dates and amounts never break */
         html.apl-on .rg-table th.rg-text, html.apl-on .rg-table td.rg-text { text-align: left !important; }
-        html.apl-on .rg-table .rg-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: normal; overflow-wrap: anywhere; line-height: 1.35; }
+        html.apl-on .rg-table .rg-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: normal; overflow-wrap: break-word; hyphens: none; line-height: 1.35; }
+        html.apl-on .rg-table th.rg-text, html.apl-on .rg-table td.rg-text { min-width: 110px; }
         html.apl-on .rg-table .rg-nowrap, html.apl-on .rg-table .amount-cell, html.apl-on .rg-table thead th { white-space: nowrap; }
         html.apl-on .rg-table thead th { font-size: 11.5px; }
 
@@ -362,6 +363,33 @@
         html.apl-on .rg-pill.rg-pill-danger:hover { background: rgba(255,59,48,.2) !important; }
         html.apl-on .rg-posted { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 980px; background: rgba(52,199,89,.14); color: #1f7a35; font-size: 11.5px; font-weight: 600; }
         @media (max-width: 640px) { html.apl-on .rg-details { grid-template-columns: 1fr; } html.apl-on .rg-details dt { padding-bottom: 0; border-bottom: 0; } html.apl-on .rg-hero-amount { font-size: 30px; } }
+
+        /* add-entry sheet: 7xl wide, every field on one line on a wide screen, wrapping on smaller ones */
+        html.apl-on .rg-add-sheet { margin: auto; }
+        html.apl-on .rg-add-sub { margin: 2px 0 0; font-size: 13px; color: #6e6e73; font-weight: 400; }
+        html.apl-on .rg-add-row { display: grid; gap: 12px; padding: 20px 24px 6px; align-items: end; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+        @media (min-width: 1100px) {
+            html.apl-on .rg-add-claim { grid-template-columns: 145px 170px 160px 140px minmax(160px, 1fr) 130px 150px; }
+            html.apl-on .rg-add-ledger { grid-template-columns: 140px 170px 130px repeat(5, minmax(92px, 1fr)) 170px; }
+        }
+        html.apl-on .rg-add-row label { display: block; margin-bottom: 5px; font-size: 12.5px !important; font-weight: 500 !important; color: #6e6e73 !important; white-space: nowrap; }
+        html.apl-on .rg-add-row input { width: 100%; height: 40px; }
+        html.apl-on .rg-add-row .select2-container { margin-top: 0 !important; }
+        html.apl-on .rg-add-effect { display: flex; flex-direction: column; justify-content: flex-end; min-height: 40px; padding: 6px 12px; border-radius: 11px; background: #f5f5f7; line-height: 1.2; }
+        html.apl-on .rg-add-effect span { font-size: 11.5px; color: #6e6e73; }
+        html.apl-on .rg-add-effect b { font-size: 15px; font-variant-numeric: tabular-nums; }
+        html.apl-on .rg-add-effect small { font-size: 11.5px; color: #6e6e73; font-variant-numeric: tabular-nums; }
+        html.apl-on .rg-add-note { margin: 10px 24px 0; font-size: 12.5px; color: #6e6e73; }
+        html.apl-on .rg-add-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding: 14px 20px; border-top: 1px solid rgba(60,60,67,.1); background: #f5f5f7; border-radius: 0 0 22px 22px; }
+        @media (max-width: 640px) { html.apl-on .rg-add-row { padding: 16px 16px 4px; } html.apl-on .rg-add-note { margin: 10px 16px 0; } }
+
+        /* quick date shortcuts inside a filter panel */
+        html.apl-on .rg-quick-dates { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 16px; }
+        html.apl-on .rg-quick-dates span { margin-right: 4px; font-size: 13px; color: #6e6e73; }
+        html.apl-on .rg-quick-dates a { padding: 5px 12px; border-radius: 980px; background: rgba(118,118,128,.12); color: #1d1d1f; font-size: 13px; text-decoration: none; transition: background-color .15s ease, transform .1s ease-out; }
+        html.apl-on .rg-quick-dates a:hover { background: rgba(118,118,128,.22); }
+        html.apl-on .rg-quick-dates a:active { transform: scale(.96); }
+        html.apl-on .rg-quick-dates a[aria-current] { background: #0071e3; color: #fff; }
         /* empty state until a supplier is chosen */
         html.apl-on .rg-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 24px 48px; border-radius: 22px; background: #fff; }
         html.apl-on .rg-empty-icon { display: grid; place-items: center; width: 60px; height: 60px; margin-bottom: 14px; border-radius: 18px; background: linear-gradient(180deg, #e8f2ff, #d6e8ff); color: #0071e3; }

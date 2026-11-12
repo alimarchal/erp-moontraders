@@ -19,6 +19,7 @@ use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\GoodsIssueReversalService;
 use App\Services\GoodsIssueStockCheck;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -132,6 +133,18 @@ class GoodsIssueController extends Controller implements HasMiddleware
             $period = $request->input('filter.issue_date_from').'_to_'.$request->input('filter.issue_date_to');
 
             return Excel::download(new GoodsIssueExport($goodsIssues->getEloquentBuilder()->clone()), "goods-issues-{$period}.xlsx");
+        }
+
+        // The filtered list as an A4 PDF, portrait unless landscape was asked for (like the Claim Register).
+        if ($request->query('format') === 'pdf') {
+            $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+            $rows = $goodsIssues->getEloquentBuilder()->clone()->get();
+            $from = $request->input('filter.issue_date_from', now()->toDateString());
+            $to = $request->input('filter.issue_date_to', now()->toDateString());
+
+            return Pdf::loadView('goods-issues.pdf', ['goodsIssues' => $rows, 'dateFrom' => $from, 'dateTo' => $to, 'orientation' => $orientation])
+                ->setPaper('a4', $orientation)
+                ->download("goods-issues-{$from}-to-{$to}.pdf");
         }
 
         // Row preview (the lines of each issue) is loaded only for normal page sizes.

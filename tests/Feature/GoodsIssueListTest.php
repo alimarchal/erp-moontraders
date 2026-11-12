@@ -3,7 +3,10 @@
 use App\Exports\GoodsIssueExport;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\GoodsIssueItem;
+use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\Uom;
 use App\Models\User;
 use App\Models\Vehicle;
 use Maatwebsite\Excel\Facades\Excel;
@@ -164,4 +167,26 @@ it('shows one stage per issue: draft, on van, settlement draft, settled or rever
         ->assertSee('2 on vans, not settled')
         ->assertSee('aria-current="page"', false)
         ->assertDontSee('role="tablist"', false);
+});
+
+it('numbers the rows and opens a quick look with the products instead of an inline row', function () {
+    $issue = GoodsIssue::factory()->create(['status' => 'issued', 'issue_date' => now(), 'total_value' => 540]);
+    GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $issue->id,
+        'product_id' => Product::factory()->create(['product_name' => 'Olper TBA 250ml'])->id,
+        'uom_id' => Uom::factory()->create()->id,
+        'quantity_issued' => 18,
+        'selling_price' => 30,
+        'total_value' => 540,
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['status' => 'all']]));
+
+    $response->assertSuccessful()
+        ->assertSee('<th scope="col" class="gl-c-no">#</th>', false)
+        ->assertSee("\$dispatch('gi-peek'", false)
+        ->assertSee('Open full issue')
+        ->assertSee('Olper TBA 250ml')
+        ->assertDontSee('class="gl-toggle"', false)
+        ->assertDontSee('Products on '.$issue->issue_number);
 });

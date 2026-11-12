@@ -230,6 +230,10 @@
                                     <div class="rgh-col-head"><span class="en">Accounting · Timeline</span><b>کتاب</b></div>
                                     <p>نیچے جرنل نمبر اور <bdi dir="ltr" class="lt">Dr Van Stock / Cr Stock in Hand</bdi>، اور ٹائم لائن میں بننے سے سیٹلمنٹ تک ہر قدم۔</p>
                                 </div>
+                                <div class="rgh-col" data-topic="gd-remove">
+                                    <div class="rgh-col-head"><span class="en">Add or remove items</span><b>کم کرنا</b></div>
+                                    <p>سیٹلمنٹ سے پہلے کسی لائن کی پوری یا کچھ مقدار واپس گودام میں لی جا سکتی ہے۔ مال اسی گودام کے اسی بیچ میں جاتا ہے (جو بیچ آخر میں نکلا وہ پہلے)، انوینٹری لیجر اور وین سٹاک برابر ہوتے ہیں، اور ایک جرنل <bdi dir="ltr" class="lt">GI-…-R1</bdi> بنتا ہے: <bdi dir="ltr" class="lt">Dr Stock in Hand / Cr Van Stock</bdi>۔ وجہ اور پاس ورڈ ضروری ہیں؛ ایشو کی آخری مقدار کے لیے <span class="en">Reverse and re-issue</span> استعمال کریں۔</p>
+                                </div>
                                 <div class="rgh-col" data-topic="gd-reversed">
                                     <div class="rgh-col-head"><span class="en">Reverse and re-issue</span><b>ریورس</b></div>
                                     <p>سیٹلمنٹ سے پہلے غلط ایشو ریورس ہو سکتا ہے: مال گودام واپس، جرنل الٹا، اور لائنیں ایک نئے ڈرافٹ میں نقل ہو جاتی ہیں تاکہ درست کر کے دوبارہ پوسٹ کریں۔</p>

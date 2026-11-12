@@ -345,25 +345,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         // Add batch breakdown to each goods issue item
         foreach ($goodsIssues as $gi) {
+            // A line whose whole quantity was removed before settlement has nothing to settle.
+            $gi->setRelation('items', $gi->items->filter(fn ($item) => (float) $item->quantity_issued > 0.0005)->values());
+
             foreach ($gi->items as $item) {
                 // Filter by goods_issue_item_id so multi-line GIs (same product on
                 // multiple lines) only return the movements that belong to *this* line.
-                $stockMovements = DB::table('stock_movements as sm')
-                    ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
-                    ->where('sm.reference_type', 'App\Models\GoodsIssue')
-                    ->where('sm.reference_id', $gi->id)
-                    ->where('sm.goods_issue_item_id', $item->id)
-                    ->where('sm.movement_type', 'transfer')
-                    ->select(
-                        'sb.id as stock_batch_id',
-                        'sb.batch_code',
-                        DB::raw('ABS(sm.quantity) as quantity'),
-                        'sm.unit_cost',
-                        'sb.selling_price',
-                        'sb.is_promotional'
-                    )
-                    ->orderBy('sb.priority_order', 'asc')
-                    ->get();
+                // Net per batch: a removal before settlement brings some of the line back to the warehouse.
+                $stockMovements = $item->netIssuedBatches();
 
                 $batchBreakdown = [];
                 foreach ($stockMovements as $movement) {
@@ -541,22 +530,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             // Filter by goods_issue_item_id so multi-line GIs (same product on
             // multiple lines) only return the movements that belong to *this* line.
-            $stockMovements = DB::table('stock_movements as sm')
-                ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
-                ->where('sm.reference_type', 'App\Models\GoodsIssue')
-                ->where('sm.reference_id', $goodsIssue->id)
-                ->where('sm.goods_issue_item_id', $item->id)
-                ->where('sm.movement_type', 'transfer')
-                ->select(
-                    'sb.id as stock_batch_id',
-                    'sb.batch_code',
-                    DB::raw('ABS(sm.quantity) as quantity'),
-                    'sm.unit_cost',
-                    'sb.selling_price',
-                    'sb.is_promotional'
-                )
-                ->orderBy('sb.priority_order', 'asc')
-                ->get();
+            // Net per batch: a removal before settlement brings some of the line back to the warehouse.
+            $stockMovements = $item->netIssuedBatches();
 
             $batchBreakdown = [];
             foreach ($stockMovements as $movement) {
@@ -580,7 +555,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         // Format items to ensure product and uom data are included
-        $formattedItems = $goodsIssue->itemsInSettlementOrder()->map(function ($item) {
+        // A line whose whole quantity was removed before settlement has nothing to settle.
+        $formattedItems = $goodsIssue->itemsInSettlementOrder()->filter(fn ($item) => (float) $item->quantity_issued > 0.0005)->values()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'line_no' => $item->line_no,

@@ -141,7 +141,10 @@ class GoodsIssue extends Model
             $label = 'line '.$item->line_no.' ('.($item->product?->product_name ?? 'product '.$item->product_id).', '.(float) $issued.')';
 
             if ($lines->isEmpty()) {
-                $problems[] = $label.' is missing';
+                // A line whose whole quantity was removed before settlement has nothing to settle.
+                if ($issued > 0.0005) {
+                    $problems[] = $label.' is missing';
+                }
             } elseif ($lines->count() > 1) {
                 $problems[] = $label.' is listed '.$lines->count().' times';
             } elseif (abs((float) ($lines->first()['quantity_issued'] ?? 0) - $issued) > 0.0001) {
@@ -165,6 +168,14 @@ class GoodsIssue extends Model
             ->sort(fn (GoodsIssueItem $a, GoodsIssueItem $b) => [$firstLineOfProduct[$a->product_id], $a->line_no, $a->id]
                 <=> [$firstLineOfProduct[$b->product_id], $b->line_no, $b->id])
             ->values();
+    }
+
+    /**
+     * Quantities taken back from this issue's lines before settlement.
+     */
+    public function removals(): HasMany
+    {
+        return $this->hasMany(GoodsIssueItemRemoval::class)->orderBy('removed_at');
     }
 
     public function settlement(): HasMany
@@ -211,7 +222,7 @@ class GoodsIssue extends Model
     public function ownsJournalReference(?string $reference): bool
     {
         return $reference !== null
-            && preg_match('/^'.preg_quote($this->issue_number, '/').'(-S\d+)?$/', $reference) === 1;
+            && preg_match('/^'.preg_quote($this->issue_number, '/').'(-[SR]\d+)?$/', $reference) === 1;
     }
 
     public function isReversed(): bool

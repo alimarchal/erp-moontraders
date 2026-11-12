@@ -99,7 +99,7 @@ it('appendItemsForm redirects drafts away from the append flow', function () {
         'status' => 'draft',
     ]);
 
-    $response = $this->get(route('goods-issues.append-items', $gi));
+    $response = $this->get(route('goods-issues.items', $gi));
 
     $response->assertRedirect(route('goods-issues.show', $gi));
     $response->assertSessionHas('error');

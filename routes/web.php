@@ -121,6 +121,7 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
 use App\Providers\AppServiceProvider;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -473,8 +474,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | API endpoints supply form dropdowns (stock levels, employees, vehicles).
     | Permissions: goods-issue-list, -create, -edit, -delete, -post
     */
-    Route::get('goods-issues/{goodsIssue}/append-items', [GoodsIssueController::class, 'appendItemsForm'])
-        ->name('goods-issues.append-items');
+    // Add or remove items on an issued goods issue (before settlement). The old /append-items address redirects here.
+    Route::get('goods-issues/{goodsIssue}/items', [GoodsIssueController::class, 'appendItemsForm'])
+        ->name('goods-issues.items');
+    Route::get('goods-issues/{goodsIssue}/append-items', fn (Request $request, int $goodsIssue) => redirect()->to(
+        route('goods-issues.items', $goodsIssue).($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301
+    ))->name('goods-issues.append-items');
+    Route::post('goods-issues/{goodsIssue}/items/{item}/remove', [GoodsIssueController::class, 'removeItem'])
+        ->scopeBindings()
+        ->name('goods-issues.remove-item');
     Route::post('goods-issues/{goodsIssue}/append-items', [GoodsIssueController::class, 'appendItems'])
         ->name('goods-issues.store-appended-items');
     Route::resource('goods-issues', GoodsIssueController::class);
@@ -973,7 +981,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         /* Supplier Ledger Register */
         // the old address keeps working for bookmarks
-        Route::get('ledger-register', fn (\Illuminate\Http\Request $request) => redirect()->to('/reports/supplier-ledger-register'.($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301));
+        Route::get('ledger-register', fn (Request $request) => redirect()->to('/reports/supplier-ledger-register'.($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301));
         Route::prefix('supplier-ledger-register')->name('supplier-ledger-register.')->group(function () {
             Route::get('/', [LedgerRegisterController::class, 'index'])->name('index');
             Route::post('/', [LedgerRegisterController::class, 'store'])->name('store');

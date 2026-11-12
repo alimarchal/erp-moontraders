@@ -322,6 +322,18 @@
     .apl-on header.bg-white .bg-blue-950:hover { background: rgba(118, 118, 128, .2) !important; }
     .apl-on header.bg-white .bg-blue-950:active { transform: scale(.95); }
     .apl-on header.bg-white .flex > a.bg-blue-950:first-child, .apl-on header.bg-white .flex > div:first-child > a.bg-blue-950 { background: var(--apl-blue) !important; color: #fff !important; }
+    /* The create button: a compact blue pill on the same 36px line as the grey icon buttons */
+    .apl-on header.bg-white a.bg-blue-950[data-create] {
+        gap: 6px; padding: 0 14px 0 11px; margin-right: 6px; font-family: var(--apl-font); font-size: 14px; font-weight: 500;
+        letter-spacing: -.01em; text-transform: none; box-shadow: 0 1px 2px rgba(0, 113, 227, .25);
+    }
+    .apl-on header.bg-white a.bg-blue-950[data-create] svg { width: 16px; height: 16px; stroke-width: 2.4; }
+    .apl-on header.bg-white a.bg-blue-950[data-create]:hover { background: #0077ed !important; }
+    .apl-on header.bg-white a.bg-blue-950[data-create]:focus-visible { outline: 2px solid var(--apl-blue); outline-offset: 2px; box-shadow: none; }
+    @media (max-width: 767px) {
+        .apl-on header.bg-white a.bg-blue-950[data-create] { width: 36px; padding: 0; justify-content: center; margin-right: 2px; }
+        .apl-on header.bg-white a.bg-blue-950[data-create] svg { width: 18px; height: 18px; }
+    }
     .apl-on .bec-table, .apl-on #filters { font-family: var(--apl-font); }
     .apl-on .bec-table table { overflow: hidden; border-radius: var(--apl-radius); box-shadow: var(--apl-shadow); background: #fff; }
     .apl-on .bec-table thead tr, .apl-on .bec-table thead th { background: #fff !important; color: var(--apl-label-2) !important; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }

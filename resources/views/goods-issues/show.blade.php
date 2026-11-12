@@ -55,6 +55,11 @@
         ])->values())
         ->push($isReversed ? ['at' => $gi->reversed_at, 'text' => 'Reversed'.($gi->reversedBy ? ' by '.$gi->reversedBy->name : '').': stock returned to '.($gi->warehouse->warehouse_name ?? 'warehouse').($gi->replacement ? ', lines copied to '.$gi->replacement->issue_number : ''), 'tone' => 'red'] : null)
         ->filter()
+        ->merge($gi->removals->map(fn ($removal) => [
+            'at' => $removal->removed_at,
+            'text' => 'Removed '.rtrim(rtrim(number_format((float) $removal->quantity, 3), '0'), '.').' of '.($removal->item->product->product_name ?? 'a line').': '.$removal->reason.($removal->removedBy ? ' ('.$removal->removedBy->name.')' : ''),
+            'tone' => 'amber',
+        ]))
         ->merge($settlements->map(fn ($settlement) => [
             'at' => $settlement->created_at,
             'text' => 'Settlement '.$settlement->settlement_number.' '.($settlement->status === 'draft' ? 'started (draft)' : $settlement->status),
@@ -314,10 +319,9 @@
                         @endcan
                     @endif
                     @if ($gi->canAcceptSupplementaryItems())
-                        @can('goods-issue-edit')
-                            <button type="button" x-data class="gs-pill gs-pill-blue"
-                                @click="$dispatch('open-append-items-confirm', { url: '{{ route('goods-issues.append-items', $gi->id) }}', issueNumber: '{{ $gi->issue_number }}', existingLineCount: {{ $gi->items->count() }} })">+ Add more items</button>
-                        @endcan
+                        @canany(['goods-issue-edit', 'goods-issue-remove-items'])
+                            <a href="{{ route('goods-issues.items', $gi) }}" class="gs-pill gs-pill-blue">Add or remove items</a>
+                        @endcanany
                     @endif
                 </div>
             </div>
@@ -638,8 +642,10 @@
                 <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" @click="show = false"></div>
                 <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
                     <form method="POST" action="{{ route('goods-issues.reverse', $gi->id) }}" role="dialog" aria-modal="true" aria-labelledby="reverse-gi-title"
-                          class="relative w-full max-w-lg overflow-hidden rounded-lg bg-white text-left shadow-xl" @click.outside="show = false">
+                          class="relative w-full max-w-lg overflow-hidden rounded-lg bg-white text-left shadow-xl" @click.outside="show = false"
+                          x-data="{ sending: false }" @submit="if (sending) { $event.preventDefault(); return; } sending = true">
                         @csrf
+                        <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">
                         <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                             <h3 id="reverse-gi-title" class="text-lg font-medium leading-6 text-gray-900">Reverse {{ $gi->issue_number }} &amp; re-issue</h3>
                             <div class="mt-2 space-y-2 text-sm text-gray-600">
@@ -670,8 +676,8 @@
                         <div class="flex flex-row justify-end gap-3 bg-gray-100 px-6 py-4">
                             <button type="button" @click="show = false"
                                 class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50">Cancel</button>
-                            <button type="submit"
-                                class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-red-700">Reverse &amp; open draft</button>
+                            <button type="submit" :disabled="sending"
+                                class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-red-700 disabled:opacity-60"><span x-show="! sending">Reverse &amp; open draft</span><span x-show="sending" x-cloak>Reversing…</span></button>
                         </div>
                     </form>
                 </div>

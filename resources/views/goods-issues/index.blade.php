@@ -193,9 +193,9 @@
         @media screen and (max-width: 767px) { .gl-dot-text { display: inline; font-size: 13px; font-weight: 600; color: #15803d; margin-left: 8px; } }
         @media print { .gl-dot { display: none; } .gl-dot-text { display: inline; } }
         @media (min-width: 768px) {
-            .gl-table thead th:nth-last-child(-n+3), .gl-table tbody > tr:not(.gl-lines) > td:nth-last-child(-n+3) { width: 1%; white-space: nowrap; }
-            .gl-table thead th:nth-last-child(2), .gl-table tbody > tr:not(.gl-lines) > td:nth-last-child(2) { padding-left: 18px; padding-right: 18px; }
-            .gl-table thead th:nth-last-child(1), .gl-table tbody > tr:not(.gl-lines) > td:nth-last-child(1) { padding-left: 8px; }
+            .gl-table thead th:nth-last-child(-n+3), .gl-table tbody > tr > td:nth-last-child(-n+3) { width: 1%; white-space: nowrap; }
+            .gl-table thead th:nth-last-child(2), .gl-table tbody > tr > td:nth-last-child(2) { padding-left: 18px; padding-right: 18px; }
+            .gl-table thead th:nth-last-child(1), .gl-table tbody > tr > td:nth-last-child(1) { padding-left: 8px; }
         }
         .gl-act { display: flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
         .gl-view { gap: 6px; }
@@ -213,7 +213,7 @@
         .ak-dt-scroll { max-height: calc(100vh - 190px); min-height: 18rem; }
         .gl-draft > td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
         .gl-draft > td { background: #fffbeb; }
-        .gl-table > tbody > tr:not(.gl-lines):hover > td { background: #f1f5f9; }
+        .gl-table > tbody > tr:hover > td { background: #f1f5f9; }
         .gl-table tfoot td { position: sticky; bottom: 0; font-weight: 700; background: #f8fafc; border-top: 2px solid var(--ak-border); }
         .gl-settle a { color: inherit; text-decoration: none; }
         .gl-settle a:hover .ak-status { text-decoration: underline; }
@@ -226,18 +226,104 @@
         .ak-filters .select2-container--focus .select2-selection--single, .ak-filters .select2-container--open .select2-selection--single { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
         .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
         .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
-        .gl-table > tbody > tr:not(.gl-lines) > td { border-bottom: 1px solid #e5e7eb; }
+        .gl-table > tbody > tr > td { border-bottom: 1px solid #e5e7eb; }
         .gl-table > tbody:last-of-type > tr:last-child > td { border-bottom: 0; }
-.gl-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin-right: 8px; height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid #94a3b8; border-radius: 6px; background: #fff; color: var(--ak-navy); font-size: 12px; font-weight: 600; cursor: pointer; vertical-align: middle; }
-        .gl-toggle:hover, .gl-toggle[aria-expanded="true"] { background: var(--ak-navy); border-color: var(--ak-navy); color: #fff; }
-        .gl-toggle svg { width: 14px; height: 14px; transition: transform .15s; }
-        .gl-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
-        .gl-lines > td { background: #f1f5f9 !important; padding: 0 !important; border-bottom: 1px solid #cbd5e1; }
-        .gl-lines-panel { margin: 10px 16px 14px 56px; padding: 12px 16px; background: #fff; border: 1px solid #cbd5e1; border-left: 4px solid var(--ak-navy); border-radius: 8px; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
-        .gl-lines-title { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--ak-navy); }
-        .gl-lines table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-        .gl-lines th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); padding: 6px 10px; border-bottom: 2px solid var(--ak-line); background: transparent !important; position: static !important; }
-        .gl-lines td td { padding: 6px 10px !important; border-bottom: 1px solid #eef2f7; background: transparent !important; }
+/* Row number, and the issue number / products that open the Quick look */
+        .gl-c-no { width: 40px; }
+        .gl-table td.gl-no { width: 40px; color: #8e8e93; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+        .gl-prod-peek { display: block; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 8px; }
+        .gl-prod-peek:hover .gl-prod-name { color: #0066cc; }
+        .gl-prod-peek:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+        @media screen and (max-width: 767px) { .gl-table td.gl-no { display: none !important; } }
+
+        /* Quick look: one sheet for every row, Apple style */
+        .gq-wrap { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+        .gq-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+        .gq-box { position: relative; width: 100%; max-width: 560px; max-height: min(86vh, 760px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 22px; box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 24px 64px -12px rgba(0,0,0,.35); transform-origin: center; }
+        .gq-head { padding: 20px 22px 0; }
+        .gq-top { display: flex; align-items: center; gap: 8px; }
+        .gq-num { margin: 0; font-size: 15px; font-weight: 600; color: #1d1d1f; letter-spacing: -.01em; }
+        .gq-close { margin-left: auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: rgba(120,120,128,.14); color: #3a3a40; cursor: pointer; transition: transform .12s ease; }
+        .gq-close:active { transform: scale(.94); }
+        .gq-close:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+        .gq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .gq-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 980px; font-size: 12px; font-weight: 600; }
+        .gq-chip-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .gq-green { background: rgba(52,199,89,.14); color: #1f7a35; } .gq-amber { background: rgba(255,159,10,.16); color: #8a4b00; }
+        .gq-red { background: rgba(255,59,48,.12); color: #c4161c; } .gq-grey { background: rgba(120,120,128,.14); color: #3a3a40; }
+        .gq-blue { background: rgba(0,113,227,.1); color: #0058b0; }
+        .gq-amount { margin: 14px 0 0; font-size: 34px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+        .gq-amount small { font-size: 17px; font-weight: 500; color: #6e6e73; margin-right: 4px; }
+        .gq-who { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: #424245; }
+        .gq-who b { color: #1d1d1f; font-weight: 600; }
+        .gq-who span { color: #6e6e73; }
+        .gq-list-head { display: flex; justify-content: space-between; margin: 16px 22px 0; padding-bottom: 6px; border-bottom: 1px solid rgba(60,60,67,.14); font-size: 11.5px; font-weight: 600; color: #6e6e73; }
+        .gq-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 0 22px; list-style: none; }
+        .gq-list li { display: flex; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(60,60,67,.08); font-size: 14px; }
+        .gq-list li:last-child { border-bottom: 0; }
+        .gq-line-name { flex: 1 1 auto; min-width: 0; color: #1d1d1f; overflow-wrap: anywhere; }
+        .gq-line-name small { display: block; margin-top: 1px; font-size: 12px; color: #6e6e73; }
+        .gq-line-val { flex: none; font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+        .gq-supp { margin-left: 4px; padding: 0 7px; border-radius: 980px; font-size: 10.5px; font-weight: 600; background: rgba(175,82,222,.14); color: #7a2fa3; }
+        .gq-foot { padding: 12px 22px 18px; border-top: 1px solid rgba(60,60,67,.14); background: #fbfbfd; }
+        .gq-totals { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: #424245; }
+        .gq-totals b { color: #1d1d1f; font-variant-numeric: tabular-nums; }
+        .gq-open { display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; margin-top: 12px; border-radius: 980px; background: #0071e3; color: #fff !important; font-size: 14.5px; font-weight: 500; text-decoration: none !important; transition: transform .12s ease, background-color .15s ease; }
+        .gq-open:hover { background: #0077ed; }
+        .gq-open:active { transform: scale(.98); }
+        .gq-enter { transition: opacity .2s cubic-bezier(.23,1,.32,1), transform .2s cubic-bezier(.23,1,.32,1); }
+        .gq-leave { transition: opacity .12s ease-out, transform .12s ease-out; }
+        .gq-from { opacity: 0; transform: scale(.96) translateY(6px); }
+        .gq-fade-enter { transition: opacity .2s ease; } .gq-fade-leave { transition: opacity .12s ease; } .gq-fade-from { opacity: 0; }
+        @media (max-width: 640px) {
+            .gq-wrap { align-items: flex-end; padding: 0; }
+            .gq-box { max-width: none; max-height: 90vh; border-radius: 20px 20px 0 0; }
+            .gq-from { transform: translateY(24px); opacity: 0; }
+            .gq-head { padding: 16px 18px 0; } .gq-list-head { margin: 14px 18px 0; } .gq-list { padding: 0 18px; } .gq-foot { padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); }
+            .gq-amount { font-size: 30px; }
+        }
+        @media (prefers-reduced-motion: reduce) { .gq-enter, .gq-leave { transition: opacity .15s ease; } .gq-from { transform: none; } }
+        /* Laptops (1024–1279px): the table fits without sideways scrolling; Qty and the posting time step aside (both are in the Quick look) */
+        @media screen and (min-width: 1024px) and (max-width: 1279px) {
+            .gl-table { min-width: 0 !important; }
+            .gl-table .gl-c-qty, .gl-table td[data-label="Qty"] { display: none; }
+            .gl-table .ak-hide-compact { display: none; }
+            .gl-prod { min-width: 150px; }
+            .gl-prod-line { max-width: 220px; }
+            .gl-table .gl-c-issue { width: auto; }
+            .gl-table .gl-meta { white-space: normal; }
+        }
+        /* Tablets (768–1023px): rows become cards, as on a phone */
+        @media screen and (min-width: 768px) and (max-width: 1023px) {
+            .gl-table { min-width: 0 !important; }
+            .gl-table thead { display: none; }
+            .gl-table, .gl-table tbody, .gl-table tr, .gl-table td, .gl-table tfoot { display: block; width: 100%; }
+            .gl-table tbody tr { margin: 12px; width: auto; border: 1px solid var(--ak-border); border-radius: var(--ak-radius); overflow: hidden; }
+            .gl-table td { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; text-align: right; }
+            .gl-table tbody > tr > td { width: 100% !important; white-space: normal; padding-left: 12px !important; padding-right: 12px !important; }
+            .gl-table td::before { content: attr(data-label); font-size: 12px; font-weight: 700; color: var(--ak-muted); text-align: left; }
+            .gl-table td[data-label=""]::before, .gl-table td.gl-no { display: none; }
+            .gl-table .ak-sticky-end { position: static; box-shadow: none; width: auto; min-width: 0; }
+            .gl-table tfoot tr { display: flex; justify-content: space-between; }
+            .gl-table tfoot td { position: static; width: auto; }
+        }
+        /* Phones and tablets: the products button never runs out of its card */
+        @media screen and (max-width: 1023px) {
+            .gl-table td.gl-prod { min-width: 0; }
+            .gl-prod-peek { flex: 1 1 auto; min-width: 0; width: auto; text-align: right; }
+            .gl-prod-line { max-width: 100%; justify-content: flex-end; }
+            .gl-prod-name { flex: 0 1 auto; }
+            .gl-table tfoot tr { flex-wrap: wrap; gap: 4px 12px; }
+            .gl-table tfoot td { width: auto !important; min-width: 0; }
+            .gl-table tfoot td:empty { display: none; }
+            /* Cards: label on the left, everything else stacked on the right */
+            .gl-table td[data-label="Issue"], .gl-table td[data-label="Salesman · vehicle"] { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
+            .gl-table td[data-label="Issue"]::before, .gl-table td[data-label="Salesman · vehicle"]::before { grid-row: 1; }
+            .gl-table td[data-label="Issue"] > *, .gl-table td[data-label="Salesman · vehicle"] > * { grid-column: 2; justify-self: end; text-align: right; }
+            .gl-table td.ak-num, .gl-table td.gl-nw { display: flex !important; justify-content: space-between !important; align-items: center; }
+            .gl-table td.gl-nw > a, .gl-table td.gl-nw > span { margin-left: auto; }
+            .gl-table td.ak-sticky-end { display: flex !important; justify-content: flex-end !important; }
+        }
         @media print {
             .gl-ranges, .ak-filters, .ak-tabs { display: none !important; }
             .gl-table { min-width: 0 !important; }
@@ -413,6 +499,7 @@
                             <caption class="sr-only">Goods issues, {{ $goodsIssues->total() }} results</caption>
                             <thead>
                                 <tr>
+                                    <th scope="col" class="gl-c-no">#</th>
                                     <th scope="col" class="gl-c-issue" aria-sort="{{ $ariaSort($sortField === 'issue_date' ? 'issue_date' : 'issue_number') }}"><a href="{{ $sortUrl('issue_number') }}">Issue <span aria-hidden="true">{{ $sortMark('issue_number') }}</span></a> &middot; <a href="{{ $sortUrl('issue_date') }}">Date <span aria-hidden="true">{{ $sortMark('issue_date') }}</span></a></th>
                                     <th scope="col" class="gl-c-man">Salesman &middot; vehicle</th>
                                     <th scope="col" class="gl-c-prod">Products</th>
@@ -429,27 +516,61 @@
                                     $canPeek = $gi->relationLoaded('items') && $gi->items->isNotEmpty();
                                     $canEdit = $gi->status === 'draft' && auth()->user()->can('goods-issue-edit');
                                     $canDelete = $gi->status === 'draft' && auth()->user()->can('goods-issue-delete');
+                                    $peek = null;
+                                    if ($canPeek) {
+                                        $peekSettled = $settlement && in_array($settlement->status, ['verified', 'posted'], true);
+                                        [$peekStage, $peekTone] = match (true) {
+                                            $gi->status === 'draft' => ['Draft', 'grey'],
+                                            $gi->status === 'cancelled' => ['Reversed', 'red'],
+                                            $peekSettled => ['Settled', 'green'],
+                                            (bool) $settlement => ['Settlement draft', 'amber'],
+                                            default => ['On van · '.($daysOut === 0 ? 'today' : $daysOut.' '.\Illuminate\Support\Str::plural('day', $daysOut)), $daysOut >= 2 ? 'red' : 'amber'],
+                                        };
+                                        $peek = [
+                                            'number' => $gi->issue_number,
+                                            'url' => route('goods-issues.show', $gi),
+                                            'stage' => $peekStage,
+                                            'tone' => $peekTone,
+                                            'settlement' => $settlement?->settlement_number,
+                                            'supplier' => $gi->supplier->supplier_name ?? '',
+                                            'value' => number_format((float) $gi->total_value),
+                                            'salesman' => $displayName($gi->employee->name ?? '—'),
+                                            'vehicle' => $gi->vehicle->vehicle_number ?? '—',
+                                            'warehouse' => $gi->warehouse->warehouse_name ?? '',
+                                            'date' => $gi->issue_date?->format('D, d M Y').($gi->posted_at ? ' · posted '.$gi->posted_at->format('h:i A') : ' · not posted'),
+                                            'qty' => $qty($gi->items->sum('quantity_issued')),
+                                            'total' => number_format((float) $gi->items->sum('total_value'), 2),
+                                            'lines' => $gi->items->map(fn ($line) => [
+                                                'name' => $line->product->product_name ?? '—',
+                                                'qty' => rtrim(rtrim(number_format((float) $line->quantity_issued, 3), '0'), '.'),
+                                                'rate' => number_format((float) $line->selling_price, 2),
+                                                'value' => number_format((float) $line->total_value, 2),
+                                                'supplementary' => (bool) $line->is_supplementary,
+                                            ])->values(),
+                                        ];
+                                    }
                                 @endphp
-                                <tbody x-data="{ open: false }">
+                                <tbody>
                                     <tr class="{{ $gi->status === 'draft' ? 'gl-draft' : '' }}">
+                                        <td class="gl-no" data-label="#">{{ $goodsIssues->firstItem() + $loop->index }}</td>
                                         <td data-label="Issue">
-                                            @if ($canPeek)
-                                                <button type="button" class="gl-toggle" @click="open = !open" :aria-expanded="open" aria-label="Show lines of {{ $gi->issue_number }}" title="Show or hide the products on this issue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg><span>{{ $gi->items->count() }}</span></button>
-                                            @endif
-                                            <a href="{{ route('goods-issues.show', $gi) }}" class="ak-primary-link" title="{{ $gi->issue_number }} · issued by {{ $gi->issuedBy->name ?? '—' }}">{{ $shortGi($gi->issue_number) }}<span class="sr-only">, issued by {{ $gi->issuedBy->name ?? '—' }}</span></a>
-                                            <div class="ak-muted gl-meta" title="{{ $gi->supplier->supplier_name ?? '' }} · {{ $gi->issue_date?->format('l, d M Y') }}{{ $gi->posted_at ? ' · posted '.$gi->posted_at->format('h:i A') : '' }}">{{ $shortSupplier($gi->supplier->supplier_name ?? '') ?: '—' }} · {{ $gi->issue_date?->format('d M') }}<span class="ak-hide-compact"> · {{ $gi->posted_at ? $gi->posted_at->format('h:i A') : 'not posted' }}</span></div>
+                                            <a href="{{ route('goods-issues.show', $gi) }}" class="ak-primary-link"
+                                                @if ($peek) x-data @click="if (! ($event.metaKey || $event.ctrlKey || $event.shiftKey)) { $event.preventDefault(); $dispatch('gi-peek', @js($peek)) }" aria-haspopup="dialog" title="Quick look at {{ $gi->issue_number }}" @else title="{{ $gi->issue_number }} · issued by {{ $gi->issuedBy->name ?? '—' }}" @endif>{{ $shortGi($gi->issue_number) }}<span class="sr-only">, issued by {{ $gi->issuedBy->name ?? '—' }}</span></a>
+                                            <div class="ak-muted gl-meta" title="{{ $gi->supplier->supplier_name ?? '' }} · {{ $gi->issue_date?->format('l, d M Y') }}{{ $gi->posted_at ? ' · posted '.$gi->posted_at->format('h:i A') : '' }}">{{ $shortSupplier($gi->supplier->supplier_name ?? '') ?: '—' }} · {{ $gi->issue_date?->format('d M Y') }}<span class="ak-hide-compact"> · {{ $gi->posted_at ? $gi->posted_at->format('h:i A') : 'not posted' }}</span></div>
                                         </td>
                                         <td data-label="Salesman · vehicle">
                                             <span class="ak-strong">{{ $displayName($gi->employee->name ?? '—') }}</span>
                                             <div class="ak-muted" title="{{ $gi->warehouse->warehouse_name ?? '' }}">{{ $gi->vehicle->vehicle_number ?? '—' }}{{ $gi->warehouse ? ' · '.$shortWarehouse($gi->warehouse->warehouse_name) : '' }}</div>
                                         </td>
                                         <td class="gl-prod" data-label="Products">
-                                            @if ($gi->relationLoaded('items') && $gi->items->isNotEmpty())
+                                            @if ($peek)
+                                                <button type="button" class="gl-prod-peek" x-data @click="$dispatch('gi-peek', @js($peek))" aria-haspopup="dialog" aria-label="Quick look at the products on {{ $gi->issue_number }}">
                                                 @php $top = $gi->items->sortByDesc('total_value')->take(2); $more = $gi->items->count() - 1; @endphp
                                                 @foreach ($top as $line)
                                                     <div class="gl-prod-line" title="{{ $line->product->product_name ?? '' }}"><span class="gl-prod-name">{{ $line->product->product_name ?? '—' }}</span><span class="gl-prod-qty">× {{ $qty($line->quantity_issued) }}</span>@if ($loop->first && $more > 0)<span class="gl-more-inline">+{{ $more }}</span>@endif</div>
                                                 @endforeach
                                                 @if ($gi->items->count() > 2)<div class="ak-muted gl-more-line">+ {{ $gi->items->count() - 2 }} more {{ \Illuminate\Support\Str::plural('product', $gi->items->count() - 2) }}</div>@endif
+                                                </button>
                                             @else
                                                 <span class="ak-muted">{{ number_format($gi->items_count) }} {{ \Illuminate\Support\Str::plural('line', $gi->items_count) }}</span>
                                             @endif
@@ -512,34 +633,11 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    @if ($canPeek)
-                                        <tr class="gl-lines" x-show="open" x-cloak>
-                                            <td colspan="7">
-                                                <div class="gl-lines-panel">
-                                                <p class="gl-lines-title">Products on {{ $gi->issue_number }}</p>
-                                                <table>
-                                                    <thead><tr><th>#</th><th>Product</th><th style="text-align:right">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Value (Rs)</th></tr></thead>
-                                                    <tbody>
-                                                        @foreach ($gi->items as $line)
-                                                            <tr>
-                                                                <td class="ak-muted">{{ $line->line_no ?? $loop->iteration }}</td>
-                                                                <td>{{ $line->product->product_name ?? '—' }}@if ($line->is_supplementary) <span class="ak-pill" style="margin:0">supplementary</span>@endif</td>
-                                                                <td style="text-align:right">{{ rtrim(rtrim(number_format((float) $line->quantity_issued, 3), '0'), '.') }}</td>
-                                                                <td style="text-align:right">{{ number_format((float) $line->selling_price, 2) }}</td>
-                                                                <td style="text-align:right">{{ number_format((float) $line->total_value, 2) }}</td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endif
                                 </tbody>
                             @endforeach
                             <tfoot>
                                 <tr>
-                                    <td colspan="2">Total &middot; {{ number_format($goodsIssues->total()) }} {{ \Illuminate\Support\Str::plural('issue', $goodsIssues->total()) }}{{ $goodsIssues->hasPages() ? ' (all pages)' : '' }}</td>
+                                    <td colspan="3">Total &middot; {{ number_format($goodsIssues->total()) }} {{ \Illuminate\Support\Str::plural('issue', $goodsIssues->total()) }}{{ $goodsIssues->hasPages() ? ' (all pages)' : '' }}</td>
                                     <td class="ak-muted" style="font-weight:400">{{ $goodsIssues->hasPages() ? '* quantity on this page' : '' }}</td>
                                     <td class="ak-num">{{ $goodsIssues->getCollection()->first()?->relationLoaded('items') ? $qty($goodsIssues->getCollection()->sum(fn ($g) => $g->items->sum('quantity_issued'))) : '' }}{{ $goodsIssues->hasPages() ? '*' : '' }}</td>
                                     <td class="ak-num" title="{{ number_format((float) $totalValue, 2) }}">{{ number_format((float) $totalValue) }}</td>
@@ -613,4 +711,46 @@
             });
         </script>
     @endpush
+    {{-- Quick look: opened by the issue number or the products of any row; View still opens the full page --}}
+    <div x-data="{ open: false, gi: null, opener: null,
+            show(detail) { this.opener = document.activeElement; this.gi = detail; this.open = true; this.$nextTick(() => this.$refs.close.focus()); },
+            hide() { this.open = false; this.opener?.focus(); } }"
+        @gi-peek.window="show($event.detail)" @keydown.escape.window="open && hide()">
+        <template x-if="gi">
+            <div class="gq-wrap" x-show="open" role="dialog" aria-modal="true" aria-labelledby="gq-title" x-trap.noscroll="open">
+                <div class="gq-scrim" @click="hide()" x-show="open"
+                    x-transition:enter="gq-fade-enter" x-transition:enter-start="gq-fade-from" x-transition:leave="gq-fade-leave" x-transition:leave-end="gq-fade-from"></div>
+                <div class="gq-box" x-show="open"
+                    x-transition:enter="gq-enter" x-transition:enter-start="gq-from" x-transition:leave="gq-leave" x-transition:leave-end="gq-from">
+                    <div class="gq-head">
+                        <div class="gq-top">
+                            <h2 class="gq-num" id="gq-title" x-text="gi.number"></h2>
+                            <button type="button" class="gq-close" x-ref="close" @click="hide()" aria-label="Close quick look">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6 6 18" /></svg>
+                            </button>
+                        </div>
+                        <div class="gq-chips">
+                            <span class="gq-chip gq-chip-dot" :class="'gq-' + gi.tone" x-text="gi.stage + (gi.settlement ? ' · ' + gi.settlement : '')"></span>
+                            <span class="gq-chip gq-blue" x-show="gi.supplier" x-text="gi.supplier"></span>
+                        </div>
+                        <p class="gq-amount"><small>Rs</small><span x-text="gi.value"></span></p>
+                        <p class="gq-who"><b x-text="gi.salesman"></b> · <span x-text="gi.vehicle"></span><template x-if="gi.warehouse"><span x-text="' · ' + gi.warehouse"></span></template><br><span x-text="gi.date"></span></p>
+                    </div>
+                    <div class="gq-list-head"><span x-text="gi.lines.length + (gi.lines.length === 1 ? ' product' : ' products')"></span><span>Value (Rs)</span></div>
+                    <ul class="gq-list">
+                        <template x-for="(line, index) in gi.lines" :key="index">
+                            <li>
+                                <span class="gq-line-name"><span x-text="line.name"></span><span class="gq-supp" x-show="line.supplementary">supplementary</span><small x-text="line.qty + ' × ' + line.rate"></small></span>
+                                <span class="gq-line-val" x-text="line.value"></span>
+                            </li>
+                        </template>
+                    </ul>
+                    <div class="gq-foot">
+                        <div class="gq-totals"><span>Quantity <b x-text="gi.qty"></b></span><span>Total <b x-text="'Rs ' + gi.total"></b></span></div>
+                        <a :href="gi.url" class="gq-open">Open full issue <span aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 </x-app-layout>

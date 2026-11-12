@@ -227,3 +227,16 @@ it('stays in balance from issue through added items to the posted settlement', f
         ->sum(DB::raw('line.debit - line.credit'));
     expect($vanStockOnIssueDate)->toBe(0.0);
 });
+
+it('adds the items only once when the same form arrives twice', function () {
+    $data = postGoodsIssueForAppending();
+    $payload = appendPayload($data, 10) + ['_once' => 'append-form-1'];
+
+    post(route('goods-issues.store-appended-items', $data['goodsIssue']), $payload)
+        ->assertRedirect(route('goods-issues.show', $data['goodsIssue']));
+    post(route('goods-issues.store-appended-items', $data['goodsIssue']), $payload)
+        ->assertSessionHas('error', fn (string $message) => str_contains($message, 'already been sent'));
+
+    expect(GoodsIssueItem::where('goods_issue_id', $data['goodsIssue']->id)->where('is_supplementary', true)->count())->toBe(1)
+        ->and(JournalEntry::where('reference', 'like', $data['goodsIssue']->issue_number.'-S%')->count())->toBe(1);
+});

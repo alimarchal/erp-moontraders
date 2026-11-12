@@ -1,124 +1,127 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-                Add Items to Goods Issue: {{ $goodsIssue->issue_number }}
-            </h2>
-            <a href="{{ route('goods-issues.show', $goodsIssue->id) }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
-        </div>
+        <x-page-header :title="'Add or remove items · '.$goodsIssue->issue_number" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" :backRoute="route('goods-issues.show', $goodsIssue->id)" />
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 mt-4 shadow-md" />
+    @include('settings.partials.ui-style')
+    <x-apple-skin />
+    @include('goods-issues.partials.form-style')
 
-            @if ($draftSettlement)
-                <div class="mb-4 rounded-md border-l-4 border-amber-400 bg-amber-50 p-4 shadow">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-semibold text-amber-800">Draft Settlement Exists</h3>
-                            <p class="mt-1 text-sm text-amber-700">
-                                A draft settlement <strong>{{ $draftSettlement->settlement_number }}</strong> already exists for this Goods Issue.
-                                After adding items here, you must <a href="{{ route('sales-settlements.edit', $draftSettlement->id) }}" class="font-semibold underline">edit that draft settlement</a>
-                                manually to include the new items, otherwise they will be excluded from the reconciliation.
-                            </p>
-                        </div>
-                    </div>
+    <div class="ak-page gf-page">
+        <x-status-message class="mb-4 mt-4 shadow-md" />
+        <x-validation-errors class="mb-4" />
+
+        @if ($draftSettlement)
+            <div class="gf-banner gf-banner-amber" role="status">
+                <span>
+                    <b>Draft settlement {{ $draftSettlement->settlement_number }} already exists.</b>
+                    After adding items here, <a href="{{ route('sales-settlements.edit', $draftSettlement->id) }}">edit that draft settlement</a>
+                    to include the new items, otherwise they are left out of the reconciliation.
+                </span>
+            </div>
+        @endif
+
+        @if ($goodsIssue->status === 'issued')
+            <div class="gf-banner gf-banner-blue" role="status">
+                <span>This goods issue is already posted. The items added here are posted straight away, with their own journal entry for the extra stock moved to the van.</span>
+            </div>
+        @endif
+
+        <section class="uf-card gf-card" aria-labelledby="gf-issue">
+            <header class="uf-card-head">
+                <div>
+                    <h2 class="uf-card-title" id="gf-issue"><span class="uf-step">1</span> {{ $goodsIssue->issue_number }}</h2>
+                    <p class="uf-card-sub">The issue the items are added to, and what is already on it.</p>
                 </div>
-            @endif
+            </header>
+            <div class="uf-body">
+                <dl class="gf-facts">
+                    <div><dt>Supplier</dt><dd>{{ $goodsIssue->supplier->supplier_name ?? '—' }}</dd></div>
+                    <div><dt>Issue date</dt><dd>{{ $goodsIssue->issue_date->format('d M Y') }}</dd></div>
+                    <div><dt>Warehouse</dt><dd>{{ $goodsIssue->warehouse->warehouse_name ?? '—' }}</dd></div>
+                    <div><dt>Salesman</dt><dd>{{ $goodsIssue->employee->name ?? '—' }}</dd></div>
+                    <div><dt>Vehicle</dt><dd>{{ $goodsIssue->vehicle->vehicle_number ?? '—' }} <span class="gf-lede" style="font-size:12px; font-weight:400">· {{ ucfirst($goodsIssue->status) }}</span></dd></div>
+                </dl>
 
-            @if ($goodsIssue->status === 'issued')
-                <div class="mb-4 rounded-md border-l-4 border-blue-400 bg-blue-50 p-4 shadow">
-                    <p class="text-sm text-blue-800">
-                        <strong>Note:</strong> This Goods Issue has already been posted. New items added here will be posted automatically (a separate journal entry will be created for the supplementary stock movement).
-                    </p>
-                </div>
-            @endif
+                <table class="gf-existing" style="margin-top:16px">
+                    <caption class="sr-only">Items already on {{ $goodsIssue->issue_number }}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">SKU</th>
+                            <th scope="col" class="gf-num">Qty issued</th>
+                            <th scope="col">UOM</th>
+                            <th scope="col" class="gf-num">Unit cost</th>
+                            <th scope="col" class="gf-num">Total value</th>
+                            <th scope="col">Type</th>
+                            @if ($canRemove)
+                                <th scope="col"><span class="sr-only">Remove</span></th>
+                            @endif
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($goodsIssue->items as $existingItem)
+                            <tr>
+                                <td data-label="#">{{ $existingItem->line_no }}</td>
+                                <td data-label="SKU">
+                                    <b>{{ $existingItem->product->product_name ?? '—' }}</b>
+                                    @foreach ($existingItem->removals as $removal)
+                                        <span class="gf-removed">removed {{ rtrim(rtrim(number_format((float) $removal->quantity, 3), '0'), '.') }} &middot; {{ $removal->removed_at->format('d M') }} by {{ $removal->removedBy->name ?? '—' }}</span>
+                                    @endforeach
+                                </td>
+                                <td data-label="Qty issued" class="gf-num">{{ number_format($existingItem->quantity_issued, 2) }}</td>
+                                <td data-label="UOM">{{ $existingItem->uom->uom_name ?? '—' }}</td>
+                                <td data-label="Unit cost" class="gf-num">{{ number_format($existingItem->unit_cost, 2) }}</td>
+                                <td data-label="Total value" class="gf-num">{{ number_format($existingItem->total_value, 2) }}</td>
+                                <td data-label="Type">
+                                    @if ($existingItem->is_supplementary)
+                                        <span class="ak-pill" style="margin:0; background:rgba(175,82,222,.14); color:#7a2fa3">Supplementary</span>
+                                    @else
+                                        <span class="ak-pill" style="margin:0">Original</span>
+                                    @endif
+                                </td>
+                                @if ($canRemove)
+                                    @php $line = $removableLines[$existingItem->id] ?? ['batches' => [], 'refusal' => 'Nothing is left on this line.']; @endphp
+                                    <td data-label="" class="gf-num">
+                                        <button type="button" class="gf-remove" x-data
+                                            @if ($line['refusal']) disabled title="{{ $line['refusal'] }}" @endif
+                                            aria-label="Remove from {{ $goodsIssue->issue_number }} : {{ $existingItem->product->product_name ?? '' }}"
+                                            @click="$dispatch('gi-remove-line', @js([
+                                                'id' => $existingItem->id,
+                                                'sku' => $existingItem->product->product_name ?? '',
+                                                'url' => route('goods-issues.remove-item', [$goodsIssue, $existingItem]),
+                                                'standing' => (float) collect($line['batches'])->sum('quantity'),
+                                                'batches' => $line['batches'],
+                                            ]))">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
+                                            Remove
+                                        </button>
+                                    </td>
+                                @endif
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <x-validation-errors class="mb-4 mt-4" />
-
-                    {{-- Read-only GI info --}}
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-gray-50 rounded-md border border-gray-200">
-                        <div>
-                            <div class="text-xs uppercase text-gray-500 font-semibold">Supplier</div>
-                            <div class="text-sm font-medium text-gray-900">{{ $goodsIssue->supplier->supplier_name ?? '-' }}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs uppercase text-gray-500 font-semibold">Issue Date</div>
-                            <div class="text-sm font-medium text-gray-900">{{ $goodsIssue->issue_date->format('Y-m-d') }}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs uppercase text-gray-500 font-semibold">Warehouse</div>
-                            <div class="text-sm font-medium text-gray-900">{{ $goodsIssue->warehouse->warehouse_name ?? '-' }}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs uppercase text-gray-500 font-semibold">Salesman</div>
-                            <div class="text-sm font-medium text-gray-900">{{ $goodsIssue->employee->name ?? '-' }}</div>
-                        </div>
-                        <div>
-                            <div class="text-xs uppercase text-gray-500 font-semibold">Vehicle</div>
-                            <div class="text-sm font-medium text-gray-900">{{ $goodsIssue->vehicle->vehicle_number ?? '-' }} <span class="text-xs text-gray-500">({{ ucfirst($goodsIssue->status) }})</span></div>
-                        </div>
-                    </div>
-
-                    {{-- Existing items (read-only) --}}
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Existing Items on this GI</h3>
-                    <div class="overflow-x-auto mb-6">
-                        <table class="min-w-full divide-y divide-gray-200 border border-gray-200 text-sm">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-3 py-2 text-left font-semibold text-gray-700">Line</th>
-                                    <th class="px-3 py-2 text-left font-semibold text-gray-700">Product</th>
-                                    <th class="px-3 py-2 text-right font-semibold text-gray-700">Qty Issued</th>
-                                    <th class="px-3 py-2 text-left font-semibold text-gray-700">UOM</th>
-                                    <th class="px-3 py-2 text-right font-semibold text-gray-700">Unit Cost</th>
-                                    <th class="px-3 py-2 text-right font-semibold text-gray-700">Total Value</th>
-                                    <th class="px-3 py-2 text-center font-semibold text-gray-700">Type</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
-                                @foreach ($goodsIssue->items as $existingItem)
-                                    <tr>
-                                        <td class="px-3 py-2">{{ $existingItem->line_no }}</td>
-                                        <td class="px-3 py-2">{{ $existingItem->product->product_name ?? '-' }}</td>
-                                        <td class="px-3 py-2 text-right">{{ number_format($existingItem->quantity_issued, 2) }}</td>
-                                        <td class="px-3 py-2">{{ $existingItem->uom->uom_name ?? '-' }}</td>
-                                        <td class="px-3 py-2 text-right">{{ number_format($existingItem->unit_cost, 2) }}</td>
-                                        <td class="px-3 py-2 text-right">{{ number_format($existingItem->total_value, 2) }}</td>
-                                        <td class="px-3 py-2 text-center">
-                                            @if ($existingItem->is_supplementary)
-                                                <span class="inline-flex px-2 py-0.5 text-xs rounded bg-purple-100 text-purple-700 font-semibold">Supplementary</span>
-                                            @else
-                                                <span class="inline-flex px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700">Original</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {{-- New items form --}}
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Add New Items</h3>
-
+        @if ($canAdd)
                     <form method="POST" action="{{ route('goods-issues.store-appended-items', $goodsIssue->id) }}"
-                        id="appendItemsForm" x-data="appendItemsForm()">
+                        id="appendItemsForm" x-data="appendItemsForm()" style="display:flex; flex-direction:column; gap:16px">
                         @csrf
+                        <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">
 
-                        <x-form-table title="Products to Add" :sticky-header="true" :headers="array_filter([
-        ['label' => 'Product', 'align' => 'text-left', 'width' => '300px'],
+                        <section class="uf-card gf-card" aria-labelledby="gf-products">
+                            <header class="uf-card-head">
+                                <div>
+                                    <h2 class="uf-card-title" id="gf-products"><span class="uf-step">2</span> SKUs to add</h2>
+                                    <p class="uf-card-sub">Taken from the same warehouse, oldest / soonest-expiring batches first. Lines in red have less stock than needed.</p>
+                                </div>
+                            </header>
+                            <div class="gf-table">
+                        <x-form-table :title="null" :sticky-header="true" :headers="array_filter([
+        ['label' => '#', 'align' => 'text-center', 'width' => '36px'],
+        ['label' => 'SKU', 'align' => 'text-left', 'width' => '300px'],
         ['label' => 'Non-Promo<br>Only', 'align' => 'text-center', 'width' => '70px'],
         ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '110px'],
         $canEnterCartons ? ['label' => 'Carton', 'align' => 'text-center', 'width' => '90px'] : null,
@@ -132,14 +135,15 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
                                     <tr class="align-top">
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="#" class="gf-no" x-text="index + 1" aria-label="Line number"></td>
+                                        <td data-label="SKU" class="px-2 py-2 align-middle">
                                             <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
                                                 required
                                                 class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                                <option value="">Select Product</option>
+                                                <option value="">Select SKU</option>
                                             </select>
                                         </td>
-                                        <td class="px-2 py-2 text-center align-middle">
+                                        <td data-label="Non-promo only" class="px-2 py-2 text-center align-middle">
                                             <input type="hidden" :name="`items[${index}][exclude_promotional]`" value="0">
                                             <input type="checkbox" :name="`items[${index}][exclude_promotional]`"
                                                 x-model="item.exclude_promotional"
@@ -149,14 +153,14 @@
                                                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 h-5 w-5"
                                                 title="Check to exclude promotional batches">
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Qty available" class="px-2 py-2 align-middle">
                                             <input type="text" :id="`available_qty_${index}`" readonly
                                                 x-model="item.available_qty"
                                                 :class="parseFloat(item.available_qty) <= 0 ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-100'"
                                                 class="rounded-md shadow-sm text-sm w-full text-center font-semibold">
                                         </td>
                                         @if ($canEnterCartons)
-                                            <td class="px-2 py-2 align-middle">
+                                            <td data-label="Carton" class="px-2 py-2 align-middle">
                                                 <input type="number"
                                                     x-model="item.carton_qty"
                                                     @input="recalcFromCartonPieces(index)"
@@ -166,7 +170,7 @@
                                                     class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
                                                     placeholder="0">
                                             </td>
-                                            <td class="px-2 py-2 align-middle">
+                                            <td data-label="Pieces" class="px-2 py-2 align-middle">
                                                 <input type="number"
                                                     x-model="item.pieces_qty"
                                                     @input="recalcFromCartonPieces(index)"
@@ -177,7 +181,7 @@
                                                     placeholder="0">
                                             </td>
                                         @endif
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Qty issued" class="px-2 py-2 align-middle">
                                             <input type="number" :name="`items[${index}][quantity_issued]`"
                                                 x-model="item.quantity_issued"
                                                 @input="onDirectQtyInput(index)" step="0.001"
@@ -188,7 +192,7 @@
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 @if ($canEnterCartons) readonly title="Auto-calculated from Carton + Pieces" @endif>
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="UOM" class="px-2 py-2 align-middle">
                                             <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
                                                 :disabled="parseFloat(item.available_qty) <= 0"
                                                 :required="parseFloat(item.available_qty) > 0"
@@ -200,7 +204,7 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Price breakdown" class="px-2 py-2 align-middle">
                                             @if ($canEnterCartons)
                                                 <div x-show="item.conversion_factor > 1" class="text-xs text-indigo-600 font-medium mb-1">
                                                     <span x-text="'1 Ctn = ' + item.conversion_factor + ' Pcs'"></span>
@@ -211,9 +215,9 @@
                                             <input type="hidden" :name="`items[${index}][unit_cost]`" x-model="item.unit_cost">
                                             <input type="hidden" :name="`items[${index}][selling_price]`" x-model="item.selling_price">
                                         </td>
-                                        <td class="px-2 py-2 text-right text-sm font-semibold align-middle"
+                                        <td data-label="Total value" class="px-2 py-2 text-right text-sm font-semibold align-middle"
                                             x-text="formatNumber(item.total_value)"></td>
-                                        <td class="px-2 py-2 text-center align-middle">
+                                        <td data-label="" class="px-2 py-2 text-center align-middle">
                                             <button type="button" @click="removeItem(index)"
                                                 class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
                                                 :class="(items.length === 1) ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
@@ -228,7 +232,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr class="font-semibold bg-gray-100">
-                                    <td class="px-2 py-2 text-right" colspan="{{ $canEnterCartons ? 5 : 3 }}">Totals:</td>
+                                    <td class="px-2 py-2 text-right" colspan="{{ $canEnterCartons ? 6 : 4 }}">Totals:</td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))">
                                     </td>
@@ -238,23 +242,33 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="{{ $canEnterCartons ? 10 : 8 }}" class="px-2 py-2">
+                                    <td colspan="{{ $canEnterCartons ? 11 : 9 }}" class="px-2 py-2">
                                         <button type="button" @click="addItem()"
                                             class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                             </svg>
-                                            Add Product
+                                            Add SKU
                                         </button>
                                     </td>
                                 </tr>
                             </tfoot>
                         </x-form-table>
 
-                        <div class="flex items-center justify-end mt-6">
-                            <x-button type="button" @click="validateAndSubmit()">
-                                Append Items to {{ $goodsIssue->issue_number }}
-                            </x-button>
+                            </div>
+                        </section>
+
+                        <div class="uf-actions gf-actions">
+                            <div class="gf-totals" aria-live="polite">
+                                <span><b x-text="items.filter(i => i.product_id).length"></b> SKUs to add</span>
+                                <span>Value Rs <b x-text="formatNumber(grandTotal)"></b></span>
+                            </div>
+                            <div>
+                                <a href="{{ route('goods-issues.show', $goodsIssue->id) }}" class="ak-btn ak-btn-outline">Cancel</a>
+                                <x-button type="button" @click="validateAndSubmit()">
+                                    Append Items to {{ $goodsIssue->issue_number }}
+                                </x-button>
+                            </div>
                         </div>
 
                         {{-- Append-items submit confirmation lives inside the form's
@@ -314,9 +328,7 @@
                             </div>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
+        @endif
     </div>
 
     @push('scripts')
@@ -508,7 +520,7 @@
 
                         const batchInfoDiv = document.getElementById(`batch_info_${index}`);
                         if (batchesUsed.length > 0) {
-                            let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
+                            let info = '<div class="text-blue-600 font-semibold mb-1">Issuing from batches</div>';
                             batchesUsed.forEach((b, bIndex) => {
                                 const promo = b.is_promotional ? ' 🎁' : '';
                                 info += `<div>Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>`;
@@ -592,12 +604,15 @@
                 const alpineComponent = Alpine.$data($select.closest('form')[0]);
 
                 $select.select2({
-                    placeholder: 'Select Product',
+                    placeholder: 'Select SKU',
+                    language: { noResults: () => (allProducts.length ? 'No SKU matches' : 'Pick the supplier and warehouse first') },
+                    matcher: (params, data) => { const term = (params.term || '').trim().toLowerCase(); if (! term) { return data; } return `${data.text || ''} ${data.code || ''}`.toLowerCase().includes(term) ? data : null; },
                     allowClear: false,
                     width: '100%',
                     data: allProducts.map(p => ({
                         id: p.id,
-                        text: `${p.product_code} - ${p.product_name}`
+                        text: p.product_name,
+                        code: p.product_code
                     }))
                 });
 
@@ -663,7 +678,7 @@
                             });
                             batchInfoDiv.innerHTML = html;
                         } else {
-                            batchInfoDiv.innerHTML = `<div class="text-green-600">✓ Single price: ₨${data.batches[0].selling_price.toFixed(2)}</div>`;
+                            batchInfoDiv.innerHTML = `<div class="text-green-600">Single price ₨${data.batches[0].selling_price.toFixed(2)}</div>`;
                         }
                     } else {
                         batchInfoDiv.innerHTML = '';
@@ -691,6 +706,102 @@
             })();
         </script>
     @endpush
+
+    @if ($canRemove)
+        {{-- Remove: a sheet that previews the batches that come back and the journal it posts --}}
+        @php $reopen = old('_remove_item'); @endphp
+        <div x-data="giRemoveSheet(@js($reopen ? ['id' => (int) $reopen] : null))" @gi-remove-line.window="open($event.detail)" @keydown.escape.window="close()">
+            <template x-if="line">
+                <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="gf-remove-title" x-show="shown" x-trap.noscroll="shown">
+                    <div class="absolute inset-0 gf-scrim" @click="close()" x-show="shown" x-transition.opacity></div>
+                    <form method="POST" :action="line.url" class="gf-sheet" x-show="shown" @submit="submitting = true"
+                        x-transition:enter="gf-sheet-in" x-transition:enter-start="gf-sheet-from" x-transition:leave="gf-sheet-out" x-transition:leave-end="gf-sheet-from">
+                        @csrf
+                        <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">
+                        <header class="gf-sheet-head">
+                            <div>
+                                <h2 id="gf-remove-title">Remove from {{ $goodsIssue->issue_number }}</h2>
+                                <p><b x-text="line.sku"></b> &middot; <span x-text="fmt(line.standing)"></span> left on this line</p>
+                            </div>
+                            <button type="button" class="gf-sheet-close" @click="close()" aria-label="Close">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                            </button>
+                        </header>
+                        <div class="gf-sheet-body">
+                            <label for="gf-remove-qty">Quantity to take back</label>
+                            <div class="gf-qty">
+                                <input id="gf-remove-qty" name="quantity" type="number" step="0.01" min="0.01" :max="line.standing" x-model.number="quantity" x-ref="qty" required inputmode="decimal">
+                                <button type="button" @click="quantity = line.standing">All</button>
+                            </div>
+                            <p class="gf-hint" x-show="quantity > line.standing" x-cloak>Only <span x-text="fmt(line.standing)"></span> is left on this line.</p>
+
+                            <p class="gf-sheet-label">Comes back to {{ $goodsIssue->warehouse->warehouse_name ?? 'the warehouse' }}</p>
+                            <ul class="gf-preview">
+                                <template x-for="batch in preview" :key="batch.stock_batch_id">
+                                    <li><span x-text="batch.batch_code"></span><span><b x-text="fmt(batch.quantity)"></b> &times; <span x-text="money(batch.unit_cost)"></span></span></li>
+                                </template>
+                            </ul>
+                            <p class="gf-journal">Journal: <b>Dr</b> Stock in Hand / <b>Cr</b> Van Stock &middot; Rs <b x-text="money(cost)"></b></p>
+
+                            <label for="gf-remove-reason">Reason</label>
+                            <textarea id="gf-remove-reason" name="reason" rows="2" minlength="5" maxlength="500" required placeholder="e.g. Four cartons came back unopened">{{ old('reason') }}</textarea>
+
+                            <label for="gf-remove-password">Your password</label>
+                            <input id="gf-remove-password" name="password" type="password" autocomplete="current-password" required>
+                        </div>
+                        <footer class="gf-sheet-foot">
+                            <button type="button" class="gf-btn-grey" @click="close()">Cancel</button>
+                            <button type="submit" class="gf-btn-red" :disabled="submitting || !(quantity > 0 && quantity <= line.standing)"><span x-show="! submitting">Remove <span x-text="fmt(quantity || 0)"></span></span><span x-show="submitting" x-cloak>Removing…</span></button>
+                        </footer>
+                    </form>
+                </div>
+            </template>
+        </div>
+
+        @push('scripts')
+            <script>
+                /** The remove sheet: the batch issued last comes back first, at the cost it left at (as the server does). */
+                function giRemoveSheet(reopen) {
+                    const lines = @js($goodsIssue->items->filter(fn ($item) => isset($removableLines[$item->id]))->map(fn ($item) => [
+                        'id' => $item->id,
+                        'sku' => $item->product->product_name ?? '',
+                        'url' => route('goods-issues.remove-item', [$goodsIssue, $item]),
+                        'standing' => (float) collect($removableLines[$item->id]['batches'])->sum('quantity'),
+                        'batches' => $removableLines[$item->id]['batches'],
+                    ])->values());
+                    return {
+                        line: null, shown: false, quantity: 0, opener: null, submitting: false,
+                        init() {
+                            // After a refused removal the page comes back with the sheet open on the same line.
+                            const found = reopen ? lines.find(l => l.id === reopen.id) : null;
+                            if (found) { this.open(found, @js((float) old('quantity', 0))); }
+                        },
+                        open(detail, quantity = null) {
+                            this.opener = document.activeElement;
+                            this.line = detail;
+                            this.quantity = quantity || detail.standing;
+                            this.$nextTick(() => { this.shown = true; this.$nextTick(() => this.$refs.qty?.focus()); });
+                        },
+                        close() { if (! this.shown) { return; } this.shown = false; this.opener?.focus(); },
+                        get preview() {
+                            let left = Math.min(this.quantity || 0, this.line?.standing || 0);
+                            const out = [];
+                            for (const batch of (this.line?.batches || [])) {
+                                if (left <= 0.0005) { break; }
+                                const take = Math.round(Math.min(left, batch.quantity) * 1000) / 1000;
+                                out.push({ ...batch, quantity: take });
+                                left -= take;
+                            }
+                            return out;
+                        },
+                        get cost() { return this.preview.reduce((sum, b) => sum + b.quantity * b.unit_cost, 0); },
+                        fmt(n) { return (Math.round(n * 1000) / 1000).toString(); },
+                        money(n) { return Number(n).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+                    };
+                }
+            </script>
+        @endpush
+    @endif
 
     <x-alpine-alert-modal
         event-name="open-alert-modal"

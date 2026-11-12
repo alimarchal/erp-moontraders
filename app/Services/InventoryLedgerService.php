@@ -97,6 +97,52 @@ class InventoryLedgerService
      * the warehouse gets its stock back and the van gives it up. The entry keeps the
      * goods_issue_id, which lets the issue and its reversal net to zero together.
      */
+    /**
+     * Record stock taken back from a van to its warehouse before settlement (a goods issue line removal):
+     * warehouse IN (debit) and vehicle OUT (credit) on the same batch, both tied to the goods issue.
+     */
+    public function recordIssueRemoval(
+        int $productId,
+        int $warehouseId,
+        int $vehicleId,
+        ?int $employeeId,
+        float $quantity,
+        float $unitCost,
+        int $goodsIssueId,
+        string $date,
+        string $notes,
+        int $batchId,
+        bool $undo = false
+    ): void {
+        // $undo writes the mirror (warehouse OUT, vehicle IN), used when a reversal offsets an earlier removal.
+        $warehouseIn = $undo ? 0 : $quantity;
+        $shared = [
+            'date' => $date,
+            'transaction_type' => InventoryLedgerEntry::TYPE_ADJUSTMENT,
+            'product_id' => $productId,
+            'stock_batch_id' => $batchId,
+            'employee_id' => $employeeId,
+            'goods_issue_id' => $goodsIssueId,
+            'unit_cost' => $unitCost,
+        ];
+
+        $this->createEntry($shared + [
+            'warehouse_id' => $warehouseId,
+            'vehicle_id' => null,
+            'debit_qty' => $warehouseIn,
+            'credit_qty' => $quantity - $warehouseIn,
+            'notes' => $notes.($undo ? ' (Warehouse OUT)' : ' (Warehouse IN)'),
+        ]);
+
+        $this->createEntry($shared + [
+            'warehouse_id' => null,
+            'vehicle_id' => $vehicleId,
+            'debit_qty' => $quantity - $warehouseIn,
+            'credit_qty' => $warehouseIn,
+            'notes' => $notes.($undo ? ' (Vehicle IN)' : ' (Vehicle OUT)'),
+        ]);
+    }
+
     public function recordIssueReversal(InventoryLedgerEntry $original, string $date, string $notes): InventoryLedgerEntry
     {
         return $this->createEntry([

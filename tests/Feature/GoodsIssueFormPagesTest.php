@@ -17,7 +17,7 @@ beforeEach(function () {
 it('shows the create form in three sections with every field the form posts', function () {
     $this->get(route('goods-issues.create'))
         ->assertSuccessful()
-        ->assertSeeInOrder(['Issue details', 'Products to issue', 'Notes'])
+        ->assertSeeInOrder(['Issue details', 'SKUs to issue', 'Notes'])
         ->assertSee('id="goodsIssueForm"', false)
         ->assertSee('name="supplier_ids[]"', false)
         ->assertSee('name="issue_date"', false)
@@ -35,7 +35,7 @@ it('shows the edit form of a draft with its number and the same fields', functio
     $this->get(route('goods-issues.edit', $draft))
         ->assertSuccessful()
         ->assertSee('Edit Goods Issue '.$draft->issue_number)
-        ->assertSeeInOrder(['Issue details', 'Products to issue', 'Notes'])
+        ->assertSeeInOrder(['Issue details', 'SKUs to issue', 'Notes'])
         ->assertSee('name="_method" value="PUT"', false)
         ->assertSee('Morning load')
         ->assertSee('Update Goods Issue');

@@ -200,7 +200,8 @@ class GoodsIssueReversalService
         return JournalEntry::where('status', 'posted')
             ->where(fn ($query) => $query
                 ->where('reference', $goodsIssue->issue_number)
-                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%')
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-R%'))
             ->orderBy('id')
             ->get()
             ->filter(fn (JournalEntry $entry) => $goodsIssue->ownsJournalReference($entry->reference))
@@ -282,6 +283,26 @@ class GoodsIssueReversalService
                 "Reversal of GI {$goodsIssue->issue_number}".($entry->vehicle_id ? ' (Vehicle OUT)' : ' (Warehouse IN)')
             );
         }
+
+        // Stock already taken back by removals is in the warehouse: offset those entries too, so the
+        // reversal returns only what was still on the van.
+        foreach ($goodsIssue->removals()->with('item')->get() as $removal) {
+            foreach ($removal->batches as $batch) {
+                $this->inventoryLedgerService->recordIssueRemoval(
+                    (int) $removal->item->product_id,
+                    (int) $goodsIssue->warehouse_id,
+                    (int) $goodsIssue->vehicle_id,
+                    $goodsIssue->employee_id,
+                    (float) $batch['quantity'],
+                    (float) $batch['unit_cost'],
+                    $goodsIssue->id,
+                    $date,
+                    "Reversal of GI {$goodsIssue->issue_number}: removal of ".rtrim(rtrim(number_format((float) $batch['quantity'], 3, '.', ''), '0'), '.'),
+                    (int) $batch['stock_batch_id'],
+                    undo: true
+                );
+            }
+        }
     }
 
     /**
@@ -326,6 +347,8 @@ class GoodsIssueReversalService
             ->orderBy('line_no')
             ->get()
             ->groupBy('product_id')
+            // A product whose lines were all removed before the reversal has nothing to copy.
+            ->filter(fn ($items) => (float) $items->sum('quantity_issued') > StockValuationService::QTY_EPSILON)
             ->values();
 
         $replacement = GoodsIssue::create([

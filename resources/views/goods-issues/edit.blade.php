@@ -1,28 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('goods-issues.index') }}">Goods Issues</a><span aria-hidden="true">›</span>
-                    <a href="{{ route('goods-issues.show', $goodsIssue) }}">{{ $goodsIssue->issue_number }}</a><span aria-hidden="true">›</span><span>Edit</span>
-                </nav>
-                <h1 class="ak-title">Edit Goods Issue {{ $goodsIssue->issue_number }}</h1>
-                <p class="ak-sub">
-                    <span class="ak-status ak-status-amber"><i aria-hidden="true"></i>Draft</span>
-                    &middot; created {{ $goodsIssue->created_at?->format('d M Y, h:i A') }}{{ $goodsIssue->issuedBy ? ' by '.$goodsIssue->issuedBy->name : '' }}
-                    &middot; stock moves only when it is posted
-                </p>
-            </div>
-            <div class="ak-head-actions">
-                <a href="{{ route('goods-issues.show', $goodsIssue) }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to {{ $goodsIssue->issue_number }}</a>
-            </div>
-        </div>
+        <x-page-header :title="'Edit Goods Issue '.$goodsIssue->issue_number" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" :backRoute="route('goods-issues.show', $goodsIssue)" />
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     @include('goods-issues.partials.form-style')
 
     <div class="ak-page gf-page">
+        <p class="gf-lede">
+            <span class="ak-status ak-status-amber"><i aria-hidden="true"></i>Draft</span>
+            &middot; created {{ $goodsIssue->created_at?->format('d M Y, h:i A') }}{{ $goodsIssue->issuedBy ? ' by '.$goodsIssue->issuedBy->name : '' }}
+            &middot; stock moves only when it is posted
+        </p>
         <x-status-message class="mb-4 mt-4 shadow-md" />
         <x-validation-errors class="mb-4" />
 
@@ -103,7 +93,7 @@
                         <section class="uf-card gf-card" aria-labelledby="gf-products">
                             <header class="uf-card-head">
                                 <div>
-                                    <h2 class="uf-card-title" id="gf-products"><span class="uf-step">2</span> Products to issue</h2>
+                                    <h2 class="uf-card-title" id="gf-products"><span class="uf-step">2</span> SKUs to issue</h2>
                                     <p class="uf-card-sub">Stock is taken from the oldest / soonest-expiring batches first. Lines in red have less stock than needed.</p>
                                 </div>
                                 <div class="gf-head-stats">
@@ -114,7 +104,8 @@
                             </header>
                             <div class="gf-table">
                         <x-form-table :title="null" :sticky-header="true" :headers="array_filter([
-                            ['label' => 'Product', 'align' => 'text-left', 'width' => '300px'],
+                            ['label' => '#', 'align' => 'text-center', 'width' => '36px'],
+                            ['label' => 'SKU', 'align' => 'text-left', 'width' => '300px'],
                             ['label' => 'Non-Promo<br>Only', 'align' => 'text-center', 'width' => '70px'],
                             ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '110px'],
                             $canEnterCartons ? ['label' => 'Carton', 'align' => 'text-center', 'width' => '90px'] : null,
@@ -128,14 +119,15 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="item.uid">
                                     <tr class="align-top">
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="#" class="gf-no" x-text="index + 1" aria-label="Line number"></td>
+                                        <td data-label="SKU" class="px-2 py-2 align-middle">
                                             <select :id="`product_${item.uid}`" :name="`items[${index}][product_id]`"
                                                 required
                                                 class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                                <option value="">Select Product</option>
+                                                <option value="">Select SKU</option>
                                             </select>
                                         </td>
-                                        <td class="px-2 py-2 text-center align-middle">
+                                        <td data-label="Non-promo only" class="px-2 py-2 text-center align-middle">
                                             <input type="hidden" :name="`items[${index}][exclude_promotional]`" value="0">
                                             <input type="checkbox" :name="`items[${index}][exclude_promotional]`"
                                                 x-model="item.exclude_promotional"
@@ -145,7 +137,7 @@
                                                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 h-5 w-5"
                                                 title="Check to exclude promotional batches">
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Qty available" class="px-2 py-2 align-middle">
                                             <input type="text" :id="`available_qty_${item.uid}`" readonly
                                                 x-model="item.available_qty"
                                                 :class="parseFloat(item.available_qty) <= 0 ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-100'"
@@ -157,7 +149,7 @@
                                             </div>
                                         </td>
                                         @if($canEnterCartons)
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Carton" class="px-2 py-2 align-middle">
                                             <input type="number"
                                                 x-model="item.carton_qty"
                                                 @input="recalcFromCartonPieces(index)"
@@ -167,7 +159,7 @@
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
                                                 placeholder="0">
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Pieces" class="px-2 py-2 align-middle">
                                             <input type="number"
                                                 x-model="item.pieces_qty"
                                                 @input="recalcFromCartonPieces(index)"
@@ -178,7 +170,7 @@
                                                 placeholder="0">
                                         </td>
                                         @endif
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Qty issued" class="px-2 py-2 align-middle">
                                             <input type="number" :name="`items[${index}][quantity_issued]`"
                                                 x-model="item.quantity_issued"
                                                 @input="onDirectQtyInput(index)" step="0.001"
@@ -189,7 +181,7 @@
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 @if($canEnterCartons) readonly title="Auto-calculated from Carton + Pieces" @endif>
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="UOM" class="px-2 py-2 align-middle">
                                             <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
                                                 :disabled="parseFloat(item.available_qty) <= 0 && !item.stock_short"
                                                 :required="parseFloat(item.available_qty) > 0 || item.stock_short"
@@ -201,7 +193,7 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="px-2 py-2 align-middle">
+                                        <td data-label="Price breakdown" class="px-2 py-2 align-middle">
                                             @if($canEnterCartons)
                                             <div x-show="item.conversion_factor > 1" class="text-xs text-indigo-600 font-medium mb-1">
                                                 <span x-text="'1 Ctn = ' + item.conversion_factor + ' Pcs'"></span>
@@ -216,9 +208,9 @@
                                             <input type="hidden" :name="`items[${index}][selling_price]`"
                                                 x-model="item.selling_price">
                                         </td>
-                                        <td class="px-2 py-2 text-right text-sm font-semibold align-middle"
+                                        <td data-label="Total value" class="px-2 py-2 text-right text-sm font-semibold align-middle"
                                             x-text="formatNumber(item.total_value)"></td>
-                                        <td class="px-2 py-2 text-center align-middle">
+                                        <td data-label="" class="px-2 py-2 text-center align-middle">
                                             <button type="button" @click="removeItem(index)"
                                                 class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
                                                 :class="(index === 0 || items.length === 1) ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
@@ -235,7 +227,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr class="font-semibold bg-gray-100">
-                                    <td class="px-2 py-2 text-right" colspan="{{ $canEnterCartons ? 5 : 3 }}">Totals:</td>
+                                    <td class="px-2 py-2 text-right" colspan="{{ $canEnterCartons ? 6 : 4 }}">Totals:</td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))">
                                     </td>
@@ -247,7 +239,7 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="{{ $canEnterCartons ? 10 : 8 }}" class="px-2 py-2">
+                                    <td colspan="{{ $canEnterCartons ? 11 : 9 }}" class="px-2 py-2">
                                         <div class="flex items-center gap-2">
                                             <input type="number" x-model.number="addProductCount" min="1"
                                                 class="w-20 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
@@ -259,7 +251,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M12 4v16m8-8H4" />
                                             </svg>
-                                            Add Product
+                                            Add SKU
                                             </button>
                                         </div>
                                     </td>
@@ -282,14 +274,14 @@
 
                         <div class="uf-actions gf-actions">
                             <div class="gf-totals" aria-live="polite">
-                                <span><b x-text="items.filter(i => i.product_id).length"></b> products</span>
+                                <span><b x-text="items.filter(i => i.product_id).length"></b> SKUs</span>
                                 <span><b x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))"></b> total qty</span>
                                 <span>Value Rs <b x-text="formatNumber(grandTotal)"></b></span>
                                 <span class="gf-warn" x-show="items.some(i => i.product_id && i.stock_short)" x-cloak>Reduce or remove the red lines before saving</span>
                             </div>
                             <div>
                                 <a href="{{ route('goods-issues.show', $goodsIssue) }}" class="ak-btn ak-btn-outline">Cancel</a>
-                                <x-button type="button" @click="validateAndSubmit()"
+                                <x-button type="button" @click="validateAndSubmit()" x-bind:disabled="submitting"
                                 class="!bg-green-600 hover:!bg-green-700 focus:!bg-green-700 active:!bg-green-800 focus:!ring-green-500">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -392,7 +384,7 @@
 
         function productLabel(productId) {
             const product = allProducts.find(p => String(p.id) === String(productId));
-            return product ? `${product.product_code} - ${product.product_name}` : `Product #${productId}`;
+            return product ? product.product_name : `Product #${productId}`;
         }
 
         function formatStockQty(quantity, factor) {
@@ -446,6 +438,7 @@
 
         function goodsIssueForm() {
             return {
+                    submitting: false,
                 items: (oldItems.length > 0 ? oldItems : existingItems).map(item => makeRow({
                     product_id: item.product_id || '',
                     uom_id: item.uom_id || '',
@@ -498,7 +491,9 @@
                     this.items = validItems;
 
                     this.$nextTick(() => {
-                        document.getElementById('goodsIssueForm').submit();
+                        if (this.submitting) { return; }
+                            this.submitting = true;
+                            document.getElementById('goodsIssueForm').submit();
                     });
                 },
 
@@ -683,7 +678,7 @@
                     }
 
                     if (batchesUsed.length > 0) {
-                        let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
+                        let info = '<div class="text-blue-600 font-semibold mb-1">Issuing from batches</div>';
                         batchesUsed.forEach((b, bIndex) => {
                             const promo = b.is_promotional ? ' 🎁' : '';
                             info += `<div>Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>`;
@@ -837,8 +832,9 @@
             }
         }
 
+        // The SKU list (with its stock) loads only once both the supplier and the warehouse are chosen.
         async function loadProductsBySuppliers(supplierIds) {
-            if (!supplierIds || supplierIds.length === 0) {
+            if (!supplierIds || supplierIds.length === 0 || !$('#warehouse_id').val()) {
                 allProducts = [];
                 return;
             }
@@ -912,12 +908,15 @@
             // select2 appends its data as <option>s, so clear the previous ones before re-initialising.
             $select.find('option').not('[value=""]').remove();
             $select.select2({
-                placeholder: 'Select Product',
+                placeholder: 'Select SKU',
+                    language: { noResults: () => (allProducts.length ? 'No SKU matches' : 'Pick the supplier and warehouse first') },
+                    matcher: (params, data) => { const term = (params.term || '').trim().toLowerCase(); if (! term) { return data; } return `${data.text || ''} ${data.code || ''}`.toLowerCase().includes(term) ? data : null; },
                 allowClear: false,
                 width: '100%',
                 data: allProducts.map(p => ({
                     id: p.id,
-                    text: `${p.product_code} - ${p.product_name}`
+                    text: p.product_name,
+                        code: p.product_code
                 }))
             });
 
@@ -1061,7 +1060,7 @@
                 });
                 batchInfoDiv.innerHTML = batchHtml;
             } else {
-                batchInfoDiv.innerHTML = filterBadge + `<div class="text-green-600">✓ Single price: ₨${batches[0].selling_price.toFixed(2)}</div>`;
+                batchInfoDiv.innerHTML = filterBadge + `<div class="text-green-600">Single price ₨${batches[0].selling_price.toFixed(2)}</div>`;
             }
         }
 
@@ -1087,6 +1086,16 @@
                 });
 
                 // Supplier change → load employees, vehicles + products (for user-initiated changes)
+                // Warehouse change → reload the SKU list and re-read the stock of the lines already picked
+                $('#warehouse_id').on('change', function () {
+                    const val = $('#supplier_ids').val();
+                    const supplierIds = val ? (Array.isArray(val) ? val : [val]) : [];
+                    loadProductsBySuppliers(supplierIds).then(() => {
+                        refreshAllProductSelects();
+                        $('.product-select').each(function () { if ($(this).val()) { $(this).trigger('change'); } });
+                    });
+                });
+
                 $('#supplier_ids').on('change', function () {
                     const val = $(this).val();
                     const supplierIds = val ? (Array.isArray(val) ? val : [val]) : [];

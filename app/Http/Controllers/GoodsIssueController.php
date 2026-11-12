@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\GoodsIssueExport;
 use App\Http\Requests\AppendGoodsIssueItemsRequest;
+use App\Http\Requests\RemoveGoodsIssueItemRequest;
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
 use App\Models\ChartOfAccount;
@@ -17,8 +18,10 @@ use App\Models\Uom;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use App\Services\GoodsIssueLineRemovalService;
 use App\Services\GoodsIssueReversalService;
 use App\Services\GoodsIssueStockCheck;
+use App\Support\FormOnce;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -46,7 +49,9 @@ class GoodsIssueController extends Controller implements HasMiddleware
         return [
             new Middleware('permission:goods-issue-list', only: ['index', 'show']),
             new Middleware('permission:goods-issue-create', only: ['create', 'store']),
-            new Middleware('permission:goods-issue-edit', only: ['edit', 'update', 'appendItemsForm', 'appendItems']),
+            new Middleware('permission:goods-issue-edit', only: ['edit', 'update', 'appendItems']),
+            new Middleware('permission:goods-issue-edit|goods-issue-remove-items', only: ['appendItemsForm']),
+            new Middleware('permission:goods-issue-remove-items', only: ['removeItem']),
             new Middleware('permission:goods-issue-delete', only: ['destroy']),
             new Middleware('permission:goods-issue-post', only: ['post']),
             new Middleware('permission:goods-issue-reverse', only: ['reverse']),
@@ -434,6 +439,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'reversedBy',
             'replaces',
             'replacement',
+            'removals.item.product',
+            'removals.removedBy',
         ]);
 
         foreach ($goodsIssue->items as $item) {
@@ -441,22 +448,25 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 // For posted goods issues, get ACTUAL batch breakdown from stock movements.
                 // Filter by goods_issue_item_id so multi-line GIs (same product on
                 // multiple lines) only return the movements that belong to *this* line.
-                $stockMovements = DB::table('stock_movements as sm')
-                    ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
-                    ->where('sm.reference_type', 'App\Models\GoodsIssue')
-                    ->where('sm.reference_id', $goodsIssue->id)
-                    ->where('sm.goods_issue_item_id', $item->id)
-                    ->where('sm.movement_type', 'transfer')
-                    // A reversed issue also carries the offsetting rows; the note shows what was issued.
-                    ->where('sm.quantity', '<', 0)
-                    ->select(
-                        'sb.batch_code',
-                        DB::raw('ABS(sm.quantity) as quantity'),
-                        'sb.selling_price',
-                        'sb.is_promotional'
-                    )
-                    ->orderBy('sb.priority_order', 'asc')
-                    ->get();
+                // An issued line shows what is still on the van (net of removals); a reversed issue also
+                // carries the offsetting rows, so its note shows what was issued.
+                $stockMovements = $goodsIssue->status === 'issued'
+                    ? $item->netIssuedBatches()
+                    : DB::table('stock_movements as sm')
+                        ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
+                        ->where('sm.reference_type', 'App\Models\GoodsIssue')
+                        ->where('sm.reference_id', $goodsIssue->id)
+                        ->where('sm.goods_issue_item_id', $item->id)
+                        ->where('sm.movement_type', 'transfer')
+                        ->where('sm.quantity', '<', 0)
+                        ->select(
+                            'sb.batch_code',
+                            DB::raw('ABS(sm.quantity) as quantity'),
+                            'sb.selling_price',
+                            'sb.is_promotional'
+                        )
+                        ->orderBy('sb.priority_order', 'asc')
+                        ->get();
 
                 $batchBreakdown = [];
                 foreach ($stockMovements as $movement) {
@@ -546,8 +556,10 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ->where(fn ($query) => $query
                 ->where('reference', $goodsIssue->issue_number)
                 ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%')
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-R%')
                 ->orWhere('reference', 'REV-'.$goodsIssue->issue_number)
-                ->orWhere('reference', 'like', 'REV-'.$goodsIssue->issue_number.'-S%'))
+                ->orWhere('reference', 'like', 'REV-'.$goodsIssue->issue_number.'-S%')
+                ->orWhere('reference', 'like', 'REV-'.$goodsIssue->issue_number.'-R%'))
             ->withSum('details as total_debit', 'debit')
             ->orderBy('id')
             ->get(['id', 'reference', 'entry_date', 'status', 'description'])
@@ -878,7 +890,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'vehicle_label' => $vehicleLabel,
             'existing_employee_id' => $existing->employee_id,
             'existing_employee_name' => $existing->employee_name,
-            'redirect_url' => route('goods-issues.append-items', $existing->id),
+            'redirect_url' => route('goods-issues.items', $existing->id),
         ]);
     }
 
@@ -902,18 +914,62 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'supplier',
             'items.product',
             'items.uom',
+            'items.removals.removedBy',
         ]);
 
         $draftSettlement = $goodsIssue->settlement()->where('status', 'draft')->first();
         $uoms = Uom::orderBy('uom_name')->get();
         $canEnterCartons = auth()->user()->can('goods-issue-enter-cartons');
+        $canAdd = auth()->user()->can('goods-issue-edit');
+        $canRemove = auth()->user()->can('goods-issue-remove-items');
+        $remover = app(GoodsIssueLineRemovalService::class);
+
+        // What each line still holds on the van, last-issued batch first, and why it cannot be touched (if so).
+        $removableLines = $canRemove
+            ? $goodsIssue->items->mapWithKeys(fn (GoodsIssueItem $item) => [$item->id => [
+                'batches' => $remover->standingBatches($item)->values()->all(),
+                'refusal' => $remover->lineRefusal($item),
+            ]])->all()
+            : [];
 
         return view('goods-issues.append-items', [
             'goodsIssue' => $goodsIssue,
             'draftSettlement' => $draftSettlement,
             'uoms' => $uoms,
             'canEnterCartons' => $canEnterCartons,
+            'canAdd' => $canAdd,
+            'canRemove' => $canRemove,
+            'removableLines' => $removableLines,
         ]);
+    }
+
+    /**
+     * Take a quantity of one line back to the warehouse before settlement (reason and password required).
+     */
+    public function removeItem(RemoveGoodsIssueItemRequest $request, GoodsIssue $goodsIssue, GoodsIssueItem $item): RedirectResponse
+    {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
+        $validated = $request->validated();
+        $keep = $request->except('password') + ['_remove_item' => $item->id];
+
+        if (! Hash::check($validated['password'], auth()->user()->password)) {
+            Log::warning("Failed GI line removal attempt for {$goodsIssue->issue_number} - invalid password by user: ".auth()->user()->name);
+
+            return back()->withInput($keep)->with('error', 'Invalid password. Removing items requires your password confirmation.');
+        }
+
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('goods-issues.items', $goodsIssue)->with('error', FormOnce::alreadySentMessage());
+        }
+
+        $result = app(GoodsIssueLineRemovalService::class)->remove($item, (float) $validated['quantity'], $validated['reason']);
+
+        if (! $result['success']) {
+            return back()->withInput($keep)->with('error', $result['message']);
+        }
+
+        return redirect()->route('goods-issues.items', $goodsIssue)->with('success', $result['message']);
     }
 
     /**
@@ -930,6 +986,10 @@ class GoodsIssueController extends Controller implements HasMiddleware
             return redirect()
                 ->route('goods-issues.show', $goodsIssue)
                 ->with('error', 'This Goods Issue cannot accept supplementary items.');
+        }
+
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('goods-issues.show', $goodsIssue)->with('error', FormOnce::alreadySentMessage());
         }
 
         // Saving the lines and posting their stock is one transaction: when posting fails

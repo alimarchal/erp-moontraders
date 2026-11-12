@@ -208,6 +208,33 @@
                                     <li><span class="en">Comfortable</span> / <span class="en">Compact</span>: لائنوں کی اونچائی۔</li>
                                 </ul>
                             </section>
+                            <section data-topic="detail">
+                                <h2>ایک ایشو کا صفحہ</h2>
+                                <div class="rgh-col" data-topic="gd-stage">
+                                    <div class="rgh-col-head"><span class="en">Stage</span><b>مرحلہ</b></div>
+                                    <p>اوپر کا کیپسول بتاتا ہے ایشو کہاں ہے: <span class="en">On van</span> یعنی مال گاڑی پر ہے اور سیٹلمنٹ نہیں بنی (دو دن یا زیادہ ہو تو سرخ)؛ <span class="en">Settlement draft</span> یعنی سیٹلمنٹ بنی مگر پوسٹ نہیں؛ <span class="en">Settled</span> یعنی کام مکمل۔ کیپسول پر کلک سے سیٹلمنٹ کھلتی ہے۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="gd-value">
+                                    <div class="rgh-col-head"><span class="en">Value · Cost · Margin</span><b>رقم</b></div>
+                                    <p>بڑی رقم بیچنے کی قیمت پر مال کی مالیت ہے۔ <span class="en">Cost</span> جرنل میں گئی لاگت ہے (ڈرافٹ پر اندازہ)، اور <span class="en">Margin</span> ان دونوں کا فرق۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="gd-batches">
+                                    <div class="rgh-col-head"><span class="en">Batches × rate</span><b>بیچ</b></div>
+                                    <p>ہر پروڈکٹ کس بیچ سے، کتنا اور کس ریٹ پر نکلا۔ پرانا یا جلد ختم ہونے والا مال پہلے نکلتا ہے۔ <span class="en">Promo</span> پروموشنل سٹاک ہے؛ <span class="en">Non-Promo</span> لائن پروموشنل مال نہیں لیتی۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="gd-draft">
+                                    <div class="rgh-col-head"><span class="en">Draft · Stock Check</span><b>ڈرافٹ</b></div>
+                                    <p>ڈرافٹ پر سٹاک چیک دکھتا ہے: سرخ یعنی مال کم ہے اور پوسٹ نہیں ہو گا؛ پیلا یعنی دوسرے ڈرافٹ بھی یہی مال مانگ رہے ہیں، جو پہلے پوسٹ ہو وہ لے جائے گا؛ سبز یعنی سب موجود۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="gd-accounting">
+                                    <div class="rgh-col-head"><span class="en">Accounting · Timeline</span><b>کتاب</b></div>
+                                    <p>نیچے جرنل نمبر اور <bdi dir="ltr" class="lt">Dr Van Stock / Cr Stock in Hand</bdi>، اور ٹائم لائن میں بننے سے سیٹلمنٹ تک ہر قدم۔</p>
+                                </div>
+                                <div class="rgh-col" data-topic="gd-reversed">
+                                    <div class="rgh-col-head"><span class="en">Reverse and re-issue</span><b>ریورس</b></div>
+                                    <p>سیٹلمنٹ سے پہلے غلط ایشو ریورس ہو سکتا ہے: مال گودام واپس، جرنل الٹا، اور لائنیں ایک نئے ڈرافٹ میں نقل ہو جاتی ہیں تاکہ درست کر کے دوبارہ پوسٹ کریں۔</p>
+                                </div>
+                            </section>
                             <section data-topic="print">
                                 <h2>پرنٹ، <bdi class="lt" dir="ltr">PDF</bdi> اور <bdi class="lt" dir="ltr">Excel</bdi></h2>
                                 <p>اوپر کے بٹن: <span class="en">Excel</span> فلٹر شدہ فہرست؛ ڈاؤن لوڈ سے <bdi class="lt" dir="ltr">A4 PDF</bdi> عام طور پر <span class="en">Portrait</span> یا <span class="en">Landscape</span>؛ پرنٹ کے بٹن سے براؤزر میں دونوں رخ۔</p>

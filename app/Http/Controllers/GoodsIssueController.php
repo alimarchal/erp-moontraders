@@ -554,6 +554,15 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ->filter(fn (JournalEntry $entry) => $goodsIssue->ownsJournalReference(preg_replace('/^REV-/', '', (string) $entry->reference)))
             ->values();
 
+        // The issue note as an A4 PDF, portrait unless landscape was asked for (like the list).
+        if (request()->query('format') === 'pdf') {
+            $orientation = request()->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+            return Pdf::loadView('goods-issues.show-pdf', ['goodsIssue' => $goodsIssue, 'orientation' => $orientation])
+                ->setPaper('a4', $orientation)
+                ->download("goods-issue-{$goodsIssue->issue_number}.pdf");
+        }
+
         return view('goods-issues.show', [
             'goodsIssue' => $goodsIssue,
             'journalEntries' => $journalEntries,

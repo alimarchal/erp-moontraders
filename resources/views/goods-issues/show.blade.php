@@ -1,8 +1,8 @@
 {{--
-    Goods Issues -> View (/goods-issues/{goodsIssue}).
-    Same layout as Settings -> Users -> View: header with actions, KPI cards,
-    the issued items on the left and details, settlement, accounting,
-    timeline and related links on the right. Prints as a formal issue note.
+    Goods Issues -> View (/goods-issues/{goodsIssue}), in the Apple look of the Goods Issues list:
+    a hero card (stage, value, who and where), the issued items full width, then Settlement,
+    Accounting and Timeline side by side. Fits any width without sideways scrolling; on a phone
+    the items become cards. Prints as a formal issue note; ?format=pdf downloads it as A4.
 --}}
 @php
     $gi = $goodsIssue;
@@ -17,30 +17,48 @@
     $supplementary = $gi->items->where('is_supplementary', true);
     $qty = fn ($item) => \App\Services\GoodsIssueStockCheck::formatQuantity((float) $item->quantity_issued, (float) ($item->product->uom_conversion_factor ?? 1) ?: 1.0);
     $rs = fn ($value) => number_format((float) $value, 2);
-    $since = '2020-01-01';
-    $today = now()->toDateString();
     $settlements = $gi->settlement;
     $settlementTone = fn (?string $status) => match ($status) {
-        'posted' => 'ak-status-green',
-        'verified' => 'ak-status-green',
-        'draft' => 'ak-status-amber',
-        default => 'ak-status-red',
+        'posted', 'verified' => 'green',
+        'draft' => 'amber',
+        default => 'red',
     };
+
+    // The same stage capsule as the Goods Issues list.
+    $latestSettlement = $settlements->last();
+    $isSettled = $settlements->contains(fn ($settlement) => in_array($settlement->status, ['verified', 'posted'], true));
+    $daysOut = $gi->status === 'issued' && $settlements->isEmpty() ? (int) abs($gi->issue_date?->startOfDay()->diffInDays(now()->startOfDay()) ?? 0) : null;
+    [$stageText, $stageTone] = match (true) {
+        $isDraft => ['Draft', 'grey'],
+        $isReversed => ['Reversed', 'red'],
+        $isSettled => ['Settled', 'green'],
+        $settlements->isNotEmpty() => ['Settlement draft', 'amber'],
+        default => ['On van · '.($daysOut === 0 ? 'today' : $daysOut.' '.\Illuminate\Support\Str::plural('day', $daysOut)), $daysOut >= 2 ? 'red' : 'amber'],
+    };
+    $helpTopic = match (true) {
+        $isDraft => 'gd-draft',
+        $isReversed => 'gd-reversed',
+        default => 'gd-stage',
+    };
+    $employeeUrl = $gi->employee && auth()->user()->can('employee-list') ? route('employees.show', $gi->employee) : null;
+    $vehicleUrl = $gi->vehicle && auth()->user()->can('vehicle-list') ? route('vehicles.show', $gi->vehicle) : null;
 
     // Timeline: what happened to this issue, oldest first.
     $timeline = collect([
-        ['at' => $gi->created_at, 'text' => ($gi->replaces ? 'Copied as draft from reversed '.$gi->replaces->issue_number.($gi->replaces->reversedBy ? ' by '.$gi->replaces->reversedBy->name : '') : 'Created as draft').($gi->issuedBy ? ($gi->replaces ? ', owned by ' : ' by ').$gi->issuedBy->name : '')],
-        $gi->posted_at ? ['at' => $gi->posted_at, 'text' => 'Posted: stock moved from '.($gi->warehouse->warehouse_name ?? 'warehouse').' to vehicle '.($gi->vehicle->vehicle_number ?? '')] : null,
+        ['at' => $gi->created_at, 'text' => ($gi->replaces ? 'Copied as draft from reversed '.$gi->replaces->issue_number.($gi->replaces->reversedBy ? ' by '.$gi->replaces->reversedBy->name : '') : 'Created as draft').($gi->issuedBy ? ($gi->replaces ? ', owned by ' : ' by ').$gi->issuedBy->name : ''), 'tone' => 'grey'],
+        $gi->posted_at ? ['at' => $gi->posted_at, 'text' => 'Posted: stock moved from '.($gi->warehouse->warehouse_name ?? 'warehouse').' to vehicle '.($gi->vehicle->vehicle_number ?? ''), 'tone' => 'blue'] : null,
     ])->filter()
         ->merge($supplementary->groupBy(fn ($item) => optional($item->supplementary_posted_at)->format('Y-m-d H:i'))->map(fn ($items) => [
             'at' => $items->first()->supplementary_posted_at ?? $items->first()->created_at,
             'text' => $items->count().' supplementary '.\Illuminate\Support\Str::plural('line', $items->count()).' added',
+            'tone' => 'purple',
         ])->values())
-        ->push($isReversed ? ['at' => $gi->reversed_at, 'text' => 'Reversed'.($gi->reversedBy ? ' by '.$gi->reversedBy->name : '').': stock returned to '.($gi->warehouse->warehouse_name ?? 'warehouse').($gi->replacement ? ', lines copied to '.$gi->replacement->issue_number : '')] : null)
+        ->push($isReversed ? ['at' => $gi->reversed_at, 'text' => 'Reversed'.($gi->reversedBy ? ' by '.$gi->reversedBy->name : '').': stock returned to '.($gi->warehouse->warehouse_name ?? 'warehouse').($gi->replacement ? ', lines copied to '.$gi->replacement->issue_number : ''), 'tone' => 'red'] : null)
         ->filter()
         ->merge($settlements->map(fn ($settlement) => [
             'at' => $settlement->created_at,
             'text' => 'Settlement '.$settlement->settlement_number.' '.($settlement->status === 'draft' ? 'started (draft)' : $settlement->status),
+            'tone' => $settlementTone($settlement->status),
         ]))
         ->filter(fn ($event) => $event['at'])
         ->sortBy('at')
@@ -49,132 +67,183 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('goods-issues.index') }}">Goods Issues</a><span aria-hidden="true">›</span>
-                    <span>{{ $gi->issue_number }}</span>
-                </nav>
-                <div class="ak-person" style="align-items:center; margin-top:6px">
-                    <span class="ak-avatar" style="width:48px; height:48px" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.38a1.13 1.13 0 0 1-1.13-1.13V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.13c.62 0 1.13-.5 1.09-1.12a17.9 17.9 0 0 0-3.21-9.06 2.29 2.29 0 0 0-1.89-.95H14.25M16.5 18.75h-2.25m0-11.18v-.96c0-.57-.42-1.05-.98-1.12a48.6 48.6 0 0 0-10.04 0 1.13 1.13 0 0 0-.98 1.12v7.64m12 0v-6.68" /></svg>
-                    </span>
-                    <div>
-                        <h1 class="ak-title" style="margin:0">Goods Issue {{ $gi->issue_number }}</h1>
-                        <p class="ak-sub" style="margin-top:2px">
-                            {{ $gi->issue_date?->format('l, d M Y') }} &middot; {{ $gi->supplier->supplier_name ?? 'No supplier' }}
-                            &middot;
-                            @if ($isDraft)
-                                <span class="ak-status ak-status-amber"><i aria-hidden="true"></i>Draft</span>
-                            @elseif ($isReversed)
-                                <span class="ak-status ak-status-red"><i aria-hidden="true"></i>Reversed</span>
-                            @else
-                                <span class="ak-status ak-status-green"><i aria-hidden="true"></i>{{ \Illuminate\Support\Str::headline($gi->status) }}</span>
-                            @endif
-                            @if ($supplementary->isNotEmpty()) <span class="ak-pill" style="margin:0">{{ $supplementary->count() }} supplementary</span> @endif
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="ak-head-actions">
-                <a href="{{ route('goods-issues.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to Goods Issues</a>
-                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
-                @if ($isDraft)
-                    @can('goods-issue-edit')
-                        <a href="{{ route('goods-issues.edit', $gi->id) }}" class="ak-btn ak-btn-outline">Edit</a>
-                    @endcan
-                    @can('goods-issue-post')
-                        <button type="button" x-data class="ak-btn ak-btn-success"
-                            @click="$dispatch('open-post-gi-modal', { url: '{{ route('goods-issues.post', $gi->id) }}' })">Post Issue</button>
-                    @endcan
-                @endif
-                @if ($gi->status === 'issued')
-                    @can('goods-issue-reverse')
-                        <button type="button" x-data class="ak-btn ak-btn-outline" style="color:#b91c1c; border-color:#fca5a5"
-                            @if ($reversalRefusal) disabled title="{{ $reversalRefusal }}" @endif
-                            @click="$dispatch('open-reverse-gi-modal')">Reverse &amp; Re-issue</button>
-                    @endcan
-                @endif
-                @if ($gi->canAcceptSupplementaryItems())
-                    @can('goods-issue-edit')
-                        <button type="button" x-data class="ak-btn ak-btn-primary"
-                            @click="$dispatch('open-append-items-confirm', { url: '{{ route('goods-issues.append-items', $gi->id) }}', issueNumber: '{{ $gi->issue_number }}', existingLineCount: {{ $gi->items->count() }} })">+ Add More Items</button>
-                    @endcan
-                @endif
-            </div>
-        </div>
+        <x-page-header :title="'Goods Issue '.$gi->issue_number" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" backRoute="goods-issues.index">
+            <x-slot name="actions">
+                <x-register-header-actions page="goods-issue" :help="false" />
+                <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 transition ease-in-out duration-150 no-print"
+                    x-data @click="$dispatch('rg-help', { topic: @js($helpTopic) })" aria-haspopup="dialog" aria-label="Help in Urdu" title="What this page shows, in Urdu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+                </button>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
+    <x-register-apple-style />
+    <x-register-help page="goods-issues" :has-supplier="true" />
     <style>
-        .gi-grid { display: grid; gap: 20px; grid-template-columns: 1fr; }
-        @media (min-width: 1024px) { .gi-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
-        .gi-side { display: flex; flex-direction: column; gap: 20px; }
-        .gi-list { margin: 0; display: flex; flex-direction: column; font-size: 14px; }
-        .gi-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid #f1f5f9; }
-        .gi-list > div:last-child { border-bottom: 0; }
-        .gi-list dt { color: var(--ak-muted); flex: none; }
-        .gi-list dd { margin: 0; font-weight: 600; color: var(--ak-text); text-align: right; word-break: break-word; }
-        .gi-list dd small { display: block; font-weight: 400; color: var(--ak-muted); font-size: 12px; }
-        .gi-list a, .gi-links a, .gi-rows a { color: var(--ak-navy); text-decoration: none; }
-        .gi-list a:hover, .gi-links a:hover, .gi-rows a:hover { text-decoration: underline; }
-        /* Compact rows on screen, like the old issue note: one line per product. */
-        .gi-items { min-width: 760px !important; font-size: 13px; }
-        .gi-items th, .gi-items td { padding: 6px 10px; vertical-align: middle; line-height: 1.35; }
-        .gi-items thead th { padding-top: 8px; padding-bottom: 8px; }
-        .gi-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .gi-tools .ak-search { width: 230px; }
-        .gi-tools .ak-field input, .gi-tools .ak-field select { height: 34px; font-size: 13px; }
-        .gi-tools .ak-search svg { top: 8px; }
-        .gi-found { margin: 0; padding: 8px 18px; font-size: 13px; color: var(--ak-muted); background: #eef2ff; border-top: 1px solid #c7d2fe; }
-        .gi-found b { color: var(--ak-text); }
-        .gi-found button { margin-left: 8px; border: 0; background: none; color: var(--ak-navy); font-weight: 600; cursor: pointer; }
-        .gi-none { margin: 0; padding: 18px; text-align: center; color: var(--ak-muted); font-size: 13px; }
-        .gi-items .gi-sub { margin-left: 6px; font-size: 11.5px; color: var(--ak-muted); font-weight: 400; }
-        .gi-items tfoot td { font-weight: 700; background: #f8fafc; border-top: 2px solid var(--ak-border); }
-        .gi-batches { font-size: 12px; color: var(--ak-muted); line-height: 1.5; }
-        .gi-batches b { color: var(--ak-text); font-weight: 600; }
-        .gi-tag { display: inline-block; margin: 2px 4px 0 0; padding: 0 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .gi-tag-promo { background: #ffedd5; color: #9a3412; }
-        .gi-tag-np { background: #e0e7ff; color: #3730a3; }
-        .gi-tag-supp { background: #f3e8ff; color: #6b21a8; }
-        .gi-rows { margin: 0; padding: 0; list-style: none; }
-        .gi-rows li { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .gi-rows li:last-child { border-bottom: 0; }
-        .gi-rows small { display: block; color: var(--ak-muted); font-size: 12px; }
-        .gi-feed { margin: 0; padding: 0; list-style: none; }
-        .gi-feed li { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        .gi-feed li:last-child { border-bottom: 0; }
-        .gi-feed i { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--ak-navy); }
-        .gi-feed small { display: block; color: var(--ak-muted); font-size: 12px; }
-        .gi-links { display: grid; grid-template-columns: 1fr; gap: 2px; font-size: 13.5px; }
-        .gi-links a { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-        .gi-links a:last-child { border-bottom: 0; }
-        .gi-check { border-left: 4px solid; padding: 12px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13.5px; }
-        .gi-check-red { border-color: #ef4444; background: #fef2f2; }
-        .gi-check-amber { border-color: #f59e0b; background: #fffbeb; }
-        .gi-check-green { border-color: #22c55e; background: #f0fdf4; }
-        @media print {
-            /* No fixed size: the print dialog offers Portrait and Landscape, and the table fits either. */
-            @page { margin: 10mm; }
-            .gi-grid { display: block; }
-            .ak-page, .uf-card, .ak-dt-scroll { overflow: visible !important; max-width: none !important; width: 100% !important; }
-            .gi-items { min-width: 0 !important; width: 100% !important; table-layout: auto; }
-            .gi-items th, .gi-items td { white-space: normal !important; word-break: break-word; }
-            .gi-items .ak-num { white-space: nowrap !important; }
-            .gi-batches { font-size: 9px; }
-            .gi-side, .gi-no-print, #stock-check { display: none !important; }
-            .uf-card { border: 0 !important; box-shadow: none !important; }
-            .uf-card-head { display: none !important; }
-            .gi-items { font-size: 9.5px; }
-            .gi-tag { border: 1px solid #555; background: none !important; color: #000 !important; }
-            .gi-sign { display: flex !important; }
+        .gs-wrap { max-width: 80rem; margin: 0 auto; padding: 20px 16px 64px; display: flex; flex-direction: column; gap: 16px; }
+        @media (min-width: 640px) { .gs-wrap { padding-left: 24px; padding-right: 24px; } }
+        .gs-wrap, .gs-wrap * { min-width: 0; }
+        .gs-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 0 0 1px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.05), 0 8px 24px -8px rgba(0,0,0,.14); }
+        .gs-banner { box-shadow: 0 0 0 1px rgba(0,0,0,.03), 0 6px 18px -8px rgba(0,0,0,.12); }
+        #stock-check .gs-banner { box-shadow: none; }
+        .gs-card-title { margin: 0 0 4px; font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: #1d1d1f; }
+        .gs-card-sub { margin: 0; font-size: 13px; color: #6e6e73; }
+        .gs-muted { color: #6e6e73; }
+        .gs-wrap a { color: #0066cc; text-decoration: none; }
+        .gs-wrap a:hover { text-decoration: underline; }
+
+        /* Stage capsule, as on the list */
+        .gs-stage { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 980px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+        .gs-stage::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .gs-green { background: rgba(52,199,89,.14); color: #1f7a35; }
+        .gs-amber { background: rgba(255,159,10,.16); color: #8a4b00; }
+        .gs-red { background: rgba(255,59,48,.12); color: #c4161c; }
+        .gs-grey { background: rgba(120,120,128,.14); color: #3a3a40; }
+        .gs-blue { background: rgba(0,113,227,.12); color: #0058b0; }
+        .gs-purple { background: rgba(175,82,222,.14); color: #7a2fa3; }
+
+        /* Hero */
+        .gs-hero-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .gs-hero-top a.gs-stage { text-decoration: none; }
+        .gs-amount { margin: 14px 0 0; font-size: 40px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+        .gs-amount small { font-size: 20px; font-weight: 500; color: #6e6e73; margin-right: 4px; }
+        .gs-who { margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: #424245; }
+        .gs-who b { font-weight: 600; color: #1d1d1f; }
+        .gs-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 18px 0 0; border-radius: 14px; background: #f5f5f7; }
+        .gs-stats > div { padding: 12px 14px; }
+        .gs-stats > div + div { box-shadow: inset 1px 0 0 rgba(60,60,67,.12); }
+        .gs-stats dt { margin: 0; font-size: 12px; color: #6e6e73; }
+        .gs-stats dd { margin: 2px 0 0; font-size: 16px; font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+        .gs-stats dd small { display: block; font-size: 11.5px; font-weight: 400; color: #6e6e73; }
+        .gs-hero-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+        .gs-meta { margin: 0; font-size: 12.5px; color: #6e6e73; }
+        .gs-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .gs-pill { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 16px; border: 0; border-radius: 980px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none !important; transition: transform .12s ease, background-color .15s ease; }
+        .gs-pill:active:not(:disabled) { transform: scale(.97); }
+        .gs-pill:disabled { opacity: .4; cursor: not-allowed; }
+        .gs-pill-blue { background: #0071e3; color: #fff !important; }
+        .gs-pill-blue:hover { background: #0077ed; }
+        .gs-pill-green { background: #34c759; color: #fff !important; }
+        .gs-pill-grey { background: rgba(120,120,128,.14); color: #1d1d1f !important; }
+        .gs-pill-danger { background: rgba(255,59,48,.12); color: #d70015 !important; }
+        .gs-pill-sm { height: 30px; padding: 0 12px; font-size: 13px; }
+
+        /* Banners */
+        .gs-banner { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; padding: 14px 18px; border-radius: 16px; font-size: 14px; line-height: 1.45; color: #1d1d1f; }
+        .gs-banner > span { display: flex; gap: 10px; flex: 1 1 280px; }
+        .gs-banner > span::before { content: ''; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; }
+        .gs-banner-red { background: #fff1f0; } .gs-banner-red > span::before { background: #ff3b30; }
+        .gs-banner-amber { background: #fff8eb; } .gs-banner-amber > span::before { background: #ff9f0a; }
+        .gs-banner-green { background: #effbf2; } .gs-banner-green > span::before { background: #34c759; }
+
+        /* Tables (items and stock check): fit the card, never scroll sideways */
+        .gs-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; line-height: 1.35; table-layout: auto; }
+        .gs-table th { padding: 8px; font-size: 11.5px; font-weight: 600; color: #6e6e73; text-align: left; border-bottom: 1px solid rgba(60,60,67,.18); white-space: nowrap; }
+        .gs-table td { padding: 9px 8px; border-bottom: 1px solid rgba(60,60,67,.1); vertical-align: top; color: #1d1d1f; overflow-wrap: anywhere; }
+        .gs-table tbody tr:hover td { background: #fafafc; }
+        .gs-table .gs-num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .gs-table .gs-c { text-align: center; color: #6e6e73; width: 36px; }
+        .gs-table tfoot td { border-bottom: 0; border-top: 1px solid rgba(60,60,67,.18); font-weight: 600; }
+        .gs-table tr.gs-row-red td { background: #fff5f4; }
+        .gs-table tr.gs-row-amber td { background: #fffaf0; }
+        .gs-name { font-weight: 600; }
+        .gs-code { margin-left: 6px; font-size: 12px; color: #6e6e73; font-weight: 400; }
+        .gs-ctn { display: block; font-size: 11.5px; color: #6e6e73; }
+        .gs-batches { font-size: 12.5px; color: #6e6e73; line-height: 1.5; }
+        .gs-batches b { color: #1d1d1f; font-weight: 600; }
+        .gs-tag { display: inline-block; margin: 3px 4px 0 0; padding: 1px 8px; border-radius: 980px; font-size: 11px; font-weight: 600; }
+        .gs-tag-promo { background: rgba(255,159,10,.16); color: #8a4b00; }
+        .gs-tag-np { background: rgba(88,86,214,.13); color: #3f3cb0; }
+        .gs-tag-supp { background: rgba(175,82,222,.14); color: #7a2fa3; }
+
+        .gs-items-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+        .gs-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+        .gs-tools input, .gs-tools select { height: 34px; border: 0 !important; border-radius: 10px !important; background-color: rgba(118,118,128,.12) !important; font-size: 13.5px; color: #1d1d1f; box-shadow: none !important; }
+        .gs-tools input { width: 220px; max-width: 100%; padding: 0 12px; }
+        .gs-tools select { padding: 0 32px 0 12px; }
+        .gs-tools input:focus, .gs-tools select:focus { outline: none; background-color: #fff !important; box-shadow: 0 0 0 4px rgba(0,113,227,.22), 0 0 0 1px #0071e3 !important; }
+        .gs-found { margin: 0 0 8px; padding: 8px 12px; border-radius: 10px; background: rgba(0,113,227,.08); font-size: 13px; color: #424245; }
+        .gs-found button { margin-left: 8px; border: 0; background: none; color: #0066cc; font-weight: 600; cursor: pointer; }
+        .gs-none { margin: 0; padding: 18px; text-align: center; color: #6e6e73; font-size: 13px; }
+        .gs-notes { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: #f5f5f7; font-size: 13.5px; color: #424245; }
+
+        /* Settlement, Accounting, Timeline */
+        .gs-trio { display: grid; gap: 16px; grid-template-columns: 1fr; }
+        @media (min-width: 768px) { .gs-trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (min-width: 1100px) { .gs-trio { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        .gs-rows { margin: 10px 0 0; padding: 0; list-style: none; }
+        .gs-rows li { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(60,60,67,.1); font-size: 14px; }
+        .gs-rows li:last-child { border-bottom: 0; }
+        .gs-rows small { display: block; margin-top: 2px; font-size: 12.5px; color: #6e6e73; }
+        .gs-gl { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; font-size: 13px; line-height: 1.6; }
+        .gs-gl div { display: flex; gap: 8px; }
+        .gs-gl b { flex: none; width: 22px; color: #6e6e73; font-weight: 600; }
+        .gs-empty { margin: 10px 0 0; font-size: 14px; color: #6e6e73; }
+        .gs-feed { position: relative; margin: 12px 0 0; padding: 0; list-style: none; }
+        .gs-feed li { position: relative; padding: 0 0 14px 22px; font-size: 13.5px; line-height: 1.4; }
+        .gs-feed li:last-child { padding-bottom: 0; }
+        .gs-feed li::before { content: ''; position: absolute; left: 5px; top: 14px; bottom: -2px; width: 2px; background: rgba(60,60,67,.12); }
+        .gs-feed li:last-child::before { display: none; }
+        .gs-feed i { position: absolute; left: 0; top: 3px; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 3px #fff; }
+        .gs-feed i.gs-grey { background: #aeaeb2; } .gs-feed i.gs-blue { background: #0071e3; } .gs-feed i.gs-green { background: #34c759; }
+        .gs-feed i.gs-amber { background: #ff9f0a; } .gs-feed i.gs-red { background: #ff3b30; } .gs-feed i.gs-purple { background: #af52de; }
+        .gs-feed small { display: block; margin-top: 2px; font-size: 12px; color: #6e6e73; }
+
+        /* Tablet: the batches column moves under the product name */
+        @media (max-width: 900px) {
+            .gs-items .gs-col-batches { display: none; }
+            .gs-items .gs-batches-inline { display: block !important; margin-top: 4px; }
         }
-        .gi-sign { display: none; justify-content: space-between; margin-top: 40px; font-size: 10px; }
-        .gi-sign span { border-top: 1px solid #000; padding-top: 4px; width: 28%; text-align: center; }
+        .gs-items .gs-batches-inline { display: none; }
+
+        /* Phone: hero stats in two rows, each item and stock line becomes a card */
+        @media (max-width: 640px) {
+            .gs-wrap { padding-top: 12px; gap: 12px; }
+            .gs-card { padding: 16px; border-radius: 16px; }
+            .gs-amount { font-size: 32px; }
+            .gs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .gs-stats > div:nth-child(3) { box-shadow: inset 0 1px 0 rgba(60,60,67,.12); }
+            .gs-stats > div:nth-child(4) { box-shadow: inset 1px 0 0 rgba(60,60,67,.12), inset 0 1px 0 rgba(60,60,67,.12); }
+            .gs-actions { width: 100%; }
+            .gs-actions > *, .gs-actions form { flex: 1 1 calc(50% - 4px); }
+            .gs-tools, .gs-tools > * { width: 100%; }
+            .gs-tools input { width: 100%; }
+            .gs-cards thead { display: none; }
+            .gs-cards, .gs-cards tbody, .gs-cards tr, .gs-cards td, .gs-cards tfoot { display: block; width: 100%; }
+            .gs-cards tbody tr { padding: 10px 0; border-bottom: 1px solid rgba(60,60,67,.12); }
+            .gs-cards tbody tr:hover td { background: transparent; }
+            .gs-cards td { padding: 2px 0; border: 0; text-align: left !important; }
+            .gs-cards td[data-label]:not([data-label=""])::before { content: attr(data-label); display: inline-block; min-width: 92px; font-size: 12px; color: #6e6e73; }
+            .gs-cards td.gs-num { display: flex; justify-content: space-between; white-space: normal; }
+            .gs-cards td.gs-c { display: none; }
+            .gs-cards tfoot tr { display: flex; justify-content: space-between; padding-top: 10px; }
+            .gs-cards tfoot td { width: auto; border: 0; }
+            .gs-cards tfoot td:empty { display: none; }
+            .gs-items .gs-batches-inline { margin-left: 0; }
+        }
+
+        @media print {
+            @page { margin: 10mm; }
+            .gs-wrap { max-width: none; padding: 0; }
+            .gs-hero, .gs-trio, .gs-no-print, #stock-check, .gs-tools, .gs-found { display: none !important; }
+            .gs-card { box-shadow: none; padding: 0; border-radius: 0; }
+            .gs-items-head { display: none; }
+            .gs-items { font-size: 9.5px; }
+            .gs-items th, .gs-items td { border: 1px solid #000; padding: 3px 5px; color: #000; }
+            .gs-items .gs-col-batches { display: table-cell !important; }
+            .gs-items .gs-batches-inline { display: none !important; }
+            .gs-batches { font-size: 9px; color: #000; }
+            .gs-tag { border: 1px solid #555; background: none !important; color: #000 !important; }
+            .gs-sign { display: flex !important; }
+        }
+        .gs-sign { display: none; justify-content: space-between; margin-top: 40px; font-size: 10px; }
+        .gs-sign span { border-top: 1px solid #000; padding-top: 4px; width: 28%; text-align: center; }
     </style>
 
-    <div class="ak-page">
+    <div class="gs-wrap">
         <div class="ak-print-head">
             <div class="ak-print-bank">{{ config('app.name') }}</div>
             <div class="ak-print-title">Goods Issue Note</div>
@@ -191,366 +260,334 @@
 
         <x-status-message />
 
+        {{-- The issue at a glance --}}
+        <section class="gs-card gs-hero" aria-label="Issue summary">
+            <div class="gs-hero-top">
+                @if ($latestSettlement && auth()->user()->can('sales-settlement-list'))
+                    <a href="{{ route('sales-settlements.show', $latestSettlement) }}" class="gs-stage gs-{{ $stageTone }}" title="Open {{ $latestSettlement->settlement_number }}">{{ $stageText }} · {{ $latestSettlement->settlement_number }}</a>
+                @else
+                    <span class="gs-stage gs-{{ $stageTone }}">{{ $stageText }}{{ $latestSettlement ? ' · '.$latestSettlement->settlement_number : '' }}</span>
+                @endif
+                <span class="gs-stage gs-blue" style="padding-left:11px">{{ $gi->supplier->supplier_name ?? 'No supplier' }}</span>
+                @if ($supplementary->isNotEmpty())
+                    <span class="gs-stage gs-purple">{{ $supplementary->count() }} supplementary</span>
+                @endif
+            </div>
+
+            <p class="gs-amount" title="Rs {{ $rs($sellingValue) }}"><small>Rs</small>{{ number_format($sellingValue) }}</p>
+            <p class="gs-who">
+                @if ($employeeUrl)<a href="{{ $employeeUrl }}"><b>{{ $gi->employee->name }}</b></a>@else<b>{{ $gi->employee->name ?? '—' }}</b>@endif
+                <span class="gs-muted">{{ $gi->employee->employee_code ?? '' }}</span>
+                &middot; @if ($vehicleUrl)<a href="{{ $vehicleUrl }}">{{ $gi->vehicle->vehicle_number }}</a>@else{{ $gi->vehicle->vehicle_number ?? '—' }}@endif
+                <span class="gs-muted">{{ $gi->vehicle->vehicle_type ?? '' }}</span>
+                <br>{{ $gi->warehouse->warehouse_name ?? 'Warehouse' }} → van &middot; {{ $gi->issue_date?->format('l, d M Y') }}
+            </p>
+
+            <dl class="gs-stats">
+                <div><dt>Lines</dt><dd>{{ number_format($gi->items->count()) }}<small>{{ $supplementary->isNotEmpty() ? $supplementary->count().' supplementary' : 'products' }}</small></dd></div>
+                <div><dt>Quantity</dt><dd>{{ rtrim(rtrim(number_format($totalPieces, 3), '0'), '.') }}<small>pieces</small></dd></div>
+                <div><dt>Cost</dt><dd>{{ number_format($cost) }}<small>{{ $postedCost > 0 ? 'as posted' : 'estimate' }}</small></dd></div>
+                <div><dt>Margin</dt><dd>{{ number_format($margin) }}<small>{{ $sellingValue > 0 ? number_format($margin / $sellingValue * 100, 1).'% of value' : '—' }}</small></dd></div>
+            </dl>
+
+            <div class="gs-hero-foot">
+                <p class="gs-meta">
+                    Created by {{ $gi->issuedBy->name ?? '—' }} {{ $gi->created_at?->format('d M Y, h:i A') }}
+                    @if ($gi->posted_at) &middot; posted {{ $gi->posted_at->format('d M Y, h:i A') }} @endif
+                    &middot; updated {{ $gi->updated_at?->diffForHumans() }}
+                </p>
+                <div class="gs-actions no-print">
+                    @if ($isDraft)
+                        @can('goods-issue-edit')
+                            <a href="{{ route('goods-issues.edit', $gi->id) }}" class="gs-pill gs-pill-grey">Edit</a>
+                        @endcan
+                        @can('goods-issue-post')
+                            <button type="button" x-data class="gs-pill gs-pill-green"
+                                @click="$dispatch('open-post-gi-modal', { url: '{{ route('goods-issues.post', $gi->id) }}' })">Post Issue</button>
+                        @endcan
+                    @endif
+                    @if ($gi->status === 'issued')
+                        @can('goods-issue-reverse')
+                            <button type="button" x-data class="gs-pill gs-pill-danger"
+                                @if ($reversalRefusal) disabled title="{{ $reversalRefusal }}" @endif
+                                @click="$dispatch('open-reverse-gi-modal')">Reverse &amp; Re-issue</button>
+                        @endcan
+                    @endif
+                    @if ($gi->canAcceptSupplementaryItems())
+                        @can('goods-issue-edit')
+                            <button type="button" x-data class="gs-pill gs-pill-blue"
+                                @click="$dispatch('open-append-items-confirm', { url: '{{ route('goods-issues.append-items', $gi->id) }}', issueNumber: '{{ $gi->issue_number }}', existingLineCount: {{ $gi->items->count() }} })">+ Add more items</button>
+                        @endcan
+                    @endif
+                </div>
+            </div>
+        </section>
+
         @if ($isReversed)
-            <div class="gi-check gi-check-red" role="status">
+            <div class="gs-banner gs-banner-red" role="status">
                 <span>
-                    <b>Reversed</b> on {{ $gi->reversed_at->format('d M Y, h:i A') }}{{ $gi->reversedBy ? ' by '.$gi->reversedBy->name : '' }}.
-                    Stock went back to {{ $gi->warehouse->warehouse_name ?? 'the warehouse' }} and the journal entries were offset on {{ $gi->issue_date?->format('d M Y') }}.
-                    <br><span class="ak-muted">Reason: {{ $gi->reversal_reason }}</span>
+                    <span>
+                        <b>Reversed</b> on {{ $gi->reversed_at->format('d M Y, h:i A') }}{{ $gi->reversedBy ? ' by '.$gi->reversedBy->name : '' }}.
+                        Stock went back to {{ $gi->warehouse->warehouse_name ?? 'the warehouse' }} and the journal entries were offset on {{ $gi->issue_date?->format('d M Y') }}.
+                        <br><span class="gs-muted">Reason: {{ $gi->reversal_reason }}</span>
+                    </span>
                 </span>
                 @if ($gi->replacement)
-                    <a href="{{ route('goods-issues.show', $gi->replacement) }}" class="ak-btn ak-btn-outline ak-btn-sm gi-no-print">Replaced by {{ $gi->replacement->issue_number }} →</a>
+                    <a href="{{ route('goods-issues.show', $gi->replacement) }}" class="gs-pill gs-pill-sm gs-pill-grey gs-no-print">Replaced by {{ $gi->replacement->issue_number }} →</a>
                 @endif
             </div>
         @endif
         @if ($gi->replaces)
-            <div class="gi-check gi-check-amber gi-no-print" role="status">
-                <span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it. This draft holds the lock on vehicle '.($gi->vehicle->vehicle_number ?? '').' until its vehicle is changed or it is deleted.' : '.' }}</span>
-                <a href="{{ route('goods-issues.show', $gi->replaces) }}" class="ak-btn ak-btn-outline ak-btn-sm">View {{ $gi->replaces->issue_number }} →</a>
+            <div class="gs-banner gs-banner-amber gs-no-print" role="status">
+                <span><span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it. This draft holds the lock on vehicle '.($gi->vehicle->vehicle_number ?? '').' until its vehicle is changed or it is deleted.' : '.' }}</span></span>
+                <a href="{{ route('goods-issues.show', $gi->replaces) }}" class="gs-pill gs-pill-sm gs-pill-grey">View {{ $gi->replaces->issue_number }} →</a>
             </div>
         @endif
-
-        {{-- KPI cards --}}
-        <section class="ak-kpis" aria-label="Issue summary">
-            <div class="ak-kpi">
-                <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.63 10.63a2.25 2.25 0 0 1-2.24 2.12H6.62a2.25 2.25 0 0 1-2.24-2.12L3.75 7.5M10 11.25h4M3.38 7.5h17.25c.62 0 1.12-.5 1.12-1.13v-1.5c0-.62-.5-1.12-1.12-1.12H3.38c-.63 0-1.13.5-1.13 1.13v1.5c0 .62.5 1.12 1.13 1.12Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Items issued</span>
-                    <span class="ak-kpi-value">{{ number_format($gi->items->count()) }} {{ \Illuminate\Support\Str::plural('line', $gi->items->count()) }}</span>
-                    <span class="ak-kpi-hint">{{ rtrim(rtrim(number_format($totalPieces, 3), '0'), '.') }} pcs in total{{ $supplementary->isNotEmpty() ? ' · '.$supplementary->count().' supplementary' : '' }}</span>
-                </span>
-            </div>
-            <div class="ak-kpi" title="Rs {{ $rs($sellingValue) }}">
-                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.8 2.1c.73.2 1.45-.34 1.45-1.1V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.38c0-.62.5-1.12 1.13-1.12H20.25M2.25 6v9m18-10.5v.75c0 .41.34.75.75.75h.75m-1.5-1.5h.38c.62 0 1.12.5 1.12 1.13v9.75c0 .62-.5 1.12-1.12 1.12h-.38m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.38a1.13 1.13 0 0 1-1.12-1.12V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Selling value</span>
-                    <span class="ak-kpi-value">Rs {{ number_format($sellingValue) }}</span>
-                    <span class="ak-kpi-hint">cost Rs {{ number_format($cost) }}{{ $postedCost > 0 ? '' : ' (estimate)' }} &middot; margin Rs {{ number_format($margin) }}</span>
-                </span>
-            </div>
-            @php $employeeUrl = $gi->employee && auth()->user()->can('employee-list') ? route('employees.show', $gi->employee) : null; @endphp
-            <div class="ak-kpi">
-                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.12a7.5 7.5 0 0 1 15 0A17.93 17.93 0 0 1 12 21.75c-2.68 0-5.22-.58-7.5-1.63Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Salesman</span>
-                    <span class="ak-kpi-value ak-kpi-value-sm">{{ $gi->employee->name ?? '—' }}</span>
-                    <span class="ak-kpi-hint">{{ $gi->employee->employee_code ?? '' }}</span>
-                </span>
-            </div>
-            @php $vehicleUrl = $gi->vehicle && auth()->user()->can('vehicle-list') ? route('vehicles.show', $gi->vehicle) : null; @endphp
-            <div class="ak-kpi">
-                <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.38a1.13 1.13 0 0 1-1.13-1.13V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.13c.62 0 1.13-.5 1.09-1.12a17.9 17.9 0 0 0-3.21-9.06 2.29 2.29 0 0 0-1.89-.95H14.25M16.5 18.75h-2.25m0-11.18v-.96c0-.57-.42-1.05-.98-1.12a48.6 48.6 0 0 0-10.04 0 1.13 1.13 0 0 0-.98 1.12v7.64m12 0v-6.68" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Vehicle</span>
-                    <span class="ak-kpi-value ak-kpi-value-sm">{{ $gi->vehicle->vehicle_number ?? '—' }}</span>
-                    <span class="ak-kpi-hint">{{ $gi->vehicle->vehicle_type ?? '' }} &middot; from {{ $gi->warehouse->warehouse_name ?? '—' }}</span>
-                </span>
-            </div>
-        </section>
 
         @if ($isDraft && $stockPositions->isNotEmpty())
             @php
                 $shortPositions = $stockPositions->filter(fn ($p) => $p['short'] > 0.001 || $p['short_non_promotional'] > 0.001);
                 $contestedPositions = $stockPositions->filter(fn ($p) => $p['short'] <= 0.001 && $p['short_non_promotional'] <= 0.001 && $p['required'] > $p['free'] + 0.001);
                 $problemPositions = $shortPositions->merge($contestedPositions);
-                $qty = fn (float $quantity, array $p) => \App\Services\GoodsIssueStockCheck::formatQuantity($quantity, $p['conversion_factor']);
+                $positionQty = fn (float $quantity, array $p) => \App\Services\GoodsIssueStockCheck::formatQuantity($quantity, $p['conversion_factor']);
+                $stockTone = $shortPositions->isNotEmpty() ? 'red' : ($contestedPositions->isNotEmpty() ? 'amber' : 'green');
             @endphp
-            <section id="stock-check" class="uf-card" style="padding:0; overflow:hidden" aria-label="Stock check">
-                <div @class([
-                    'gi-check',
-                    'gi-check-red' => $shortPositions->isNotEmpty(),
-                    'gi-check-amber' => $shortPositions->isEmpty() && $contestedPositions->isNotEmpty(),
-                    'gi-check-green' => $problemPositions->isEmpty(),
-                ])>
-                    <b>Stock Check before posting</b>
+            <section id="stock-check" class="gs-card" style="padding:0; overflow:hidden" aria-label="Stock check">
+                <div class="gs-banner gs-banner-{{ $stockTone }}" style="border-radius:0">
                     <span>
-                        @if ($shortPositions->isNotEmpty())
-                            <span class="font-semibold text-red-700">{{ $shortPositions->count() }} {{ Str::plural('product', $shortPositions->count()) }} short — this issue cannot be posted until they are reduced or removed.</span>
-                        @elseif ($contestedPositions->isNotEmpty())
-                            <span class="font-semibold text-amber-700">All in stock, but other drafts also need {{ $contestedPositions->count() }} of these {{ Str::plural('product', $contestedPositions->count()) }}. Whichever is posted first takes the stock.</span>
-                        @else
-                            <span class="font-semibold text-green-700">All {{ $stockPositions->count() }} products are in stock.</span>
-                        @endif
+                        <span>
+                            <b>Stock Check before posting</b><br>
+                            @if ($shortPositions->isNotEmpty())
+                                {{ $shortPositions->count() }} {{ Str::plural('product', $shortPositions->count()) }} short — this issue cannot be posted until they are reduced or removed.
+                            @elseif ($contestedPositions->isNotEmpty())
+                                All in stock, but other drafts also need {{ $contestedPositions->count() }} of these {{ Str::plural('product', $contestedPositions->count()) }}. Whichever is posted first takes the stock.
+                            @else
+                                All {{ $stockPositions->count() }} products are in stock.
+                            @endif
+                        </span>
                     </span>
                 </div>
-                    @if ($problemPositions->isNotEmpty())
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead class="bg-gray-50 text-xs uppercase text-gray-600">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left">Product</th>
-                                        <th class="px-3 py-2 text-right">This issue needs</th>
-                                        <th class="px-3 py-2 text-right">In stock now</th>
-                                        <th class="px-3 py-2 text-left">Also in other drafts</th>
-                                        <th class="px-3 py-2 text-left">Already issued {{ $goodsIssue->issue_date?->format('d-M') }}</th>
-                                        <th class="px-3 py-2 text-left">Status</th>
+                @if ($problemPositions->isNotEmpty())
+                    <div style="padding:4px 16px 12px">
+                        <table class="gs-table gs-cards">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Product</th>
+                                    <th scope="col" class="gs-num">Needs</th>
+                                    <th scope="col" class="gs-num">In stock</th>
+                                    <th scope="col">Other drafts</th>
+                                    <th scope="col">Issued {{ $goodsIssue->issue_date?->format('d-M') }}</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($problemPositions as $position)
+                                    @php $isShort = $position['short'] > 0.001 || $position['short_non_promotional'] > 0.001; @endphp
+                                    <tr class="{{ $isShort ? 'gs-row-red' : 'gs-row-amber' }}">
+                                        <td data-label=""><span class="gs-name">{{ $position['product_name'] }}</span><span class="gs-code">{{ $position['product_code'] }}</span></td>
+                                        <td class="gs-num" data-label="Needs">{{ $positionQty($position['required'], $position) }}</td>
+                                        <td class="gs-num" data-label="In stock">{{ $positionQty($position['on_hand'], $position) }}</td>
+                                        <td data-label="Other drafts" style="font-size:12.5px">
+                                            @forelse ($position['other_drafts'] as $draft)
+                                                <div>{{ $draft['issue_number'] }}@if ($draft['vehicle']) ({{ $draft['vehicle'] }})@endif: {{ $positionQty($draft['quantity'], $position) }}</div>
+                                            @empty
+                                                <span class="gs-muted">—</span>
+                                            @endforelse
+                                        </td>
+                                        <td data-label="Issued" style="font-size:12.5px">
+                                            @forelse ($position['issued_same_day'] as $issued)
+                                                <div>{{ $issued['issue_number'] }}@if ($issued['vehicle']) ({{ $issued['vehicle'] }})@endif: {{ $positionQty($issued['quantity'], $position) }}</div>
+                                            @empty
+                                                <span class="gs-muted">—</span>
+                                            @endforelse
+                                        </td>
+                                        <td data-label="Status" style="font-size:12.5px; font-weight:600">
+                                            @if ($position['short'] > 0.001)
+                                                <span style="color:#c4161c">Short {{ $positionQty($position['short'], $position) }}</span>
+                                            @elseif ($position['short_non_promotional'] > 0.001)
+                                                <span style="color:#c4161c">Short {{ $positionQty($position['short_non_promotional'], $position) }} of non-promotional stock</span>
+                                            @else
+                                                <span style="color:#8a4b00">Other drafts need more than is left</span>
+                                            @endif
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @foreach ($problemPositions as $position)
-                                        @php $isShort = $position['short'] > 0.001 || $position['short_non_promotional'] > 0.001; @endphp
-                                        <tr @class(['align-top', 'bg-red-50' => $isShort, 'bg-amber-50' => ! $isShort])>
-                                            <td class="px-3 py-2">
-                                                <div class="font-semibold text-gray-900">{{ $position['product_name'] }}</div>
-                                                <div class="text-xs text-gray-500">{{ $position['product_code'] }}</div>
-                                            </td>
-                                            <td class="px-3 py-2 text-right tabular-nums">{{ $qty($position['required'], $position) }}</td>
-                                            <td class="px-3 py-2 text-right tabular-nums">{{ $qty($position['on_hand'], $position) }}</td>
-                                            <td class="px-3 py-2 text-xs">
-                                                @forelse ($position['other_drafts'] as $draft)
-                                                    <div>{{ $draft['issue_number'] }}@if ($draft['vehicle']) ({{ $draft['vehicle'] }})@endif: {{ $qty($draft['quantity'], $position) }}</div>
-                                                @empty
-                                                    <span class="text-gray-400">—</span>
-                                                @endforelse
-                                            </td>
-                                            <td class="px-3 py-2 text-xs">
-                                                @forelse ($position['issued_same_day'] as $issued)
-                                                    <div>{{ $issued['issue_number'] }}@if ($issued['vehicle']) ({{ $issued['vehicle'] }})@endif: {{ $qty($issued['quantity'], $position) }}</div>
-                                                @empty
-                                                    <span class="text-gray-400">—</span>
-                                                @endforelse
-                                            </td>
-                                            <td class="px-3 py-2 text-xs font-semibold">
-                                                @if ($position['short'] > 0.001)
-                                                    <span class="text-red-700">Short {{ $qty($position['short'], $position) }}</span>
-                                                @elseif ($position['short_non_promotional'] > 0.001)
-                                                    <span class="text-red-700">Short {{ $qty($position['short_non_promotional'], $position) }} of non-promotional stock</span>
-                                                @else
-                                                    <span class="text-amber-700">Other drafts need more than is left</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </section>
-            @php $qty = fn ($item) => \App\Services\GoodsIssueStockCheck::formatQuantity((float) $item->quantity_issued, (float) ($item->product->uom_conversion_factor ?? 1) ?: 1.0); @endphp
         @endif
 
-        <div class="gi-grid">
-            {{-- Items --}}
-            <section class="uf-card" style="padding:0; overflow:hidden" aria-labelledby="gi-items" x-data="giItems()" @beforeprint.window="search = ''">
-                <header class="uf-card-head" style="padding:16px 18px 10px; flex-wrap:wrap; gap:10px">
-                    <div>
-                        <h2 class="uf-card-title" id="gi-items">Items issued</h2>
-                        <p class="uf-card-sub" style="margin-left:0">{{ $isDraft ? 'Draft: batches and rates are what posting would take now (oldest / urgent first).' : 'Batches and rates actually moved to the van.' }}</p>
-                    </div>
-                    @if ($gi->items->count() > 1)
-                        <div class="gi-tools gi-no-print">
-                            <div class="ak-search ak-field">
-                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
-                                <input type="search" x-model="search" x-ref="search" placeholder="Find product or batch" aria-label="Find product" @keydown.escape="search = ''">
-                            </div>
-                            <div class="ak-field">
-                                <select x-model="sort" aria-label="Sort items">
-                                    <option value="line">Sort: line #</option>
-                                    <option value="value">Value: high → low</option>
-                                    <option value="qty">Quantity: high → low</option>
-                                    <option value="name">Name: A → Z</option>
-                                </select>
-                            </div>
-                        </div>
-                    @endif
-                </header>
-                <p class="gi-found gi-no-print" x-show="search.trim() !== ''" x-cloak>
-                    <span x-text="shown + ' of {{ $gi->items->count() }} lines'"></span> &middot; Rs <b x-text="shownValue"></b>
-                    <button type="button" @click="search = ''">Clear</button>
-                </p>
-                <div class="ak-dt-scroll" style="max-height:none">
-                    <table class="ak-dt gi-items">
-                        <thead>
-                            <tr>
-                                <th scope="col" class="ak-c" style="width:44px">#</th>
-                                <th scope="col">Product</th>
-                                <th scope="col" class="ak-num">Quantity</th>
-                                <th scope="col">Batches &times; rate</th>
-                                <th scope="col" class="ak-num">Value (Rs)</th>
-                            </tr>
-                        </thead>
-                        <tbody x-ref="rows">
-                            @foreach ($gi->items as $item)
-                                @php
-                                    $lineValue = $item->calculated_total ?? $item->total_value;
-                                    $haystack = mb_strtolower($item->product->product_name.' '.$item->product->product_code.' '.collect($item->batch_breakdown ?? [])->pluck('batch_code')->implode(' '));
-                                @endphp
-                                <tr data-line="{{ $item->line_no ?? $loop->iteration }}" data-value="{{ (float) $lineValue }}" data-qty="{{ (float) $item->quantity_issued }}"
-                                    data-name="{{ mb_strtolower($item->product->product_name) }}" data-find="{{ $haystack }}">
-                                    <td class="ak-c ak-muted">{{ $item->line_no }}</td>
-                                    <td>
-                                        <span class="ak-strong">{{ $item->product->product_name }}</span>
-                                        @if (mb_strtoupper(trim($item->product->product_code)) !== mb_strtoupper(trim($item->product->product_name)))
-                                            <span class="gi-sub">{{ $item->product->product_code }}</span>
-                                        @endif
-                                        @if ($item->exclude_promotional)<span class="gi-tag gi-tag-np">Non-Promo</span>@endif
-                                        @if ($item->is_supplementary)<span class="gi-tag gi-tag-supp">Supplementary{{ $item->supplementary_posted_at ? ' · '.$item->supplementary_posted_at->format('d M') : '' }}</span>@endif
-                                    </td>
-                                    <td class="ak-num">
-                                        @php $cartonsText = ($item->product->uom_conversion_factor ?? 1) > 1 ? \Illuminate\Support\Str::before($qty($item), ' (') : null; @endphp
-                                        @if ($cartonsText && ! str_starts_with($cartonsText, '0 ctn'))
-                                            <span class="gi-sub" style="margin:0 6px 0 0">{{ $cartonsText }}</span>
-                                        @endif
-                                        <span class="ak-strong" title="{{ $cartonsText ?? '' }}">{{ number_format((float) $item->quantity_issued, 2) }}</span>
-                                    </td>
-                                    <td class="gi-batches">
-                                        @forelse ($item->batch_breakdown ?? [] as $b)
-                                            <div><b>{{ number_format($b['quantity'], 0) }}</b> &times; {{ $rs($b['selling_price']) }}{{ count($item->batch_breakdown) > 1 ? ' = '.$rs($b['value']) : '' }}
-                                                @if (($b['batch_code'] ?? 'N/A') !== 'N/A')<span>&middot; {{ $b['batch_code'] }}</span>@endif
-                                                @if ($b['is_promotional'])<span class="gi-tag gi-tag-promo">Promo</span>@endif
-                                            </div>
-                                        @empty
-                                            <span>Avg cost {{ $rs($item->unit_cost) }}{{ $isDraft ? ' · no stock to take from' : '' }}</span>
-                                        @endforelse
-                                    </td>
-                                    <td class="ak-num ak-strong">{{ $rs($lineValue) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="2">Total &middot; {{ $gi->items->count() }} {{ \Illuminate\Support\Str::plural('line', $gi->items->count()) }}</td>
-                                <td class="ak-num">{{ number_format($totalPieces, 2) }}</td>
-                                <td></td>
-                                <td class="ak-num">{{ $rs($sellingValue) }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                    <p class="gi-none gi-no-print" x-show="search.trim() !== '' && shown === 0" x-cloak>No product matches “<span x-text="search"></span>”.</p>
+        {{-- Items --}}
+        <section class="gs-card" aria-labelledby="gi-items" x-data="giItems()" @beforeprint.window="search = ''">
+            <div class="gs-items-head">
+                <div>
+                    <h2 class="gs-card-title" id="gi-items">Items issued</h2>
+                    <p class="gs-card-sub">{{ $isDraft ? 'Draft: batches and rates are what posting would take now (oldest / urgent first).' : 'Batches and rates actually moved to the van.' }}</p>
                 </div>
-                @if ($gi->notes)
-                    <p class="ak-muted gi-no-print" style="margin:0; padding:12px 18px; border-top:1px solid var(--ak-line)"><b>Notes:</b> {{ $gi->notes }}</p>
+                @if ($gi->items->count() > 1)
+                    <div class="gs-tools gs-no-print">
+                        <input type="search" x-model="search" placeholder="Find product or batch" aria-label="Find product" @keydown.escape="search = ''">
+                        <select x-model="sort" aria-label="Sort items">
+                            <option value="line">Sort: line #</option>
+                            <option value="value">Value: high → low</option>
+                            <option value="qty">Quantity: high → low</option>
+                            <option value="name">Name: A → Z</option>
+                        </select>
+                    </div>
                 @endif
-                <div class="gi-sign"><span>Issued by</span><span>Salesman</span><span>Store keeper</span></div>
+            </div>
+            <p class="gs-found gs-no-print" x-show="search.trim() !== ''" x-cloak>
+                <span x-text="shown + ' of {{ $gi->items->count() }} lines'"></span> &middot; Rs <b x-text="shownValue"></b>
+                <button type="button" @click="search = ''">Clear</button>
+            </p>
+            <table class="gs-table gs-items gs-cards">
+                <thead>
+                    <tr>
+                        <th scope="col" class="gs-c">#</th>
+                        <th scope="col">Product</th>
+                        <th scope="col" class="gs-num">Quantity</th>
+                        <th scope="col" class="gs-col-batches">Batches &times; rate</th>
+                        <th scope="col" class="gs-num">Value (Rs)</th>
+                    </tr>
+                </thead>
+                <tbody x-ref="rows">
+                    @foreach ($gi->items as $item)
+                        @php
+                            $lineValue = $item->calculated_total ?? $item->total_value;
+                            $haystack = mb_strtolower($item->product->product_name.' '.$item->product->product_code.' '.collect($item->batch_breakdown ?? [])->pluck('batch_code')->implode(' '));
+                            $cartonsText = ($item->product->uom_conversion_factor ?? 1) > 1 ? \Illuminate\Support\Str::before($qty($item), ' (') : null;
+                        @endphp
+                        <tr data-line="{{ $item->line_no ?? $loop->iteration }}" data-value="{{ (float) $lineValue }}" data-qty="{{ (float) $item->quantity_issued }}"
+                            data-name="{{ mb_strtolower($item->product->product_name) }}" data-find="{{ $haystack }}">
+                            <td class="gs-c">{{ $item->line_no }}</td>
+                            <td data-label="">
+                                <span class="gs-name">{{ $item->product->product_name }}</span>
+                                @if (mb_strtoupper(trim($item->product->product_code)) !== mb_strtoupper(trim($item->product->product_name)))
+                                    <span class="gs-code">{{ $item->product->product_code }}</span>
+                                @endif
+                                @if ($item->exclude_promotional)<span class="gs-tag gs-tag-np">Non-Promo</span>@endif
+                                @if ($item->is_supplementary)<span class="gs-tag gs-tag-supp">Supplementary{{ $item->supplementary_posted_at ? ' · '.$item->supplementary_posted_at->format('d M') : '' }}</span>@endif
+                                <div class="gs-batches gs-batches-inline">
+                                    @foreach ($item->batch_breakdown ?? [] as $b)
+                                        <div><b>{{ number_format($b['quantity'], 0) }}</b> &times; {{ $rs($b['selling_price']) }}@if (($b['batch_code'] ?? 'N/A') !== 'N/A') &middot; {{ $b['batch_code'] }}@endif @if ($b['is_promotional'])<span class="gs-tag gs-tag-promo">Promo</span>@endif</div>
+                                    @endforeach
+                                </div>
+                            </td>
+                            <td class="gs-num" data-label="Quantity">
+                                <span>
+                                    <b>{{ number_format((float) $item->quantity_issued, 2) }}</b>
+                                    @if ($cartonsText && ! str_starts_with($cartonsText, '0 ctn'))<span class="gs-ctn">{{ $cartonsText }}</span>@endif
+                                </span>
+                            </td>
+                            <td class="gs-batches gs-col-batches">
+                                @forelse ($item->batch_breakdown ?? [] as $b)
+                                    <div><b>{{ number_format($b['quantity'], 0) }}</b> &times; {{ $rs($b['selling_price']) }}{{ count($item->batch_breakdown) > 1 ? ' = '.$rs($b['value']) : '' }}
+                                        @if (($b['batch_code'] ?? 'N/A') !== 'N/A')<span>&middot; {{ $b['batch_code'] }}</span>@endif
+                                        @if ($b['is_promotional'])<span class="gs-tag gs-tag-promo">Promo</span>@endif
+                                    </div>
+                                @empty
+                                    <span>Avg cost {{ $rs($item->unit_cost) }}{{ $isDraft ? ' · no stock to take from' : '' }}</span>
+                                @endforelse
+                            </td>
+                            <td class="gs-num" data-label="Value (Rs)"><b>{{ $rs($lineValue) }}</b></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2">Total &middot; {{ $gi->items->count() }} {{ \Illuminate\Support\Str::plural('line', $gi->items->count()) }}</td>
+                        <td class="gs-num">{{ number_format($totalPieces, 2) }}</td>
+                        <td class="gs-col-batches"></td>
+                        <td class="gs-num">{{ $rs($sellingValue) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <p class="gs-none gs-no-print" x-show="search.trim() !== '' && shown === 0" x-cloak>No product matches “<span x-text="search"></span>”.</p>
+            @if ($gi->notes)
+                <p class="gs-notes gs-no-print"><b>Notes:</b> {{ $gi->notes }}</p>
+            @endif
+            <div class="gs-sign"><span>Issued by</span><span>Salesman</span><span>Store keeper</span></div>
+        </section>
+
+        <div class="gs-trio">
+            {{-- Settlement --}}
+            <section class="gs-card" aria-labelledby="gi-settlement">
+                <h2 class="gs-card-title" id="gi-settlement">Settlement</h2>
+                @if ($settlements->isEmpty())
+                    <p class="gs-empty">
+                        @if ($isDraft)
+                            Post this issue first; the settlement is made when the van comes back.
+                        @elseif ($isReversed)
+                            Reversed: nothing to settle.
+                        @else
+                            No settlement yet. The vehicle stays locked until this issue is settled.
+                        @endif
+                    </p>
+                    @if ($gi->status === 'issued')
+                        @can('sales-settlement-create')
+                            <a href="{{ route('sales-settlements.create') }}" class="gs-pill gs-pill-sm gs-pill-blue" style="margin-top:12px">Start settlement</a>
+                        @endcan
+                    @endif
+                @else
+                    <ul class="gs-rows">
+                        @foreach ($settlements as $settlement)
+                            <li>
+                                <span>
+                                    @can('sales-settlement-list')
+                                        <a href="{{ route('sales-settlements.show', $settlement) }}"><b>{{ $settlement->settlement_number }}</b></a>
+                                    @else
+                                        <b>{{ $settlement->settlement_number }}</b>
+                                    @endcan
+                                    <small>{{ $settlement->settlement_date?->format('d M Y') }} &middot; sales Rs {{ number_format((float) $settlement->total_sales_amount) }}</small>
+                                </span>
+                                <span class="gs-stage gs-{{ $settlementTone($settlement->status) }}">{{ \Illuminate\Support\Str::headline($settlement->status) }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
             </section>
 
-            <div class="gi-side">
-                {{-- Details --}}
-                <section class="uf-card" aria-labelledby="gi-details">
-                    <header class="uf-card-head"><h2 class="uf-card-title" id="gi-details">Details</h2></header>
-                    <div class="uf-body" style="padding-top:4px; padding-bottom:4px">
-                        <dl class="gi-list">
-                            <div><dt>Issue number</dt><dd>{{ $gi->issue_number }}</dd></div>
-                            <div><dt>Issue date</dt><dd>{{ $gi->issue_date?->format('d M Y') }}</dd></div>
-                            <div><dt>Status</dt><dd>{{ \Illuminate\Support\Str::headline($gi->status) }}@if ($gi->posted_at)<small>posted {{ $gi->posted_at->format('d M Y, h:i A') }}</small>@endif</dd></div>
-                            <div><dt>Supplier</dt><dd>{{ $gi->supplier->supplier_name ?? 'N/A' }}</dd></div>
-                            <div><dt>From warehouse</dt><dd>{{ $gi->warehouse->warehouse_name ?? '—' }}</dd></div>
-                            <div><dt>Salesman</dt><dd>@if ($employeeUrl)<a href="{{ $employeeUrl }}">{{ $gi->employee->name }}</a>@else{{ $gi->employee->name ?? '—' }}@endif<small>{{ $gi->employee->employee_code ?? '' }}</small></dd></div>
-                            <div><dt>Vehicle</dt><dd>@if ($vehicleUrl)<a href="{{ $vehicleUrl }}">{{ $gi->vehicle->vehicle_number }}</a>@else{{ $gi->vehicle->vehicle_number ?? '—' }}@endif<small>{{ $gi->vehicle->vehicle_type ?? '' }}</small></dd></div>
-                            <div><dt>Created by</dt><dd>{{ $gi->issuedBy->name ?? '—' }}<small>{{ $gi->created_at?->format('d M Y, h:i A') }}</small></dd></div>
-                            <div><dt>Last updated</dt><dd>{{ $gi->updated_at?->format('d M Y, h:i A') ?? '—' }}</dd></div>
-                        </dl>
-                    </div>
-                </section>
+            {{-- Accounting --}}
+            <section class="gs-card" aria-labelledby="gi-accounting">
+                <h2 class="gs-card-title" id="gi-accounting">Accounting</h2>
+                @if ($journalEntries->isEmpty())
+                    <p class="gs-empty">{{ $isDraft ? 'Posting moves the cost from Stock in Hand to Van Stock with a journal entry.' : 'No journal entry found for this issue.' }}</p>
+                @else
+                    <ul class="gs-rows">
+                        @foreach ($journalEntries as $entry)
+                            <li>
+                                <span>
+                                    @can('journal-entry-list')
+                                        <a href="{{ route('journal-entries.show', $entry->id) }}"><b>JE #{{ $entry->id }}</b></a>
+                                    @else
+                                        <b>JE #{{ $entry->id }}</b>
+                                    @endcan
+                                    <small>{{ $entry->reference }} &middot; {{ $entry->entry_date?->format('d M Y') }} &middot; {{ \Illuminate\Support\Str::headline($entry->status) }}</small>
+                                </span>
+                                <b style="white-space:nowrap; font-variant-numeric:tabular-nums">Rs {{ number_format((float) $entry->total_debit) }}</b>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                <div class="gs-gl">
+                    <div><b>Dr</b><span>{{ $gi->vanStockAccount ? $gi->vanStockAccount->account_code.' · '.$gi->vanStockAccount->account_name : 'Van Stock' }}</span></div>
+                    <div><b>Cr</b><span>{{ $gi->stockInHandAccount ? $gi->stockInHandAccount->account_code.' · '.$gi->stockInHandAccount->account_name : 'Stock in Hand' }}</span></div>
+                </div>
+            </section>
 
-                {{-- Settlement --}}
-                <section class="uf-card" aria-labelledby="gi-settlement">
-                    <header class="uf-card-head"><h2 class="uf-card-title" id="gi-settlement">Settlement</h2></header>
-                    <div class="uf-body" style="padding-top:4px; padding-bottom:4px">
-                        @if ($settlements->isEmpty())
-                            <p class="ak-muted" style="padding:10px 0; margin:0">
-                                @if ($isDraft)
-                                    Post this issue first; the settlement is made when the van comes back.
-                                @elseif ($isReversed)
-                                    Reversed: nothing to settle.
-                                @else
-                                    No settlement yet. The vehicle stays locked until this issue is settled.
-                                @endif
-                            </p>
-                            @if ($gi->status === 'issued')
-                                @can('sales-settlement-create')
-                                    <a href="{{ route('sales-settlements.create') }}" class="ak-btn ak-btn-outline ak-btn-sm" style="margin-bottom:10px">Start settlement</a>
-                                @endcan
-                            @endif
-                        @else
-                            <ul class="gi-rows">
-                                @foreach ($settlements as $settlement)
-                                    <li>
-                                        <span>
-                                            @can('sales-settlement-list')
-                                                <a href="{{ route('sales-settlements.show', $settlement) }}" class="ak-strong">{{ $settlement->settlement_number }}</a>
-                                            @else
-                                                <span class="ak-strong">{{ $settlement->settlement_number }}</span>
-                                            @endcan
-                                            <small>{{ $settlement->settlement_date?->format('d M Y') }} &middot; sales Rs {{ number_format((float) $settlement->total_sales_amount) }}</small>
-                                        </span>
-                                        <span class="ak-status {{ $settlementTone($settlement->status) }}"><i aria-hidden="true"></i>{{ \Illuminate\Support\Str::headline($settlement->status) }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </div>
-                </section>
-
-                {{-- Accounting --}}
-                <section class="uf-card" aria-labelledby="gi-accounting">
-                    <header class="uf-card-head"><h2 class="uf-card-title" id="gi-accounting">Accounting</h2></header>
-                    <div class="uf-body" style="padding-top:4px; padding-bottom:4px">
-                        @if ($journalEntries->isEmpty())
-                            <p class="ak-muted" style="padding:10px 0; margin:0">{{ $isDraft ? 'Posting moves the cost from Stock in Hand to Van Stock with a journal entry.' : 'No journal entry found for this issue.' }}</p>
-                        @else
-                            <ul class="gi-rows">
-                                @foreach ($journalEntries as $entry)
-                                    <li>
-                                        <span>
-                                            @can('journal-entry-list')
-                                                <a href="{{ route('journal-entries.show', $entry->id) }}" class="ak-strong">JE #{{ $entry->id }}</a>
-                                            @else
-                                                <span class="ak-strong">JE #{{ $entry->id }}</span>
-                                            @endcan
-                                            <small>{{ $entry->reference }} &middot; {{ $entry->entry_date?->format('d M Y') }} &middot; {{ \Illuminate\Support\Str::headline($entry->status) }}</small>
-                                        </span>
-                                        <b>Rs {{ number_format((float) $entry->total_debit) }}</b>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                        <dl class="gi-list" style="border-top:1px solid #f1f5f9">
-                            <div><dt>Credit (from)</dt><dd>{{ $gi->stockInHandAccount ? $gi->stockInHandAccount->account_code.' · '.$gi->stockInHandAccount->account_name : 'Stock in Hand' }}</dd></div>
-                            <div><dt>Debit (to)</dt><dd>{{ $gi->vanStockAccount ? $gi->vanStockAccount->account_code.' · '.$gi->vanStockAccount->account_name : 'Van Stock' }}</dd></div>
-                        </dl>
-                    </div>
-                </section>
-
-                {{-- Timeline --}}
-                <section class="uf-card" aria-labelledby="gi-timeline">
-                    <header class="uf-card-head"><h2 class="uf-card-title" id="gi-timeline">Timeline</h2></header>
-                    <div class="uf-body" style="padding-top:4px; padding-bottom:4px">
-                        <ul class="gi-feed">
-                            @foreach ($timeline as $event)
-                                <li><i aria-hidden="true"></i><div>{{ $event['text'] }}<small>{{ $event['at']->format('d M Y, h:i A') }} &middot; {{ $event['at']->diffForHumans() }}</small></div></li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </section>
-
-                {{-- Related --}}
-                @php
-                    $user = auth()->user();
-                    $links = array_filter([
-                        $gi->vehicle ? ['Issues to vehicle '.$gi->vehicle->vehicle_number, route('goods-issues.index', ['filter' => ['vehicle_id' => $gi->vehicle_id, 'issue_date_from' => $since, 'issue_date_to' => $today]])] : null,
-                        $gi->employee ? ['Issues to '.$gi->employee->name, route('goods-issues.index', ['filter' => ['employee_id' => $gi->employee_id, 'issue_date_from' => $since, 'issue_date_to' => $today]])] : null,
-                        $user->can('sales-settlement-list') && $gi->vehicle ? ['Settlements of this vehicle', route('sales-settlements.index', ['filter' => ['vehicle_id' => $gi->vehicle_id, 'settlement_date_from' => $since, 'settlement_date_to' => $today]])] : null,
-                        $user->can('report-inventory-van-stock-ledger') && $gi->vehicle ? ['Van stock ledger', route('reports.van-stock-ledger.vehicle-ledger', $gi->vehicle_id)] : null,
-                        $user->can('report-inventory-van-stock-batch') && $gi->vehicle ? ['Van stock by batch', route('reports.van-stock-batch.index', ['filter' => ['vehicle_id' => $gi->vehicle_id]])] : null,
-                        $user->can('report-sales-goods-issue') ? ['Goods issue report (this day)', route('reports.goods-issue.index', ['filter' => array_filter(['start_date' => $gi->issue_date?->toDateString(), 'end_date' => $gi->issue_date?->toDateString(), 'employee_id' => $gi->employee_id ? [$gi->employee_id] : null])])] : null,
-                        $user->can('report-audit-creditors-ledger') && $gi->employee ? ['Credit with '.$gi->employee->name.'\'s customers', route('reports.creditors-ledger.index', ['filter' => ['employee_id' => $gi->employee_id, 'has_balance' => 'yes']])] : null,
-                    ]);
-                @endphp
-                <section class="uf-card" aria-labelledby="gi-related">
-                    <header class="uf-card-head"><h2 class="uf-card-title" id="gi-related">Related</h2></header>
-                    <div class="uf-body" style="padding-top:4px; padding-bottom:4px">
-                        <nav class="gi-links">
-                            @foreach ($links as [$label, $url])
-                                <a href="{{ $url }}">{{ $label }} <span aria-hidden="true">→</span></a>
-                            @endforeach
-                        </nav>
-                    </div>
-                </section>
-            </div>
+            {{-- Timeline --}}
+            <section class="gs-card" aria-labelledby="gi-timeline">
+                <h2 class="gs-card-title" id="gi-timeline">Timeline</h2>
+                <ul class="gs-feed">
+                    @foreach ($timeline as $event)
+                        <li><i class="gs-{{ $event['tone'] }}" aria-hidden="true"></i>{{ $event['text'] }}<small>{{ $event['at']->format('d M Y, h:i A') }} &middot; {{ $event['at']->diffForHumans() }}</small></li>
+                    @endforeach
+                </ul>
+            </section>
         </div>
     </div>
-
 
     <script>
         /** Client-side find and sort for the issued items (rows stay server-rendered). */

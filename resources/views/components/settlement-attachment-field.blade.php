@@ -2,7 +2,7 @@
 @props(['section' => null])
 @php $mustAttach = $section && \App\Services\SettlementAttachmentService::isRequired($section); @endphp
 @if (\App\Services\SettlementAttachmentService::enabled())
-    <div x-data>
+    <div x-data x-on:attachment-ready.window="if (pendingAttachment && pendingAttachment.key === $event.detail.key) { pendingAttachment = { ...pendingAttachment, busy: false, after: $event.detail.after } }">
         <label class="block text-xs font-semibold text-gray-700 mb-1">Attachment @if($mustAttach)<span class="text-red-600">(Required before posting)</span>@else(Optional)@endif
             <span class="font-normal text-gray-400">PDF, JPG, PNG, WEBP up to {{ round(config('settlement_attachments.max_kb') / 1024) }} MB</span>
         </label>
@@ -13,6 +13,8 @@
             <template x-if="pendingAttachment">
                 <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 rounded px-2 py-1">
                     <span class="truncate max-w-[14rem]" x-text="pendingAttachment.name"></span>
+                    <span class="text-gray-500 tabular-nums" aria-live="polite"
+                        x-text="pendingAttachment.busy ? 'Shrinking…' : (pendingAttachment.after && pendingAttachment.after < pendingAttachment.before ? SettlementAttachments.size(pendingAttachment.before) + ' → ' + SettlementAttachments.size(pendingAttachment.after) : SettlementAttachments.size(pendingAttachment.before))"></span>
                     <button type="button" class="text-red-500 hover:text-red-700"
                         @click="delete SettlementAttachments.files[pendingAttachment.key]; pendingAttachment = null">&times;</button>
                 </span>

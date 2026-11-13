@@ -75,30 +75,24 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('dashboard') }}">Dashboard</a><span aria-hidden="true">›</span><span>Sales Settlements</span>
-                </nav>
-                <h1 class="ak-title">Sales Settlements</h1>
-                <p class="ak-sub">What each van sold, collected and spent &middot; {{ $periodLabel }}</p>
-            </div>
-            <div class="ak-head-actions">
-                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('gl-toggle-filters')" aria-controls="gl-filter-panel" title="Show or hide the filters">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+        <x-page-header title="Sales Settlements" :createRoute="route('sales-settlements.create')" createLabel="New settlement"
+            createPermission="sales-settlement-create" :showSearch="true" :showRefresh="true" backRoute="dashboard">
+            <x-slot name="afterFilter">
+                {{-- Help sits next to Filters, like on the Goods Issues list --}}
+                <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150 no-print"
+                    x-data @click="$dispatch('ss-help')" aria-haspopup="dialog" aria-label="Help in Urdu" title="How settlements work, in Urdu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
                 </button>
-                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh" aria-label="Refresh">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356M2.985 19.644v-4.992h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" /></svg>
-                </a>
-                @can('sales-settlement-create')
-                    <a href="{{ route('sales-settlements.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New settlement</a>
-                @endcan
-            </div>
-        </div>
+            </x-slot>
+            <x-slot name="actions">
+                <x-register-header-actions page="sales-settlements" :help="false" :excel-url="request()->fullUrlWithQuery(['export' => 'xlsx', 'page' => null])" />
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
+    <x-register-apple-style />
     <style>
         @page { margin: 10mm; }
         .gl-ranges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
@@ -331,51 +325,6 @@
 
         </section>
 
-        {{-- KPI cards (also filters) --}}
-        <section class="ak-kpis" aria-label="Settlement summary">
-            <a href="{{ $tabUrl('') }}" class="ak-kpi" title="Rs {{ number_format($totals->total_sales_amount, 2) }}">
-                <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.31 4.31a11.95 11.95 0 0 1 5.81-5.52l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.94" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Sales</span>
-                    <span class="ak-kpi-value">Rs {{ number_format($totals->total_sales_amount) }}</span>
-                    <span class="ak-kpi-hint">{{ number_format($settlements->total()) }} {{ \Illuminate\Support\Str::plural('settlement', $settlements->total()) }} &middot; credit {{ number_format($totals->total_credit_sales) }}</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('posted') }}" class="ak-kpi" title="Rs {{ number_format($totals->total_net_profit, 2) }}">
-                <span class="ak-kpi-icon {{ $totals->total_net_profit < 0 ? 'ak-tone-amber' : 'ak-tone-navy' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.13C3 12.5 3.5 12 4.13 12h2.25c.62 0 1.12.5 1.12 1.13v6.75C7.5 20.5 7 21 6.38 21H4.13A1.13 1.13 0 0 1 3 19.88v-6.75ZM9.75 8.63c0-.63.5-1.13 1.13-1.13h2.25c.62 0 1.12.5 1.12 1.13v11.25c0 .62-.5 1.12-1.12 1.12h-2.25a1.13 1.13 0 0 1-1.13-1.12V8.63ZM16.5 4.13c0-.63.5-1.13 1.13-1.13h2.25C20.5 3 21 3.5 21 4.13v15.75c0 .62-.5 1.12-1.12 1.12h-2.25a1.13 1.13 0 0 1-1.13-1.12V4.13Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Net profit</span>
-                    <span class="ak-kpi-value {{ $totals->total_net_profit < 0 ? 'gl-loss' : '' }}">Rs {{ number_format($totals->total_net_profit) }}</span>
-                    <span class="ak-kpi-hint">gross {{ number_format($grossMargin, 1) }}% &middot; net {{ number_format($netMargin, 1) }}% &middot; expenses {{ number_format($totals->total_expenses) }}@if ($lossCount) &middot; <b class="gl-loss" title="Settlements with a loss{{ $settlements->hasPages() ? ' on this page' : '' }}">{{ $lossCount }} {{ $lossCount === 1 ? 'loss' : 'losses' }}</b>@endif</span>
-                </span>
-            </a>
-            <a href="{{ $tabUrl('draft') }}" class="ak-kpi{{ $stats['draft'] ? ' ak-kpi-action' : '' }}">
-                <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m16.86 4.49 2.65 2.65M4 20l4.2-.9 10.9-10.9a1.9 1.9 0 0 0-2.7-2.7L5.5 16.4 4 20Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Drafts to post</span>
-                    <span class="ak-kpi-value">{{ number_format($stats['draft']) }}</span>
-                    <span class="ak-kpi-hint">{{ $stats['draft'] ? 'Rs '.number_format($stats['draft_sales']).' unposted · Review →' : 'nothing waiting' }}</span>
-                </span>
-            </a>
-            @php $waitingCount = (int) ($waitingVans->issues ?? 0); @endphp
-            @can('goods-issue-list')
-                <a href="{{ route('goods-issues.index', ['filter' => ['settlement' => 'pending', 'issue_date_from' => '2020-01-01', 'issue_date_to' => $today]]) }}" class="ak-kpi{{ $waitingCount ? ' ak-kpi-action' : '' }}" title="Goods issues on vans with no posted settlement yet (any date)">
-            @else
-                <div class="ak-kpi">
-            @endcan
-                <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
-                <span class="ak-kpi-body">
-                    <span class="ak-kpi-label">Vans not settled</span>
-                    <span class="ak-kpi-value">{{ number_format($waitingCount) }}</span>
-                    <span class="ak-kpi-hint">{{ $waitingCount ? 'Rs '.number_format((float) $waitingVans->value).' on vans · View →' : 'every van is settled' }}</span>
-                </span>
-            @can('goods-issue-list')
-                </a>
-            @else
-                </div>
-            @endcan
-        </section>
-
         <section class="ak-card" aria-label="Sales settlements">
             <div class="ak-tabs" role="tablist">
                 @foreach ($tabs as $key => [$label, $count])
@@ -422,6 +371,7 @@
                             <caption class="sr-only">Sales settlements, {{ $settlements->total() }} results</caption>
                             <thead>
                                 <tr>
+                                    <th scope="col" class="gl-no">#</th>
                                     <th scope="col" aria-sort="{{ $ariaSort('settlement_number') }}"><a href="{{ $sortUrl('settlement_number') }}">Settlement <span aria-hidden="true">{{ $sortMark('settlement_number') }}</span></a></th>
                                     <th scope="col">Salesman &middot; vehicle</th>
                                     <th scope="col" class="ak-num" aria-sort="{{ $ariaSort('total_sales') }}" title="Sales, with the cost of goods sold (COGS) underneath"><a href="{{ $sortUrl('total_sales') }}">Sales <span aria-hidden="true">{{ $sortMark('total_sales') }}</span></a></th>
@@ -438,10 +388,38 @@
                                         $netProfit = $settlement->calculated_net_profit;
                                         $rowSales = (float) $settlement->calculated_total_sales_amount;
                                         $rowNet = $rowSales > 0 ? $netProfit / $rowSales * 100 : 0;
+                                        $peek = [
+                                            'number' => $settlement->settlement_number,
+                                            'url' => route('sales-settlements.show', $settlement),
+                                            'stage' => $statusLabels[$settlement->status] ?? \Illuminate\Support\Str::headline($settlement->status),
+                                            'tone' => ['posted' => 'green', 'draft' => 'amber', 'verified' => 'blue'][$settlement->status] ?? 'grey',
+                                            'issue' => $settlement->goodsIssue->issue_number ?? null,
+                                            'supplier' => $settlement->supplier->supplier_name ?? '',
+                                            'sales' => number_format($rowSales),
+                                            'salesman' => $settlement->employee->name ?? '—',
+                                            'vehicle' => $settlement->vehicle->vehicle_number ?? '—',
+                                            'warehouse' => $settlement->warehouse->warehouse_name ?? '',
+                                            'date' => $settlement->settlement_date?->format('D, d M Y').($settlement->posted_at ? ' · posted '.$settlement->posted_at->format('h:i A') : ' · draft'),
+                                            'lines' => collect([
+                                                ['Cash sale', $settlement->cash_sales_amount],
+                                                ['Credit sales', $settlement->credit_sales_amount],
+                                                ['Cheques', $settlement->cheque_sales_amount],
+                                                ['Bank transfers', $settlement->bank_transfer_amount],
+                                                ['Bank slips', $settlement->bank_slips_amount],
+                                                ['Recoveries', $settlement->credit_recoveries],
+                                                ['Expenses', $settlement->calculated_total_expenses],
+                                                ['Cost of goods sold', $settlement->calculated_total_cogs],
+                                            ])->map(fn ($line) => ['name' => $line[0], 'value' => number_format((float) $line[1], 2)])->values(),
+                                            'qty' => 'Sold '.rtrim(rtrim(number_format((float) $settlement->total_quantity_sold, 3), '0'), '.').' · returned '.rtrim(rtrim(number_format((float) $settlement->total_quantity_returned, 3), '0'), '.').' · short '.rtrim(rtrim(number_format((float) $settlement->total_quantity_shortage, 3), '0'), '.'),
+                                            'profit' => number_format($netProfit, 2),
+                                            'profitTone' => $netProfit < 0 ? 'loss' : 'gain',
+                                        ];
                                     @endphp
                                     <tr class="{{ $settlement->status === 'draft' ? 'gl-draft' : ($netProfit < 0 ? 'gl-lossrow' : '') }}">
+                                        <td class="gl-no" data-label="#">{{ $settlements->firstItem() + $loop->index }}</td>
                                         <td data-label="Settlement">
-                                            <a href="{{ route('sales-settlements.show', $settlement) }}" class="ak-primary-link" title="{{ $settlement->settlement_number }}">{{ $shortNumber($settlement->settlement_number) }}</a>
+                                            <a href="{{ route('sales-settlements.show', $settlement) }}" class="ak-primary-link" title="Quick look at {{ $settlement->settlement_number }}" aria-haspopup="dialog"
+                                                x-data @click="if (! ($event.metaKey || $event.ctrlKey || $event.shiftKey)) { $event.preventDefault(); $dispatch('ss-peek', @js($peek)) }">{{ $shortNumber($settlement->settlement_number) }}</a>
                                             @if ($settlement->goodsIssue)
                                                 <div class="ak-muted gl-nw" title="Goods issue {{ $settlement->goodsIssue->issue_number }}">
                                                     @can('goods-issue-list')<a href="{{ route('goods-issues.show', $settlement->goodsIssue) }}" class="gl-gi">{{ $shortGi($settlement->goodsIssue->issue_number) }}</a>@else{{ $shortGi($settlement->goodsIssue->issue_number) }}@endcan
@@ -521,7 +499,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="2">Total &middot; {{ number_format($settlements->total()) }} {{ \Illuminate\Support\Str::plural('settlement', $settlements->total()) }}{{ $settlements->hasPages() ? ' (all pages)' : '' }}</td>
+                                    <td colspan="3">Total &middot; {{ number_format($settlements->total()) }} {{ \Illuminate\Support\Str::plural('settlement', $settlements->total()) }}{{ $settlements->hasPages() ? ' (all pages)' : '' }}</td>
                                     <td class="ak-num" title="Sales {{ number_format($totals->total_sales_amount, 2) }} / COGS {{ number_format($totals->total_cogs, 2) }}">{{ number_format($totals->total_sales_amount) }}<div class="ak-muted" style="font-weight:400">cost {{ number_format($totals->total_cogs) }}</div></td>
                                     <td class="ak-num">{{ number_format($totals->total_expenses) }}</td>
                                     <td class="ak-num {{ $totals->total_net_profit < 0 ? 'gl-loss' : '' }}">{{ number_format($totals->total_net_profit) }}</td>
@@ -564,16 +542,24 @@
                         <p style="margin:8px 0 0; font-size:14px; color:#334155">The draft settlement and all its entries are removed and its goods issue can be settled again. This cannot be undone.</p>
                     </div>
                 </div>
-                <form method="POST" :action="confirm.url" class="uf-modal-foot">
+                <form method="POST" :action="confirm.url" class="uf-modal-foot" x-data="{ sending: false }"
+                    @submit="if (sending) { $event.preventDefault(); return; } sending = true">
                     @csrf
                     @method('DELETE')
-                    <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
-                    <button type="submit" class="ak-btn ak-btn-danger-outline">Delete draft</button>
+                    <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">
+                    <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false" :disabled="sending">Cancel</button>
+                    <button type="submit" class="ak-btn ak-btn-danger-outline" :disabled="sending" x-text="sending ? 'Deleting…' : 'Delete draft'">Delete draft</button>
                 </form>
             </div>
         </div>
     </div>
+    @include('sales-settlements.partials.help-modal')
+
     @push('scripts')
+        <script>
+            // the header's filter button opens this page's own filter panel
+            document.getElementById('toggle')?.addEventListener('click', (event) => { event.preventDefault(); window.dispatchEvent(new CustomEvent('gl-toggle-filters')); });
+        </script>
         @if (request()->boolean('print'))
             <script>window.addEventListener('load', () => window.print());</script>
         @endif
@@ -591,4 +577,85 @@
             });
         </script>
     @endpush
+    {{-- Quick look: opened by the settlement number; View still opens the full page --}}
+    <style>
+        .gl-table th.gl-no, .gl-table td.gl-no { width: 40px; color: #8e8e93; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+        @media screen and (max-width: 767px) { .gl-table td.gl-no, .gl-table th.gl-no { display: none !important; } }
+        .sq-wrap { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+        .sq-scrim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+        .sq-box { position: relative; width: 100%; max-width: 640px; max-height: min(86vh, 760px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 22px; box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 24px 64px -12px rgba(0,0,0,.35); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif; }
+        .sq-head { padding: 20px 22px 0; }
+        .sq-top { display: flex; align-items: center; gap: 8px; }
+        .sq-num { margin: 0; font-size: 15px; font-weight: 600; color: #1d1d1f; letter-spacing: -.01em; }
+        .sq-close { margin-left: auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: rgba(120,120,128,.14); color: #3a3a40; cursor: pointer; transition: transform 160ms cubic-bezier(.23,1,.32,1); }
+        .sq-close:active { transform: scale(.94); }
+        .sq-close:focus-visible, .sq-open:focus-visible { outline: 2px solid #0071e3; outline-offset: 2px; }
+        .sq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .sq-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 980px; font-size: 12px; font-weight: 600; }
+        .sq-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .sq-green { background: rgba(52,199,89,.14); color: #1f7a35; } .sq-amber { background: rgba(255,159,10,.16); color: #8a4b00; }
+        .sq-grey { background: rgba(120,120,128,.14); color: #3a3a40; } .sq-blue { background: rgba(0,113,227,.1); color: #0058b0; }
+        .sq-label { margin: 14px 0 0; font-size: 12px; font-weight: 600; color: #6e6e73; }
+        .sq-amount { margin: 2px 0 0; font-size: 34px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+        .sq-amount small { font-size: 17px; font-weight: 500; color: #6e6e73; margin-right: 4px; }
+        .sq-who { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: #424245; }
+        .sq-who b { color: #1d1d1f; font-weight: 600; } .sq-who span { color: #6e6e73; }
+        .sq-list-head { display: flex; justify-content: space-between; margin: 16px 22px 0; padding-bottom: 6px; border-bottom: 1px solid rgba(60,60,67,.14); font-size: 11.5px; font-weight: 600; color: #6e6e73; }
+        .sq-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 0 22px; list-style: none; }
+        .sq-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(60,60,67,.08); font-size: 14px; color: #1d1d1f; }
+        .sq-list li:last-child { border-bottom: 0; }
+        .sq-list li b { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .sq-foot { padding: 12px 22px 18px; border-top: 1px solid rgba(60,60,67,.14); background: #fbfbfd; }
+        .sq-totals { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 13.5px; color: #424245; }
+        .sq-totals b { font-variant-numeric: tabular-nums; } .sq-gain { color: #1a7f37; } .sq-loss { color: #d70015; }
+        .sq-open { display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; margin-top: 12px; border-radius: 980px; background: #0071e3; color: #fff !important; font-size: 14.5px; font-weight: 500; text-decoration: none !important; transition: transform 160ms cubic-bezier(.23,1,.32,1), background-color .15s ease; }
+        @media (hover: hover) and (pointer: fine) { .sq-open:hover { background: #0077ed; } }
+        .sq-open:active { transform: scale(.98); }
+        .sq-enter { transition: opacity .2s cubic-bezier(.23,1,.32,1), transform .2s cubic-bezier(.23,1,.32,1); }
+        .sq-leave { transition: opacity .12s ease-out, transform .12s ease-out; }
+        .sq-from { opacity: 0; transform: scale(.96) translateY(6px); }
+        .sq-fade-enter { transition: opacity .2s ease; } .sq-fade-leave { transition: opacity .12s ease; } .sq-fade-from { opacity: 0; }
+        @media (max-width: 640px) { .sq-wrap { padding: 0; align-items: flex-end; } .sq-box { max-width: none; border-radius: 22px 22px 0 0; padding-bottom: env(safe-area-inset-bottom); } }
+        @media (prefers-reduced-motion: reduce) { .sq-enter, .sq-leave { transition: opacity .15s ease; } .sq-from { transform: none; } }
+    </style>
+    <div class="no-print" x-data="{ open: false, ss: null, opener: null,
+            show(detail) { this.opener = document.activeElement; this.ss = detail; this.open = true; this.$nextTick(() => this.$refs.close.focus()); },
+            hide() { this.open = false; this.opener?.focus(); } }"
+        @ss-peek.window="show($event.detail)" @keydown.escape.window="open && hide()">
+        <template x-if="ss">
+            <div class="sq-wrap" x-show="open" role="dialog" aria-modal="true" aria-labelledby="sq-title" x-trap.noscroll="open">
+                <div class="sq-scrim" @click="hide()" x-show="open"
+                    x-transition:enter="sq-fade-enter" x-transition:enter-start="sq-fade-from" x-transition:leave="sq-fade-leave" x-transition:leave-end="sq-fade-from"></div>
+                <div class="sq-box" x-show="open"
+                    x-transition:enter="sq-enter" x-transition:enter-start="sq-from" x-transition:leave="sq-leave" x-transition:leave-end="sq-from">
+                    <div class="sq-head">
+                        <div class="sq-top">
+                            <h2 class="sq-num" id="sq-title" x-text="ss.number"></h2>
+                            <button type="button" class="sq-close" x-ref="close" @click="hide()" aria-label="Close quick look">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6 6 18" /></svg>
+                            </button>
+                        </div>
+                        <div class="sq-chips">
+                            <span class="sq-chip sq-dot" :class="'sq-' + ss.tone" x-text="ss.stage"></span>
+                            <span class="sq-chip sq-grey" x-show="ss.issue" x-text="ss.issue"></span>
+                            <span class="sq-chip sq-blue" x-show="ss.supplier" x-text="ss.supplier"></span>
+                        </div>
+                        <p class="sq-label">Net sale</p>
+                        <p class="sq-amount"><small>Rs</small><span x-text="ss.sales"></span></p>
+                        <p class="sq-who"><b x-text="ss.salesman"></b> · <span x-text="ss.vehicle"></span><template x-if="ss.warehouse"><span x-text="' · ' + ss.warehouse"></span></template><br><span x-text="ss.date"></span></p>
+                    </div>
+                    <div class="sq-list-head"><span>Where the money went</span><span>Rs</span></div>
+                    <ul class="sq-list">
+                        <template x-for="(line, index) in ss.lines" :key="index">
+                            <li><span x-text="line.name"></span><b x-text="line.value"></b></li>
+                        </template>
+                    </ul>
+                    <div class="sq-foot">
+                        <div class="sq-totals"><span x-text="ss.qty"></span><span>Net profit <b :class="'sq-' + ss.profitTone" x-text="'Rs ' + ss.profit"></b></span></div>
+                        <a :href="ss.url" class="sq-open">Open full settlement <span aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 </x-app-layout>

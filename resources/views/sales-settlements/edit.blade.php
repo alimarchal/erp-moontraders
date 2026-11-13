@@ -1,31 +1,7 @@
 <x-app-layout>
     @php $isSpecialEdit = $isSpecialEdit ?? false; @endphp
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-                @if ($isSpecialEdit)
-                    Special Edit — Settlement: {{ $settlement->settlement_number }}
-                @else
-                    Edit Sales Settlement
-                @endif
-            </h2>
-            <div class="flex justify-center items-center space-x-2">
-                @if ($isSpecialEdit)
-                    <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                        Super Admin Only
-                    </span>
-                @endif
-                <a href="{{ $isSpecialEdit ? route('sales-settlements.show', $settlement) : route('sales-settlements.index') }}"
-                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
-                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                </a>
-            </div>
-        </div>
+        <x-page-header :title="$isSpecialEdit ? 'Special Edit · '.$settlement->settlement_number : 'Edit Sales Settlement · '.$settlement->settlement_number" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" backRoute="sales-settlements.index" />
     </x-slot>
 
     @php
@@ -186,8 +162,15 @@
         }
     @endphp
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    @include('settings.partials.ui-style')
+    <x-apple-skin />
+    @include('goods-issues.partials.form-style')
+    @include('sales-settlements.partials.form-style')
+    @include('sales-settlements.partials.help-modal')
+    <x-alpine-select2 />
+
+    <div class="ak-page gf-page ssf-page">
+        <div class="ssf-inner">
             <x-status-message class="mb-4 shadow-md" />
             <x-validation-errors class="mb-4" />
 
@@ -212,11 +195,12 @@
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="ssf-shell">
                 <form method="POST"
                     action="{{ $isSpecialEdit ? route('sales-settlements.update-special', $settlement) : route('sales-settlements.update', $settlement) }}"
                     id="settlementForm" enctype="multipart/form-data">
                     @csrf
+                    @include('sales-settlements.partials.submit-lock')
                     @unless ($isSpecialEdit)
                         @method('PUT')
                     @endunless
@@ -224,7 +208,9 @@
                     <input type="hidden" id="current_settlement_employee_id"
                         value="{{ old('employee_id', $settlement->employee_id) }}">
 
-                    <div class="pt-6 pl-6 pr-6">
+                    <section class="ssf-card ssf-start">
+                        <div class="ssf-card-head"><div class="ssf-card-titles"><h4 class="ssf-card-title">Goods issue to settle</h4><x-settlement-section-help section="items" label="Items" /></div></div>
+                    <div class="ssf-start-body">
                         {{-- Section 1: Date & Goods Issue Selection --}}
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2" x-data="goodsIssueSelector()">
                             <div>
@@ -268,34 +254,36 @@
                             Select a Goods Issue to load product details
                         </p>
                     </div>
+                    </section>
 
-                    <div class="mb-2">
+                    <div class="ssf-items">
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
                         <div id="settlementTableContainer"
                             style="display: none; text-align: center; margin: 10px; padding: 0px">
                             <x-detail-table
-                                title="Batch-wise Settlement (Sold + Returned + Shortage + B/F Out = Issued | B/F In is for information only)"
+                                title="Batch-wise Settlement (Sold + Returned + Shortage = Issued)"
                                 :headers="[
-        ['label' => 'Product / Batch', 'align' => 'text-left'],
+        ['label' => '#', 'align' => 'text-left ss-no'],
+        ['label' => 'SKU / Batch', 'align' => 'text-left'],
         ['label' => 'Batch Breakdown', 'align' => 'text-left'],
-        ['label' => 'B/F (In)', 'align' => 'text-right'],
+        ['label' => 'B/F (In)', 'align' => 'text-right ss-hide-col'],
         ['label' => 'Qty Issued', 'align' => 'text-right'],
         ['label' => 'Price', 'align' => 'text-right'],
         ['label' => 'Value', 'align' => 'text-right'],
         ['label' => 'Sold', 'align' => 'text-right'],
         ['label' => 'Returned', 'align' => 'text-right'],
         ['label' => 'Shortage', 'align' => 'text-right'],
-        ['label' => 'B/F (Out)', 'align' => 'text-right'],
+        ['label' => 'B/F (Out)', 'align' => 'text-right ss-hide-col'],
     ]">
                                 <tbody id="settlementItemsBody">
                                     <!-- Settlement items will be populated here -->
                                 </tbody>
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="2" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
+                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
                                         </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700 ss-hide-col"
                                             id="grandTotalBFIn">-</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
                                             id="grandTotalIssued">0</td>
@@ -306,13 +294,13 @@
                                             id="grandTotalReturned">0</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
                                             id="grandTotalShortage">0</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-orange-700"
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-orange-700 ss-hide-col"
                                             id="grandTotalBalance">0</td>
                                     </tr>
                                     <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="2" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
+                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
                                         </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700 ss-hide-col"
                                             id="grandTotalBFInValue">-</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
                                             id="grandTotalIssuedValue">₨ 0.00</td>
@@ -323,7 +311,7 @@
                                             id="grandTotalReturnValue">₨ 0.00</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
                                             id="grandTotalShortageValue">₨ 0.00</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-orange-700"
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-orange-700 ss-hide-col"
                                             id="grandTotalBalanceValue">₨ 0.00</td>
                                     </tr>
                                 </x-slot>
@@ -336,10 +324,10 @@
                     </div>
 
 
-                    <div class="pr-6 pl-6 pt-2">
+                    <div class="ssf-money">
                         {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
                         <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                            <h3 class="ssf-section-title">
                                 <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -351,18 +339,18 @@
                             {{-- ROW 1: Credit Sales Detail | Recoveries Detail | Cheque Payments | Bank Transfers --}}
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-start">
                                 {{-- Credit Sales Detail Card --}}
-                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden"
+                                <div class="ssf-card ssf-tone-orange"
                                     x-data="creditSalesDisplay()">
                                     <div
-                                        class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 flex justify-between items-center">
-                                        <h4 class="text-sm font-bold text-white">Credit Sales Detail</h4>
+                                        class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Credit Sales Detail</h4><x-settlement-section-help section="credit" label="Credit Sales Detail" /></div>
                                         <button type="button" @click="openModal()"
-                                            class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
+                                            class="ssf-add">
                                             + Add More
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Customer</th>
@@ -396,27 +384,29 @@
                                 </div>
 
                                 {{-- Recoveries Detail Card --}}
-                                <div class="bg-white rounded-lg border border-green-300 overflow-hidden"
+                                <div class="ssf-card ssf-tone-green"
                                     x-data="recoveriesDisplay()">
                                     <div
-                                        class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2 flex justify-between items-center">
-                                        <h4 class="text-sm font-bold text-white">Recoveries Detail</h4>
+                                        class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Recoveries Detail</h4><x-settlement-section-help section="recoveries" label="Recoveries Detail" /></div>
                                         <button type="button" @click="openModal()"
-                                            class="text-xs bg-white text-green-600 px-2 py-0.5 rounded font-semibold hover:bg-green-50">
+                                            class="ssf-add">
                                             + Add More
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Customer</th>
+                                                    <th class="py-1 px-1 text-center text-black">Method</th>
+                                                    <th class="py-1 px-1 text-left text-black">Bank Account</th>
                                                     <th class="py-1 px-1 text-right text-black">Recovery</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="recoveriesTableBody">
                                                 <tr>
-                                                    <td colspan="2"
+                                                    <td colspan="4"
                                                         class="py-2 px-1 text-center text-black text-xs italic">
                                                         No recovery entries
                                                     </td>
@@ -424,7 +414,7 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-green-50">
-                                                    <td
+                                                    <td colspan="3"
                                                         class="py-1.5 px-1 text-right font-semibold text-green-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"
@@ -436,18 +426,18 @@
                                 </div>
 
                                 {{-- Cheque Payments Card --}}
-                                <div class="bg-white rounded-lg border border-purple-300 overflow-hidden"
+                                <div class="ssf-card ssf-tone-purple"
                                     x-data="chequePaymentDisplay()">
                                     <div
-                                        class="bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 flex justify-between items-center">
-                                        <h4 class="text-sm font-bold text-white">Cheque Payments</h4>
+                                        class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Cheque Payments</h4><x-settlement-section-help section="cheques" label="Cheque Payments" /></div>
                                         <button type="button" @click="openModal()"
-                                            class="text-xs bg-white text-purple-600 px-2 py-0.5 rounded font-semibold hover:bg-purple-50">
+                                            class="ssf-add">
                                             + Add More
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Customer</th>
@@ -480,18 +470,18 @@
                                 </div>
 
                                 {{-- Bank Transfers Card --}}
-                                <div class="bg-white rounded-lg border border-blue-300 overflow-hidden"
+                                <div class="ssf-card ssf-tone-blue"
                                     x-data="bankTransferDisplay()">
                                     <div
-                                        class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2 flex justify-between items-center">
-                                        <h4 class="text-sm font-bold text-white">Bank Transfers</h4>
+                                        class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Bank Transfers</h4><x-settlement-section-help section="bank" label="Bank Transfers" /></div>
                                         <button type="button" @click="openModal()"
-                                            class="text-xs bg-white text-blue-600 px-2 py-0.5 rounded font-semibold hover:bg-blue-50">
+                                            class="ssf-add">
                                             + Add More
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Customer</th>
@@ -522,18 +512,18 @@
                                     </div>
                                 </div>
                                 {{-- Bank Slips Card --}}
-                                <div class="bg-white rounded-lg border border-purple-300 overflow-hidden"
+                                <div class="ssf-card ssf-tone-purple"
                                     x-data="bankSlipsDisplay()">
                                     <div
-                                        class="bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 flex justify-between items-center">
-                                        <h4 class="text-sm font-bold text-white">Bank Slips / Deposits</h4>
+                                        class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Bank Slips / Deposits</h4><x-settlement-section-help section="bank" label="Bank Slips / Deposits" /></div>
                                         <button type="button" @click="openModal()"
-                                            class="text-xs bg-white text-purple-600 px-2 py-0.5 rounded font-semibold hover:bg-purple-50">
+                                            class="ssf-add">
                                             + Add
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Bank</th>
@@ -567,13 +557,12 @@
                             {{-- ROW 2: Cash Detail | Expense Detail | Sales Summary --}}
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
                                 {{-- Cash Detail (Denomination Breakdown) Card --}}
-                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination
-                                            Breakdown)</h4>
+                                <div class="ssf-card ssf-tone-orange">
+                                    <div class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Cash Detail (Denomination Breakdown)</h4><x-settlement-section-help section="cash" label="Cash Detail" /></div>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Denomination</th>
@@ -705,18 +694,18 @@
                                 </div>
 
                                 {{-- Expense Detail Card --}}
-                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden"
+                                <div class="ssf-card ssf-tone-orange"
                                     x-data="expenseManager(@js($expenseAccounts))">
                                     <div
-                                        class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 flex justify-between items-center">
-                                        <h4 class="text-sm font-bold text-white">Expense Detail</h4>
+                                        class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Expense Detail</h4><x-settlement-section-help section="expenses" label="Expense Detail" /></div>
                                         <button type="button" @click="addExpense()"
-                                            class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
+                                            class="ssf-add">
                                             + Add More
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Expense Account</th>
@@ -770,7 +759,7 @@
                                                             </template>
                                                             <template x-if="!expense.is_predefined">
                                                                 <div class="flex items-center gap-0.5">
-                                                                    <select @change="onAccountSelect($event, index)"
+                                                                    <select @change="onAccountSelect($event, index)" x-select2="expense.expense_account_id"
                                                                         class="text-[10px] border-gray-300 rounded flex-1 py-0 px-1 h-6">
                                                                         <option value="">Select...</option>
                                                                         <template
@@ -823,15 +812,15 @@
                                 </div>
 
                                 {{-- Sales Summary Card --}}
-                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white">Sales Summary</h4>
+                                <div class="ssf-card ssf-tone-orange">
+                                    <div class="ssf-card-head">
+                                        <div class="ssf-card-titles"><h4 class="ssf-card-title">Sales Summary</h4><x-settlement-section-help section="summary" label="Sales Summary" /></div>
                                     </div>
                                     <div id="payment_breakdown_warning"
                                         class="px-3 py-2 bg-red-100 border-b border-red-300 text-red-700 text-xs font-semibold"
                                         style="display: none;"></div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
+                                        <table class="ssf-mini w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Description</th>
@@ -1062,7 +1051,7 @@
                     </div>
 
                     {{-- Section 8: Notes (MOVED TO BOTTOM) --}}
-                    <div class="mb-6 p-6 bg-white rounded-lg border border-gray-300">
+                    <div class="ssf-card ssf-notes">
                         <x-label for="notes" value="Notes" />
                         <textarea id="notes" name="notes" rows="3"
                             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
@@ -1070,20 +1059,24 @@
                         <x-input-error for="notes" class="mt-2" />
                     </div>
 
-                    <div class="flex justify-end space-x-3 mb-4 mr-4">
+                    <div class="ssf-actions">
+                        <div class="ssf-actions-figure" aria-live="polite">
+                            <span>Short / Excess</span>
+                            <b data-mirror="summary_short_excess_display">Rs 0.00</b>
+                        </div>
                         <a href="{{ $isSpecialEdit ? route('sales-settlements.show', $settlement) : route('sales-settlements.index') }}"
-                            class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                            class="ak-btn ak-btn-outline">
                             Cancel
                         </a>
                         @if ($isSpecialEdit)
-                            <x-button type="submit"
+                            <button type="submit" class="ak-btn ak-btn-primary" data-submit-lock data-busy-label="Re-posting…"
                                 onclick="return confirm('This will reverse the accounting and inventory impact of this posted settlement, apply your changes, and re-post it. Continue?');">
                                 Apply Correction &amp; Re-Post
-                            </x-button>
+                            </button>
                         @else
-                            <x-button type="submit">
+                            <button type="submit" class="ak-btn ak-btn-primary" data-submit-lock data-busy-label="Saving…">
                                 Update Settlement
-                            </x-button>
+                            </button>
                         @endif
                     </div>
                 </form>
@@ -2241,15 +2234,15 @@
                                         : Math.round(parseFloat(savedBatch.sold) || 0);
 
                                     const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
-                                    const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
                                     const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
 
                                     const settlementRow = `
                                                                                                                                                                                                                                                     <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                                                                                                                                                                                                                                        <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
+                                                                                                                                                                                                                                                        <td class="ss-no"></td>
+<td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
                                                                                                                                                                                                                                                             <div class="font-semibold text-gray-900 break-words">${productName}</div>
                                                                                                                                                                                                                                                             <div class="text-xs text-gray-500 break-words">
-                                                                                                                                                                                                                                                                ${productCode}<br>Batch: ${batch.batch_code}
+                                                                                                                                                                                                                                                                Batch: ${batch.batch_code}
                                                                                                                                                                                                                                                                 ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                                                 ${item.is_supplementary ? `<span class="ml-1 px-1.5 py-0.5 bg-sky-100 text-sky-800 text-xs font-bold rounded">Supplementary${item.supplementary_date ? ' · ' + item.supplementary_date : ''}</span>` : ''}
                                                                 ${isNewLine ? '<span class="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded" title="Added to the goods issue after this settlement was saved">NEW</span>' : ''}
@@ -2260,7 +2253,7 @@
                                                                                                                                                                                                                                                                 ${parseFloat(batch.quantity).toLocaleString()} × ${sellingPrice.toFixed(2)} (${uomSymbol})
                                                                                                                                                                                                                                                             </div>
                                                                                                                                                                                                                                                         </td>
-                                                                                                                                                                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                                                                        <td class="py-1 px-1 text-right ss-hide-col">
                                                                                                                                                                                                                                                             <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
                                                                                                                                                                                                                                                             <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
                                                                                                                                                                                                                                                         </td>
@@ -2310,7 +2303,7 @@
                                                                                                                                                                                                                                                                 value="${savedShortage}"
                                                                                                                                                                                                                                                                 oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
                                                                                                                                                                                                                                                         </td>
-                                                                                                                                                                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                                                                        <td class="py-1 px-1 text-right ss-hide-col">
                                                                                                                                                                                                                                                             <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) - savedSold - savedReturned - savedShortage}</span>
                                                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                                                     </tr>

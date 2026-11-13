@@ -96,7 +96,49 @@ class SettlementAttachmentService
         $folder = config('settlement_attachments.root_folder').'/'.$settlementNumber.'/'.self::SECTIONS[$section];
         $name = hash('sha256', Str::uuid()->toString().$file->getClientOriginalName()).'.'.strtolower($file->getClientOriginalExtension());
 
-        return Storage::disk(self::disk())->putFileAs($folder, $file, $name);
+        $path = Storage::disk(self::disk())->putFileAs($folder, $file, $name);
+        $this->storeThumbnail($file, $path);
+
+        return $path;
+    }
+
+    /**
+     * Where the small copy of a photo lives: a thumbs/ folder beside it, always as a JPEG.
+     */
+    public static function thumbPath(string $path): string
+    {
+        return trim(dirname($path), '/').'/thumbs/'.pathinfo($path, PATHINFO_FILENAME).'.jpg';
+    }
+
+    /**
+     * Write the small copy shown in lists and previews. A PDF, or a picture GD cannot read, gets none, and the full
+     * file is shown instead.
+     */
+    private function storeThumbnail(UploadedFile $file, string $path): void
+    {
+        if (! in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp'], true) || ! function_exists('imagecreatefromstring')) {
+            return;
+        }
+
+        try {
+            $image = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
+
+            if ($image === false) {
+                return;
+            }
+
+            $limit = max(64, (int) config('attachment_images.thumb_px', 320));
+            $ratio = min(1, $limit / max(imagesx($image), imagesy($image)));
+            $thumb = imagecreatetruecolor(max(1, (int) round(imagesx($image) * $ratio)), max(1, (int) round(imagesy($image) * $ratio)));
+            imagefill($thumb, 0, 0, imagecolorallocate($thumb, 255, 255, 255));
+            imagecopyresampled($thumb, $image, 0, 0, 0, 0, imagesx($thumb), imagesy($thumb), imagesx($image), imagesy($image));
+
+            ob_start();
+            imagejpeg($thumb, null, 70);
+            Storage::disk(self::disk())->put(self::thumbPath($path), (string) ob_get_clean());
+        } catch (\Throwable $e) {
+            Log::warning('A settlement attachment thumbnail could not be made', ['path' => $path, 'error' => $e->getMessage()]);
+        }
     }
 
     public const STAGING_FOLDER = '_staging';
@@ -111,7 +153,10 @@ class SettlementAttachmentService
         $file = app(AttachmentImageOptimizer::class)->optimize($file);
         $name = hash('sha256', Str::uuid()->toString().$file->getClientOriginalName()).'.'.strtolower($file->getClientOriginalExtension());
 
-        return Storage::disk(self::disk())->putFileAs(config('settlement_attachments.root_folder').'/'.self::STAGING_FOLDER, $file, $name);
+        $path = Storage::disk(self::disk())->putFileAs(config('settlement_attachments.root_folder').'/'.self::STAGING_FOLDER, $file, $name);
+        $this->storeThumbnail($file, $path);
+
+        return $path;
     }
 
     public function isStaged(?string $path): bool
@@ -129,6 +174,20 @@ class SettlementAttachmentService
     {
         $target = config('settlement_attachments.root_folder').'/'.$settlementNumber.'/'.self::SECTIONS[$section].'/'.basename($stagedPath);
 
+        $moved = $this->moveFile($stagedPath, $target);
+
+        if ($moved && Storage::disk(self::disk())->exists(self::thumbPath($stagedPath))) {
+            $this->moveFile(self::thumbPath($stagedPath), self::thumbPath($target));
+        }
+
+        return $moved ? $target : $stagedPath;
+    }
+
+    /**
+     * Copy a file to its new path and delete the old one; false (and the file left where it was) when that fails.
+     */
+    private function moveFile(string $stagedPath, string $target): bool
+    {
         try {
             $disk = Storage::disk(self::disk());
 
@@ -144,13 +203,13 @@ class SettlementAttachmentService
                 ]);
                 $disk->delete($stagedPath);
 
-                return $target;
+                return true;
             }
 
             $stream = $disk->readStream($stagedPath);
 
             if ($stream === null || ! $disk->writeStream($target, $stream)) {
-                return $stagedPath;
+                return false;
             }
 
             if (is_resource($stream)) {
@@ -159,18 +218,18 @@ class SettlementAttachmentService
 
             $disk->delete($stagedPath);
 
-            return $target;
+            return true;
         } catch (\Throwable $e) {
             Log::warning('A settlement attachment could not be moved out of staging', ['path' => $stagedPath, 'error' => $e->getMessage()]);
 
-            return $stagedPath;
+            return false;
         }
     }
 
     public function delete(?string $path): void
     {
         if ($path) {
-            Storage::disk(self::disk())->delete($path);
+            Storage::disk(self::disk())->delete([$path, self::thumbPath($path)]);
         }
     }
 

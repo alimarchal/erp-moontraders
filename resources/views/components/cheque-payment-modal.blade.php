@@ -123,7 +123,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Deposit Bank (Our Bank)</label>
-                        <select x-model="form.bank_account_id"
+                        <select x-model="form.bank_account_id" x-select2="form.bank_account_id"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Deposit Bank</option>
                             <template x-for="bank in bankAccounts" :key="bank.id">

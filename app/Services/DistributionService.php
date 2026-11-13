@@ -708,7 +708,11 @@ class DistributionService
         try {
             DB::beginTransaction();
 
-            if ($settlement->status === 'posted') {
+            // Read the status from the locked row, not from the model the request loaded: two posts of the same
+            // settlement (a double click, a resent form) then queue here and the second finds it posted.
+            $lockedStatus = SalesSettlement::whereKey($settlement->id)->lockForUpdate()->value('status');
+
+            if ($lockedStatus !== 'draft') {
                 throw new \Exception('Sales Settlement is already posted');
             }
 

@@ -34,8 +34,8 @@ class FormOnce
         return Cache::add('form-once:'.sha1($token), true, now()->addHours(self::TTL_HOURS));
     }
 
-    public static function alreadySentMessage(): string
+    public static function alreadySentMessage(string $record = 'issue'): string
     {
-        return 'This form has already been sent, so nothing was changed again. Check the issue before trying once more.';
+        return "This form has already been sent, so nothing was changed again. Check the {$record} before trying once more.";
     }
 }

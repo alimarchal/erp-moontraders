@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesSettlementExport;
 use App\Http\Requests\StoreSalesSettlementRequest;
 use App\Http\Requests\UpdateSalesSettlementRequest;
 use App\Models\BankAccount;
@@ -38,6 +39,7 @@ use App\Services\DistributionService;
 use App\Services\SalesSettlementRevertService;
 use App\Services\SettlementAttachmentService;
 use App\Sorts\NetProfitSort;
+use App\Support\FormOnce;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,6 +51,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -200,6 +203,26 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->withSum('items as total_quantity_sold_sum', 'quantity_sold')
             ->withSum('items as total_quantity_returned_sum', 'quantity_returned')
             ->withSum('items as total_quantity_shortage_sum', 'quantity_shortage');
+
+        if ($request->input('export') === 'xlsx') {
+            $period = $request->input('filter.settlement_date_from').'_to_'.$request->input('filter.settlement_date_to');
+
+            return Excel::download(new SalesSettlementExport($settlementsQuery->getEloquentBuilder()->clone()), "sales-settlements-{$period}.xlsx");
+        }
+
+        // The filtered list as an A4 PDF, portrait unless landscape was asked for (like the Goods Issues list).
+        if ($request->query('format') === 'pdf') {
+            $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+            $from = $request->input('filter.settlement_date_from', $today);
+            $to = $request->input('filter.settlement_date_to', $today);
+
+            return Pdf::loadView('sales-settlements.list-pdf', [
+                'settlements' => $settlementsQuery->getEloquentBuilder()->clone()->get(),
+                'dateFrom' => $from,
+                'dateTo' => $to,
+                'orientation' => $orientation,
+            ])->setPaper('a4', $orientation)->download("sales-settlements-{$from}-to-{$to}.pdf");
+        }
 
         if ($perPage === 'all') {
             $count = $settlementsQuery->getEloquentBuilder()->clone()->reorder()->count();
@@ -611,10 +634,21 @@ class SalesSettlementController extends Controller implements HasMiddleware
         abort_if($relation === null, 404);
 
         $path = $salesSettlement->{$relation}()->whereKey($id)->value('attachment');
+        $disk = Storage::disk(SettlementAttachmentService::disk());
 
-        abort_unless($path && Storage::disk(SettlementAttachmentService::disk())->exists($path), 404);
+        abort_unless($path && $disk->exists($path), 404);
 
-        return Storage::disk(SettlementAttachmentService::disk())->response($path);
+        // ?thumb=1 asks for the small copy; an older file without one falls back to the full file.
+        if (request()->boolean('thumb') && $disk->exists(SettlementAttachmentService::thumbPath($path))) {
+            $path = SettlementAttachmentService::thumbPath($path);
+        }
+
+        // On S3 the browser fetches the file itself through a link that expires, so the server streams nothing.
+        if (config('filesystems.disks.'.SettlementAttachmentService::disk().'.driver') === 's3') {
+            return redirect()->away($disk->temporaryUrl($path, now()->addMinutes(10)));
+        }
+
+        return $disk->response($path);
     }
 
     /**
@@ -622,6 +656,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function store(StoreSalesSettlementRequest $request)
     {
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            $draft = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)->where('status', 'draft')->first();
+
+            return redirect()->route($draft ? 'sales-settlements.show' : 'sales-settlements.index', $draft ? [$draft] : [])
+                ->with('error', FormOnce::alreadySentMessage('settlement'));
+        }
+
         $this->prepareAttachmentUploads($request);
 
         DB::beginTransaction();
@@ -1106,6 +1147,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->with('error', 'Only draft Sales Settlements can be updated.');
         }
 
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('sales-settlements.show', $salesSettlement)->with('error', FormOnce::alreadySentMessage('settlement'));
+        }
+
         $this->prepareAttachmentUploads($request);
 
         DB::beginTransaction();
@@ -1250,13 +1295,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SalesSettlement $salesSettlement)
+    public function destroy(Request $request, SalesSettlement $salesSettlement)
     {
         $this->authorize('delete', $salesSettlement);
         $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         if ($salesSettlement->status !== 'draft') {
             return back()->with('error', 'Only draft Sales Settlements can be deleted.');
+        }
+
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('sales-settlements.index')->with('error', FormOnce::alreadySentMessage('settlement'));
         }
 
         DB::beginTransaction();
@@ -2083,13 +2132,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
         return (bool) Supplier::whereKey($supplierId)->value('is_advance_tax_income');
     }
 
-    public function post(SalesSettlement $salesSettlement)
+    public function post(Request $request, SalesSettlement $salesSettlement)
     {
         $this->authorize('post', $salesSettlement);
         $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         if ($salesSettlement->status !== 'draft') {
             return back()->with('error', 'Only draft Sales Settlements can be posted.');
+        }
+
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('sales-settlements.show', $salesSettlement)->with('error', FormOnce::alreadySentMessage('settlement'));
         }
 
         $distributionService = app(DistributionService::class);
@@ -2124,6 +2177,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
             return redirect()
                 ->back()
                 ->with('error', 'Invalid password. Reverting a settlement requires your password confirmation.');
+        }
+
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('sales-settlements.show', $salesSettlement)->with('error', FormOnce::alreadySentMessage('settlement'));
         }
 
         Log::info("SS revert password confirmed for {$salesSettlement->settlement_number} by user: ".auth()->user()->name.' (ID: '.auth()->id().')');
@@ -2354,6 +2411,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         $originalSettlementNumber = $salesSettlement->settlement_number;
+
+        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
+            return redirect()->route('sales-settlements.show', $salesSettlement)->with('error', FormOnce::alreadySentMessage('settlement'));
+        }
 
         $this->prepareAttachmentUploads($request);
 

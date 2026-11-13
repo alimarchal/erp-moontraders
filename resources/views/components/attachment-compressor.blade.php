@@ -15,8 +15,12 @@
                     vars: {{ \App\Support\PhpLimits::maxInputVars() }},
                 },
 
-                /** Returns the smaller picture, or the original when it is not a photo, is already small, or cannot be shrunk. */
-                async compress(file) {
+                /**
+                 * Returns the smaller picture, or the original when it is not a photo, is already small, or cannot be shrunk.
+                 * With { webp: true } (only where the server accepts .webp) the picture is saved as WebP, about a third
+                 * smaller than JPEG at the same quality; a browser that cannot write WebP falls back to the normal path.
+                 */
+                async compress(file, { webp = false } = {}) {
                     try {
                         if (!this.enabled || !/^image\/(jpeg|png|webp)$/.test(file.type) || file.size <= this.minBytes || !window.createImageBitmap) {
                             return file;
@@ -29,6 +33,21 @@
                         canvas.height = Math.max(1, Math.round(bitmap.height * scale));
                         canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
                         bitmap.close && bitmap.close();
+
+                        if (webp) {
+                            const flat = document.createElement('canvas');
+                            flat.width = canvas.width;
+                            flat.height = canvas.height;
+                            const flatContext = flat.getContext('2d');
+                            flatContext.fillStyle = '#fff';
+                            flatContext.fillRect(0, 0, flat.width, flat.height);
+                            flatContext.drawImage(canvas, 0, 0);
+                            const small = await new Promise(resolve => flat.toBlob(resolve, 'image/webp', this.quality));
+
+                            if (small && small.type === 'image/webp' && small.size < file.size * 0.9) {
+                                return new File([small], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp', lastModified: Date.now() });
+                            }
+                        }
 
                         // A PNG (a screenshot, a scanned page) is usually 2 to 4 times smaller as a JPEG; see-through parts become white.
                         if (file.type === 'image/png') {

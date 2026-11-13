@@ -67,6 +67,7 @@
                 <form :action="actionUrl" method="POST"
                     @submit="if (isSubmitting) { $event.preventDefault(); return; } isSubmitting = true;">
                     @csrf
+                    <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">
                     @if ($csrfMethod)
                         @method($csrfMethod)
                     @endif

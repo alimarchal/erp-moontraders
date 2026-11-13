@@ -15,11 +15,14 @@ return [
 
     'enabled' => (bool) env('ATTACHMENT_IMAGE_OPTIMIZE', true),
 
-    // Longest side in pixels. 2000 keeps a receipt readable at full screen.
-    'max_px' => (int) env('ATTACHMENT_IMAGE_MAX_PX', 2000),
+    // Longest side in pixels. 1600 keeps a receipt readable at full screen at a fraction of the size.
+    'max_px' => (int) env('ATTACHMENT_IMAGE_MAX_PX', 1600),
 
     // JPEG / WEBP quality, 1 to 100.
-    'quality' => (int) env('ATTACHMENT_IMAGE_QUALITY', 82),
+    'quality' => (int) env('ATTACHMENT_IMAGE_QUALITY', 75),
+
+    // Longest side of the small copy shown in lists and previews.
+    'thumb_px' => (int) env('ATTACHMENT_IMAGE_THUMB_PX', 320),
 
     // Pictures already smaller than this (KB) and within max_px are left as they are.
     'min_kb' => (int) env('ATTACHMENT_IMAGE_MIN_KB', 300),

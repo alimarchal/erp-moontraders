@@ -38,13 +38,17 @@
                         input.value = '';
 
                         // Shrink a photo in the browser (a few hundred KB instead of several MB) and swap it in when ready.
+                        const isPhoto = /^image\//.test(file.type);
                         if (window.AttachmentCompressor) {
-                            const job = window.AttachmentCompressor.compress(file).then(smaller => { if (this.files[key] === file) this.files[key] = smaller; });
+                            const job = window.AttachmentCompressor.compress(file, { webp: this.allowed.includes('webp') }).then(smaller => {
+                                if (this.files[key] === file) this.files[key] = smaller;
+                                window.dispatchEvent(new CustomEvent('attachment-ready', { detail: { key, before: file.size, after: smaller.size } }));
+                            });
                             this.pending.add(job);
                             job.finally(() => this.pending.delete(job));
                         }
 
-                        return { key, name: file.name, ext };
+                        return { key, name: file.name, ext, before: file.size, after: isPhoto ? null : file.size, busy: isPhoto && !!window.AttachmentCompressor };
                     },
 
                     /** Attach a newly chosen file to an entry row, replacing any previous one. */
@@ -92,6 +96,12 @@
                         }));
                     },
 
+                    /** "1.8 MB", "210 KB" */
+                    size(bytes) {
+                        if (!bytes && bytes !== 0) return '';
+                        return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+                    },
+
                     previewUrl(url, ext, name) {
                         window.dispatchEvent(new CustomEvent('open-attachment-preview', {
                             detail: { url, ext, name: name || 'Attachment' },
@@ -110,6 +120,8 @@
                                 event.preventDefault();
                                 event.stopImmediatePropagation();
                                 await Promise.all([...this.pending]);
+                                // The one-send lock holds the form while it waits; this marks the one send it lets through.
+                                form.dataset.resubmitting = '1';
                                 form.requestSubmit(event.submitter || undefined);
                                 return;
                             }

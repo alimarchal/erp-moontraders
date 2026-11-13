@@ -31,17 +31,27 @@
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
                     Help <span dir="rtl" lang="ur">(اردو)</span>
                 </button>
-                {{-- Print loads the printable sheet (layout=print2) in a hidden frame and opens the print dialog with it --}}
-                <button type="button" class="ak-btn ak-btn-outline" data-print-url="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2']) }}" onclick="ssPrintSheet(this)" title="Print the settlement sheet (A4, portrait or landscape)">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83c-.24.03-.48.06-.72.1m.72-.1a42.4 42.4 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.17c.24.03.48.06.72.1m-.72-.1L17.66 18m0 0 .23 2.5a1.13 1.13 0 0 1-1.12 1.24H7.23a1.13 1.13 0 0 1-1.12-1.24L6.34 18m11.32 0h1.09A2.25 2.25 0 0 0 21 15.75V9.46c0-1.08-.77-2.01-1.84-2.18a48 48 0 0 0-1.41-.2M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.46c0-1.08.77-2.01 1.84-2.18.47-.07.94-.14 1.41-.2m0 0a48.6 48.6 0 0 1 11.5 0m-11.5 0V3.38c0-.62.5-1.13 1.13-1.13h9.24c.63 0 1.13.5 1.13 1.13v3.7M18 10.5h.01" /></svg>
-                    <span>Print</span>
-                </button>
-                @foreach (['portrait' => 'PDF Portrait', 'landscape' => 'PDF Landscape'] as $pdfOrientation => $pdfLabel)
-                    <a href="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => $pdfOrientation]) }}" class="ak-btn ak-btn-outline" title="Download the settlement sheet as an A4 {{ $pdfOrientation }} PDF">
+                {{-- One Download menu: print the sheet, or download it as an A4 PDF (portrait or landscape) --}}
+                <div class="ss-dl" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
+                    <button type="button" class="ak-btn ak-btn-outline" @click="open = !open" :aria-expanded="open" aria-haspopup="menu" title="Print or download the settlement sheet">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                        {{ $pdfLabel }}
-                    </a>
-                @endforeach
+                        <span>Download</span>
+                        <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <div class="ss-dl-menu" x-show="open" x-cloak role="menu"
+                        x-transition:enter="ss-dl-enter" x-transition:enter-start="ss-dl-from" x-transition:leave="ss-dl-leave" x-transition:leave-end="ss-dl-from">
+                        {{-- Print loads the printable sheet (layout=print2) in a hidden frame and opens the print dialog with it --}}
+                        <button type="button" role="menuitem" data-print-url="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2']) }}" onclick="ssPrintSheet(this)" @click="open = false">
+                            <span>Print sheet</span><small>A4, opens the print dialog</small>
+                        </button>
+                        @foreach (['portrait' => 'PDF · Portrait', 'landscape' => 'PDF · Landscape'] as $pdfOrientation => $pdfLabel)
+                            <a role="menuitem" href="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => $pdfOrientation]) }}" @click="open = false">
+                                <span>{{ $pdfLabel }}</span><small>A4 {{ $pdfOrientation }}, attachments one per page</small>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+                <x-settlement-section-help section="posting" label="Posting and reversing" />
                 @if ($settlement->status === 'draft')
                     @can('sales-settlement-edit')
                         <a href="{{ route('sales-settlements.edit', $settlement) }}" class="ak-btn ak-btn-outline">Edit</a>
@@ -68,6 +78,31 @@
 
     @push('header')
         <style>
+            /* On a phone or tablet a wide sheet table scrolls inside its box instead of being cut off, and the
+               side-by-side tables stack. Printing is unchanged (screen only). */
+            @media screen and (max-width: 1279px) {
+                .report-table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+                .report-table th, .report-table td { white-space: nowrap; }
+            }
+            /* The sheet's header facts (settlement no, salesman, vehicle ...) stack into label / value rows on a phone */
+            @media screen and (max-width: 639px) {
+                .report-header table, .report-header tbody, .report-header tr, .report-header td { display: block; width: 100% !important; }
+                .report-header tr { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); column-gap: 8px; }
+                .report-header td { padding: 2px 0 !important; overflow-wrap: anywhere; }
+            }
+            @media screen and (max-width: 1023px) {
+                .flex.flex-row.gap-1:has(> .w-1\/2) { flex-direction: column; }
+                .flex.flex-row.gap-1 > .w-1\/2 { width: 100%; }
+            }
+            .ss-dl { position: relative; display: inline-flex; }
+            .ss-dl-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 240px; padding: 6px; border-radius: 14px; background: rgba(255,255,255,.96); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 12px 32px rgba(0,0,0,.14); transform-origin: top right; }
+            .ss-dl-menu > * { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 8px 10px; border: 0; border-radius: 9px; background: transparent; color: #1d1d1f; font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer; }
+            .ss-dl-menu > * small { font-size: 12px; font-weight: 400; color: #86868b; }
+            .ss-dl-menu > *:focus-visible { outline: 2px solid #0071e3; outline-offset: -2px; }
+            @media (hover: hover) and (pointer: fine) { .ss-dl-menu > *:hover { background: rgba(0,113,227,.08); } }
+            .ss-dl-enter { transition: opacity 150ms ease-out, transform 150ms cubic-bezier(.23,1,.32,1); } .ss-dl-leave { transition: opacity 100ms ease-out; } .ss-dl-from { opacity: 0; transform: scale(.97) translateY(-4px); }
+            .ak-head-actions .ss-help-q { width: 30px; height: 30px; align-self: center; }
+
             .report-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -366,6 +401,8 @@
     @endphp
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
+    <x-register-apple-style />
     @include('sales-settlements.partials.help-modal')
     <style>
         .ss-summary { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
@@ -1372,6 +1409,7 @@
 
                 <form id="revertSettlementForm" action="{{ route('sales-settlements.revert', $settlement->id) }}" method="POST" class="hidden">
                     @csrf
+                    <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">
                     <input type="hidden" id="revert_password" name="password">
                 </form>
 
@@ -1379,9 +1417,11 @@
                     document.addEventListener('passwordConfirmed', function (event) {
                         const { modalId, password } = event.detail;
 
-                        if (modalId === 'revertSettlementModal') {
+                        const revertForm = document.getElementById('revertSettlementForm');
+                        if (modalId === 'revertSettlementModal' && revertForm.dataset.sending !== '1') {
+                            revertForm.dataset.sending = '1';
                             document.getElementById('revert_password').value = password;
-                            document.getElementById('revertSettlementForm').submit();
+                            revertForm.submit();
                         }
                     });
                 </script>

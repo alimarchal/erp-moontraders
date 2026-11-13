@@ -93,7 +93,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Payment Method *</label>
-                        <select x-model="form.payment_method"
+                        <select x-model="form.payment_method" x-select2="form.payment_method"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="cash">Cash</option>
                             <option value="bank_transfer">Online / Bank Transfer</option>
@@ -101,7 +101,7 @@
                     </div>
                     <div x-show="form.payment_method === 'bank_transfer'">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Bank Account *</label>
-                        <select x-model="form.bank_account_id"
+                        <select x-model="form.bank_account_id" x-select2="form.bank_account_id"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Bank Account</option>
                             <template x-for="bank in bankAccounts" :key="bank.id">

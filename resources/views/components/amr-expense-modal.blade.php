@@ -13,7 +13,7 @@
 <div x-data="amrExpenseModal({
         products: @js($products->map(fn($product) => [
             'id' => $product->id,
-            'name' => $product->product_name . ' (' . $product->product_code . ')',
+            'name' => $product->product_name,
             'expiry_price' => (float) $product->expiry_price,
             'supplier_id' => $product->supplier_id,
         ])->values()),

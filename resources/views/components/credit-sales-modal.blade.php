@@ -304,6 +304,7 @@
                     },
 
                     openModal() {
+                        this.refreshCreditCap();
                         this.show = true;
                         this.form.invoice_number = 'CSI-' + this.getDateCode() + '-' + String(this.invoiceCounter).padStart(5, '0');
 
@@ -447,6 +448,7 @@
                     },
 
                     canAcceptCredit(projectedCreditTotal) {
+                        this.refreshCreditCap();
                         const tolerance = 0.01;
                         return projectedCreditTotal <= this.maxAllowedCredit + tolerance;
                     },
@@ -559,8 +561,15 @@
                         }, 0);
                     },
 
+                    /** Net sale minus bank transfers, read from the page each time the modal opens (the page's totals are not reactive here). */
+                    creditCap: 0,
+
+                    refreshCreditCap() {
+                        this.creditCap = Math.max(0, this.getNetSaleAmount() - this.getBankTransferAmount());
+                    },
+
                     get maxAllowedCredit() {
-                        return Math.max(0, this.getNetSaleAmount() - this.getBankTransferAmount());
+                        return this.creditCap;
                     },
 
                     get remainingCreditAllowed() {

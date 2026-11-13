@@ -347,3 +347,92 @@ it('removes the uploaded files again when the settlement is refused', function (
 
     expect(SalesSettlement::count())->toBe(1)->and(Storage::disk('local')->allFiles('sales-settlement/_staging'))->toBe([]);
 });
+
+it('uses lighter photo defaults for receipts', function () {
+    expect(config('attachment_images.max_px'))->toBe(1600)
+        ->and(config('attachment_images.quality'))->toBe(75)
+        ->and(config('attachment_images.thumb_px'))->toBe(320);
+});
+
+it('writes a small thumbnail next to an uploaded photo', function () {
+    $entries = ['cheques' => [['cheque_number' => 'CH-9', 'amount' => 200, 'bank_name' => 'HBL', 'attachment_key' => 'p1']]];
+
+    $this->actingAs($this->user)
+        ->post(route('sales-settlements.store'), attachmentPayload($entries, ['p1' => UploadedFile::fake()->image('cheque.jpg', 2000, 1500)]))
+        ->assertRedirect();
+
+    $path = SalesSettlement::latest('id')->firstOrFail()->cheques->first()->attachment;
+    $thumb = SettlementAttachmentService::thumbPath($path);
+
+    expect($thumb)->toEndWith('.jpg')->toContain('/thumbs/')
+        ->and(Storage::disk('local')->exists($thumb))->toBeTrue();
+
+    [$width, $height] = getimagesizefromstring(Storage::disk('local')->get($thumb));
+    expect(max($width, $height))->toBeLessThanOrEqual(320);
+});
+
+it('makes no thumbnail for a PDF', function () {
+    $settlement = storeSettlementWithAttachments();
+    $pdf = $settlement->creditSales->first()->attachment;
+
+    expect(Storage::disk('local')->exists(SettlementAttachmentService::thumbPath($pdf)))->toBeFalse();
+});
+
+it('serves the thumbnail, and the full file when an older attachment has none', function () {
+    $settlement = storeSettlementWithAttachments();
+    $cheque = $settlement->cheques->first();
+    $url = route('sales-settlements.attachments.show', [$settlement, 'cheques', $cheque->id, 'thumb' => 1]);
+
+    $thumbResponse = $this->actingAs($this->user)->get($url)->assertOk();
+    expect($thumbResponse->streamedContent())->toBe(Storage::disk('local')->get(SettlementAttachmentService::thumbPath($cheque->attachment)));
+
+    Storage::disk('local')->delete(SettlementAttachmentService::thumbPath($cheque->attachment));
+
+    $fullResponse = $this->actingAs($this->user)->get($url)->assertOk();
+    expect($fullResponse->streamedContent())->toBe(Storage::disk('local')->get($cheque->attachment));
+});
+
+it('deletes the thumbnail with its photo', function () {
+    $settlement = storeSettlementWithAttachments();
+    $thumb = SettlementAttachmentService::thumbPath($settlement->cheques->first()->attachment);
+    expect(Storage::disk('local')->exists($thumb))->toBeTrue();
+
+    $this->actingAs($this->user)->delete(route('sales-settlements.destroy', $settlement))->assertRedirect();
+
+    expect(Storage::disk('local')->exists($thumb))->toBeFalse();
+});
+
+it('sends an S3 attachment through a short-lived signed link instead of the server', function () {
+    config(['settlement_attachments.disk' => 's3']);
+    Storage::fake('s3');
+    Storage::disk('s3')->buildTemporaryUrlsUsing(fn (string $path, $expiration) => 'https://signed.test/'.$path);
+
+    $settlement = storeSettlementWithAttachments();
+    $cheque = $settlement->cheques->first();
+
+    $this->actingAs($this->user)
+        ->get(route('sales-settlements.attachments.show', [$settlement, 'cheques', $cheque->id]))
+        ->assertRedirect('https://signed.test/'.$cheque->attachment);
+});
+
+it('prunes staged uploads older than a day and keeps fresh ones', function () {
+    $old = 'sales-settlement/_staging/old.jpg';
+    $fresh = 'sales-settlement/_staging/fresh.jpg';
+    Storage::disk('local')->put($old, 'x');
+    Storage::disk('local')->put($fresh, 'y');
+    touch(Storage::disk('local')->path($old), now()->subHours(25)->getTimestamp());
+
+    $this->artisan('settlement-attachments:prune-staging')->assertSuccessful();
+
+    expect(Storage::disk('local')->exists($old))->toBeFalse()
+        ->and(Storage::disk('local')->exists($fresh))->toBeTrue();
+});
+
+it('renders the settlement PDF with a WebP photo in it', function () {
+    $settlement = storeSettlementWithAttachments();
+
+    $this->actingAs($this->user)
+        ->get(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf']))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+});

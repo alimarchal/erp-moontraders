@@ -3,12 +3,9 @@
 use App\Models\ChartOfAccount;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
-use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\GoodsIssueItemRemoval;
-use App\Models\GoodsReceiptNote;
-use App\Models\GoodsReceiptNoteItem;
 use App\Models\InventoryLedgerEntry;
 use App\Models\JournalEntry;
 use App\Models\Product;
@@ -18,94 +15,17 @@ use App\Models\SalesSettlementItemBatch;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
-use App\Models\Supplier;
-use App\Models\Uom;
 use App\Models\User;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
-use App\Models\Vehicle;
-use App\Models\Warehouse;
 use App\Services\AccountingService;
 use App\Services\DistributionService;
 use App\Services\GoodsIssueLineRemovalService;
 use App\Services\GoodsIssueReversalService;
-use App\Services\InventoryService;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
 
 use function Pest\Laravel\actingAs;
-
-/**
- * Product P received twice (batch A: 10 @ cost 10, sell 15; batch B: 10 @ cost 12, sell 18) and product Q once
- * (batch C: 10 @ cost 8, sell 11). The issue posts line 1 = P 16 (A 10 + B 6) and line 2 = Q 5 (C 5);
- * with $samePLine a line 3 = P 2 follows (B 2).
- *
- * @return array{user: User, issue: GoodsIssue, line1: GoodsIssueItem, line2: GoodsIssueItem, line3: ?GoodsIssueItem, p: Product, q: Product, warehouse: Warehouse, vehicle: Vehicle, batches: array{A: int, B: int, C: int}}
- */
-function issueFromTwoBatches(bool $samePLine = false): array
-{
-    app(PermissionRegistrar::class)->forgetCachedPermissions();
-    $permissions = ['goods-issue-list', 'goods-issue-edit', 'goods-issue-remove-items'];
-    foreach ($permissions as $permission) {
-        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
-    }
-    $user = User::factory()->create();
-    $user->givePermissionTo($permissions);
-    seedGrnPostingAccounts();
-
-    $supplier = Supplier::factory()->create();
-    $warehouse = Warehouse::factory()->create();
-    $vehicle = Vehicle::factory()->create(['vehicle_number' => 'RIS-1569', 'supplier_id' => $supplier->id]);
-    $employee = Employee::factory()->create(['supplier_id' => $supplier->id]);
-    $uom = Uom::factory()->create();
-    $p = Product::factory()->create(['product_name' => 'Olper TBA 250ml', 'uom_conversion_factor' => 1]);
-    $q = Product::factory()->create(['product_name' => 'Tarang 220ml', 'uom_conversion_factor' => 1]);
-
-    actingAs($user);
-
-    $receive = function (Product $product, float $cost, float $sell, int $daysAgo) use ($supplier, $warehouse, $uom): int {
-        $grn = GoodsReceiptNote::factory()->create([
-            'supplier_id' => $supplier->id, 'warehouse_id' => $warehouse->id,
-            'receipt_date' => now()->subDays($daysAgo), 'status' => 'draft',
-        ]);
-        GoodsReceiptNoteItem::factory()->create([
-            'grn_id' => $grn->id, 'product_id' => $product->id, 'stock_uom_id' => $uom->id, 'purchase_uom_id' => $uom->id,
-            'qty_in_purchase_uom' => 1, 'uom_conversion_factor' => 1, 'qty_in_stock_uom' => 1, 'quantity_ordered' => 1,
-            'quantity_received' => 10, 'quantity_accepted' => 10, 'unit_cost' => $cost, 'selling_price' => $sell,
-            'is_promotional' => false, 'priority_order' => 1,
-        ]);
-        expect(app(InventoryService::class)->postGrnToInventory($grn->fresh())['success'])->toBeTrue();
-
-        return (int) StockBatch::where('product_id', $product->id)->latest('id')->value('id');
-    };
-
-    $batches = ['A' => $receive($p, 10, 15, 3), 'B' => $receive($p, 12, 18, 2), 'C' => $receive($q, 8, 11, 2)];
-
-    $issue = GoodsIssue::factory()->create([
-        'issue_number' => 'GI-'.now()->year.'-0501', 'issue_date' => now()->toDateString(),
-        'warehouse_id' => $warehouse->id, 'vehicle_id' => $vehicle->id, 'employee_id' => $employee->id,
-        'supplier_id' => $supplier->id, 'issued_by' => $user->id, 'status' => 'draft',
-    ]);
-    $lines = [[$p, 16, 258.00], [$q, 5, 55.00]];
-    if ($samePLine) {
-        $lines[] = [$p, 2, 36.00];
-    }
-    foreach ($lines as $index => [$product, $quantity, $value]) {
-        GoodsIssueItem::factory()->create([
-            'goods_issue_id' => $issue->id, 'line_no' => $index + 1, 'product_id' => $product->id, 'uom_id' => $uom->id,
-            'quantity_issued' => $quantity, 'unit_cost' => 10, 'selling_price' => round($value / $quantity, 4), 'total_value' => $value,
-        ]);
-    }
-    expect(app(DistributionService::class)->postGoodsIssue($issue->fresh())['success'])->toBeTrue();
-
-    $items = $issue->items()->orderBy('line_no')->get();
-
-    return [
-        'user' => $user, 'issue' => $issue->fresh(), 'line1' => $items[0], 'line2' => $items[1], 'line3' => $items[2] ?? null,
-        'p' => $p, 'q' => $q, 'warehouse' => $warehouse, 'vehicle' => $vehicle, 'batches' => $batches,
-    ];
-}
 
 /**
  * Every table a goods issue posting touches, read back for the fixture's batches, products and lines.

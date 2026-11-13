@@ -40,6 +40,14 @@ class SalesSettlementRevertService
             }
 
             DB::transaction(function () use ($settlement) {
+                // A second revert of the same settlement (a double click, a resent form) waits on this lock and then
+                // finds it already back in draft.
+                $lockedStatus = SalesSettlement::whereKey($settlement->id)->lockForUpdate()->value('status');
+
+                if ($lockedStatus !== 'posted') {
+                    throw new \RuntimeException('Only posted settlements can be reverted.');
+                }
+
                 $settlement->load([
                     'items.batches',
                     'creditSales',

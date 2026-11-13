@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\ChartOfAccount;
+use App\Support\SettlementCreditLimit;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateSalesSettlementRequest extends FormRequest
 {
@@ -56,6 +58,22 @@ class UpdateSalesSettlementRequest extends FormRequest
      *
      * @return array<string, string>
      */
+    /**
+     * With SS_ENFORCE_CREDIT_LIMIT on, a credit sale may not take a customer past their credit limit.
+     *
+     * @return array<int, callable>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                foreach (SettlementCreditLimit::problems($this->input('credit_sales')) as $problem) {
+                    $validator->errors()->add('credit_sales', $problem);
+                }
+            },
+        ];
+    }
+
     public function messages(): array
     {
         return [

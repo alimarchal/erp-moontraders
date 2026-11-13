@@ -200,11 +200,19 @@
         table.p2-kpis td.bad { background: #e6e6e6; }
 
         .p2-sec { margin-top: 9px; }
-        .p2-att { margin-top: 8px; border: 1px solid #000; page-break-inside: avoid; }
-        .p2-att-head { background: #e6e6e6; border-bottom: 1px solid #000; padding: 3px 6px; font-size: 10px; font-weight: bold; }
-        .p2-att-head small { font-weight: normal; }
-        .p2-att-body { padding: 6px; text-align: center; }
-        .p2-att-body img { max-width: 100%; max-height: {{ $orientation === 'landscape' ? '300px' : '520px' }}; }
+        /* Attachments: one per page, the picture as large as the page allows, with a clear caption above it */
+        /* Attachments: two per row, each photo kept to a readable but compact size so a portrait page holds about six. */
+        table.p2-att-grid { width: 100%; border-collapse: separate; border-spacing: 0 6px; table-layout: fixed; }
+        table.p2-att-grid tr { page-break-inside: avoid; break-inside: avoid; }
+        table.p2-att-grid td.p2-att { width: 50%; vertical-align: top; padding: 0 3px; }
+        table.p2-att-cap { width: 100%; border-collapse: collapse; margin-bottom: 3px; border: 1px solid #000; }
+        table.p2-att-cap td { padding: 2px 5px; border: 1px solid #000; font-size: 8.5px; vertical-align: top; }
+        table.p2-att-cap td small { display: block; font-size: 6.5px; font-weight: bold; text-transform: uppercase; letter-spacing: .3px; color: #444; }
+        table.p2-att-cap td.no { width: 18%; background: #e6e6e6; font-size: 10px; font-weight: bold; text-align: center; vertical-align: middle; }
+        table.p2-att-cap td.amt { width: 28%; text-align: right; font-weight: bold; font-size: 9px; }
+        .p2-att-body { padding: 3px; border: 1px solid #999; text-align: center; }
+        .p2-att-body img { max-width: 100%; max-height: {{ $orientation === 'landscape' ? '62mm' : '80mm' }}; }
+        .p2-att-note { word-break: break-all; }
         .p2-att-note { padding: 10px 6px; font-size: 10px; text-align: center; }
         .p2-h2 { margin: 0 0 3px; padding: 3px 2px 2px; border-top: 2.5px solid #000; border-bottom: 1px solid #000; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: .3px; page-break-after: avoid; break-after: avoid; }
         .p2-h2 small, .p2-h3 small { float: right; font-weight: bold; text-transform: none; letter-spacing: 0; font-size: 9px; padding-top: 1px; }
@@ -702,30 +710,6 @@
             </table>
         </section>
 
-        @if ($exhibits->isNotEmpty())
-            <section class="p2-sec" style="page-break-before: always;">
-                <div class="p2-h2">Attachments <small>{{ $exhibits->count() }} {{ \Illuminate\Support\Str::plural('file', $exhibits->count()) }} - {{ $settlement->settlement_number }}</small></div>
-                @foreach ($exhibits as $exhibit)
-                    <div class="p2-att">
-                        <div class="p2-att-head">Att. {{ $exhibit['no'] }} - {{ $exhibit['label'] }}: {{ $exhibit['title'] }}
-                            <small>{{ $exhibit['reference'] !== '' ? ' - '.$exhibit['reference'] : '' }} - Rs {{ $money($exhibit['amount']) }}</small></div>
-                        @php $imageUri = $exhibit['is_pdf'] ? null : \App\Services\SettlementAttachmentService::imageDataUri($exhibit['path']); @endphp
-                        @if ($imageUri)
-                            <div class="p2-att-body"><img src="{{ $imageUri }}" alt="Att. {{ $exhibit['no'] }}"></div>
-                        @else
-                            <div class="p2-att-note">
-                                @if ($exhibit['is_pdf'])
-                                    <b>PDF attachment</b> - this is a separate PDF document. Open it from the link below and print it separately.
-                                @else
-                                    Image could not be embedded. Open it from the link below.
-                                @endif
-                                <br><a href="{{ $exhibit['url'] }}">{{ $exhibit['url'] }}</a>
-                            </div>
-                        @endif
-                    </div>
-                @endforeach
-            </section>
-        @endif
 
         @if ($settlement->notes)
             <div class="p2-notes"><b>Notes:</b> {{ $settlement->notes }}</div>
@@ -738,6 +722,42 @@
             <td>Checked By</td>
             <td>Authorized Signature</td>
         </tr></table>
+
+        @if ($exhibits->isNotEmpty())
+            <section class="p2-sec">
+                <div class="p2-h2">Attachments <small>{{ $exhibits->count() }} {{ \Illuminate\Support\Str::plural('file', $exhibits->count()) }} - {{ $settlement->settlement_number }}</small></div>
+                <table class="p2-att-grid">
+                    @foreach ($exhibits->values()->chunk(2) as $pair)
+                        <tr>
+                            @foreach ($pair as $exhibit)
+                                <td class="p2-att">
+                                <table class="p2-att-cap"><tr>
+                                    <td class="no">Att. {{ $exhibit['no'] }}<small>of {{ $exhibits->count() }}</small></td>
+                                    <td><small>{{ $exhibit['label'] }}</small>{{ $exhibit['title'] }}</td>
+                                    <td><small>Reference</small>{{ $exhibit['reference'] !== '' ? $exhibit['reference'] : '-' }}</td>
+                                    <td class="amt"><small>Amount</small>Rs {{ $money($exhibit['amount']) }}</td>
+                                </tr></table>
+                                @php $imageUri = $exhibit['is_pdf'] ? null : \App\Services\SettlementAttachmentService::imageDataUri($exhibit['path']); @endphp
+                                @if ($imageUri)
+                                    <div class="p2-att-body"><img src="{{ $imageUri }}" alt="Att. {{ $exhibit['no'] }}"></div>
+                                @else
+                                    <div class="p2-att-note">
+                                        @if ($exhibit['is_pdf'])
+                                            <b>PDF attachment</b> - this is a separate PDF document. Open it from the link below and print it separately.
+                                        @else
+                                            Image could not be embedded. Open it from the link below.
+                                        @endif
+                                        <br><a href="{{ $exhibit['url'] }}">{{ $exhibit['url'] }}</a>
+                                    </div>
+                                @endif
+                                </td>
+                            @endforeach
+                            @if ($pair->count() === 1)<td class="p2-att"></td>@endif
+                        </tr>
+                    @endforeach
+                </table>
+            </section>
+        @endif
     </main>
 </body>
 </html>

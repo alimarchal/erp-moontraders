@@ -420,7 +420,13 @@ class CustomerController extends Controller implements HasMiddleware
                     ->orWhere('business_name', 'like', $term)
                     ->orWhere('phone', 'like', $term)
                     ->orWhere('city', 'like', $term)
-                    ->orWhere('sub_locality', 'like', $term);
+                    ->orWhere('sub_locality', 'like', $term)
+                    ->orWhere('address', 'like', $term)
+                    ->orWhere('email', 'like', $term)
+                    ->orWhere('state', 'like', $term)
+                    ->orWhere('ntn', 'like', $term)
+                    ->orWhere('owner_cnic', 'like', $term)
+                    ->orWhere('channel_type', 'like', $term);
             })),
             AllowedFilter::partial('customer_name'),
             AllowedFilter::partial('customer_code'),

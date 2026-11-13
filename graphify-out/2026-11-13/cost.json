@@ -1,0 +1,39 @@
+{
+  "runs": [
+    {
+      "date": "2026-04-15T10:07:33.996690+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 789
+    },
+    {
+      "date": "2026-04-15T10:48:03.736845+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 142,
+      "note": "incremental update: routes/, config/, tests/, bootstrap/"
+    },
+    {
+      "date": "2026-08-24T10:28:37.527984+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 48646,
+      "mode": "update",
+      "changed_files": 454
+    },
+    {
+      "date": "2026-11-06T15:40:13.259418+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 392
+    },
+    {
+      "date": "2026-11-06T15:52:02.996386+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 392
+    }
+  ],
+  "total_input_tokens": 0,
+  "total_output_tokens": 0
+}

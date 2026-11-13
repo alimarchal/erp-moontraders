@@ -68,22 +68,24 @@
                     <div class="ev-en" lang="en">
                         <table class="gh-table"><thead><tr><th>Line</th><th>Side</th><th>How</th></tr></thead><tbody>
                             <tr><td>Basic salary</td><td>Earning</td><td>The monthly amount set for the employee.</td></tr>
-                            <tr><td>Allowances</td><td>Earning</td><td>Fixed amounts, or a percent of basic, set per employee (house rent, conveyance, mobile, fuel, food...).</td></tr>
+                            <tr><td>Allowances</td><td>Earning</td><td>Set per employee as a fixed amount, a percent of basic, or a percent of another allowance (house rent, utility, medical, conveyance...). New categories can be added any time.</td></tr>
                             <tr><td>Overtime, incentive, bonus</td><td>Earning</td><td>Added by hand in the month they happen.</td></tr>
                             <tr><td>Absent days</td><td>Deduction</td><td><b>Basic</b> type only: basic ÷ days in the month × absent days. <b>Fixed</b> type is never cut automatically.</td></tr>
                             <tr><td>Advance</td><td>Deduction</td><td>Taken automatically from every open advance: the instalment, or everything left. Never more than what remains of the pay.</td></tr>
-                            <tr><td>Income tax, EOBI, loan, fine</td><td>Deduction</td><td>EOBI can be a fixed amount per employee; tax, loan and fine are added by hand.</td></tr>
+                            <tr><td>Settlement short</td><td>Deduction</td><td>Taken automatically: what the employee's posted settlements of the month booked to <b>Short Amount (5293)</b>. Can be waived on one payslip. A cash <b>excess</b> (4250) is the employee's own money and is paid as an earning.</td></tr>
+                            <tr><td>Death insurance, tax, loan, fine</td><td>Deduction</td><td>Standing deductions are set in the salary window; one-off ones (fine, tax) under Bonus &amp; deductions.</td></tr>
                         </tbody></table>
                         <div class="gh-note"><b>Net pay = total earnings − total deductions.</b> A negative net pay cannot be sent for approval. Press <b>Recalculate all</b> after changing a salary or an advance; lines you added yourself are kept.</div>
                     </div>
                     <div class="ev-ur-col gh-rtl" dir="rtl" lang="ur">
                         <table class="gh-table"><thead><tr><th>مد</th><th>طرف</th><th>کیسے</th></tr></thead><tbody>
                             <tr><td>بنیادی تنخواہ</td><td>آمدن</td><td>ملازم کے لیے طے شدہ ماہانہ رقم۔</td></tr>
-                            <tr><td>الاؤنسز</td><td>آمدن</td><td>ہر ملازم کے لیے طے شدہ مقررہ رقم یا بنیادی تنخواہ کا فیصد (مکان، سفری، موبائل، ایندھن، کھانا وغیرہ)۔</td></tr>
+                            <tr><td>الاؤنسز</td><td>آمدن</td><td>ہر ملازم کے لیے مقررہ رقم، بنیادی تنخواہ کا فیصد، یا کسی اور الاؤنس کا فیصد (مکان کرایہ، یوٹیلیٹی، میڈیکل، سفری وغیرہ)۔ نئی مد کبھی بھی شامل کی جا سکتی ہے۔</td></tr>
                             <tr><td>اوور ٹائم، انسینٹو، بونس</td><td>آمدن</td><td>جس مہینے ہو اسی مہینے ہاتھ سے شامل کریں۔</td></tr>
                             <tr><td>غیر حاضری</td><td>کٹوتی</td><td>صرف <b>Basic</b> قسم میں: بنیادی تنخواہ ÷ مہینے کے دن × غیر حاضر دن۔ <b>Fixed</b> قسم میں خود کوئی کٹوتی نہیں ہوتی۔</td></tr>
                             <tr><td>ایڈوانس</td><td>کٹوتی</td><td>ہر کھلے ایڈوانس سے خود کٹتا ہے: قسط، یا جو باقی ہو۔ بچی ہوئی تنخواہ سے زیادہ کبھی نہیں۔</td></tr>
-                            <tr><td>انکم ٹیکس، EOBI، قرض، جرمانہ</td><td>کٹوتی</td><td>EOBI ہر ملازم کے لیے مقررہ رقم ہو سکتی ہے؛ ٹیکس، قرض اور جرمانہ ہاتھ سے شامل ہوتے ہیں۔</td></tr>
+                            <tr><td>سیٹلمنٹ شارٹ</td><td>کٹوتی</td><td>خود کٹتا ہے: مہینے کی پوسٹ شدہ سیٹلمنٹس میں جو رقم <b>Short Amount (5293)</b> میں گئی۔ کسی ایک سلپ پر معاف کی جا سکتی ہے۔ نقد <b>ایکسس</b> (4250) ملازم کی اپنی رقم ہے اور تنخواہ میں آمدن کے طور پر ملتی ہے۔</td></tr>
+                            <tr><td>ڈیتھ انشورنس، ٹیکس، قرض، جرمانہ</td><td>کٹوتی</td><td>مستقل کٹوتیاں تنخواہ والی ونڈو میں؛ ایک بار والی (جرمانہ، ٹیکس) Bonus &amp; deductions میں۔</td></tr>
                         </tbody></table>
                         <div class="gh-note"><b>خالص تنخواہ = کل آمدن − کل کٹوتی۔</b> منفی خالص تنخواہ والی سلپ منظوری کے لیے نہیں بھیجی جا سکتی۔ تنخواہ یا ایڈوانس بدلنے کے بعد <b>Recalculate all</b> دبائیں؛ آپ کی ہاتھ سے لگائی ہوئی مدیں قائم رہتی ہیں۔</div>
                     </div>
@@ -119,7 +121,7 @@
                     <div class="ev-en" lang="en">
                         <table class="gh-table"><thead><tr><th>Step</th><th>Debit</th><th>Credit</th></tr></thead><tbody>
                             <tr><td>Advance voucher approved</td><td>1131 Employee Advances</td><td>1121 Cash</td></tr>
-                            <tr><td>Payroll approved</td><td>5281 Salary (all earnings)</td><td>1131 (advances recovered), 5281 (absent, fines), 2120 (tax, EOBI), 1132 (loan), <b>2112 Payroll Payable (net)</b></td></tr>
+                            <tr><td>Payroll approved</td><td>5281 Salary (all earnings)</td><td>1131 (advances recovered), 5293 (settlement short); Dr 4250 (settlement excess paid), 5281 (absent, fines), 2120 (tax), 1132 (loan), <b>2112 Payroll Payable (net)</b></td></tr>
                             <tr><td>Salaries paid</td><td>2112 Payroll Payable</td><td>1121 Cash or the bank account</td></tr>
                         </tbody></table>
                         <div class="gh-note">A cash salary payment shows in that day's <b>Cash Collection</b> report under "Less: salaries paid (cash)". A bank payment does not touch cash.</div>
@@ -127,7 +129,7 @@
                     <div class="ev-ur-col gh-rtl" dir="rtl" lang="ur">
                         <table class="gh-table"><thead><tr><th>مرحلہ</th><th>ڈیبٹ</th><th>کریڈٹ</th></tr></thead><tbody>
                             <tr><td>ایڈوانس واؤچر منظور</td><td><bdi class="gh-code">1131</bdi> Employee Advances</td><td><bdi class="gh-code">1121</bdi> Cash</td></tr>
-                            <tr><td>Payroll منظور</td><td><bdi class="gh-code">5281</bdi> Salary (کل آمدن)</td><td><bdi class="gh-code">1131</bdi> (واپس ہوا ایڈوانس)، <bdi class="gh-code">5281</bdi> (غیر حاضری، جرمانہ)، <bdi class="gh-code">2120</bdi> (ٹیکس، EOBI)، <bdi class="gh-code">1132</bdi> (قرض)، <b><bdi class="gh-code">2112</bdi> Payroll Payable (خالص)</b></td></tr>
+                            <tr><td>Payroll منظور</td><td><bdi class="gh-code">5281</bdi> Salary (کل آمدن)</td><td><bdi class="gh-code">1131</bdi> (واپس ہوا ایڈوانس)، <bdi class="gh-code">5281</bdi> (غیر حاضری، جرمانہ)، <bdi class="gh-code">5293</bdi> (سیٹلمنٹ شارٹ)، <bdi class="gh-code">2120</bdi> (ٹیکس)، <bdi class="gh-code">1132</bdi> (قرض)، <b><bdi class="gh-code">2112</bdi> Payroll Payable (خالص)</b></td></tr>
                             <tr><td>تنخواہیں ادا</td><td><bdi class="gh-code">2112</bdi> Payroll Payable</td><td><bdi class="gh-code">1121</bdi> Cash یا بینک اکاؤنٹ</td></tr>
                         </tbody></table>
                         <div class="gh-note">نقد تنخواہ کی ادائیگی اسی دن کی <b>Cash Collection</b> رپورٹ میں "Less: salaries paid (cash)" کے تحت آتی ہے۔ بینک ادائیگی کیش کو نہیں چھوتی۔</div>

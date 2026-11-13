@@ -12,6 +12,7 @@ use App\Models\PayrollRun;
 use App\Models\PayrollSlip;
 use App\Models\PayrollSlipLine;
 use App\Models\SalaryComponent;
+use App\Models\SalesSettlement;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -20,8 +21,8 @@ use RuntimeException;
 
 /**
  * Monthly salary of one company. One button builds a payslip for every employee with a salary: basic pay,
- * allowances, the absent-day deduction and the advance instalment all come out of the set-up, so nobody types
- * them in. The maker only adds what is special this month (overtime, a fine, tax). Approval posts the ledger
+ * allowances, the absent-day deduction, the settlement shortage and the advance instalment all come out of the
+ * set-up, so nobody types them in. The maker only adds what is special this month (overtime, a fine, tax). Approval posts the ledger
  * entry and records each advance recovery; paying clears the salary payable.
  */
 class PayrollService
@@ -32,8 +33,11 @@ class PayrollService
 
     public const ADVANCES_ACCOUNT = '1131';
 
-    /** Settlement Excess Income: the settlement books a cash excess here until payroll hands it to the salesman. */
+    /** Settlement Excess Income: the settlement books a salesman's cash excess here; payroll pays it to him with his salary. */
     public const EXCESS_ACCOUNT = '4250';
+
+    /** Short Amount: a settlement books a salesman's cash shortage here as an expense; payroll recovers it from his salary. */
+    public const SHORT_ACCOUNT = '5293';
 
     public function __construct(private AccountingService $accounting, private DocumentNumberService $numbers) {}
 
@@ -130,7 +134,7 @@ class PayrollService
         $employee ??= $slip->employee()->with(['salary', 'salaryComponents.component'])->first();
         $salary = $employee->salary ?? new EmployeeSalary(['salary_type' => 'basic', 'basic_salary' => 0]);
 
-        $slip->lines()->whereIn('source', [PayrollSlipLine::SOURCE_BASIC, PayrollSlipLine::SOURCE_ALLOWANCE, PayrollSlipLine::SOURCE_ABSENT, PayrollSlipLine::SOURCE_ADVANCE, PayrollSlipLine::SOURCE_ADJUSTMENT, PayrollSlipLine::SOURCE_EXCESS])->delete();
+        $slip->lines()->whereIn('source', PayrollSlipLine::AUTOMATIC_SOURCES)->delete();
 
         $basic = (float) $salary->basic_salary;
         $slip->update(['salary_type' => $salary->salary_type, 'basic_salary' => $basic]);
@@ -139,18 +143,8 @@ class PayrollService
             $this->addLine($slip, 'earning', PayrollSlipLine::SOURCE_BASIC, 'Basic salary', $basic);
         }
 
-        foreach ($employee->salaryComponents as $assigned) {
-            $component = $assigned->component;
-
-            if (! $component || ! $component->is_active || $component->calculation === SalaryComponent::CALC_INPUT) {
-                continue;
-            }
-
-            $amount = $component->calculation === SalaryComponent::CALC_PERCENT ? round($basic * (float) $assigned->value / 100, 2) : (float) $assigned->value;
-
-            if ($amount > 0) {
-                $this->addLine($slip, $component->type, PayrollSlipLine::SOURCE_ALLOWANCE, $component->name, $amount, $component->id);
-            }
+        foreach ($this->componentAmounts($employee, $basic) as [$component, $amount]) {
+            $this->addLine($slip, $component->type, PayrollSlipLine::SOURCE_ALLOWANCE, $component->name, $amount, $component->id);
         }
 
         if ($salary->salary_type === EmployeeSalary::TYPE_BASIC && (float) $slip->absent_days > 0 && $basic > 0) {
@@ -160,6 +154,7 @@ class PayrollService
 
         $this->addAdjustmentLines($slip, $employee);
         $this->addExcessLine($slip, $employee);
+        $this->addShortLine($slip, $employee);
         $this->addAdvanceLines($slip, $employee);
 
         return $this->refreshSlipTotals($slip);
@@ -193,8 +188,53 @@ class PayrollService
     }
 
     /**
-     * The cash excess of the employee's posted settlements in the month is his earning. The settlement booked it to
-     * Settlement Excess Income (4250); approving the payroll moves it from there to the salary payable.
+     * The amount of each standing allowance or deduction: a fixed amount, a percentage of basic, or a percentage of another
+     * allowance (worked out after the ones it depends on). Monthly-input and switched-off categories are left out.
+     *
+     * @return list<array{0: SalaryComponent, 1: float}>
+     */
+    public function componentAmounts(Employee $employee, float $basic): array
+    {
+        $assigned = $employee->salaryComponents
+            ->filter(fn ($row) => $row->component && $row->component->is_active && $row->component->calculation !== SalaryComponent::CALC_INPUT)
+            ->sortBy(fn ($row) => [$row->component->sort_order, $row->component->name])
+            ->values();
+
+        $amounts = [];
+        $pending = $assigned->all();
+
+        // Percent-of-another rows wait until their base is known; a few passes settle chains, a loop is dropped.
+        for ($pass = 0; $pass < 4 && $pending !== []; $pass++) {
+            foreach ($pending as $key => $row) {
+                $calculation = $row->effectiveCalculation();
+
+                if ($calculation === SalaryComponent::CALC_PERCENT_COMPONENT && ! array_key_exists((int) $row->base_component_id, $amounts)) {
+                    if ($assigned->doesntContain('salary_component_id', $row->base_component_id)) {
+                        $amounts[(int) $row->base_component_id] = 0.0;
+                    } else {
+                        continue;
+                    }
+                }
+
+                $amounts[(int) $row->salary_component_id] = match ($calculation) {
+                    SalaryComponent::CALC_PERCENT => round($basic * (float) $row->value / 100, 2),
+                    SalaryComponent::CALC_PERCENT_COMPONENT => round($amounts[(int) $row->base_component_id] * (float) $row->value / 100, 2),
+                    default => round((float) $row->value, 2),
+                };
+                unset($pending[$key]);
+            }
+        }
+
+        return $assigned
+            ->filter(fn ($row) => ($amounts[(int) $row->salary_component_id] ?? 0) > 0)
+            ->map(fn ($row) => [$row->component, $amounts[(int) $row->salary_component_id]])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The cash excess of the employee's posted settlements in the month (by settlement date) is his earning. The settlement
+     * booked it to Settlement Excess Income (4250); approving the payroll moves it from there to the salary payable.
      */
     private function addExcessLine(PayrollSlip $slip, Employee $employee): void
     {
@@ -214,6 +254,98 @@ class PayrollService
         if ($total > 0) {
             $this->addLine($slip, 'earning', PayrollSlipLine::SOURCE_EXCESS, 'Settlement excess ('.$excess->settlements.' '.str('settlement')->plural((int) $excess->settlements).')', $total);
         }
+    }
+
+    /**
+     * What the employee's posted settlements of the month booked to Short Amount (5293): cash he was short by, taken back
+     * from his salary unless the maker waived it on this payslip.
+     */
+    private function addShortLine(PayrollSlip $slip, Employee $employee): void
+    {
+        if (! $slip->recover_settlement_short) {
+            return;
+        }
+
+        $short = $this->settlementShort($employee, $slip->run->period_month);
+
+        if ($short['total'] <= 0) {
+            return;
+        }
+
+        // Never more than the pay left after the other lines, so a large short cannot make net pay negative.
+        $slip->load('lines');
+        $available = max(0, round((float) $slip->lines->where('kind', 'earning')->sum('amount') - (float) $slip->lines->where('kind', 'deduction')->sum('amount'), 2));
+        $taken = min($short['total'], $available);
+        $label = 'Settlement short ('.$short['settlements'].' '.str('settlement')->plural($short['settlements']).')';
+
+        if ($taken < $short['total']) {
+            $label .= ' - Rs '.number_format($short['total'] - $taken, 2).' not taken, pay too low';
+        }
+
+        if ($taken > 0) {
+            $this->addLine($slip, 'deduction', PayrollSlipLine::SOURCE_SHORT, $label, $taken);
+        }
+    }
+
+    /**
+     * @return array{total: float, settlements: int}
+     */
+    public function settlementShort(Employee $employee, CarbonInterface $month): array
+    {
+        $row = DB::table('sales_settlement_expenses as expenses')
+            ->join('sales_settlements as settlements', 'settlements.id', '=', 'expenses.sales_settlement_id')
+            ->join('chart_of_accounts as accounts', 'accounts.id', '=', 'expenses.expense_account_id')
+            ->where('accounts.account_code', self::SHORT_ACCOUNT)
+            ->where('settlements.employee_id', $employee->id)
+            ->where('settlements.status', 'posted')
+            ->whereNull('settlements.deleted_at')
+            ->whereBetween('settlements.settlement_date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->selectRaw('COALESCE(SUM(expenses.amount), 0) as total, COUNT(DISTINCT settlements.id) as settlements')
+            ->first();
+
+        return ['total' => round((float) $row->total, 2), 'settlements' => (int) $row->settlements];
+    }
+
+    /**
+     * Recover (or waive) the settlement shortage on one payslip.
+     */
+    public function setRecoverShort(PayrollSlip $slip, bool $recover): PayrollSlip
+    {
+        $this->ensureEditable($slip->run);
+
+        return DB::transaction(function () use ($slip, $recover) {
+            $slip->update(['recover_settlement_short' => $recover]);
+
+            return $this->doRebuild($slip, null);
+        });
+    }
+
+    /**
+     * A settlement whose shortage or excess already went through an approved or pending payroll
+     * must not be reverted, or the salary would be wrong.
+     */
+    public function settlementIsInPayroll(SalesSettlement $settlement): bool
+    {
+        if (! $settlement->employee || ! $settlement->settlement_date || ! $this->monthIsLocked($settlement->employee, $settlement->settlement_date)) {
+            return false;
+        }
+
+        $sources = PayrollSlip::query()
+            ->where('employee_id', $settlement->employee_id)
+            ->whereHas('run', fn ($query) => $query->whereDate('period_month', $settlement->settlement_date->copy()->startOfMonth()->toDateString())->whereIn('status', [PayrollRun::STATUS_PENDING, PayrollRun::STATUS_APPROVED, PayrollRun::STATUS_PAID]))
+            ->join('payroll_slip_lines', 'payroll_slip_lines.payroll_slip_id', '=', 'payroll_slips.id')
+            ->whereIn('payroll_slip_lines.source', [PayrollSlipLine::SOURCE_SHORT, PayrollSlipLine::SOURCE_EXCESS])
+            ->pluck('payroll_slip_lines.source');
+
+        $hasShort = DB::table('sales_settlement_expenses as expenses')
+            ->join('chart_of_accounts as accounts', 'accounts.id', '=', 'expenses.expense_account_id')
+            ->where('expenses.sales_settlement_id', $settlement->id)
+            ->where('accounts.account_code', self::SHORT_ACCOUNT)
+            ->where('expenses.amount', '>', 0)
+            ->exists();
+
+        return ($hasShort && $sources->contains(PayrollSlipLine::SOURCE_SHORT))
+            || ($settlement->excessAmounts()->exists() && $sources->contains(PayrollSlipLine::SOURCE_EXCESS));
     }
 
     /**
@@ -324,6 +456,70 @@ class PayrollService
         });
     }
 
+    /**
+     * The month's variable pay from the run's grid: for each payslip, the amount of each monthly category (achievement
+     * items, overtime, fine...) and the absent days. A cell replaces what was typed for that category before; 0 or empty
+     * removes it. Each slip is then rebuilt, so advances and the settlement short are taken from the new total.
+     *
+     * @param  array<int|string, array<int|string, float|int|string|null>>  $amounts  slip id => [category id => amount]
+     * @param  array<int|string, float|int|string|null>  $absentDays  slip id => days
+     */
+    public function setVariablePay(PayrollRun $run, array $amounts, array $absentDays = []): int
+    {
+        $this->ensureEditable($run);
+
+        $categories = SalaryComponent::query()->where('is_active', true)->where('calculation', SalaryComponent::CALC_INPUT)->get()->keyBy('id');
+        $slips = $run->slips()->with(['employee.salary', 'employee.salaryComponents.component'])->get()->keyBy('id');
+        $changed = 0;
+
+        DB::transaction(function () use ($run, $amounts, $absentDays, $categories, $slips, &$changed) {
+            foreach ($slips as $slipId => $slip) {
+                $row = (array) ($amounts[$slipId] ?? []);
+                $touched = false;
+                $manual = $row === [] ? collect() : $slip->lines()->where('source', PayrollSlipLine::SOURCE_MANUAL)->get(['id', 'salary_component_id', 'amount'])->groupBy('salary_component_id');
+
+                foreach ($row as $categoryId => $amount) {
+                    $category = $categories->get((int) $categoryId);
+
+                    if (! $category) {
+                        continue;
+                    }
+
+                    $amount = round(max(0, (float) $amount), 2);
+                    $current = $manual->get($category->id, collect());
+
+                    if (round((float) $current->sum('amount'), 2) === $amount) {
+                        continue;
+                    }
+
+                    PayrollSlipLine::query()->whereIn('id', $current->pluck('id'))->delete();
+                    if ($amount > 0) {
+                        $this->addLine($slip, $category->type, PayrollSlipLine::SOURCE_MANUAL, $category->name, $amount, $category->id);
+                    }
+                    $touched = true;
+                }
+
+                if (array_key_exists($slipId, $absentDays) && $absentDays[$slipId] !== null && $absentDays[$slipId] !== '') {
+                    $days = min(max(0, (float) $absentDays[$slipId]), (float) $slip->days_in_month);
+
+                    if (round($days, 2) !== round((float) $slip->absent_days, 2)) {
+                        $slip->update(['absent_days' => $days]);
+                        $touched = true;
+                    }
+                }
+
+                if ($touched) {
+                    $this->doRebuild($slip->setRelation('run', $run), $slip->employee);
+                    $changed++;
+                }
+            }
+
+            $this->refreshRunTotals($run);
+        });
+
+        return $changed;
+    }
+
     public function removeLine(PayrollSlipLine $line): PayrollSlip
     {
         $slip = $line->slip->load('run');
@@ -373,6 +569,10 @@ class PayrollService
     {
         $this->ensureEditable($run);
 
+        // Settlements posted or reverted, advances paid and bonuses changed since the slips were built are taken in now,
+        // so what the checker approves is what the ledger shows today.
+        $this->recalculateRun($run);
+
         $negative = $run->slips()->with('employee:id,name')->where('net_pay', '<', 0)->first();
         if ($negative) {
             throw new RuntimeException($negative->employee->name.' has a negative net pay. Reduce a deduction before sending the run for approval.');
@@ -419,6 +619,9 @@ class PayrollService
             $excessId = $run->slips->flatMap->lines->contains('source', PayrollSlipLine::SOURCE_EXCESS)
                 ? $this->accountId(self::EXCESS_ACCOUNT, 'Settlement Excess Income (4250)')
                 : null;
+            $shortId = $run->slips->flatMap->lines->contains('source', PayrollSlipLine::SOURCE_SHORT)
+                ? $this->accountId(self::SHORT_ACCOUNT, 'Short Amount (5293)')
+                : null;
 
             $debits = [];
             $credits = [];
@@ -427,6 +630,7 @@ class PayrollService
                 $account = match ($line->source) {
                     PayrollSlipLine::SOURCE_ADVANCE => $advancesId,
                     PayrollSlipLine::SOURCE_EXCESS => $excessId,
+                    PayrollSlipLine::SOURCE_SHORT => $shortId,
                     default => $line->component?->account_id ?: $salaryId,
                 };
 

@@ -317,7 +317,7 @@
                     </section>
                 @endcanany
 
-                @canany(['company-target-list', 'customer-list', 'employee-list', 'expense-vendor-list', 'expense-category-manage', 'expense-vendor-payment-list', 'payroll-list', 'payroll-adjustment-manage', 'payroll-adjustment-manage', 'payroll-salary-manage', 'opening-customer-balance-list', 'promotional-campaign-list', 'supplier-list'])
+                @canany(['company-target-list', 'customer-list', 'employee-list', 'expense-vendor-list', 'expense-category-manage', 'expense-vendor-payment-list', 'payroll-list', 'payroll-adjustment-manage', 'payroll-salary-manage', 'opening-customer-balance-list', 'promotional-campaign-list', 'supplier-list'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Business Partners</p>
                         <div class="settings-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -381,27 +381,13 @@
                                     </x-slot>
                                 </x-settings-row>
                             @endcan
-                            @can('payroll-salary-manage')
-                                <x-settings-row data-settings-item data-search="employee salaries basic fixed allowances deductions payroll setup" x-bind:hidden="! matches($el)" href="{{ route('payroll.salaries.index') }}" label="Employee Salaries" description="Basic salary and allowances of each employee" icon-bg="bg-lime-600">
+                            @canany(['payroll-list', 'payroll-salary-manage', 'payroll-adjustment-manage'])
+                                <x-settings-row data-settings-item data-search="payroll salary slips monthly advance recovery employee salaries basic allowances deductions bonus commission eid insurance categories" x-bind:hidden="! matches($el)" href="{{ route('payroll.index') }}" label="Payroll" description="Salaries, allowances, bonus & deductions, monthly payslips" icon-bg="bg-lime-600">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
                                     </x-slot>
                                 </x-settings-row>
-                            @endcan
-                            @can('payroll-adjustment-manage')
-                                <x-settings-row data-settings-item data-search="bonus commission incentive overtime payroll adjustments employee extra pay" x-bind:hidden="! matches($el)" href="{{ route('payroll.adjustments.index') }}" label="Bonus &amp; Commission" description="Extra pay for chosen employees and months" icon-bg="bg-lime-600">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('payroll-list')
-                                <x-settings-row data-settings-item data-search="payroll salary slips monthly advance recovery" x-bind:hidden="! matches($el)" href="{{ route('payroll.index') }}" label="Payroll" description="Monthly salaries, slips and advance recovery" icon-bg="bg-lime-600">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
+                            @endcanany
                             @can('employee-list')
                                 <x-settings-row data-settings-item data-search="employees staff records and payroll info business partners suppliers, customers, staff and targets" x-bind:hidden="! matches($el)" href="{{ route('employees.index') }}" label="Employees"
                                     description="Staff records & payroll info" :count="\App\Models\Employee::count()"

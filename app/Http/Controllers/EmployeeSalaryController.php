@@ -11,9 +11,11 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
- * Who is paid what: salary type, basic salary and the allowances of each employee.
+ * Who is paid what: salary type, basic salary and the standing allowances and deductions of each employee. Set from the
+ * salary window of the Payroll screen, for one employee or many at once.
  */
 class EmployeeSalaryController extends Controller implements HasMiddleware
 {
@@ -22,94 +24,56 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
         return [new Middleware('can:payroll-salary-manage')];
     }
 
-    public function index(Request $request)
+    public function index(Request $request): RedirectResponse
     {
-        $user = $request->user();
-        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
-
-        $employees = Employee::query()
-            ->where('is_active', true)
-            ->when(! $user->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $user->supplier_id ?? 0))
-            ->with(['salary', 'supplier:id,supplier_name,short_name'])
-            ->when($filters['search'] ?? null, fn ($query, $term) => $query->where(fn ($q) => $q->whereLike('name', "%{$term}%")->orWhereLike('employee_code', "%{$term}%")))
-            ->when($filters['designation'] ?? null, fn ($query, $designation) => $query->where('designation', $designation))
-            ->when(($filters['salary'] ?? null) === 'missing', fn ($query) => $query->doesntHave('salary'))
-            ->when(($filters['salary'] ?? null) === 'set', fn ($query) => $query->has('salary'))
-            ->orderBy('name')
-            ->paginate(30)
-            ->withQueryString();
-
-        return view('payroll.salaries.index', [
-            'employees' => $employees,
-            'filters' => $filters,
-            'components' => SalaryComponent::active()->where('calculation', '!=', SalaryComponent::CALC_INPUT)->get(),
-            'designations' => Employee::query()->whereNotNull('designation')->when(! $user->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $user->supplier_id ?? 0))->distinct()->orderBy('designation')->pluck('designation'),
-        ]);
+        return redirect()->route('payroll.index', array_filter(['tab' => 'salaries', 'filter' => $request->input('filter')]));
     }
 
-    public function edit(Request $request, Employee $employee)
+    public function edit(Request $request, Employee $employee): RedirectResponse
     {
         $this->authorizeEmployee($request, $employee);
-        $employee->load(['salary', 'salaryComponents']);
 
-        return view('payroll.salaries.edit', [
-            'employee' => $employee,
-            'salary' => $employee->salary ?? new EmployeeSalary(['salary_type' => 'basic', 'pay_method' => 'cash', 'basic_salary' => 0]),
-            'components' => SalaryComponent::active()->where('calculation', '!=', SalaryComponent::CALC_INPUT)->get(),
-            'assigned' => $employee->salaryComponents->keyBy('salary_component_id'),
-            'advances' => $employee->advances()->where('status', 'open')->get(),
-        ]);
+        return redirect()->route('payroll.index', ['tab' => 'salaries', 'filter' => ['search' => $employee->employee_code ?: $employee->name], 'edit' => $employee->id]);
     }
 
+    /**
+     * One employee: the window's rows replace the whole set-up.
+     */
     public function update(Request $request, Employee $employee): RedirectResponse
     {
         $this->authorizeEmployee($request, $employee);
 
-        $data = $request->validate([
-            'salary_type' => ['required', Rule::in([EmployeeSalary::TYPE_BASIC, EmployeeSalary::TYPE_FIXED])],
-            'basic_salary' => ['required', 'numeric', 'min:0', 'max:9999999999'],
-            'pay_method' => ['required', Rule::in(['cash', 'bank'])],
-            'notes' => ['nullable', 'string', 'max:500'],
-            'components' => ['nullable', 'array'],
-            'components.*' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
-        ]);
+        $data = $this->validated($request, single: true);
+        $lines = $this->lines($data, $this->standingIds());
 
-        DB::transaction(function () use ($employee, $data, $request) {
+        DB::transaction(function () use ($employee, $data, $lines, $request) {
             EmployeeSalary::updateOrCreate(['employee_id' => $employee->id], [
                 'salary_type' => $data['salary_type'], 'basic_salary' => $data['basic_salary'], 'pay_method' => $data['pay_method'],
                 'notes' => $data['notes'] ?? null, 'updated_by' => $request->user()->id,
             ]);
 
-            $valid = SalaryComponent::query()->where('calculation', '!=', SalaryComponent::CALC_INPUT)->pluck('id')->all();
             $employee->salaryComponents()->delete();
 
-            foreach ((array) ($data['components'] ?? []) as $componentId => $value) {
-                if (in_array((int) $componentId, $valid, true) && (float) $value > 0) {
-                    $employee->salaryComponents()->create(['salary_component_id' => $componentId, 'value' => $value]);
+            foreach ($lines as $line) {
+                if ($line['value'] > 0) {
+                    $employee->salaryComponents()->create($line);
                 }
             }
         });
 
-        return redirect()->route('payroll.salaries.index')->with('success', 'Salary of '.$employee->name.' saved.');
+        return redirect()->to($this->back($request))->with('success', 'Salary of '.$employee->name.' saved.');
     }
 
     /**
-     * Sets the same salary set-up for many employees in one go. A field left empty keeps what each employee already has,
-     * so one pass can raise only the pay method or add only one allowance.
+     * Many employees at once. A field left empty keeps what each employee already has; each row of the window is set on
+     * all of them (a row with 0 takes that category off), other categories they have are kept unless "replace" is ticked.
      */
     public function bulkUpdate(Request $request): RedirectResponse
     {
         $user = $request->user();
-
-        $data = $request->validate([
-            'employee_ids' => ['required', 'array', 'min:1', 'max:500'],
-            'employee_ids.*' => ['integer', 'exists:employees,id'],
-            'salary_type' => ['nullable', Rule::in([EmployeeSalary::TYPE_BASIC, EmployeeSalary::TYPE_FIXED])],
-            'basic_salary' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
-            'pay_method' => ['nullable', Rule::in(['cash', 'bank'])],
-            'components' => ['nullable', 'array'],
-            'components.*' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
-        ], ['employee_ids.required' => 'Tick at least one employee first.']);
+        $data = $this->validated($request, single: false);
+        $lines = $this->lines($data, $this->standingIds());
+        $replace = $request->boolean('replace_components');
 
         $employees = Employee::query()
             ->whereIn('id', $data['employee_ids'])
@@ -117,12 +81,9 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
             ->with('salary')
             ->get();
 
-        $validComponents = SalaryComponent::query()->where('calculation', '!=', SalaryComponent::CALC_INPUT)->pluck('id')->all();
-        $componentValues = collect((array) ($data['components'] ?? []))
-            ->filter(fn ($value, $id) => $value !== null && $value !== '' && in_array((int) $id, $validComponents, true));
         $skipped = [];
 
-        DB::transaction(function () use ($employees, $data, $componentValues, $user, &$skipped) {
+        DB::transaction(function () use ($employees, $data, $lines, $replace, $user, &$skipped) {
             foreach ($employees as $employee) {
                 $basic = $data['basic_salary'] ?? null;
 
@@ -139,11 +100,15 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
                     'updated_by' => $user->id,
                 ]);
 
-                foreach ($componentValues as $componentId => $value) {
-                    if ((float) $value > 0) {
-                        $employee->salaryComponents()->updateOrCreate(['salary_component_id' => $componentId], ['value' => $value]);
+                if ($replace) {
+                    $employee->salaryComponents()->whereNotIn('salary_component_id', array_column($lines, 'salary_component_id'))->delete();
+                }
+
+                foreach ($lines as $line) {
+                    if ($line['value'] > 0) {
+                        $employee->salaryComponents()->updateOrCreate(['salary_component_id' => $line['salary_component_id']], $line);
                     } else {
-                        $employee->salaryComponents()->where('salary_component_id', $componentId)->delete();
+                        $employee->salaryComponents()->where('salary_component_id', $line['salary_component_id'])->delete();
                     }
                 }
             }
@@ -151,12 +116,106 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
 
         $done = $employees->count() - count($skipped);
         $message = 'Salary set-up saved for '.$done.' '.str('employee')->plural($done).'.';
+        $redirect = redirect()->to($this->back($request))->with('success', $message);
 
-        if ($skipped) {
-            return redirect()->route('payroll.salaries.index')->with('success', $message)->with('error', 'Skipped (no salary yet and no basic salary entered): '.implode(', ', $skipped).'.');
+        return $skipped ? $redirect->with('error', 'Skipped (no salary yet and no basic salary entered): '.implode(', ', $skipped).'.') : $redirect;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validated(Request $request, bool $single): array
+    {
+        $standing = $this->standingIds();
+
+        $rules = [
+            'salary_type' => [$single ? 'required' : 'nullable', Rule::in([EmployeeSalary::TYPE_BASIC, EmployeeSalary::TYPE_FIXED])],
+            'basic_salary' => [$single ? 'required' : 'nullable', 'numeric', 'min:0', 'max:9999999999'],
+            'pay_method' => [$single ? 'required' : 'nullable', Rule::in(['cash', 'bank'])],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'lines' => ['nullable', 'array', 'max:60'],
+            'lines.*.component_id' => ['required', 'integer', Rule::in($standing)],
+            'lines.*.calculation' => ['required', Rule::in(SalaryComponent::STANDING_CALCULATIONS)],
+            'lines.*.value' => ['required', 'numeric', 'min:0', 'max:9999999999'],
+            'lines.*.base_component_id' => ['nullable', 'required_if:lines.*.calculation,'.SalaryComponent::CALC_PERCENT_COMPONENT, 'integer', Rule::in($standing)],
+            // Older forms send {component id: amount} and use each category's own calculation.
+            'components' => ['nullable', 'array'],
+            'components.*' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+        ];
+
+        if (! $single) {
+            $rules['employee_ids'] = ['required', 'array', 'min:1', 'max:1000'];
+            $rules['employee_ids.*'] = ['integer', 'exists:employees,id'];
         }
 
-        return redirect()->route('payroll.salaries.index')->with('success', $message);
+        $validator = validator($request->all(), $rules, [
+            'employee_ids.required' => 'Tick at least one employee first.',
+            'lines.*.base_component_id.required_if' => 'Choose which allowance the percentage is of.',
+        ]);
+
+        $types = SalaryComponent::query()->whereIn('id', $standing)->pluck('type', 'id');
+
+        $validator->after(function (Validator $validator) use ($request, $types) {
+            $ids = collect((array) $request->input('lines', []))->pluck('component_id')->filter();
+
+            if ($ids->count() !== $ids->unique()->count()) {
+                $validator->errors()->add('lines', 'Each allowance or deduction can be listed only once.');
+            }
+
+            foreach ((array) $request->input('lines', []) as $line) {
+                if (($line['calculation'] ?? null) === SalaryComponent::CALC_PERCENT_COMPONENT && (string) ($line['base_component_id'] ?? '') === (string) ($line['component_id'] ?? '')) {
+                    $validator->errors()->add('lines', 'An allowance cannot be a percentage of itself.');
+                }
+                if (($line['calculation'] ?? null) === SalaryComponent::CALC_PERCENT_COMPONENT && filled($line['base_component_id'] ?? null)
+                    && ((string) $line['base_component_id'] !== (string) ($line['component_id'] ?? '') && (! $ids->map(fn ($id) => (string) $id)->contains((string) $line['base_component_id']) || ($types[(int) $line['base_component_id']] ?? null) !== SalaryComponent::TYPE_EARNING))) {
+                    $validator->errors()->add('lines', 'A percentage must be of another allowance listed in the same window.');
+                }
+                if (in_array($line['calculation'] ?? null, [SalaryComponent::CALC_PERCENT, SalaryComponent::CALC_PERCENT_COMPONENT], true) && (float) ($line['value'] ?? 0) > 1000) {
+                    $validator->errors()->add('lines', 'A percentage cannot be more than 1000%.');
+                }
+            }
+        });
+
+        return $validator->validate();
+    }
+
+    /**
+     * The window's rows as employee_salary_components attributes.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<int>  $standing  categories that may be set per employee
+     * @return list<array{salary_component_id: int, calculation: string|null, base_component_id: int|null, value: float}>
+     */
+    private function lines(array $data, array $standing): array
+    {
+        if (array_key_exists('lines', $data) && $data['lines'] !== null) {
+            return collect($data['lines'])->map(fn (array $line) => [
+                'salary_component_id' => (int) $line['component_id'],
+                'calculation' => $line['calculation'],
+                'base_component_id' => $line['calculation'] === SalaryComponent::CALC_PERCENT_COMPONENT ? (int) $line['base_component_id'] : null,
+                'value' => (float) $line['value'],
+            ])->values()->all();
+        }
+
+        return collect((array) ($data['components'] ?? []))
+            ->filter(fn ($value, $id) => $value !== null && $value !== '' && in_array((int) $id, $standing, true))
+            ->map(fn ($value, $id) => ['salary_component_id' => (int) $id, 'calculation' => null, 'base_component_id' => null, 'value' => (float) $value])
+            ->values()->all();
+    }
+
+    /**
+     * @return list<int> active categories that are worked out every month
+     */
+    private function standingIds(): array
+    {
+        return SalaryComponent::query()->where('is_active', true)->where('calculation', '!=', SalaryComponent::CALC_INPUT)->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    private function back(Request $request): string
+    {
+        $back = (string) $request->input('return_to', '');
+
+        return str_starts_with($back, url('/payroll')) ? $back : route('payroll.index', ['tab' => 'salaries']);
     }
 
     private function authorizeEmployee(Request $request, Employee $employee): void

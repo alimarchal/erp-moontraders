@@ -109,7 +109,8 @@ it('only offers a bonus to employees of the user\'s own company', function () {
 
 it('keeps the bonus screen behind its permission and validates the amount', function () {
     $this->actingAs($this->checker)->get(route('payroll.adjustments.index'))->assertForbidden();
-    $this->actingAs($this->maker)->get(route('payroll.adjustments.index'))->assertOk()->assertSee('Bonus');
+    $this->actingAs($this->maker)->get(route('payroll.adjustments.index'))->assertRedirect(route('payroll.index', ['tab' => 'adjustments']));
+    $this->actingAs($this->maker)->get(route('payroll.index', ['tab' => 'adjustments']))->assertOk()->assertSee('Bonus &amp; deductions', false);
 
     ($this->give)(['amount' => 0])->assertSessionHasErrors('amount');
     ($this->give)(['employee_ids' => []])->assertSessionHasErrors('employee_ids');
@@ -124,7 +125,7 @@ it('adds an employee who became payable after the draft payroll was built', func
     EmployeeSalary::create(['employee_id' => $joiner->id, 'salary_type' => 'fixed', 'basic_salary' => 20000, 'pay_method' => 'cash']);
     ($this->give)(['employee_ids' => [$joiner->id], 'amount' => 1000]);
 
-    $this->actingAs($this->maker)->get(route('payroll.show', $run))->assertOk()->assertSee('New Joiner')->assertSee('Add them to this payroll');
+    $this->actingAs($this->maker)->get(route('payroll.show', $run))->assertOk()->assertSee('New Joiner')->assertSee('Add missing employees (1)');
     $this->actingAs($this->maker)->post(route('payroll.add-employees', $run))->assertSessionHas('success');
 
     $slip = $run->slips()->where('employee_id', $joiner->id)->first();

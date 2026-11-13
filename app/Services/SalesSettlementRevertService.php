@@ -111,12 +111,12 @@ class SalesSettlementRevertService
             ];
         }
 
-        // The excess was paid to the salesman with that month's salary; taking it back now would leave the payroll wrong.
-        if ($settlement->excessAmounts()->exists() && $settlement->employee
-            && app(PayrollService::class)->monthIsLocked($settlement->employee, $settlement->settlement_date)) {
+        // The shortage was recovered from (or, on older payslips, the excess paid with) that month's salary; taking the
+        // settlement back now would leave the payroll wrong.
+        if (app(PayrollService::class)->settlementIsInPayroll($settlement)) {
             return [
                 'ok' => false,
-                'message' => 'Cannot revert: this settlement\'s cash excess is already in the approved payroll of '.$settlement->settlement_date->format('F Y').'.',
+                'message' => 'Cannot revert: this settlement\'s cash short or excess is already in the approved payroll of '.$settlement->settlement_date->format('F Y').'.',
             ];
         }
 

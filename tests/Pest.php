@@ -152,6 +152,7 @@ function seedExpenseLedger(): array
         '2120' => ['Duties and Taxes', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
         '5221' => ['Miscellaneous Expenses', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
         '5281' => ['Salary', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
+        '5293' => ['Short Amount', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
     ];
 
     $accounts = [];

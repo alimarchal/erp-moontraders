@@ -5,6 +5,7 @@
     $rows = max($earnings->count(), $deductions->count());
     $earningRows = $earnings->values();
     $deductionRows = $deductions->values();
+    $slipStatus = $run->status === 'paid' && $run->paid_on ? 'Paid on '.$run->paid_on->format('d-M-Y') : $run->statusLabel();
 @endphp
 <article class="ps-slip">
     <header class="ps-head">
@@ -12,7 +13,7 @@
             <div class="ps-company">{{ $run->supplier?->supplier_name ?? $run->company?->company_name ?? 'Moon Traders' }}</div>
             <div class="ps-title">Salary slip · {{ $run->period_month->format('F Y') }}</div>
         </div>
-        <div class="ps-ref">{{ $run->run_number }}</div>
+        <div class="ps-ref">{{ $run->run_number }}<div class="ps-status">Status: {{ $slipStatus }}</div></div>
     </header>
     <dl class="ps-emp">
         <div><dt>Employee</dt><dd>{{ $slip->employee?->name }}</dd></div>

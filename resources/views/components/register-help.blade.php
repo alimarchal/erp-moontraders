@@ -1,4 +1,4 @@
-{{-- Urdu help window of the Claim Register ("claims") and the Supplier Ledger Register ("ledger"), like the Bank
+{{-- Urdu help window of the Claim Register ("claims"), the Supplier Ledger Register ("ledger"), Goods Issues and Payroll, like the Bank
      Register's. Opened by the header Help button (event "rg-help"): it goes to the part that fits what is on screen
      (no supplier chosen: getting started; otherwise reading the register). The small ⓘ buttons on the page pass a
      topic and the window opens on that part, briefly highlighted. Each window ends with the page's flow. --}}
@@ -8,7 +8,7 @@
 
 @php
     $isClaims = $page === 'claims';
-    $defaultTopic = $hasSupplier ? 'read' : 'start';
+    $defaultTopic = $page === 'payroll' ? 'what' : ($hasSupplier ? 'read' : 'start');
 @endphp
 
 <div class="no-print" x-data="{
@@ -36,8 +36,8 @@
         <div class="rgh-box" @click.outside="open = false">
             <div class="rgh-head">
                 <div>
-                    <h3 id="rgh-title">Help: {{ $isClaims ? 'Claim Register' : ($page === 'goods-issues' ? 'Goods Issues' : 'Supplier Ledger Register') }}</h3>
-                    <p>How this register works, in Urdu</p>
+                    <h3 id="rgh-title">Help: {{ $isClaims ? 'Claim Register' : ($page === 'goods-issues' ? 'Goods Issues' : ($page === 'payroll' ? 'Payroll' : 'Supplier Ledger Register')) }}</h3>
+                    <p>{{ $page === 'payroll' ? 'How salaries work, in Urdu' : 'How this register works, in Urdu' }}</p>
                 </div>
                 <button type="button" class="rgh-close" x-ref="close" @click="open = false" aria-label="Close">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -124,6 +124,8 @@
                                 <p>پرنٹ کے بٹن سے براؤزر میں <span class="en">Portrait</span> یا <span class="en">Landscape</span> چن سکتے ہیں۔ ڈاؤن لوڈ کے بٹن سے پوری مدت کی <bdi class="lt" dir="ltr">A4 PDF</bdi> بنتی ہے ؛ عام طور پر <span class="en">Portrait</span>۔</p>
                             </section>
                             <section data-topic="flow"><x-help-flow flow="claims" /></section>
+                        @elseif ($page === 'payroll')
+                            @include('payroll.help._topics')
                         @elseif ($page === 'goods-issues')
                             <section data-topic="what">
                                 <h2>گڈز ایشو کیا ہے؟</h2>

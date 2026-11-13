@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\PayrollSheetExport;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\EmployeeAdvance;
@@ -12,9 +13,12 @@ use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\PayrollService;
+use App\Services\PayrollSheetService;
 use App\Services\SalesSettlementRevertService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -54,7 +58,7 @@ it('saves an employee\'s salary type, basic salary and allowances', function () 
 
     $this->actingAs($this->maker)->put(route('payroll.salaries.update', $other), [
         'salary_type' => 'fixed', 'basic_salary' => 45000, 'pay_method' => 'bank', 'components' => [$conveyance->id => 2500, $this->houseRent->id => 0],
-    ])->assertRedirect(route('payroll.salaries.index'));
+    ])->assertRedirect(route('payroll.index', ['tab' => 'salaries']));
 
     $other->refresh();
     expect($other->salary->salary_type)->toBe('fixed')->and((float) $other->salary->basic_salary)->toBe(45000.0)->and($other->salary->pay_method)->toBe('bank')
@@ -66,7 +70,7 @@ it('keeps salary set-up to the people with the manage permission and their own c
 
     $this->actingAs($this->checker)->get(route('payroll.salaries.index'))->assertForbidden();
     $this->actingAs($this->maker)->get(route('payroll.salaries.edit', $stranger))->assertNotFound();
-    $this->actingAs($this->maker)->get(route('payroll.salaries.edit', $this->employee))->assertOk()->assertSee('Imran Salesman');
+    $this->actingAs($this->maker)->get(route('payroll.salaries.edit', $this->employee))->assertRedirectContains('edit='.$this->employee->id);
 });
 
 it('builds every slip in one go: basic, allowance, absent days and the advance instalment', function () {
@@ -232,7 +236,10 @@ it('lets an allowance be added and switched off in the component list', function
     $this->actingAs($this->maker)->post(route('payroll.components.store'), ['name' => 'Night Shift', 'type' => 'earning', 'calculation' => 'fixed'])->assertSessionHas('success');
     $component = SalaryComponent::where('name', 'Night Shift')->firstOrFail();
 
-    $this->actingAs($this->maker)->put(route('payroll.components.update', $component), ['name' => 'Night Shift', 'type' => 'earning', 'calculation' => 'fixed'])->assertSessionHas('success');
+    // Categories are shared by every company: a supplier's own user may add one but not change one.
+    $this->actingAs($this->maker)->put(route('payroll.components.update', $component), ['name' => 'Night Shift', 'type' => 'earning', 'calculation' => 'fixed'])->assertForbidden();
+    $admin = User::factory()->create(['is_super_admin' => 'Yes'])->givePermissionTo('payroll-salary-manage');
+    $this->actingAs($admin)->put(route('payroll.components.update', $component), ['name' => 'Night Shift', 'type' => 'earning', 'calculation' => 'fixed'])->assertSessionHas('success');
     expect($component->fresh()->is_active)->toBeFalse();
 });
 
@@ -322,7 +329,7 @@ it('sets the salary of many employees at once and keeps what is left empty', fun
 
     $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), [
         'employee_ids' => [$this->employee->id, $second->id, $noSalary->id], 'pay_method' => 'bank', 'components' => [$conveyance->id => 1500, $this->houseRent->id => ''],
-    ])->assertRedirect(route('payroll.salaries.index'))->assertSessionHas('error');
+    ])->assertRedirect(route('payroll.index', ['tab' => 'salaries']))->assertSessionHas('error');
 
     expect($second->fresh()->salary->pay_method)->toBe('bank')->and((float) $second->fresh()->salary->basic_salary)->toBe(30000.0)
         ->and((float) $second->salaryComponents()->where('salary_component_id', $conveyance->id)->value('value'))->toBe(1500.0)
@@ -352,39 +359,275 @@ it('filters the payroll list by payroll number, month range and status', functio
     $this->get(route('payroll.index', ['filter' => ['status' => 'paid']]))->assertOk()->assertDontSee($run->run_number);
 });
 
-it('pays a salesman his settlement excess with the salary and takes his advance out of it (worked example)', function () {
-    // Imran: basic = days x 1,000 and house rent 6,000. In the month his settlements came 1,000 and 500 over
-    // (Rs 1,500 he handed in above what was due), and he took a 5,000 advance to be recovered in full.
+it('pays a salesman his settlement excess and takes his settlement short and advance from his salary (worked example)', function () {
+    // Imran: basic = days x 1,000 and house rent 6,000. In the month (by settlement date) two posted settlements were short by
+    // 700 and 300 (booked to Short Amount 5293) and one came 1,000 over (Settlement Excess Income 4250, his own money).
     $excessAccount = seedSettlementExcessAccount();
-    foreach ([1000, 500] as $i => $excess) {
+    foreach ([700, 300] as $i => $short) {
         $settlement = SalesSettlement::factory()->create([
             'employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'posted', 'settlement_date' => $this->month->copy()->addDays(4 + $i),
         ]);
-        $settlement->excessAmounts()->create(['amount' => $excess, 'description' => 'Cash Excess']);
+        $settlement->expenses()->create(['expense_account_id' => $this->ledger['5293']->id, 'amount' => $short, 'description' => 'Short']);
     }
+    $settlement->excessAmounts()->create(['amount' => 1000, 'description' => 'Cash Excess']);
     $draft = SalesSettlement::factory()->create(['employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'draft', 'settlement_date' => $this->month->copy()->addDays(9)]);
+    $draft->expenses()->create(['expense_account_id' => $this->ledger['5293']->id, 'amount' => 999, 'description' => 'not posted']);
     $draft->excessAmounts()->create(['amount' => 999, 'description' => 'not posted']);
+    $nextMonth = SalesSettlement::factory()->create(['employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'posted', 'settlement_date' => $this->month->copy()->addMonth()->addDays(1)]);
+    $nextMonth->expenses()->create(['expense_account_id' => $this->ledger['5293']->id, 'amount' => 444, 'description' => 'next month']);
     ($this->advance)(5000);
 
     $run = ($this->build)();
     $slip = $run->slips()->with('lines')->first();
     $earnings = $this->days * 1000 + 6000;
+    $short = $slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_SHORT);
+    $excess = $slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_EXCESS);
 
-    expect($slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_EXCESS)->label)->toBe('Settlement excess (2 settlements)')
-        ->and((float) $slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_EXCESS)->amount)->toBe(1500.0)
-        ->and((float) $slip->total_earnings)->toBe((float) $earnings + 1500)
-        ->and((float) $slip->total_deductions)->toBe(5000.0)
-        ->and((float) $slip->net_pay)->toBe((float) $earnings + 1500 - 5000);
+    expect($short->label)->toBe('Settlement short (2 settlements)')
+        ->and($short->kind)->toBe('deduction')
+        ->and((float) $short->amount)->toBe(1000.0)
+        ->and($excess->label)->toBe('Settlement excess (1 settlement)')
+        ->and($excess->kind)->toBe('earning')
+        ->and((float) $excess->amount)->toBe(1000.0)
+        ->and((float) $slip->total_earnings)->toBe((float) $earnings + 1000)
+        ->and((float) $slip->total_deductions)->toBe(6000.0)
+        ->and((float) $slip->net_pay)->toBe((float) $earnings + 1000 - 6000);
 
     $this->actingAs($this->maker)->post(route('payroll.submit', $run));
     $this->actingAs($this->checker)->post(route('payroll.approve', $run))->assertSessionHas('success');
 
-    // Dr Salary (basic + rent), Dr 4250 1,500 (the excess leaves company income) / Cr 1131 5,000, Cr 2112 net pay.
-    expect((float) DB::table('journal_entry_details')->where('chart_of_account_id', $excessAccount->id)->sum('debit'))->toBe(1500.0)
+    // Dr Salary (basic + rent), Dr 4250 1,000 (his excess leaves company income) / Cr 5293 1,000 (the write-off comes back),
+    // Cr 1131 5,000, Cr 2112 net pay.
+    expect(($this->balanceOf)('5293'))->toBe(-1000.0)
+        ->and((float) DB::table('journal_entry_details')->where('chart_of_account_id', $excessAccount->id)->sum('debit'))->toBe(1000.0)
         ->and(($this->balanceOf)('5281'))->toBe((float) $earnings)
         ->and(($this->balanceOf)('1131'))->toBe(-5000.0)
-        ->and(($this->balanceOf)('2112'))->toBe(-((float) $earnings + 1500 - 5000));
+        ->and(($this->balanceOf)('2112'))->toBe(-((float) $earnings + 1000 - 6000));
 
-    $paidSettlement = SalesSettlement::where('status', 'posted')->first()->forceFill(['journal_entry_id' => DB::table('journal_entries')->value('id')]);
-    expect(app(SalesSettlementRevertService::class)->performPreChecks($paidSettlement)['message'])->toContain('already in the approved payroll');
+    $recovered = SalesSettlement::where('status', 'posted')->orderBy('id')->first()->forceFill(['journal_entry_id' => DB::table('journal_entries')->value('id')]);
+    expect(app(SalesSettlementRevertService::class)->performPreChecks($recovered)['message'])->toContain('already in the approved payroll');
+});
+
+it('waives the settlement short on one payslip and takes it again when switched back', function () {
+    $settlement = SalesSettlement::factory()->create(['employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'posted', 'settlement_date' => $this->month->copy()->addDays(2)]);
+    $settlement->expenses()->create(['expense_account_id' => $this->ledger['5293']->id, 'amount' => 450, 'description' => 'Short']);
+    $run = ($this->build)();
+    $slip = $run->slips()->first();
+
+    $this->actingAs($this->maker)->post(route('payroll.slips.short', [$run, $slip]), ['recover' => 0])
+        ->assertRedirect(route('payroll.show', ['payroll' => $run, 'slip' => $slip->id]))->assertSessionHas('success');
+    expect($slip->fresh()->recover_settlement_short)->toBeFalse()
+        ->and($slip->lines()->where('source', PayrollSlipLine::SOURCE_SHORT)->exists())->toBeFalse();
+
+    $this->actingAs($this->maker)->post(route('payroll.slips.short', [$run, $slip]), ['recover' => 1]);
+    expect((float) $slip->lines()->where('source', PayrollSlipLine::SOURCE_SHORT)->value('amount'))->toBe(450.0);
+
+    $this->actingAs($this->checker)->post(route('payroll.slips.short', [$run, $slip]), ['recover' => 0])->assertForbidden();
+});
+
+it('works an allowance out as a fixed amount, a percentage of basic or a percentage of another allowance', function () {
+    $utility = SalaryComponent::where('code', 'utility')->firstOrFail();
+    $medical = SalaryComponent::where('code', 'medical')->firstOrFail();
+    $insurance = SalaryComponent::where('code', 'death_insurance')->firstOrFail();
+    $basic = $this->days * 1000;
+
+    $this->actingAs($this->maker)->put(route('payroll.salaries.update', $this->employee), [
+        'salary_type' => 'basic', 'basic_salary' => $basic, 'pay_method' => 'cash',
+        'lines' => [
+            ['component_id' => $this->houseRent->id, 'calculation' => 'percent_of_basic', 'value' => 40],
+            ['component_id' => $medical->id, 'calculation' => 'percent_of_component', 'base_component_id' => $utility->id, 'value' => 50],
+            ['component_id' => $utility->id, 'calculation' => 'fixed', 'value' => 3000],
+            ['component_id' => $insurance->id, 'calculation' => 'fixed', 'value' => 250],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    $lines = ($this->build)()->slips()->first()->lines;
+
+    expect((float) $lines->firstWhere('salary_component_id', $this->houseRent->id)->amount)->toBe(round($basic * 0.4, 2))
+        ->and((float) $lines->firstWhere('salary_component_id', $utility->id)->amount)->toBe(3000.0)
+        ->and((float) $lines->firstWhere('salary_component_id', $medical->id)->amount)->toBe(1500.0)
+        ->and($lines->firstWhere('salary_component_id', $insurance->id)->kind)->toBe('deduction');
+
+    $this->actingAs($this->maker)->put(route('payroll.salaries.update', $this->employee), [
+        'salary_type' => 'basic', 'basic_salary' => $basic, 'pay_method' => 'cash',
+        'lines' => [['component_id' => $utility->id, 'calculation' => 'percent_of_component', 'base_component_id' => $utility->id, 'value' => 10]],
+    ])->assertSessionHasErrors('lines');
+    $this->actingAs($this->maker)->put(route('payroll.salaries.update', $this->employee), [
+        'salary_type' => 'basic', 'basic_salary' => $basic, 'pay_method' => 'cash',
+        'lines' => [['component_id' => $utility->id, 'calculation' => 'percent_of_component', 'value' => 10]],
+    ])->assertSessionHasErrors('lines.0.base_component_id');
+});
+
+it('sets the same allowances on everyone ticked and can take off the ones not listed', function () {
+    $second = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
+    EmployeeSalary::create(['employee_id' => $second->id, 'salary_type' => 'basic', 'basic_salary' => 30000, 'pay_method' => 'cash']);
+    $utility = SalaryComponent::where('code', 'utility')->firstOrFail();
+
+    $this->actingAs($this->maker)->post(route('payroll.salaries.bulk'), [
+        'employee_ids' => [$this->employee->id, $second->id], 'replace_components' => 1,
+        'lines' => [['component_id' => $utility->id, 'calculation' => 'percent_of_basic', 'value' => 10]],
+    ])->assertSessionHas('success');
+
+    foreach ([$this->employee, $second] as $employee) {
+        expect($employee->salaryComponents()->pluck('salary_component_id')->all())->toBe([$utility->id])
+            ->and($employee->salaryComponents()->value('calculation'))->toBe('percent_of_basic');
+    }
+});
+
+it('adds a new category from the salary window and no longer offers EOBI', function () {
+    $this->actingAs($this->maker)->postJson(route('payroll.components.store'), ['name' => 'Night Shift', 'type' => 'earning', 'calculation' => 'fixed'])
+        ->assertCreated()->assertJsonPath('component.name', 'Night Shift');
+    $this->actingAs($this->maker)->postJson(route('payroll.components.store'), ['name' => 'Night Shift', 'type' => 'earning', 'calculation' => 'fixed'])
+        ->assertUnprocessable()->assertJsonValidationErrors('name');
+
+    expect(SalaryComponent::where('code', 'eobi')->value('is_active'))->toBeFalsy()
+        ->and(SalaryComponent::whereIn('code', ['utility', 'medical', 'death_insurance'])->where('is_active', true)->count())->toBe(3);
+});
+
+it('shows each payroll tab only to people allowed to use it and downloads the salary register', function () {
+    $this->actingAs($this->checker)->get(route('payroll.index'))->assertOk()->assertSee('Payroll runs')->assertDontSee('tab=salaries', false);
+    $this->actingAs($this->checker)->get(route('payroll.index', ['tab' => 'salaries']))->assertOk()->assertDontSee('Imran Salesman');
+    $this->actingAs(User::factory()->create())->get(route('payroll.index'))->assertForbidden();
+
+    $this->actingAs($this->maker)->get(route('payroll.index', ['tab' => 'salaries']))->assertOk()->assertSee('Imran Salesman');
+    $this->actingAs($this->maker)->get(route('payroll.index', ['tab' => 'categories']))->assertOk()->assertSee('Utility Allowance');
+    $this->actingAs($this->maker)->get(route('payroll.index', ['tab' => 'salaries', 'export' => 'xlsx']))->assertOk()->assertDownload('employee-salaries.xlsx');
+    $this->actingAs($this->maker)->get(route('payroll.index', ['tab' => 'salaries', 'export' => 'pdf']))->assertOk()->assertDownload('employee-salaries.pdf');
+});
+
+it('caps the settlement short at the pay left and takes in a settlement posted after the draft was built', function () {
+    $run = ($this->build)();
+    $settlement = SalesSettlement::factory()->create(['employee_id' => $this->employee->id, 'supplier_id' => $this->supplier->id, 'status' => 'posted', 'settlement_date' => $this->month->copy()->addDays(3)]);
+    $pay = $this->days * 1000 + 6000;
+    $settlement->expenses()->create(['expense_account_id' => $this->ledger['5293']->id, 'amount' => $pay + 2500, 'description' => 'Short']);
+
+    $this->actingAs($this->maker)->post(route('payroll.submit', $run))->assertSessionHas('success');
+    $slip = $run->slips()->with('lines')->first();
+    $short = $slip->lines->firstWhere('source', PayrollSlipLine::SOURCE_SHORT);
+
+    expect((float) $short->amount)->toBe((float) $pay)
+        ->and($short->label)->toContain('2,500.00 not taken')
+        ->and((float) $slip->net_pay)->toBe(0.0);
+});
+
+it('rejects a percentage of an allowance that is not in the same window and ignores unknown categories', function () {
+    $utility = SalaryComponent::where('code', 'utility')->firstOrFail();
+    $medical = SalaryComponent::where('code', 'medical')->firstOrFail();
+    $bonus = SalaryComponent::where('code', 'bonus')->firstOrFail();
+    $salary = ['salary_type' => 'basic', 'basic_salary' => 30000, 'pay_method' => 'cash'];
+
+    $this->actingAs($this->maker)->put(route('payroll.salaries.update', $this->employee), $salary + [
+        'lines' => [['component_id' => $medical->id, 'calculation' => 'percent_of_component', 'base_component_id' => $utility->id, 'value' => 50]],
+    ])->assertSessionHasErrors('lines');
+
+    $this->actingAs($this->maker)->put(route('payroll.salaries.update', $this->employee), $salary + ['components' => [99999 => 500, $bonus->id => 500, $utility->id => 700]])
+        ->assertSessionHasNoErrors();
+    expect($this->employee->salaryComponents()->pluck('salary_component_id')->all())->toBe([$utility->id]);
+});
+
+it('does not let a category employees already have change kind or become a monthly amount', function () {
+    $admin = User::factory()->create(['is_super_admin' => 'Yes'])->givePermissionTo('payroll-salary-manage');
+
+    $this->actingAs($admin)->put(route('payroll.components.update', $this->houseRent), ['name' => 'House Rent', 'type' => 'deduction', 'calculation' => 'fixed', 'is_active' => 1])->assertSessionHasErrors('type');
+    $this->actingAs($admin)->put(route('payroll.components.update', $this->houseRent), ['name' => 'House Rent', 'type' => 'earning', 'calculation' => 'input', 'is_active' => 1])->assertSessionHasErrors('type');
+    $this->actingAs($admin)->put(route('payroll.components.update', $this->houseRent), ['name' => 'House Rent Allowance', 'type' => 'earning', 'calculation' => 'percent_of_basic', 'is_active' => 1])->assertSessionHas('success');
+
+    expect($this->houseRent->fresh()->type)->toBe('earning')->and($this->houseRent->fresh()->name)->toBe('House Rent Allowance');
+});
+
+it('enters the month\'s variable pay and absent days for everyone in one grid', function () {
+    $run = ($this->build)();
+    $slip = $run->slips()->first();
+    $mop = SalaryComponent::where('code', 'mop_achievement')->firstOrFail();
+    $pos = SalaryComponent::where('code', 'pos')->firstOrFail();
+    $fine = SalaryComponent::where('code', 'fine')->firstOrFail();
+
+    $this->actingAs($this->maker)->post(route('payroll.variable-pay', $run), [
+        'amounts' => [$slip->id => [$mop->id => 7000, $pos->id => 2500, $fine->id => 500, $this->houseRent->id => 999]],
+        'absent' => [$slip->id => 2],
+    ])->assertRedirect(route('payroll.show', $run))->assertSessionHas('success');
+
+    $slip->refresh()->load('lines');
+    $manual = $slip->lines->where('source', PayrollSlipLine::SOURCE_MANUAL);
+    expect($manual->pluck('amount', 'salary_component_id')->map(fn ($a) => (float) $a)->all())->toEqual([$mop->id => 7000.0, $pos->id => 2500.0, $fine->id => 500.0])
+        ->and((float) $slip->absent_days)->toBe(2.0)
+        ->and((float) $slip->net_pay)->toBe((float) ($this->days * 1000 + 6000 + 9500 - 500 - 2000));
+
+    // saving again replaces, an empty cell removes, and only the maker of a draft may do it
+    $this->actingAs($this->maker)->post(route('payroll.variable-pay', $run), ['amounts' => [$slip->id => [$mop->id => 6000, $pos->id => '', $fine->id => 500]]]);
+    expect($slip->lines()->where('source', PayrollSlipLine::SOURCE_MANUAL)->pluck('amount', 'salary_component_id')->map(fn ($a) => (float) $a)->all())->toEqual([$fine->id => 500.0, $mop->id => 6000.0]);
+    $this->actingAs($this->checker)->post(route('payroll.variable-pay', $run), ['amounts' => [$slip->id => [$mop->id => 1]]])->assertForbidden();
+    $this->actingAs($this->maker)->post(route('payroll.variable-pay', $run), ['amounts' => [$slip->id => [$mop->id => -5]]])->assertSessionHasErrors();
+});
+
+it('downloads the salary sheet with fixed part, variable part, deductions and net for every employee', function () {
+    $run = ($this->build)();
+    $slip = $run->slips()->first();
+    $mop = SalaryComponent::where('code', 'mop_achievement')->firstOrFail();
+    app(PayrollService::class)->setVariablePay($run, [$slip->id => [$mop->id => 7000]]);
+
+    $sheet = app(PayrollSheetService::class)->build($run->fresh());
+    expect(collect($sheet['columns']['fixed'])->pluck('label')->all())->toBe(['Basic', 'House Rent'])
+        ->and(collect($sheet['columns']['variable'])->pluck('label')->all())->toBe(['MOP Achievement'])
+        ->and($sheet['totals']['fixed'])->toBe((float) ($this->days * 1000 + 6000))
+        ->and($sheet['totals']['variable'])->toBe(7000.0)
+        ->and($sheet['totals']['net'])->toBe((float) ($this->days * 1000 + 13000));
+
+    $this->actingAs($this->maker)->get(route('payroll.sheet.pdf', $run))->assertOk()->assertDownload($run->run_number.'-salary-sheet.pdf');
+    $this->actingAs($this->maker)->get(route('payroll.sheet.excel', $run))->assertOk()->assertDownload($run->run_number.'-salary-sheet.xlsx');
+    $this->actingAs(User::factory()->create(['supplier_id' => Supplier::factory()->create()->id])->givePermissionTo('payroll-list'))
+        ->get(route('payroll.sheet.pdf', $run))->assertNotFound();
+});
+
+it('saves the grid sent as one field however many employees it has, and keeps salary sheet amounts as numbers in Excel', function () {
+    $run = ($this->build)();
+    $slip = $run->slips()->first();
+    $mop = SalaryComponent::where('code', 'mop_achievement')->firstOrFail();
+    $fine = SalaryComponent::where('code', 'fine')->firstOrFail();
+    $payload = json_encode([['id' => $slip->id, 'absent' => '1', 'cells' => [$mop->id => '12500', $fine->id => '']]]);
+
+    $this->actingAs($this->maker)->post(route('payroll.variable-pay', $run), ['payload' => $payload])->assertSessionHas('success');
+    expect((float) $slip->lines()->where('salary_component_id', $mop->id)->value('amount'))->toBe(12500.0)
+        ->and((float) $slip->fresh()->absent_days)->toBe(1.0);
+    $this->actingAs($this->maker)->post(route('payroll.variable-pay', $run), ['payload' => json_encode([['id' => $slip->id, 'cells' => [$mop->id => 'abc']]])])->assertSessionHasErrors();
+
+    $file = Maatwebsite\Excel\Facades\Excel::raw(new PayrollSheetExport($run->fresh(), app(PayrollSheetService::class)->build($run->fresh())), Excel::XLSX);
+    $path = tempnam(sys_get_temp_dir(), 'sheet').'.xlsx';
+    file_put_contents($path, $file);
+    $cells = collect(IOFactory::load($path)->getActiveSheet()->toArray(null, false, false));
+    $row = $cells->first(fn ($r) => ($r[1] ?? null) === 'Imran Salesman');
+
+    expect($row[3])->toBeNumeric()->and((float) $row[3])->toBe((float) ($this->days * 1000));
+});
+
+it('has the Urdu help window with a section for every help button on the payroll screens', function () {
+    $run = ($this->build)();
+
+    $this->actingAs($this->maker)->get(route('payroll.index', ['tab' => 'salaries']))->assertOk()
+        ->assertSee('data-topic="short"', false)->assertSee('data-topic="sources"', false)->assertSee('ماہانہ تنخواہ کا فلو');
+    $this->actingAs($this->maker)->get(route('payroll.show', $run))->assertOk()
+        ->assertSee('data-topic="grid"', false)->assertSee("topic: 'grid'", false);
+});
+
+it('pays the salaries from the chosen bank account without touching the day\'s cash', function () {
+    $run = ($this->build)();
+    $service = app(PayrollService::class);
+    $service->submit($run, $this->maker);
+    $service->approve($run->fresh(), $this->checker);
+    $bank = \App\Models\BankAccount::factory()->create(['chart_of_account_id' => $this->ledger['1171']->id, 'is_active' => true]);
+    $today = now()->toDateString();
+
+    $this->actingAs($this->checker)->post(route('payroll.pay', $run), ['method' => 'bank', 'paid_on' => $today])->assertSessionHasErrors('bank_account_id');
+    $this->actingAs($this->checker)->post(route('payroll.pay', $run), ['method' => 'bank', 'bank_account_id' => $bank->id, 'paid_on' => $today])->assertSessionHas('success');
+
+    $net = (float) $run->fresh()->total_net;
+    $summary = collect($this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->supplier->id, 'date' => $today]))->viewData('tables')['summary']['rows'])
+        ->mapWithKeys(fn ($row) => [$row[0] => $row[1]]);
+
+    expect($run->fresh()->paid_method)->toBe('bank')
+        ->and($run->fresh()->paid_bank_account_id)->toBe($bank->id)
+        ->and(($this->balanceOf)('1171'))->toBe(-$net)
+        ->and(($this->balanceOf)('1121'))->toBe(0.0)
+        ->and(($this->balanceOf)('2112'))->toBe(0.0)
+        ->and($summary['Less: salaries paid (cash)'])->toBe(number_format(0, 2));
 });

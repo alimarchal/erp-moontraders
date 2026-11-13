@@ -8,15 +8,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PayrollSlip extends Model
 {
+    /** @var array<string, mixed> */
+    protected $attributes = ['recover_settlement_short' => true];
+
     protected $fillable = [
-        'payroll_run_id', 'employee_id', 'salary_type', 'basic_salary', 'days_in_month', 'absent_days',
+        'payroll_run_id', 'employee_id', 'salary_type', 'basic_salary', 'days_in_month', 'absent_days', 'recover_settlement_short',
         'total_earnings', 'total_deductions', 'net_pay', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
-            'basic_salary' => 'decimal:2', 'absent_days' => 'decimal:2', 'total_earnings' => 'decimal:2',
+            'basic_salary' => 'decimal:2', 'absent_days' => 'decimal:2', 'recover_settlement_short' => 'boolean', 'total_earnings' => 'decimal:2',
             'total_deductions' => 'decimal:2', 'net_pay' => 'decimal:2',
         ];
     }

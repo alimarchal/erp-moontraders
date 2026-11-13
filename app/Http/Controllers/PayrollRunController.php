@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\PayrollRunExport;
 use App\Exports\PayrollRunsExport;
+use App\Exports\PayrollSheetExport;
 use App\Models\BankAccount;
 use App\Models\Company;
 use App\Models\PayrollRun;
@@ -12,6 +13,7 @@ use App\Models\PayrollSlipLine;
 use App\Models\SalaryComponent;
 use App\Models\Supplier;
 use App\Services\PayrollService;
+use App\Services\PayrollSheetService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,30 +37,16 @@ class PayrollRunController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:payroll-list', only: ['index', 'show', 'slip', 'printAll', 'help', 'exportPdf', 'exportExcel', 'slipsPdf', 'listPdf', 'listExcel']),
-            new Middleware('can:payroll-create', only: ['create', 'store', 'updateSlip', 'addLine', 'removeLine', 'recalculate', 'addEmployees', 'submit', 'destroy']),
+            new Middleware('can:payroll-list', only: ['sheetPdf', 'sheetExcel', 'show', 'slip', 'printAll', 'help', 'exportPdf', 'exportExcel', 'slipsPdf', 'listPdf', 'listExcel']),
+            new Middleware('can:payroll-create', only: ['create', 'store', 'updateSlip', 'toggleShort', 'variablePay', 'addLine', 'removeLine', 'recalculate', 'addEmployees', 'submit', 'destroy']),
             new Middleware('can:payroll-approve', only: ['approve', 'reject']),
             new Middleware('can:payroll-pay', only: ['pay']),
         ];
     }
 
-    public function index(Request $request)
+    public function create(): RedirectResponse
     {
-        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
-
-        $runs = $this->filteredRuns($request, $filters)->paginate(25)->withQueryString();
-
-        $user = $request->user();
-
-        return view('payroll.index', [
-            'runs' => $runs, 'filters' => $filters, 'statuses' => PayrollRun::statusLabels(),
-            'suppliers' => $user->hasAllSupplierAccess() ? Supplier::query()->orderBy('supplier_name')->get(['id', 'supplier_name']) : collect(),
-        ]);
-    }
-
-    public function create(Request $request)
-    {
-        return view('payroll.create', $this->ownerData($request) + ['month' => now()->subMonthNoOverflow()->format('Y-m')]);
+        return redirect()->route('payroll.index', ['tab' => 'runs', 'new' => 1]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,7 +57,7 @@ class PayrollRunController extends Controller implements HasMiddleware
         try {
             $run = $this->service->createRun($supplierId, $companyId, Carbon::parse($data['month'].'-01'), $request->user());
         } catch (RuntimeException $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+            return redirect()->route('payroll.index', ['tab' => 'runs', 'new' => 1])->withInput()->with('error', $e->getMessage());
         }
 
         return redirect()->route('payroll.show', $run)->with('success', 'Payroll '.$run->run_number.' is ready. Check the payslips, then send it for approval.');
@@ -79,7 +67,11 @@ class PayrollRunController extends Controller implements HasMiddleware
     {
         $this->authorizeVisible($request, $payroll);
 
+        $variableCategories = SalaryComponent::active()->where('calculation', SalaryComponent::CALC_INPUT)->get(['id', 'name', 'type', 'sort_order'])
+            ->sortBy(fn (SalaryComponent $component) => [$component->type === SalaryComponent::TYPE_EARNING ? 0 : 1, $component->sort_order, $component->name])->values();
+
         return view('payroll.show', [
+            'variableCategories' => $variableCategories,
             'run' => $payroll->load(['supplier', 'company', 'creator', 'checker', 'slips.employee.supplier', 'slips.lines', 'journalEntry', 'paymentJournalEntry', 'paidBankAccount']),
             'components' => SalaryComponent::active()->where('calculation', SalaryComponent::CALC_INPUT)->get(),
             'bankAccounts' => BankAccount::query()->where('is_active', true)->whereNotNull('chart_of_account_id')->orderBy('bank_name')->get(['id', 'bank_name', 'account_name', 'account_number']),
@@ -110,7 +102,52 @@ class PayrollRunController extends Controller implements HasMiddleware
         abort_unless($slip->payroll_run_id === $payroll->id, 404);
         $data = $request->validate(['absent_days' => ['required', 'numeric', 'min:0', 'max:31']]);
 
-        return $this->attempt(fn () => $this->service->setAbsentDays($slip->setRelation('run', $payroll), (float) $data['absent_days']), $payroll, 'Absent days saved and the payslip recalculated.');
+        return $this->attempt(fn () => $this->service->setAbsentDays($slip->setRelation('run', $payroll), (float) $data['absent_days']), $payroll, 'Absent days saved and the payslip recalculated.', $slip);
+    }
+
+    /**
+     * Save the run's variable-pay grid: one amount per employee and monthly category, plus absent days.
+     */
+    public function variablePay(Request $request, PayrollRun $payroll): RedirectResponse
+    {
+        $this->authorizeVisible($request, $payroll);
+        $this->authorizeMaker($request, $payroll);
+
+        // The grid sends everything as one JSON field; amounts[slip][category] / absent[slip] are accepted too.
+        if ($request->filled('payload')) {
+            $rows = json_decode((string) $request->input('payload'), true);
+            abort_unless(is_array($rows), 422, 'The grid could not be read. Reload the page and try again.');
+            $request->merge([
+                'amounts' => collect($rows)->filter(fn ($row) => is_array($row) && isset($row['id']))->mapWithKeys(fn ($row) => [(int) $row['id'] => array_map(fn ($v) => $v === '' ? null : $v, (array) ($row['cells'] ?? []))])->all(),
+                'absent' => collect($rows)->filter(fn ($row) => is_array($row) && isset($row['id']) && ($row['absent'] ?? null) !== null)->mapWithKeys(fn ($row) => [(int) $row['id'] => $row['absent'] === '' ? null : $row['absent']])->all(),
+            ]);
+        }
+
+        $data = $request->validate([
+            'amounts' => ['nullable', 'array', 'max:2000'],
+            'amounts.*' => ['array'],
+            'amounts.*.*' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+            'absent' => ['nullable', 'array', 'max:2000'],
+            'absent.*' => ['nullable', 'numeric', 'min:0', 'max:31'],
+        ], ['amounts.*.*.numeric' => 'Every amount in the grid must be a number.', 'amounts.*.*.min' => 'Amounts in the grid cannot be negative.']);
+
+        try {
+            $changed = $this->service->setVariablePay($payroll, (array) ($data['amounts'] ?? []), (array) ($data['absent'] ?? []));
+        } catch (RuntimeException $e) {
+            return redirect()->route('payroll.show', $payroll)->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('payroll.show', $payroll)->with('success', $changed === 0 ? 'Nothing changed in the variable pay.' : 'Variable pay saved; '.$changed.' '.Str::plural('payslip', $changed).' recalculated.');
+    }
+
+    public function toggleShort(Request $request, PayrollRun $payroll, PayrollSlip $slip): RedirectResponse
+    {
+        $this->authorizeVisible($request, $payroll);
+        $this->authorizeMaker($request, $payroll);
+        abort_unless($slip->payroll_run_id === $payroll->id, 404);
+        $recover = $request->boolean('recover');
+
+        return $this->attempt(fn () => $this->service->setRecoverShort($slip->setRelation('run', $payroll), $recover), $payroll, $recover ? 'Settlement short will be taken from the salary.' : 'Settlement short waived on this payslip.', $slip);
     }
 
     public function addLine(Request $request, PayrollRun $payroll, PayrollSlip $slip): RedirectResponse
@@ -124,7 +161,7 @@ class PayrollRunController extends Controller implements HasMiddleware
             'label' => ['nullable', 'string', 'max:160'],
         ]);
 
-        return $this->attempt(fn () => $this->service->addManualLine($slip->setRelation('run', $payroll), SalaryComponent::findOrFail($data['salary_component_id']), (float) $data['amount'], $data['label'] ?? null), $payroll, 'Line added.');
+        return $this->attempt(fn () => $this->service->addManualLine($slip->setRelation('run', $payroll), SalaryComponent::findOrFail($data['salary_component_id']), (float) $data['amount'], $data['label'] ?? null), $payroll, 'Line added.', $slip);
     }
 
     public function removeLine(Request $request, PayrollRun $payroll, PayrollSlipLine $line): RedirectResponse
@@ -133,7 +170,7 @@ class PayrollRunController extends Controller implements HasMiddleware
         $this->authorizeMaker($request, $payroll);
         abort_unless($line->slip->payroll_run_id === $payroll->id, 404);
 
-        return $this->attempt(fn () => $this->service->removeLine($line), $payroll, 'Line removed.');
+        return $this->attempt(fn () => $this->service->removeLine($line), $payroll, 'Line removed.', $line->slip);
     }
 
     public function recalculate(Request $request, PayrollRun $payroll): RedirectResponse
@@ -204,7 +241,7 @@ class PayrollRunController extends Controller implements HasMiddleware
             return redirect()->route('payroll.show', $payroll)->with('error', $e->getMessage());
         }
 
-        return redirect()->route('payroll.index')->with('success', 'Payroll deleted.');
+        return redirect()->route('payroll.index', ['tab' => 'runs'])->with('success', 'Payroll deleted.');
     }
 
     public function listPdf(Request $request)
@@ -240,6 +277,30 @@ class PayrollRunController extends Controller implements HasMiddleware
         return Excel::download(new PayrollRunExport($this->loadForExport($payroll)), $payroll->run_number.'.xlsx');
     }
 
+    /**
+     * The month's salary sheet: one row per employee, Fixed part | Variable part | Deductions | Net, landscape.
+     */
+    public function sheetPdf(Request $request, PayrollRun $payroll, PayrollSheetService $sheets)
+    {
+        $this->authorizeVisible($request, $payroll);
+        $this->loadForExport($payroll);
+
+        $sheet = $sheets->build($payroll);
+        // A month with very many pay items gets a larger page so the net salary column is never cut off.
+        $paper = count(array_merge(...array_values($sheet['columns']))) > 24 ? 'a3' : 'a4';
+
+        return $this->paged(Pdf::loadView('payroll.pdf.sheet', ['run' => $payroll, 'sheet' => $sheet])->setPaper($paper, 'landscape'))
+            ->download($payroll->run_number.'-salary-sheet.pdf');
+    }
+
+    public function sheetExcel(Request $request, PayrollRun $payroll, PayrollSheetService $sheets)
+    {
+        $this->authorizeVisible($request, $payroll);
+        $this->loadForExport($payroll);
+
+        return Excel::download(new PayrollSheetExport($payroll, $sheets->build($payroll)), $payroll->run_number.'-salary-sheet.xlsx');
+    }
+
     public function slipsPdf(Request $request, PayrollRun $payroll, ?PayrollSlip $slip = null)
     {
         $this->authorizeVisible($request, $payroll);
@@ -253,7 +314,7 @@ class PayrollRunController extends Controller implements HasMiddleware
 
     private function loadForExport(PayrollRun $run): PayrollRun
     {
-        return $run->load(['supplier', 'company', 'creator', 'checker', 'slips.employee.supplier', 'slips.lines']);
+        return $run->load(['supplier', 'company', 'creator', 'checker', 'slips.employee.supplier', 'slips.lines.component']);
     }
 
     /** Adds "Page x of y" to every page of a PDF. */
@@ -292,19 +353,6 @@ class PayrollRunController extends Controller implements HasMiddleware
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function ownerData(Request $request): array
-    {
-        $user = $request->user();
-
-        return [
-            'suppliers' => Supplier::query()->when(! $user->hasAllSupplierAccess(), fn ($query) => $query->where('id', $user->supplier_id ?? 0))->orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'companies' => $user->hasAllSupplierAccess() ? Company::query()->orderBy('id')->limit(1)->get(['id', 'company_name']) : collect(),
-        ];
-    }
-
-    /**
      * @return array{0: int|null, 1: int|null} supplier id, company id
      */
     private function resolveOwner(Request $request, ?string $owner): array
@@ -334,14 +382,19 @@ class PayrollRunController extends Controller implements HasMiddleware
         abort_unless((int) $run->created_by === $request->user()->id, 403, 'Only the user who made this payroll can change it.');
     }
 
-    private function attempt(callable $action, PayrollRun $run, string $message): RedirectResponse
+    /**
+     * Run the action and go back to the run; after a payslip change its window opens again.
+     */
+    private function attempt(callable $action, PayrollRun $run, string $message, ?PayrollSlip $slip = null): RedirectResponse
     {
+        $target = route('payroll.show', array_filter(['payroll' => $run, 'slip' => $slip?->id]));
+
         try {
             $action();
         } catch (RuntimeException $e) {
-            return redirect()->route('payroll.show', $run)->with('error', $e->getMessage());
+            return redirect()->to($target)->with('error', $e->getMessage());
         }
 
-        return redirect()->route('payroll.show', $run)->with('success', $message);
+        return redirect()->to($target)->with('success', $message);
     }
 }

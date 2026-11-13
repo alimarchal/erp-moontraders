@@ -50,6 +50,7 @@ use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\OpeningCustomerBalanceController;
 use App\Http\Controllers\OpeningStockController;
 use App\Http\Controllers\PayrollAdjustmentController;
+use App\Http\Controllers\PayrollHubController;
 use App\Http\Controllers\PayrollRunController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
@@ -581,7 +582,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('components', [SalaryComponentController::class, 'store'])->name('components.store');
         Route::put('components/{component}', [SalaryComponentController::class, 'update'])->name('components.update');
 
-        Route::get('/', [PayrollRunController::class, 'index'])->name('index');
+        Route::get('/', [PayrollHubController::class, 'index'])->name('index');
         Route::get('create', [PayrollRunController::class, 'create'])->name('create');
         Route::post('/', [PayrollRunController::class, 'store'])->name('store');
         Route::get('export/pdf', [PayrollRunController::class, 'listPdf'])->name('list.pdf');
@@ -590,11 +591,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('{payroll}/export/pdf', [PayrollRunController::class, 'exportPdf'])->name('export.pdf');
         Route::get('{payroll}/export/excel', [PayrollRunController::class, 'exportExcel'])->name('export.excel');
         Route::get('{payroll}/slips-pdf', [PayrollRunController::class, 'slipsPdf'])->name('slips.pdf');
+        Route::get('{payroll}/sheet/pdf', [PayrollRunController::class, 'sheetPdf'])->name('sheet.pdf');
+        Route::get('{payroll}/sheet/excel', [PayrollRunController::class, 'sheetExcel'])->name('sheet.excel');
         Route::get('{payroll}/slips/{slip}/pdf', [PayrollRunController::class, 'slipsPdf'])->name('slip.pdf');
         Route::delete('{payroll}', [PayrollRunController::class, 'destroy'])->name('destroy');
         Route::get('{payroll}/print', [PayrollRunController::class, 'printAll'])->name('print');
         Route::get('{payroll}/slips/{slip}', [PayrollRunController::class, 'slip'])->name('slips.show');
         Route::put('{payroll}/slips/{slip}', [PayrollRunController::class, 'updateSlip'])->name('slips.update');
+        Route::post('{payroll}/variable-pay', [PayrollRunController::class, 'variablePay'])->name('variable-pay');
+        Route::post('{payroll}/slips/{slip}/short', [PayrollRunController::class, 'toggleShort'])->name('slips.short');
         Route::post('{payroll}/slips/{slip}/lines', [PayrollRunController::class, 'addLine'])->name('lines.store');
         Route::delete('{payroll}/lines/{line}', [PayrollRunController::class, 'removeLine'])->name('lines.destroy');
         Route::post('{payroll}/add-employees', [PayrollRunController::class, 'addEmployees'])->name('add-employees');

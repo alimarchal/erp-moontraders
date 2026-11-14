@@ -56,6 +56,10 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      # .env must exist before Composer: package discovery boots the app and reads its config.
+      - name: Copy .env
+        run: cp .env.example .env
+
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -65,10 +69,8 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
-      - name: Prepare .env
-        run: |
-          cp .env.example .env
-          php artisan key:generate --no-interaction
+      - name: Generate the app key
+        run: php artisan key:generate --no-interaction
 
       # The dump's triggers are owned by user_moontraders, and the test suite uses moontraders_test.
       - name: Create the dump's definer user and the test database

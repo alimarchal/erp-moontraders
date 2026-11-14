@@ -104,6 +104,21 @@ it('returns error when password is wrong', function () {
         ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'Invalid password'));
 });
 
+it('throttles repeated revert password attempts', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+
+    $this->actingAs($user);
+
+    foreach (range(1, 10) as $attempt) {
+        $this->post(route('sales-settlements.revert', $settlement->id), ['password' => 'wrong-password'])
+            ->assertRedirect();
+    }
+
+    $this->post(route('sales-settlements.revert', $settlement->id), ['password' => 'wrong-password'])
+        ->assertTooManyRequests();
+});
+
 it('returns validation error when password field is missing', function () {
     $user = makeRevertUser();
     $settlement = makePostedSettlement(['created_by' => $user->id]);

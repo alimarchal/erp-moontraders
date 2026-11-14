@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use Google\Client;
 use Google\Service\Drive;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem;
@@ -26,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Post / reverse / revert actions confirmed with the user's password: cap attempts so the
+        // password cannot be brute-forced from a logged-in session. Counted per user and per action.
+        RateLimiter::for('password-confirm', function (Request $request) {
+            return Limit::perMinute(10)->by(($request->user()?->id ?? $request->ip()).'|'.$request->route()?->getName());
+        });
+
         // Implicitly grant "Super Admin" role all permissions
         // This works in the app by using gate-related functions like auth()->user->can() and @can()
         Gate::before(function ($user, $ability) {

@@ -451,8 +451,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('goods-receipt-notes.import');
     Route::resource('goods-receipt-notes', GoodsReceiptNoteController::class);
     Route::post('goods-receipt-notes/{goodsReceiptNote}/post', [GoodsReceiptNoteController::class, 'post'])
+        ->middleware('throttle:password-confirm')
         ->name('goods-receipt-notes.post');
     Route::post('goods-receipt-notes/{goodsReceiptNote}/reverse', [GoodsReceiptNoteController::class, 'reverse'])
+        ->middleware('throttle:password-confirm')
         ->name('goods-receipt-notes.reverse');
     Route::get('goods-receipt-notes/{goodsReceiptNote}/edit-special', [GoodsReceiptNoteController::class, 'editSpecial'])
         ->name('goods-receipt-notes.edit-special');
@@ -484,6 +486,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     ))->name('goods-issues.append-items');
     Route::post('goods-issues/{goodsIssue}/items/{item}/remove', [GoodsIssueController::class, 'removeItem'])
         ->scopeBindings()
+        ->middleware('throttle:password-confirm')
         ->name('goods-issues.remove-item');
     Route::post('goods-issues/{goodsIssue}/append-items', [GoodsIssueController::class, 'appendItems'])
         ->name('goods-issues.store-appended-items');
@@ -491,6 +494,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('goods-issues/{goodsIssue}/post', [GoodsIssueController::class, 'post'])
         ->name('goods-issues.post');
     Route::post('goods-issues/{goodsIssue}/reverse', [GoodsIssueController::class, 'reverse'])
+        ->middleware('throttle:password-confirm')
         ->name('goods-issues.reverse');
     Route::get('api/goods-issues/check-vehicle', [GoodsIssueController::class, 'checkVehicleGoodsIssue'])
         ->name('api.goods-issues.check-vehicle');
@@ -517,6 +521,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('sales-settlements/{salesSettlement}/post', [SalesSettlementController::class, 'post'])
         ->name('sales-settlements.post');
     Route::post('sales-settlements/{salesSettlement}/revert', [SalesSettlementController::class, 'revert'])
+        ->middleware('throttle:password-confirm')
         ->name('sales-settlements.revert');
     Route::get('sales-settlements/{salesSettlement}/edit-special', [SalesSettlementController::class, 'editSpecial'])
         ->name('sales-settlements.edit-special');
@@ -538,6 +543,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     */
     Route::resource('claim-registers', ClaimRegisterController::class);
     Route::post('claim-registers/{claimRegister}/post', [ClaimRegisterController::class, 'post'])
+        ->middleware('throttle:password-confirm')
         ->name('claim-registers.post');
 
     /*
@@ -616,6 +622,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     Route::resource('expense-details', ExpenseDetailController::class);
     Route::post('expense-details/{expenseDetail}/post', [ExpenseDetailController::class, 'post'])
+        ->middleware('throttle:password-confirm')
         ->name('expense-details.post');
 
     /*
@@ -629,6 +636,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('stock-adjustments/help', [StockAdjustmentController::class, 'help'])->name('stock-adjustments.help');
     Route::resource('stock-adjustments', StockAdjustmentController::class);
     Route::post('stock-adjustments/{stockAdjustment}/post', [StockAdjustmentController::class, 'post'])
+        ->middleware('throttle:password-confirm')
         ->name('stock-adjustments.post');
     Route::get('api/suppliers/{supplier}/stock-adjustment-products', [StockAdjustmentController::class, 'getProductsBySupplier'])
         ->name('api.suppliers.stock-adjustment-products');
@@ -645,6 +653,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     */
     Route::resource('product-recalls', ProductRecallController::class);
     Route::post('product-recalls/{productRecall}/post', [ProductRecallController::class, 'post'])
+        ->middleware('throttle:password-confirm')
         ->name('product-recalls.post');
     Route::post('product-recalls/{productRecall}/cancel', [ProductRecallController::class, 'cancel'])
         ->name('product-recalls.cancel');
@@ -715,10 +724,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('tickets/customer-code/check', [TicketController::class, 'checkCustomerCode'])->name('tickets.customer-code.check');
     Route::get('tickets/help', [TicketController::class, 'help'])->name('tickets.help');
     Route::get('tickets/stock-adjustment/products/{product}/warehouses/{warehouse}/batches', [TicketController::class, 'adjustmentBatches'])->name('tickets.adjustment-batches');
-    Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->name('tickets.approve');
+    Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->middleware('throttle:password-confirm')->name('tickets.approve');
     Route::post('tickets/{ticket}/customer-code', [TicketController::class, 'updateCustomerCode'])->name('tickets.customer-code');
     Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
-    Route::resource('tickets', TicketController::class);
+    // store/update check the password on a unit-cost change
+    Route::resource('tickets', TicketController::class)->middlewareFor(['store', 'update'], 'throttle:password-confirm');
 
     /*
     |----------------------------------------------------------------------

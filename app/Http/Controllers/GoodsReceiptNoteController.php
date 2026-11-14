@@ -1312,9 +1312,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $errors = [];
 
         foreach ($items as $index => $item) {
-            $received = (float) $item['quantity_received'];
-            $accepted = (float) $item['quantity_accepted'];
-            $rejected = (float) ($item['quantity_rejected'] ?? 0);
+            // Compared as stored: the quantity columns keep 2 decimals.
+            $received = round((float) $item['quantity_received'], 2);
+            $accepted = round((float) $item['quantity_accepted'], 2);
+            $rejected = round((float) ($item['quantity_rejected'] ?? 0), 2);
 
             if ($accepted - $received > 0.0001) {
                 $errors["items.{$index}.quantity_accepted"] = 'Line '.($index + 1).': accepted quantity cannot be more than the quantity received.';

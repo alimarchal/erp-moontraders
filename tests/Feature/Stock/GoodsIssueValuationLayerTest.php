@@ -16,6 +16,8 @@ use App\Models\StockValuationLayer;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
+use App\Models\VanStockBalance;
+use App\Models\VanStockBatch;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
@@ -118,7 +120,7 @@ function issueLayer(float $quantity, string $receiptDate): StockValuationLayer
     ]);
 }
 
-function postIssueOf(float $quantity): array
+function postIssueOf(float $quantity, float $lineUnitCost = 150): array
 {
     $context = test();
 
@@ -137,9 +139,9 @@ function postIssueOf(float $quantity): array
         'product_id' => $context->product->id,
         'uom_id' => $context->uom->id,
         'quantity_issued' => $quantity,
-        'unit_cost' => 150,
+        'unit_cost' => $lineUnitCost,
         'selling_price' => 200,
-        'total_cogs' => $quantity * 150,
+        'total_cogs' => $quantity * $lineUnitCost,
         'total_value' => $quantity * 200,
     ]);
 
@@ -162,4 +164,13 @@ it('leaves current_stock showing the same quantity as the batch rows behind it',
     // The current-stock page reads current_stock and its batch modal reads
     // current_stock_by_batch; the two showing different numbers is the defect.
     expect((float) CurrentStock::where('product_id', $this->product->id)->value('quantity_on_hand'))->toBe(13.0);
+});
+
+it('carries the batch cost to the van, not the cost typed on the issue line', function () {
+    // The line says 120, but the stock leaves the warehouse at the batch's 150, which is what the GL moves to Van Stock.
+    $result = postIssueOf(10, 120);
+
+    expect($result['success'])->toBeTrue()
+        ->and((float) VanStockBatch::where('vehicle_id', $this->vehicle->id)->value('unit_cost'))->toBe(150.0)
+        ->and((float) VanStockBalance::where('vehicle_id', $this->vehicle->id)->value('last_unit_cost'))->toBe(150.0);
 });

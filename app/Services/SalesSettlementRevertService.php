@@ -7,7 +7,9 @@ use App\Models\CurrentStockByBatch;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\GoodsIssue;
 use App\Models\InventoryLedgerEntry;
+use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
@@ -54,6 +56,8 @@ class SalesSettlementRevertService
                     'recoveries',
                     'cheques',
                 ]);
+
+                $this->assertReturnedStockStillOnHand($settlement);
 
                 $this->reverseGLEntry($settlement);
                 $this->reverseInventoryLedgerEntries($settlement);
@@ -192,6 +196,59 @@ class SalesSettlementRevertService
     }
 
     /**
+     * Refuse the revert when stock this settlement returned to the warehouse is no longer there: it was issued
+     * again, sold or adjusted after posting. Taking it out anyway would leave current_stock_by_batch, the
+     * valuation layers and the stock ledger disagreeing (the same rule a GRN reversal follows).
+     *
+     * @throws \RuntimeException naming the batches that fall short
+     */
+    private function assertReturnedStockStillOnHand(SalesSettlement $settlement): void
+    {
+        $returnedByBatch = [];
+
+        foreach ($settlement->items as $item) {
+            foreach ($item->batches as $itemBatch) {
+                if ((float) $itemBatch->quantity_returned > 0) {
+                    $returnedByBatch[$itemBatch->stock_batch_id] = ($returnedByBatch[$itemBatch->stock_batch_id] ?? 0) + (float) $itemBatch->quantity_returned;
+                }
+            }
+        }
+
+        $shortfalls = [];
+
+        foreach ($returnedByBatch as $batchId => $returnedQty) {
+            $onHand = (float) CurrentStockByBatch::where('stock_batch_id', $batchId)
+                ->where('warehouse_id', $settlement->warehouse_id)
+                ->lockForUpdate()
+                ->value('quantity_on_hand');
+
+            if ($onHand + StockValuationService::QTY_EPSILON < $returnedQty) {
+                $batchCode = StockBatch::whereKey($batchId)->value('batch_code') ?? "#{$batchId}";
+                $shortfalls[] = sprintf('batch %s has %s of the %s returned', $batchCode, $this->formatQuantity($onHand), $this->formatQuantity($returnedQty));
+            }
+        }
+
+        if ($shortfalls !== []) {
+            throw new \RuntimeException(
+                "Stock returned by {$settlement->settlement_number} has since been issued, sold or adjusted ("
+                .implode('; ', array_slice($shortfalls, 0, 3))
+                .(count($shortfalls) > 3 ? '; and '.(count($shortfalls) - 3).' more batches' : '')
+                .'). Reverse the later goods issue or adjustment first, then revert this settlement.'
+            );
+        }
+    }
+
+    private function formatQuantity(float $quantity): string
+    {
+        return rtrim(rtrim(number_format($quantity, 3, '.', ''), '0'), '.');
+    }
+
+    private function productLabel(int $productId): string
+    {
+        return Product::whereKey($productId)->value('product_name') ?? "product #{$productId}";
+    }
+
+    /**
      * Restore van stock balance by adding back all quantities moved during posting.
      */
     private function restoreVanStockBalance(SalesSettlement $settlement): void
@@ -205,10 +262,18 @@ class SalesSettlementRevertService
                 continue;
             }
 
-            VanStockBalance::where('vehicle_id', $settlement->vehicle_id)
+            $vanStock = VanStockBalance::where('vehicle_id', $settlement->vehicle_id)
                 ->where('product_id', $item->product_id)
                 ->lockForUpdate()
-                ->first()?->increment('quantity_on_hand', $totalToRestore);
+                ->first();
+
+            if (! $vanStock) {
+                throw new \RuntimeException("The van stock row for {$this->productLabel($item->product_id)} on this vehicle is missing, so its quantity cannot be put back. Nothing was reverted.");
+            }
+
+            $vanStock->quantity_on_hand = (float) $vanStock->quantity_on_hand + $totalToRestore;
+            $vanStock->last_updated = now();
+            $vanStock->save();
         }
     }
 
@@ -241,9 +306,11 @@ class SalesSettlementRevertService
                     ->lockForUpdate()
                     ->first();
 
-            if ($vanStockBatch) {
-                $vanStockBatch->increment('quantity_on_hand', $totalToRestore);
+            if (! $vanStockBatch) {
+                throw new \RuntimeException("No van batch row for {$this->productLabel($item->product_id)} exists on this vehicle, so its quantity cannot be put back. Nothing was reverted.");
             }
+
+            $vanStockBatch->increment('quantity_on_hand', $totalToRestore);
         }
     }
 
@@ -269,7 +336,7 @@ class SalesSettlementRevertService
                     ->first();
 
                 if ($stockByBatch) {
-                    $stockByBatch->quantity_on_hand = max(0, $stockByBatch->quantity_on_hand - $returnedQty);
+                    $stockByBatch->quantity_on_hand = (float) $stockByBatch->quantity_on_hand - $returnedQty;
                     $stockByBatch->total_value = round($stockByBatch->quantity_on_hand * (float) $itemBatch->unit_cost, 2);
 
                     if ($stockByBatch->quantity_on_hand <= 0) {

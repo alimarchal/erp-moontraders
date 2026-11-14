@@ -189,6 +189,28 @@ it('restates a settlement line and its header when the sale behind it is re-cost
         ->and((float) $settlement->fresh()->gross_profit)->toBe(400.0);
 });
 
+it('counts a settlement that was reverted and posted again only once when restating its cost', function () {
+    $sale = leaveStockAtStaleCost();
+
+    $settlement = SalesSettlement::factory()->create(['status' => 'posted', 'total_cogs' => 300, 'gross_profit' => 500]);
+    $settlementItemId = DB::table('sales_settlement_items')->insertGetId([
+        'sales_settlement_id' => $settlement->id, 'product_id' => $this->product->id,
+        'quantity_issued' => 4, 'quantity_sold' => 4, 'quantity_returned' => 0, 'quantity_shortage' => 0,
+        'unit_selling_price' => 200, 'total_sales_value' => 800, 'unit_cost' => 75, 'total_cogs' => 300,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $sale->update(['reference_type' => SalesSettlement::class, 'reference_id' => $settlement->id]);
+
+    // Reverted (the sale put back) and posted again (sold once more).
+    $sale->replicate()->fill(['quantity' => -(float) $sale->quantity])->save();
+    $sale->replicate()->save();
+
+    app(GrnCostDriftService::class)->repair(app(GrnCostDriftService::class)->detect()->sole());
+
+    expect((float) DB::table('sales_settlement_items')->where('id', $settlementItemId)->value('total_cogs'))->toBe(400.0)
+        ->and((float) $settlement->fresh()->total_cogs)->toBe(400.0);
+});
+
 it('moves the Round Off a stale line total went to onto cost of goods sold and Stock In Hand', function () {
     // The line was booked at 10 × 75 = 750, so 250 of its 1,000 went to Round Off. Four units
     // were sold at 75 and six are still on hand, valued at 75.

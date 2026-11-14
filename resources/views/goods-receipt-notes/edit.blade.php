@@ -892,14 +892,13 @@
                         // Total Value with Taxes = totalBeforeWht + Withholding Tax
                         item.total_value_with_taxes = parseFloat((totalBeforeWht + withholdingTax).toFixed(2));
 
-                        // Calculate Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received
-                        // If supplier has is_fmr_allowed = true (e.g. Engro), exclude FMR from unit cost
-                        const fmrForUnitCost = this.isFmrAllowed ? 0 : fmrAllowance;
+                        // Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received, for every supplier.
+                        // FMR is income (posted to 4210/4220 by the GRN journal), so the stock is carried at its
+                        // cost before FMR; deducting it here as well made the journal plug the gap in Round Off.
+                        const fmrForUnitCost = fmrAllowance;
                         const qtyReceived = parseFloat(item.quantity_received) || 0;
                         if (qtyReceived > 0) {
-                            item.unit_cost = this.isCartonMode
-                                ? parseFloat((extendedValue / qtyReceived).toFixed(6))
-                                : parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
+                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
                         }
 
                         // total_cost = qty_accepted × unit_cost (4 decimal precision)

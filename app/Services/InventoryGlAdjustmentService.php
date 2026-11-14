@@ -29,6 +29,15 @@ class InventoryGlAdjustmentService
 
     public const STOCK_LOSS_OTHER = '5273';
 
+    /** Line descriptions for the stock accounts a re-cost journal touches. */
+    private const RECOST_DESCRIPTIONS = [
+        self::STOCK_IN_HAND => 'Warehouse stock re-costed',
+        self::VAN_STOCK => 'Van stock re-costed',
+        self::COST_OF_GOODS_SOLD => 'Cost of goods already sold, at the corrected cost',
+        self::INVENTORY_SHORTAGE => 'Van shortages, at the corrected cost',
+        self::STOCK_LOSS_OTHER => 'Stock adjustments, at the corrected cost',
+    ];
+
     /**
      * Post what a re-cost changed.
      *
@@ -42,6 +51,42 @@ class InventoryGlAdjustmentService
      * @param  array{transfer?: float, sale?: float, return?: float, shortage?: float, adjustment?: float}  $deltas
      */
     public function postRecostAdjustment(array $deltas, string $reference, string $description, ?string $date = null, ?float $vanValueDelta = null): ?JournalEntry
+    {
+        return $this->post($this->recostAmounts($deltas, $vanValueDelta), $reference, $description, $date, self::RECOST_DESCRIPTIONS);
+    }
+
+    /**
+     * Post a receipt whose cost was understated, with the shortfall put on another account (Round Off), together with
+     * what re-costing the stock issued, sold and returned from it changed. Stock In Hand and Van Stock move by exactly
+     * what the physical stock's value moved by, shortages and stock losses by their re-costed movements, and cost of
+     * goods sold takes the rest: the stock already sold, plus the paisa rounding of movements stored at 2 decimals
+     * against a receipt cost of 6. The amount comes off the account it had been put on.
+     *
+     * @param  array{transfer?: float, sale?: float, return?: float, shortage?: float, adjustment?: float}  $deltas
+     */
+    public function postReceiptRestatement(float $amount, string $offsetAccountCode, float $warehouseValueDelta, float $vanValueDelta, array $deltas, string $reference, string $description, ?string $date = null): ?JournalEntry
+    {
+        $amounts = [
+            self::STOCK_IN_HAND => round($warehouseValueDelta, 2),
+            self::VAN_STOCK => round($vanValueDelta, 2),
+            self::INVENTORY_SHORTAGE => round(-(float) ($deltas['shortage'] ?? 0), 2),
+            self::STOCK_LOSS_OTHER => round(-(float) ($deltas['adjustment'] ?? 0), 2),
+        ];
+        $amounts[self::COST_OF_GOODS_SOLD] = round($amount - array_sum($amounts), 2);
+        $amounts[$offsetAccountCode] = round(-$amount, 2);
+
+        return $this->post($amounts, $reference, $description, $date, self::RECOST_DESCRIPTIONS + [
+            $offsetAccountCode => 'Receipt cost that had been put here, moved to the stock and cost of goods sold',
+        ]);
+    }
+
+    /**
+     * What a re-cost moves on each stock account, with Stock In Hand as the balancing figure.
+     *
+     * @param  array{transfer?: float, sale?: float, return?: float, shortage?: float, adjustment?: float}  $deltas
+     * @return array<string, float>
+     */
+    private function recostAmounts(array $deltas, ?float $vanValueDelta): array
     {
         $transfer = (float) ($deltas['transfer'] ?? 0);
         $sale = (float) ($deltas['sale'] ?? 0);
@@ -60,16 +105,9 @@ class InventoryGlAdjustmentService
             self::INVENTORY_SHORTAGE => round(-$shortage, 2),
             self::STOCK_LOSS_OTHER => round(-$adjustment, 2),
         ];
-        // Stock In Hand takes the balancing figure, so rounding can never unbalance the entry.
-        $amounts = [self::STOCK_IN_HAND => round(-array_sum($amounts), 2)] + $amounts;
 
-        return $this->post($amounts, $reference, $description, $date, [
-            self::STOCK_IN_HAND => 'Warehouse stock re-costed',
-            self::VAN_STOCK => 'Van stock re-costed',
-            self::COST_OF_GOODS_SOLD => 'Cost of goods already sold, at the corrected cost',
-            self::INVENTORY_SHORTAGE => 'Van shortages, at the corrected cost',
-            self::STOCK_LOSS_OTHER => 'Stock adjustments, at the corrected cost',
-        ]);
+        // Stock In Hand takes the balancing figure, so rounding can never unbalance the entry.
+        return [self::STOCK_IN_HAND => round(-array_sum($amounts), 2)] + $amounts;
     }
 
     /**

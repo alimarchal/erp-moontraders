@@ -182,3 +182,38 @@ it('does not count a reversed GRN as a duplicate supplier invoice', function () 
 
     expect(GoodsReceiptNote::where('supplier_invoice_number', 'SI-500')->count())->toBe(2);
 });
+
+it('rejects a pieces-mode GRN line whose cost does not match its value with taxes plus FMR', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces']);
+    $product = cartonProduct(['supplier_id' => $supplier->id]);
+
+    // 10 × 110 = 1,100 is the cost net of FMR; the line is 1,100 with taxes plus 30 FMR = 1,130 before FMR.
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), cartonGrnPayload($supplier, $product, [
+            'quantity_received' => 10,
+            'quantity_accepted' => 10,
+            'unit_cost' => 110,
+            'total_value_with_taxes' => 1100,
+            'fmr_allowance' => 30,
+        ]))
+        ->assertSessionHasErrors('items.0.unit_cost');
+
+    expect(GoodsReceiptNote::count())->toBe(0);
+});
+
+it('accepts a pieces-mode GRN line costed before FMR', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces', 'is_fmr_allowed' => true]);
+    $product = cartonProduct(['supplier_id' => $supplier->id]);
+
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), cartonGrnPayload($supplier, $product, [
+            'quantity_received' => 10,
+            'quantity_accepted' => 10,
+            'unit_cost' => 113,
+            'total_value_with_taxes' => 1100,
+            'fmr_allowance' => 30,
+        ]))
+        ->assertSessionDoesntHaveErrors();
+
+    expect(GoodsReceiptNote::count())->toBe(1);
+});

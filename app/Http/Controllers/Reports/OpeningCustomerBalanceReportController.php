@@ -50,7 +50,12 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
 
         $hasFilters = $supplierId || $employeeId || $customerId || $referenceNumber || $postedStatus;
 
-        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'short_name']);
+        $userSupplierId = $this->getUserSupplierScope();
+        $supplierId = $userSupplierId ?? $supplierId;
+
+        $suppliers = Supplier::where('disabled', false)
+            ->when($userSupplierId, fn ($q) => $q->where('id', $userSupplierId))
+            ->orderBy('supplier_name')->get(['id', 'supplier_name', 'short_name']);
         $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'employee_code', 'name', 'supplier_id']);
         $customers = Customer::where('is_active', true)->orderBy('customer_name')->get(['id', 'customer_code', 'customer_name', 'address', 'city', 'phone']);
 
@@ -345,8 +350,10 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
             ->orderBy('transaction_date')
             ->orderBy('id');
 
-        if ($request->input('supplier_id')) {
-            $query->whereHas('account.employee', fn ($q) => $q->where('supplier_id', $request->input('supplier_id')));
+        $exportSupplierId = $this->getUserSupplierScope() ?? $request->input('supplier_id');
+
+        if ($exportSupplierId) {
+            $query->whereHas('account.employee', fn ($q) => $q->where('supplier_id', $exportSupplierId));
         }
 
         if ($request->input('employee_id')) {
@@ -368,5 +375,19 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
         }
 
         return Excel::download(new OpeningCustomerBalanceExport($query), 'opening-customer-balances.xlsx');
+    }
+
+    /**
+     * Supplier-scoped users (not admins) only ever see their own supplier in this report.
+     */
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
     }
 }

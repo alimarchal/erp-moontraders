@@ -329,3 +329,18 @@ it('blocks post without post permission', function () {
     $this->post(route('reports.opening-customer-balance.post', $transaction))
         ->assertForbidden();
 });
+
+it('never shows a supplier-scoped user another supplier\'s balances', function () {
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $otherEmployee = Employee::factory()->create(['supplier_id' => $otherSupplier->id, 'is_active' => true]);
+
+    createReportTransaction($this, ['debit' => 5000]);
+    createReportTransaction($this, ['employee_id' => $otherEmployee->id, 'debit' => 3000]);
+
+    $this->user->update(['supplier_id' => $this->supplier->id]);
+
+    $this->get(route('reports.opening-customer-balance.index', ['supplier_id' => $otherSupplier->id]))
+        ->assertOk()
+        ->assertSee('5,000.00')
+        ->assertDontSee('3,000.00');
+});

@@ -153,14 +153,17 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
     private function reportData(Request $request): array
     {
         $asOfDate = $request->input('as_of_date', now()->format('Y-m-d'));
-        $supplierId = $request->input('supplier_id');
+        $userSupplierId = $this->getUserSupplierScope();
+        $supplierId = $userSupplierId ?? $request->input('supplier_id');
         $warehouseId = $request->input('warehouse_id');
         $categoryId = $request->input('category_id');
         $showZeroStock = $request->boolean('show_zero_stock', true);
         $sortBy = $request->input('sort_by', 'supplier_name');
         $stockSource = $request->input('stock_source', 'all'); // all, warehouse, van
 
-        $suppliers = Supplier::orderBy('supplier_name')->get();
+        $suppliers = Supplier::orderBy('supplier_name')
+            ->when($userSupplierId, fn ($q) => $q->where('id', $userSupplierId))
+            ->get();
         $warehouses = Warehouse::where('disabled', false)->orderBy('warehouse_name')->get();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
 
@@ -410,5 +413,19 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
             'amount_asc' => $data->sortBy('total_amount')->values(),
             default => $data->sortBy('supplier_name')->values(),
         };
+    }
+
+    /**
+     * Supplier-scoped users (not admins) only ever see their own supplier in this report.
+     */
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
     }
 }

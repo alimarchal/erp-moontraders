@@ -206,3 +206,18 @@ it('has no PDF when there is no stock data and keeps it behind the permission', 
     $this->actingAs($user)->get(route('reports.stock-availability.export.pdf'))->assertStatus(422);
     $this->actingAs(User::factory()->create())->get(route('reports.stock-availability.export.pdf'))->assertForbidden();
 });
+
+it('shows a supplier-scoped user only their own supplier, whatever supplier is asked for', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->givePermissionTo('report-audit-stock-availability');
+
+    foreach ([[], ['supplier_id' => $otherSupplier->id]] as $query) {
+        $this->actingAs($user)
+            ->get(route('reports.stock-availability.index', $query))
+            ->assertOk()
+            ->assertViewHas('stockData', fn ($rows) => $rows->pluck('supplier_id')->map(fn ($id) => (int) $id)->unique()->values()->all() === [$ownSupplier->id])
+            ->assertViewHas('suppliers', fn ($suppliers) => $suppliers->pluck('id')->all() === [$ownSupplier->id]);
+    }
+});

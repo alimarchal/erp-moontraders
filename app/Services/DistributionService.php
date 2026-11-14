@@ -739,6 +739,7 @@ class DistributionService
                 // Reduce van stock by quantity sold
                 $vanStock = VanStockBalance::where('vehicle_id', $settlement->vehicle_id)
                     ->where('product_id', $item->product_id)
+                    ->lockForUpdate()
                     ->first();
 
                 if (! $vanStock) {
@@ -826,6 +827,7 @@ class DistributionService
                         // Update current_stock_by_batch - returns go to SAME batch
                         $stockByBatch = CurrentStockByBatch::where('stock_batch_id', $batch->id)
                             ->where('warehouse_id', $settlement->warehouse_id)
+                            ->lockForUpdate()
                             ->first();
 
                         $restoredValue = round($returnedQty * (float) $itemBatch->unit_cost, 4);
@@ -941,6 +943,7 @@ class DistributionService
                     ->where('product_id', $item->product_id)
                     ->where('quantity_on_hand', '>', 0)
                     ->orderBy('created_at')
+                    ->lockForUpdate()
                     ->get();
 
                 foreach ($vanStockBatches as $vsBatch) {

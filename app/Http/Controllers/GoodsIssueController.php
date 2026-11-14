@@ -39,7 +39,7 @@ use Spatie\QueryBuilder\QueryBuilder;
 class GoodsIssueController extends Controller implements HasMiddleware
 {
     /** Rows-per-page choices on the list. */
-    public const PER_PAGE = [20, 50, 100, 500, 'all'];
+    public const PER_PAGE = [20, 50, 100, 500];
 
     /**
      * Get the middleware that should be assigned to the controller.
@@ -153,16 +153,11 @@ class GoodsIssueController extends Controller implements HasMiddleware
         }
 
         // Row preview (the lines of each issue) is loaded only for normal page sizes.
-        if ($perPage !== 'all' && (int) $perPage <= 100) {
+        if ((int) $perPage <= 100) {
             $goodsIssues->with(['items' => fn ($query) => $query->orderBy('line_no'), 'items.product:id,product_name,product_code,uom_conversion_factor']);
         }
 
-        if ($perPage === 'all') {
-            $count = $goodsIssues->getEloquentBuilder()->clone()->reorder()->count();
-            $goodsIssues = $goodsIssues->paginate(max($count, 1))->withQueryString();
-        } else {
-            $goodsIssues = $goodsIssues->paginate((int) $perPage)->withQueryString();
-        }
+        $goodsIssues = $goodsIssues->paginate((int) $perPage)->withQueryString();
 
         // Card and tab counts use every filter except status / settlement, so they show what each tab would hold.
         $statsRequest = new Request(['filter' => Arr::except((array) $request->input('filter', []), ['status', 'settlement'])]);

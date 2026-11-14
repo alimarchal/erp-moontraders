@@ -384,7 +384,7 @@
                         <label for="f_per_page">Rows</label>
                         <select id="f_per_page" class="rg-select" name="per_page" onchange="this.form.requestSubmit()">
                             @foreach (\App\Http\Controllers\GoodsIssueController::PER_PAGE as $n)
-                                <option value="{{ $n }}" @selected($perPage === (string) $n)>{{ $n === 'all' ? 'All' : $n }}</option>
+                                <option value="{{ $n }}" @selected($perPage === (string) $n)>{{ $n }}</option>
                             @endforeach
                         </select>
                     </div>

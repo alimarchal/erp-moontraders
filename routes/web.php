@@ -724,10 +724,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('tickets/customer-code/check', [TicketController::class, 'checkCustomerCode'])->name('tickets.customer-code.check');
     Route::get('tickets/help', [TicketController::class, 'help'])->name('tickets.help');
     Route::get('tickets/stock-adjustment/products/{product}/warehouses/{warehouse}/batches', [TicketController::class, 'adjustmentBatches'])->name('tickets.adjustment-batches');
-    Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->name('tickets.approve');
+    Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->middleware('throttle:password-confirm')->name('tickets.approve');
     Route::post('tickets/{ticket}/customer-code', [TicketController::class, 'updateCustomerCode'])->name('tickets.customer-code');
-    Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->middleware('throttle:password-confirm')->name('tickets.reject');
-    Route::resource('tickets', TicketController::class);
+    Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
+    // store/update check the password on a unit-cost change
+    Route::resource('tickets', TicketController::class)->middlewareFor(['store', 'update'], 'throttle:password-confirm');
 
     /*
     |----------------------------------------------------------------------

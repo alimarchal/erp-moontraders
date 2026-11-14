@@ -65,6 +65,7 @@
         'form' => ['salary_type' => (string) old('salary_type', ''), 'pay_method' => (string) old('pay_method', ''), 'basic' => (string) old('basic_salary', ''), 'notes' => (string) old('notes', '')],
         'lines' => array_values((array) old('lines', [])),
         'replace' => (bool) old('replace_components'),
+        'basics' => (array) old('basics', []),
     ] : null;
 @endphp
 <div x-data="prSalaries({ employees: @js($sheetData), categories: @js($categories), pageIds: @js($pageIds), oldSheet: @js($oldSheet) })"
@@ -222,7 +223,7 @@
         <span><b x-text="ticked.length"></b> selected</span>
         <button type="button" class="pr-btn pr-btn-primary" @click="openFor(ticked)">Set salary for selected</button>
         @can('payroll-adjustment-manage')
-            <a href="{{ route('payroll.index', ['tab' => 'adjustments']) }}" class="pr-btn">Add bonus / deduction</a>
+            <a href="{{ route('payroll.index', ['tab' => 'adjustments']) }}" class="pr-btn">Add incentive / adjustment</a>
         @endcan
         <button type="button" class="pr-btn" @click="ticked = []">Clear</button>
     </div>
@@ -273,11 +274,35 @@
                             </div>
                         </div>
                         <label class="pr-field">
-                            <span>Basic salary (Rs a month) <button type="button" class="rg-info no-print" @click.stop="$dispatch('rg-help', { topic: 'basic' })" aria-label="Help: basic salary" title="Help: basic salary">i</button></span>
+                            <span><span x-text="single ? 'Basic salary (Rs a month)' : 'Same basic for everyone (optional)'">Basic salary (Rs a month)</span> <button type="button" class="rg-info no-print" @click.stop="$dispatch('rg-help', { topic: 'basic' })" aria-label="Help: basic salary" title="Help: basic salary">i</button></span>
                             <input type="number" class="pr-input" name="basic_salary" x-ref="first" min="0" step="0.01" inputmode="decimal"
                                 x-model="form.basic" :required="single" :placeholder="single ? '0' : 'Keep each one\'s'">
                         </label>
                     </div>
+
+                    {{-- Many employees: each one's own basic salary --}}
+                    <template x-if="! single">
+                        <section class="pr-col" style="margin-bottom:16px" aria-label="Basic salary of each employee">
+                            <div class="pr-col-head">
+                                <h4>Basic salary of each employee <button type="button" class="rg-info no-print" @click.stop="$dispatch('rg-help', { topic: 'basic' })" aria-label="Help: basic salary" title="Help: basic salary">i</button></h4>
+                                <span style="display:flex; gap:6px">
+                                    <button type="button" class="pr-btn pr-btn-sm" @click="ids.forEach((id) => basics[id] = form.basic)" :disabled="form.basic === ''" title="Copy the same basic into every row">Use same for all</button>
+                                    <button type="button" class="pr-btn pr-btn-sm" @click="prefillBasics()" title="Put back each one's saved basic">Reset</button>
+                                </span>
+                            </div>
+                            <p class="pr-label" style="font-size:12px; margin:0 0 6px">Type a different basic for anyone; a row left empty keeps what that employee has (or the same basic above).</p>
+                            <div style="max-height:260px; overflow-y:auto; border-radius:12px; background:#fff; box-shadow: inset 0 0 0 1px var(--pr-sep)">
+                                <template x-for="id in ids" :key="'b' + id">
+                                    <label style="display:grid; grid-template-columns:1fr 150px; gap:10px; align-items:center; padding:6px 12px; border-bottom:1px solid rgba(60,60,67,.08)">
+                                        <span style="min-width:0"><span style="font-weight:500" x-text="employees[id].name"></span>
+                                            <span style="display:block; font-size:12px; color:var(--pr-muted)" x-text="[employees[id].code, employees[id].designation, employees[id].salary ? '' : 'No salary yet'].filter(Boolean).join(' · ')"></span></span>
+                                        <input type="number" class="pr-input" :name="'basics[' + id + ']'" min="0" step="0.01" inputmode="decimal" x-model="basics[id]"
+                                            :placeholder="form.basic !== '' ? form.basic : (employees[id].salary ? 'Keep' : 'Basic')" :aria-label="'Basic salary of ' + employees[id].name">
+                                    </label>
+                                </template>
+                            </div>
+                        </section>
+                    </template>
 
                     <div class="pr-split">
                         <template x-for="side in ['earning', 'deduction']" :key="side">
@@ -426,7 +451,7 @@
     function prSalaries({ employees, categories, pageIds, oldSheet }) {
         return {
             employees, categories, pageIds, oldSheet,
-            ticked: [], ids: [], rows: [], open: false, saving: false, hint: false, error: '', seq: 0,
+            ticked: [], ids: [], rows: [], basics: {}, open: false, saving: false, hint: false, error: '', seq: 0,
             form: { salary_type: 'basic', pay_method: 'cash', basic: '', notes: '' },
             newCat: { earning: { show: false, name: '', calculation: 'fixed', error: '', busy: false }, deduction: { show: false, name: '', calculation: 'fixed', error: '', busy: false } },
             routes: { update: @js(route('payroll.salaries.update', ['employee' => '__ID__'])), bulk: @js(route('payroll.salaries.bulk')), store: @js(route('payroll.components.store')) },
@@ -481,12 +506,17 @@
             },
             prefillMany() {
                 this.form = { salary_type: '', pay_method: '', basic: '', notes: '' };
+                this.prefillBasics();
                 const sig = (e) => JSON.stringify([...e.lines].sort((a, b) => a.component_id - b.component_id));
                 const first = this.employees[this.ids[0]];
                 const same = this.ids.every((id) => sig(this.employees[id]) === sig(first));
                 this.rows = same ? first.lines.filter((l) => this.cat(l.component_id)).map((l) => this.row(l)) : [];
             },
 
+            prefillBasics() {
+                const old = this.oldSheet?.basics || {};
+                this.basics = Object.fromEntries(this.ids.map((id) => [id, old[id] ?? (this.employees[id].salary ? String(this.employees[id].salary.basic_salary) : '')]));
+            },
             cat(id) { return this.categories.find((c) => c.id == id); },
             catName(id) { return this.cat(id)?.name || 'row'; },
             rowsOf(side) { return this.rows.filter((r) => r.side === side); },

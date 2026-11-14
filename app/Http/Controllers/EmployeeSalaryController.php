@@ -65,7 +65,8 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
     }
 
     /**
-     * Many employees at once. A field left empty keeps what each employee already has; each row of the window is set on
+     * Many employees at once. Each employee's own basic (basics[id]) is used first, then the one basic for everyone.
+     * A field left empty keeps what each employee already has; each row of the window is set on
      * all of them (a row with 0 takes that category off), other categories they have are kept unless "replace" is ticked.
      */
     public function bulkUpdate(Request $request): RedirectResponse
@@ -85,7 +86,8 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
 
         DB::transaction(function () use ($employees, $data, $lines, $replace, $user, &$skipped) {
             foreach ($employees as $employee) {
-                $basic = $data['basic_salary'] ?? null;
+                $own = $data['basics'][$employee->id] ?? null;
+                $basic = ($own !== null && $own !== '') ? $own : ($data['basic_salary'] ?? null);
 
                 if (($basic === null || $basic === '') && ! $employee->salary) {
                     $skipped[] = $employee->name;
@@ -146,6 +148,9 @@ class EmployeeSalaryController extends Controller implements HasMiddleware
         if (! $single) {
             $rules['employee_ids'] = ['required', 'array', 'min:1', 'max:1000'];
             $rules['employee_ids.*'] = ['integer', 'exists:employees,id'];
+            // Each employee's own basic salary, keyed by employee id; it wins over the one basic for everyone.
+            $rules['basics'] = ['nullable', 'array'];
+            $rules['basics.*'] = ['nullable', 'numeric', 'min:0', 'max:9999999999'];
         }
 
         $validator = validator($request->all(), $rules, [

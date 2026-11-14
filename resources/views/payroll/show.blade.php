@@ -20,9 +20,9 @@
     $days = fn ($value) => rtrim(rtrim(number_format((float) $value, 2), '0'), '.') ?: '0';
     $sourceLabels = [
         'basic' => 'Basic', 'allowance' => 'Allowance', 'absent' => 'Absent days', 'advance' => 'Advance', 'manual' => 'Added by hand',
-        'adjustment' => 'Bonus/deduction', 'excess' => 'Settlement excess (old)', 'short' => 'Settlement short',
+        'adjustment' => 'Incentive/adjustment', 'excess' => 'Settlement excess (old)', 'short' => 'Settlement short',
     ];
-    $tabNames = ['runs' => 'Payroll runs', 'salaries' => 'Employee salaries', 'adjustments' => 'Bonus & deductions', 'categories' => 'Categories'];
+    $tabNames = ['runs' => 'Payroll runs', 'salaries' => 'Employee salaries', 'adjustments' => 'Incentives & adjustments', 'categories' => 'Categories'];
     $tabs = collect(\App\Http\Controllers\PayrollHubController::TABS)->filter(fn (string $permission) => $user->can($permission))->keys();
 
     $slipData = $ordered->map(fn ($slip) => [
@@ -561,7 +561,7 @@
                                                 <td><input class="pr-cell" type="number" step="0.01" min="0" x-model="row.cells[cat.id]"
                                                     :class="cat.type === 'deduction' ? 'is-ded' : ''" @paste="paste($event, r, c)" :aria-label="cat.name + ' for ' + row.name"></td>
                                             </template>
-                                            <td class="pr-num"><span x-text="money(rowTotal(row))"></span><small x-show="row.extra !== 0" x-text="(row.extra > 0 ? '+ ' : '− ') + money(Math.abs(row.extra)) + ' from Bonus tab'"></small></td>
+                                            <td class="pr-num"><span x-text="money(rowTotal(row))"></span><small x-show="row.extra !== 0" x-text="(row.extra > 0 ? '+ ' : '− ') + money(Math.abs(row.extra)) + ' from Incentives tab'"></small></td>
                                         </tr>
                                     </template>
                                 </tbody>

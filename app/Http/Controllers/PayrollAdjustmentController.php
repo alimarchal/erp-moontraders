@@ -17,11 +17,15 @@ use Illuminate\Validation\Rule;
 use RuntimeException;
 
 /**
- * Bonuses, commissions, overtime, fines, death insurance and the like, decided ahead for chosen employees and a chosen month.
- * Payroll pulls them into that month's slips by itself.
+ * Incentives & adjustments: commissions, bonuses, overtime, fines and the like, decided ahead for chosen employees, for one
+ * month or every month. Payroll pulls them into the month's slips by itself.
  */
 class PayrollAdjustmentController extends Controller implements HasMiddleware
 {
+    public const REPEAT_ONCE = 'once';
+
+    public const REPEAT_MONTHLY = 'monthly';
+
     public function __construct(private PayrollService $payroll) {}
 
     public static function middleware(): array
@@ -35,7 +39,8 @@ class PayrollAdjustmentController extends Controller implements HasMiddleware
     }
 
     /**
-     * Give the same amount to one or many employees for a month.
+     * Give the same amount to one or many employees: for one month only, or every month from that month (until an end
+     * month or until stopped).
      */
     public function store(Request $request): RedirectResponse
     {
@@ -46,9 +51,13 @@ class PayrollAdjustmentController extends Controller implements HasMiddleware
             'employee_ids.*' => ['integer', 'exists:employees,id'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999'],
             'note' => ['nullable', 'string', 'max:300'],
-        ]);
+            'repeat' => ['nullable', Rule::in([self::REPEAT_ONCE, self::REPEAT_MONTHLY])],
+            'end_month' => ['nullable', 'date_format:Y-m', 'after_or_equal:month'],
+        ], ['end_month.after_or_equal' => 'The last month cannot be before the first month.']);
 
         $month = Carbon::parse($data['month'].'-01');
+        $recurring = ($data['repeat'] ?? self::REPEAT_ONCE) === self::REPEAT_MONTHLY;
+        $endMonth = $recurring && ! empty($data['end_month']) ? Carbon::parse($data['end_month'].'-01') : null;
         $user = $request->user();
         $employees = Employee::query()->whereIn('id', $data['employee_ids'])
             ->when(! $user->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $user->supplier_id ?? 0))
@@ -57,34 +66,33 @@ class PayrollAdjustmentController extends Controller implements HasMiddleware
         abort_if($employees->count() !== count(array_unique($data['employee_ids'])), 403, 'You can only add pay for employees of your own company.');
 
         try {
-            DB::transaction(function () use ($employees, $month, $data) {
+            DB::transaction(function () use ($employees, $month, $data, $recurring, $endMonth) {
                 foreach ($employees as $employee) {
-                    if ($this->payroll->monthIsLocked($employee, $month)) {
-                        throw new RuntimeException($employee->name.' already has an approved or pending payroll for '.$month->format('F Y').'. Add it to a later month, or ask for the run to be rejected first.');
-                    }
-
-                    $adjustment = PayrollAdjustment::create([
-                        'employee_id' => $employee->id, 'salary_component_id' => $data['salary_component_id'], 'period_month' => $month,
-                        'amount' => $data['amount'], 'note' => $data['note'] ?? null, 'status' => PayrollAdjustment::STATUS_PENDING,
-                    ]);
-                    $this->payroll->refreshAdjustment($adjustment);
+                    $this->payroll->addAdjustment($employee, (int) $data['salary_component_id'], $month, (float) $data['amount'], $data['note'] ?? null, $recurring, $endMonth);
                 }
             });
         } catch (RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        $when = $recurring ? 'every month from '.$month->format('F Y').($endMonth ? ' to '.$endMonth->format('F Y') : '') : 'in '.$month->format('F Y');
+
         return redirect()->route('payroll.index', ['tab' => 'adjustments', 'filter' => ['month' => $data['month']]])
-            ->with('success', 'Added for '.$employees->count().' '.Str::plural('employee', $employees->count()).' in '.$month->format('F Y').'. It will appear on their salary slip by itself.');
+            ->with('success', 'Added for '.$employees->count().' '.Str::plural('employee', $employees->count()).' '.$when.'. It will appear on their salary slip by itself.');
     }
 
     public function destroy(Request $request, PayrollAdjustment $adjustment): RedirectResponse
     {
-        $user = $request->user();
-        abort_unless($user->hasAllSupplierAccess() || (int) $adjustment->employee?->supplier_id === (int) $user->supplier_id, 404);
+        $this->authorizeAdjustment($request, $adjustment);
 
-        if (! $adjustment->isPending() || $this->payroll->monthIsLocked($adjustment->employee, $adjustment->period_month)) {
-            return back()->with('error', 'This one is already part of an approved or pending payroll, so it cannot be removed.');
+        $locked = $adjustment->is_recurring
+            ? $this->payroll->adjustmentIsLocked($adjustment)
+            : (! $adjustment->isPending() || $this->payroll->monthIsLocked($adjustment->employee, $adjustment->period_month));
+
+        if ($locked) {
+            return back()->with('error', $adjustment->is_recurring
+                ? 'It has already been paid on an approved or pending payroll, so it cannot be removed. Use Stop to end it from a later month.'
+                : 'This one is already part of an approved or pending payroll, so it cannot be removed.');
         }
 
         DB::transaction(function () use ($adjustment) {
@@ -93,6 +101,33 @@ class PayrollAdjustmentController extends Controller implements HasMiddleware
         });
 
         return back()->with('success', 'Removed.');
+    }
+
+    /**
+     * End a recurring item: it is no longer paid from the chosen month on.
+     */
+    public function stop(Request $request, PayrollAdjustment $adjustment): RedirectResponse
+    {
+        $this->authorizeAdjustment($request, $adjustment);
+        abort_unless($adjustment->is_recurring, 404);
+
+        $data = $request->validate(['from_month' => ['required', 'date_format:Y-m']]);
+        $from = Carbon::parse($data['from_month'].'-01');
+
+        try {
+            $this->payroll->stopAdjustment($adjustment, $from);
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', ($adjustment->component?->name ?? 'It').' of '.$adjustment->employee?->name.' stops from '.$from->format('F Y').'.');
+    }
+
+    private function authorizeAdjustment(Request $request, PayrollAdjustment $adjustment): void
+    {
+        $user = $request->user();
+
+        abort_unless($user->hasAllSupplierAccess() || (int) $adjustment->employee?->supplier_id === (int) $user->supplier_id, 404);
     }
 
     /**

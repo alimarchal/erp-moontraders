@@ -29,6 +29,9 @@ class PayrollRun extends Model
 
     public const STATUS_REJECTED = 'rejected';
 
+    /** A payroll in these states is final for its employees and month: nothing may be added to or taken off it. */
+    public const LOCKED_STATUSES = [self::STATUS_PENDING, self::STATUS_APPROVED, self::STATUS_PAID];
+
     protected $fillable = [
         'uuid', 'run_number', 'period_month', 'supplier_id', 'company_id', 'status', 'total_earnings', 'total_deductions', 'total_net',
         'notes', 'submitted_by', 'submitted_at', 'checked_by', 'checked_at', 'rejection_reason', 'journal_entry_id', 'paid_method',

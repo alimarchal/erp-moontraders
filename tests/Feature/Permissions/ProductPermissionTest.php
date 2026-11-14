@@ -119,3 +119,32 @@ it('denies a supplier-scoped user saving a product under another supplier', func
 
     expect(Product::where('product_name', 'Smuggled')->exists())->toBeFalse();
 });
+
+it('refuses an invalid update of another supplier\'s product before validating it', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherProduct = Product::factory()->create(['supplier_id' => Supplier::factory()]);
+
+    $this->user->update(['supplier_id' => $ownSupplier->id]);
+    $this->user->givePermissionTo('product-edit');
+
+    $this->putJson(route('products.update', $otherProduct), [])->assertForbidden();
+});
+
+it('denies a supplier-scoped user moving their own product to another supplier', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $ownProduct = Product::factory()->create(['supplier_id' => $ownSupplier->id]);
+
+    $this->user->update(['supplier_id' => $ownSupplier->id]);
+    $this->user->givePermissionTo('product-edit');
+
+    $this->put(route('products.update', $ownProduct), [
+        'product_code' => $ownProduct->product_code,
+        'product_name' => $ownProduct->product_name,
+        'uom_id' => $ownProduct->uom_id ?? Uom::factory()->create()->id,
+        'valuation_method' => Product::VALUATION_METHODS[0],
+        'supplier_id' => $otherSupplier->id,
+    ])->assertForbidden();
+
+    expect($ownProduct->fresh()->supplier_id)->toBe($ownSupplier->id);
+});

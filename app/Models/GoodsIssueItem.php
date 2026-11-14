@@ -82,10 +82,12 @@ class GoodsIssueItem extends Model
             ->where('sm.reference_id', $this->goods_issue_id)
             ->where('sm.goods_issue_item_id', $this->id)
             ->where('sm.movement_type', 'transfer')
-            ->groupBy('sb.id', 'sb.batch_code', 'sb.selling_price', 'sb.is_promotional', 'sb.priority_order')
+            ->groupBy('sb.id', 'sb.batch_code', 'sb.selling_price', 'sb.is_promotional', 'sb.priority_order', 'sb.receipt_date')
             ->selectRaw('sb.id as stock_batch_id, sb.batch_code, SUM(-sm.quantity) as quantity, MAX(sm.unit_cost) as unit_cost, sb.selling_price, sb.is_promotional')
             ->havingRaw('SUM(-sm.quantity) > 0.0005')
+            // the order the issue allocated them in: priority, then oldest receipt first (FIFO)
             ->orderBy('sb.priority_order')
+            ->orderBy('sb.receipt_date')
             ->orderBy('sb.id')
             ->get();
     }

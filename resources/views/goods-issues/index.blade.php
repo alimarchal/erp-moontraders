@@ -481,14 +481,6 @@
                                 &middot; <a href="{{ $pendingUrl }}" class="gl-pending-link">{{ number_format($stats['pending']) }} on vans, not settled <span aria-hidden="true">→</span></a>
                             @endif
                         </p>
-                        <nav class="gl-ranges gl-ranges-inline" aria-label="Quick dates">
-                            @php $matched = false; @endphp
-                            @foreach ($ranges as $label => [$from, $to])
-                                @php $on = $dateFrom === $from && $dateTo === $to; $matched = $matched || $on; @endphp
-                                <a href="{{ $rangeUrl($from, $to) }}" @if ($on) aria-current="true" @endif>{{ $label }}</a>
-                            @endforeach
-                            @unless ($matched)<a href="#" aria-current="true" onclick="return false" title="Custom period (change it in Filters)">{{ $periodLabel }}</a>@endunless
-                        </nav>
                         <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
                             <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
                             <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>

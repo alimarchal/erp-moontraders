@@ -73,6 +73,13 @@
                                 <x-label for="supplier_invoice_number" value="Supplier Invoice Number" />
                                 <x-input id="supplier_invoice_number" name="supplier_invoice_number" type="text"
                                     class="mt-1 block w-full" :value="old('supplier_invoice_number', $grn->supplier_invoice_number)" />
+                                @error('supplier_invoice_number')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                                        <input type="checkbox" name="confirm_split_invoice" value="1" class="rounded border-gray-300">
+                                        Same invoice, delivered in parts
+                                    </label>
+                                @enderror
                             </div>
 
 

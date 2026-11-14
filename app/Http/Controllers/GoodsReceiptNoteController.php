@@ -221,6 +221,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         $this->assertLineQuantitiesAddUp($validated['items']);
+        $this->assertSupplierInvoiceIsNew($request, $validated);
 
         DB::beginTransaction();
 
@@ -473,6 +474,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         $this->assertLineQuantitiesAddUp($validated['items']);
+        $this->assertSupplierInvoiceIsNew($request, $validated, $goodsReceiptNote->id);
 
         DB::beginTransaction();
 
@@ -765,6 +767,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             return back()
                 ->with('error', 'You do not have permission to import GRNs for this supplier.');
         }
+
+        $this->assertSupplierInvoiceIsNew($request, $validated);
 
         $withholdingTaxRate = $this->resolveActiveWithholdingTaxRate();
 
@@ -1301,6 +1305,35 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
             DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
                 'running_balance' => $balance,
+            ]);
+        }
+    }
+
+    /**
+     * The same supplier invoice entered on two GRNs books the delivery twice. Refuse it unless the person says it is
+     * one invoice delivered in parts. Reversed GRNs do not count.
+     *
+     * @param  array{supplier_id: int|string, supplier_invoice_number?: ?string}  $validated
+     *
+     * @throws RequestValidationException
+     */
+    private function assertSupplierInvoiceIsNew(Request $request, array $validated, ?int $exceptGrnId = null): void
+    {
+        $invoiceNumber = trim((string) ($validated['supplier_invoice_number'] ?? ''));
+
+        if ($invoiceNumber === '' || $request->boolean('confirm_split_invoice')) {
+            return;
+        }
+
+        $existing = GoodsReceiptNote::where('supplier_id', $validated['supplier_id'])
+            ->where('supplier_invoice_number', $invoiceNumber)
+            ->where('status', '!=', 'reversed')
+            ->when($exceptGrnId, fn ($query, $id) => $query->whereKeyNot($id))
+            ->value('grn_number');
+
+        if ($existing) {
+            throw RequestValidationException::withMessages([
+                'supplier_invoice_number' => "Invoice {$invoiceNumber} of this supplier is already on {$existing}. If it is the same invoice delivered in parts, tick \"Same invoice, delivered in parts\" and save again.",
             ]);
         }
     }

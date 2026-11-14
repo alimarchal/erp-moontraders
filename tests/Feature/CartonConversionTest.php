@@ -151,6 +151,38 @@ it('rejects a GRN line whose accepted plus rejected does not equal received', fu
     expect(GoodsReceiptNote::count())->toBe(0);
 });
 
+it('refuses a second GRN for the same supplier invoice unless it is marked as delivered in parts', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces']);
+    $product = cartonProduct(['supplier_id' => $supplier->id]);
+    $first = GoodsReceiptNote::factory()->create(['supplier_id' => $supplier->id, 'supplier_invoice_number' => 'SI-00416', 'status' => 'posted']);
+
+    $payload = cartonGrnPayload($supplier, $product) + ['supplier_invoice_number' => 'SI-00416'];
+
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), $payload)
+        ->assertSessionHasErrors(['supplier_invoice_number' => "Invoice SI-00416 of this supplier is already on {$first->grn_number}. If it is the same invoice delivered in parts, tick \"Same invoice, delivered in parts\" and save again."]);
+
+    expect(GoodsReceiptNote::count())->toBe(1);
+
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), $payload + ['confirm_split_invoice' => '1'])
+        ->assertSessionDoesntHaveErrors();
+
+    expect(GoodsReceiptNote::where('supplier_invoice_number', 'SI-00416')->count())->toBe(2);
+});
+
+it('does not count a reversed GRN as a duplicate supplier invoice', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces']);
+    $product = cartonProduct(['supplier_id' => $supplier->id]);
+    GoodsReceiptNote::factory()->create(['supplier_id' => $supplier->id, 'supplier_invoice_number' => 'SI-500', 'status' => 'reversed']);
+
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), cartonGrnPayload($supplier, $product) + ['supplier_invoice_number' => 'SI-500'])
+        ->assertSessionDoesntHaveErrors();
+
+    expect(GoodsReceiptNote::where('supplier_invoice_number', 'SI-500')->count())->toBe(2);
+});
+
 it('rejects a pieces-mode GRN line whose cost does not match its value with taxes plus FMR', function () {
     $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces']);
     $product = cartonProduct(['supplier_id' => $supplier->id]);

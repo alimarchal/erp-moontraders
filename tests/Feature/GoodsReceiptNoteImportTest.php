@@ -620,3 +620,28 @@ it('sets selling_price from product when not in excel', function () {
     $item = GoodsReceiptNoteItem::latest()->first();
     expect((float) $item->selling_price)->toBe(75.00);
 });
+
+it('refuses an import for a supplier invoice already on another GRN and asks again in the import window', function () {
+    $existing = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id, 'supplier_invoice_number' => 'INV-DUP-9', 'status' => 'posted',
+    ]);
+
+    $this->from(route('goods-receipt-notes.create'))
+        ->post(route('goods-receipt-notes.import'), [
+            'submitted_form' => 'import',
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'receipt_date' => '2026-02-17',
+            'supplier_invoice_number' => 'INV-DUP-9',
+            'import_file' => createTestExcelFile([['Product Code' => 'TEST-001', 'Quantity' => 1, 'Unit Price Per Case' => 100]]),
+        ])
+        ->assertRedirect(route('goods-receipt-notes.create'))
+        ->assertSessionHasErrors('supplier_invoice_number');
+
+    expect(GoodsReceiptNote::count())->toBe(1);
+
+    $this->get(route('goods-receipt-notes.create'))
+        ->assertSuccessful()
+        ->assertSee("already on {$existing->grn_number}", false)
+        ->assertSee('Choose the file again before importing.');
+});

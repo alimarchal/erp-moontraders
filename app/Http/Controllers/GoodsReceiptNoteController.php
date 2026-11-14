@@ -226,6 +226,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
+            // Checked under a lock on the supplier, so two saves of the same invoice cannot both pass.
+            $this->assertSupplierInvoiceIsNew($request, $validated);
+
             // Generate GRN number
             $grn_number = $this->generateGRNNumber();
 
@@ -342,6 +345,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->route('goods-receipt-notes.show', $grn)
                 ->with('success', "GRN '{$grn->grn_number}' created successfully.");
 
+        } catch (RequestValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -479,6 +486,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
+            // Checked under a lock on the supplier, so two saves of the same invoice cannot both pass.
+            $this->assertSupplierInvoiceIsNew($request, $validated, $goodsReceiptNote->id);
+
             // Calculate totals
             $total_quantity = 0;
             $total_amount = 0; // Total inventory cost (includes FMR)
@@ -594,6 +604,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->route('goods-receipt-notes.show', $goodsReceiptNote)
                 ->with('success', "GRN '{$goodsReceiptNote->grn_number}' updated successfully.");
 
+        } catch (RequestValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -774,6 +788,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
+            // Checked under a lock on the supplier, so two saves of the same invoice cannot both pass.
+            $this->assertSupplierInvoiceIsNew($request, $validated);
+
             $import = new GoodsReceiptNoteItemsImport($validated['supplier_id'], $withholdingTaxRate);
             Excel::import($import, $request->file('import_file'));
 
@@ -913,6 +930,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->withInput()
                 ->withErrors(['import_file' => $errors]);
 
+        } catch (RequestValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -1284,6 +1305,37 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
             DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
                 'running_balance' => $balance,
+            ]);
+        }
+    }
+
+    /**
+     * The same supplier invoice entered on two GRNs books the delivery twice. Refuse it unless the person says it is
+     * one invoice delivered in parts. Reversed GRNs do not count.
+     *
+     * @param  array{supplier_id: int|string, supplier_invoice_number?: ?string}  $validated
+     *
+     * @throws RequestValidationException
+     */
+    private function assertSupplierInvoiceIsNew(Request $request, array $validated, ?int $exceptGrnId = null): void
+    {
+        $invoiceNumber = trim((string) ($validated['supplier_invoice_number'] ?? ''));
+
+        if ($invoiceNumber === '' || $request->boolean('confirm_split_invoice')) {
+            return;
+        }
+
+        Supplier::whereKey($validated['supplier_id'])->lockForUpdate()->first();
+
+        $existing = GoodsReceiptNote::where('supplier_id', $validated['supplier_id'])
+            ->where('supplier_invoice_number', $invoiceNumber)
+            ->where('status', '!=', 'reversed')
+            ->when($exceptGrnId, fn ($query, $id) => $query->whereKeyNot($id))
+            ->value('grn_number');
+
+        if ($existing) {
+            throw RequestValidationException::withMessages([
+                'supplier_invoice_number' => "Invoice {$invoiceNumber} of this supplier is already on {$existing}. If it is the same invoice delivered in parts, tick \"Same invoice, delivered in parts\" and save again.",
             ]);
         }
     }

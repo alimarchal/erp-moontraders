@@ -1193,6 +1193,35 @@ it('blocks reversing a GRN whose invoice was posted by hand under the same invoi
     expect(app(InventoryService::class)->grnReversalRefusal($grn->fresh()))->toContain('HAND-9');
 });
 
+it('raises a draft for each part of one invoice delivered in parts, so every part reaches the supplier ledger', function () {
+    $postPart = function (float $quantity): GoodsReceiptNote {
+        $grn = GoodsReceiptNote::factory()->create([
+            'supplier_id' => $this->supplier->id, 'warehouse_id' => $this->warehouse->id, 'status' => 'draft',
+            'receipt_date' => now(), 'supplier_invoice_number' => 'SPLIT-1',
+        ]);
+        $grn->items()->create([
+            'line_no' => 1, 'product_id' => $this->product->id, 'stock_uom_id' => $this->uom->id, 'purchase_uom_id' => $this->uom->id,
+            'qty_in_purchase_uom' => $quantity, 'uom_conversion_factor' => 1, 'qty_in_stock_uom' => $quantity, 'extended_value' => $quantity * 10,
+            'quantity_received' => $quantity, 'quantity_accepted' => $quantity, 'unit_cost' => 10, 'total_cost' => $quantity * 10,
+        ]);
+
+        expect(app(InventoryService::class)->postGrnToInventory($grn->fresh())['success'])->toBeTrue();
+
+        return $grn->fresh();
+    };
+
+    $first = $postPart(10);
+    $second = $postPart(5);
+
+    $drafts = LedgerRegister::whereIn('goods_receipt_note_id', [$first->id, $second->id])->orderBy('id')->get();
+
+    expect($drafts)->toHaveCount(2)
+        ->and($drafts[0]->document_number)->toBe('SPLIT-1')
+        ->and((float) $drafts[0]->invoice_amount)->toBe(100.0)
+        ->and($drafts[1]->document_number)->toBe("SPLIT-1 / {$second->grn_number}")
+        ->and((float) $drafts[1]->invoice_amount)->toBe(50.0);
+});
+
 it('lists ledger rows already entered under the GRN invoice number and raises no second invoice row', function () {
     grnReversalPermission($this);
 

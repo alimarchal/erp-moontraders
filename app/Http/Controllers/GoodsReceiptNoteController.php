@@ -215,6 +215,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'items.*.notes' => 'nullable|string',
         ]);
 
+        $this->authorizeSupplierSelection($validated);
+
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         DB::beginTransaction();
@@ -462,6 +464,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'items.*.quality_status' => 'nullable|string',
             'items.*.notes' => 'nullable|string',
         ]);
+
+        $this->authorizeSupplierSelection($validated);
 
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
@@ -1310,6 +1314,34 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         }
 
         return (int) $user->supplier_id ?? null;
+    }
+
+    /**
+     * A supplier-scoped user may only enter GRNs for their own supplier, with that supplier's products.
+     *
+     * @param  array{supplier_id: int|string, items?: array<int, array{product_id?: int|string}>}  $validated
+     */
+    private function authorizeSupplierSelection(array $validated): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId) {
+            return;
+        }
+
+        if ((int) $validated['supplier_id'] !== $userSupplierId) {
+            abort(403, 'You do not have permission to create GRNs for this supplier.');
+        }
+
+        $productIds = collect($validated['items'] ?? [])->pluck('product_id')->filter()->unique();
+
+        $foreignProducts = Product::withTrashed()->whereIn('id', $productIds)
+            ->where(fn ($query) => $query->where('supplier_id', '!=', $userSupplierId)->orWhereNull('supplier_id'))
+            ->exists();
+
+        if ($foreignProducts) {
+            abort(403, 'You can only add products of your own supplier to this GRN.');
+        }
     }
 
     /**

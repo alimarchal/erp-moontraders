@@ -27,7 +27,7 @@ class SupplierFactory extends Factory
             'is_internal_supplier' => fake()->boolean(10),
             'is_fmr_allowed' => false,
             'is_advance_tax_income' => false,
-            'disabled' => fake()->boolean(10),
+            'disabled' => false,
             'supplier_details' => fake()->optional()->sentence(),
             'website' => fake()->optional()->url(),
             'tax_id' => fake()->optional()->numerify('TAX-#######'),

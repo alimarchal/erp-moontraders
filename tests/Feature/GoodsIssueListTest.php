@@ -63,13 +63,13 @@ it('searches by issue number, vehicle and salesman name', function () {
     expect($other->id)->not->toBe($mine->id);
 });
 
-it('shows every row when all rows per page is chosen', function () {
+it('falls back to 20 rows when the retired all-rows option is requested', function () {
     GoodsIssue::factory()->count(25)->create(['issue_date' => now()]);
 
     $response = $this->actingAs($this->user)->get(route('goods-issues.index', ['per_page' => 'all', 'filter' => ['status' => 'all']]));
 
-    expect($response->viewData('goodsIssues')->count())->toBe(25)
-        ->and($response->viewData('perPage'))->toBe('all');
+    expect($response->viewData('goodsIssues')->count())->toBe(20)
+        ->and($response->viewData('perPage'))->toBe('20');
 });
 
 it('downloads the filtered list as an Excel file', function () {

@@ -1,0 +1,94 @@
+name: "Copilot Setup Steps"
+
+# Prepares the GitHub Copilot coding agent's environment before it starts: PHP 8.4, MariaDB with the
+# sample database (database/backup/database.sql.gz) imported and migrated, Composer and npm dependencies,
+# and built assets. Runs on its own when this file changes, so a broken setup shows up in the PR.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job must be called copilot-setup-steps or Copilot will not pick it up.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: yes
+          MARIADB_DATABASE: moontrader
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
+
+    env:
+      DB_CONNECTION: mariadb
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: moontrader
+      DB_USERNAME: root
+      DB_PASSWORD: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: pdo_mysql, bcmath, intl, zip, gd, mbstring, exif, pcntl
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # .env must exist before Composer: package discovery boots the app and reads its config.
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      # package-lock.json lags package.json, so npm ci refuses; npm install works.
+      - name: Install npm dependencies and build assets
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Generate the app key
+        run: php artisan key:generate --no-interaction
+
+      # The dump's triggers are owned by user_moontraders, and the test suite uses moontraders_test.
+      - name: Create the dump's definer user and the test database
+        run: |
+          mysql -h127.0.0.1 -uroot -e "
+            CREATE USER IF NOT EXISTS 'user_moontraders'@'localhost';
+            CREATE USER IF NOT EXISTS 'user_moontraders'@'%';
+            GRANT ALL ON *.* TO 'user_moontraders'@'localhost';
+            GRANT ALL ON *.* TO 'user_moontraders'@'%';
+            CREATE DATABASE IF NOT EXISTS moontraders_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            FLUSH PRIVILEGES;"
+
+      - name: Import the sample database
+        run: zcat database/backup/database.sql.gz | mysql -h127.0.0.1 -uroot moontrader
+
+      # The dump has no stored procedures; recreate them (and views/triggers) before migrating.
+      - name: Sync database objects and migrate
+        run: |
+          php artisan db:sync-objects --no-interaction
+          php artisan migrate --force --no-interaction
+          php artisan db:sync-objects --no-interaction

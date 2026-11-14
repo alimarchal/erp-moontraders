@@ -110,10 +110,10 @@ it('shows return and shortage values in the sales summary on the show page and p
     $this->actingAs($user)
         ->get(route('sales-settlements.show', $settlement))
         ->assertSuccessful()
-        ->assertSeeInOrder(['Return Value', '1,275.75', 'Shortage Value', '425.25']);
+        ->assertSeeInOrder(['Return Value', '1,275.75', 'Shortage Value', '425.25', 'Recovery (Cash)']);
 
     $this->actingAs($user)
         ->get(route('sales-settlements.show', [$settlement, 'layout' => 'print2']))
         ->assertSuccessful()
-        ->assertSeeInOrder(['Return value', '1,275.75', 'Shortage value', '425.25']);
+        ->assertSeeInOrder(['Return value', '1,275.75', 'Shortage value', '425.25', 'Recovery (cash)']);
 });

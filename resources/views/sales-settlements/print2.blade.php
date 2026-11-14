@@ -629,8 +629,8 @@
                             <tr><td class="i">4</td><td>Cash sale amount</td><td class="basis">net sale - credit - bank</td><td class="n b">{{ $money($settlement->cash_sales_amount) }}</td></tr>
                             <tr><td class="i">5</td><td>Bank slips / deposits</td><td class="basis">deposited by salesman</td><td class="n b">{{ $money($bankSlipsTotal) }}</td></tr>
                             <tr class="tot"><td class="i">6</td><td>Net sale (sold items value)</td><td class="basis">credit + cheque + bank + cash</td><td class="n">{{ $money($netSale) }}</td></tr>
-                            <tr><td class="i">7</td><td>Return value</td><td class="basis">returned x unit price</td><td class="n">{{ $money($settlement->sales_return_amount) }}</td></tr>
-                            <tr><td class="i">8</td><td>Shortage value</td><td class="basis">shortage x unit price</td><td class="n">{{ $money($settlement->shortage_amount) }}</td></tr>
+                            <tr><td class="i">7</td><td>Return value</td><td class="basis">returned x unit price</td><td class="n">{{ $money($valueTotals['returned_value']) }}</td></tr>
+                            <tr><td class="i">8</td><td>Shortage value</td><td class="basis">shortage x unit price</td><td class="n">{{ $money($valueTotals['shortage_value']) }}</td></tr>
                             <tr><td class="i">9</td><td>Recovery (cash)</td><td class="basis">old credit, in cash</td><td class="n">{{ $money($recoveryCash) }}</td></tr>
                             <tr><td class="i">10</td><td>Recovery (bank / online)</td><td class="basis">old credit, via bank</td><td class="n">{{ $money($recoveryBank) }}</td></tr>
                             <tr class="tot"><td class="i">11</td><td>Total sale amount</td><td class="basis">= row 6</td><td class="n">{{ $money($netSale) }}</td></tr>

@@ -9,6 +9,14 @@ test('login screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
+test('login screen has a show/hide toggle on the password field', function () {
+    $this->get('/login')
+        ->assertSuccessful()
+        ->assertSee('x-bind:type="show ? \'text\' : \'password\'"', false)
+        ->assertSee('type="password"', false)
+        ->assertSee('aria-label="Show password"', false);
+});
+
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
 

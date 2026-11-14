@@ -487,11 +487,36 @@ class AccountingService
             return $preferred;
         }
 
+        // Periods overlap (a fiscal year and its quarters): book to the narrowest open one.
         return AccountingPeriod::query()
             ->where('status', AccountingPeriod::STATUS_OPEN)
             ->whereDate('start_date', '<=', $entryDate)
             ->whereDate('end_date', '>=', $entryDate)
+            ->orderByDesc('start_date')
+            ->orderBy('end_date')
             ->value('id');
+    }
+
+    /**
+     * Refuse to post into books that were closed. Periods overlap (a fiscal year and its quarters), so a date
+     * is closed when any period covering it is not open, e.g. a closed Q1 inside an open fiscal year.
+     *
+     * @throws \RuntimeException naming the closed period
+     */
+    protected function assertPeriodOpenForPosting(\DateTimeInterface|string $entryDate): void
+    {
+        $date = $entryDate instanceof \DateTimeInterface ? $entryDate->format('Y-m-d') : substr((string) $entryDate, 0, 10);
+
+        $closedPeriod = AccountingPeriod::query()
+            ->where('status', '!=', AccountingPeriod::STATUS_OPEN)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->orderByDesc('start_date')
+            ->first(['name', 'status']);
+
+        if ($closedPeriod) {
+            throw new \RuntimeException("Cannot post an entry dated {$date}: the accounting period {$closedPeriod->name} is {$closedPeriod->status}.");
+        }
     }
 
     /**
@@ -499,6 +524,8 @@ class AccountingService
      */
     protected function markEntryAsPosted(JournalEntry $journalEntry): void
     {
+        $this->assertPeriodOpenForPosting($journalEntry->entry_date);
+
         $journalEntry->update([
             'status' => 'posted',
             'posted_at' => now(),

@@ -6,6 +6,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Models\User;
+use App\Services\Accounting\PeriodClosingService;
 use App\Services\AccountingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -183,6 +184,82 @@ it('creates and auto-posts a journal entry', function () {
     expect($result['success'])->toBeTrue();
     expect($result['data']->status)->toBe('posted');
     expect($result['data']->posted_at)->not->toBeNull();
+});
+
+it('refuses to post into a closed quarter inside an open fiscal year', function () {
+    AccountingPeriod::create([
+        'name' => 'Closed Q1',
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->startOfYear()->addMonths(3)->subDay()->toDateString(),
+        'status' => AccountingPeriod::STATUS_CLOSED,
+    ]);
+
+    $lines = [
+        ['account_id' => $this->cash->id, 'debit' => 500, 'credit' => 0, 'description' => 'Cash', 'cost_center_id' => null],
+        ['account_id' => $this->capital->id, 'debit' => 0, 'credit' => 500, 'description' => 'Capital', 'cost_center_id' => null],
+    ];
+    $closedDate = now()->startOfYear()->addDays(14)->toDateString();
+
+    $autoPosted = $this->service->createJournalEntry(['entry_date' => $closedDate, 'description' => 'Back-dated', 'lines' => $lines, 'auto_post' => true]);
+
+    expect($autoPosted['success'])->toBeFalse()
+        ->and($autoPosted['message'])->toContain('accounting period Closed Q1 is closed')
+        ->and(JournalEntry::where('description', 'Back-dated')->exists())->toBeFalse();
+
+    $draft = $this->service->createJournalEntry(['entry_date' => $closedDate, 'description' => 'Back-dated draft', 'lines' => $lines]);
+    expect($draft['success'])->toBeTrue();
+
+    $posted = $this->service->postJournalEntry($draft['data']->id);
+    expect($posted['success'])->toBeFalse()
+        ->and($posted['message'])->toContain('is closed')
+        ->and($draft['data']->fresh()->status)->toBe('draft');
+});
+
+it('still posts on a date whose periods are all open', function () {
+    AccountingPeriod::create([
+        'name' => 'Closed Q1',
+        'start_date' => now()->startOfYear()->toDateString(),
+        'end_date' => now()->startOfYear()->addMonths(3)->subDay()->toDateString(),
+        'status' => AccountingPeriod::STATUS_CLOSED,
+    ]);
+
+    $result = $this->service->createJournalEntry([
+        'entry_date' => now()->endOfYear()->toDateString(),
+        'description' => 'Year end',
+        'lines' => [
+            ['account_id' => $this->cash->id, 'debit' => 100, 'credit' => 0, 'description' => 'Cash', 'cost_center_id' => null],
+            ['account_id' => $this->capital->id, 'debit' => 0, 'credit' => 100, 'description' => 'Capital', 'cost_center_id' => null],
+        ],
+        'auto_post' => true,
+    ]);
+
+    expect($result['success'])->toBeTrue($result['message']);
+});
+
+it('reopens a closed quarter that contains today and reverses its closing entry', function () {
+    $quarter = AccountingPeriod::create([
+        'name' => 'Current Quarter',
+        'start_date' => now()->startOfQuarter()->toDateString(),
+        'end_date' => now()->endOfQuarter()->toDateString(),
+        'status' => AccountingPeriod::STATUS_OPEN,
+    ]);
+
+    $closing = $this->service->createJournalEntry([
+        'entry_date' => now()->toDateString(),
+        'description' => 'Closing entry',
+        'lines' => [
+            ['account_id' => $this->cash->id, 'debit' => 300, 'credit' => 0, 'description' => 'Cash', 'cost_center_id' => null],
+            ['account_id' => $this->capital->id, 'debit' => 0, 'credit' => 300, 'description' => 'Capital', 'cost_center_id' => null],
+        ],
+        'auto_post' => true,
+    ]);
+    $quarter->forceFill(['status' => AccountingPeriod::STATUS_CLOSED, 'closing_journal_entry_id' => $closing['data']->id])->save();
+
+    $result = app(PeriodClosingService::class)->reopenAccountingPeriod($quarter->id);
+
+    expect($result['success'])->toBeTrue($result['message'])
+        ->and($quarter->fresh()->status)->toBe(AccountingPeriod::STATUS_OPEN)
+        ->and(JournalEntry::where('reverses_entry_id', $closing['data']->id)->where('status', 'posted')->exists())->toBeTrue();
 });
 
 it('rejects unbalanced journal entries', function () {

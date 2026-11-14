@@ -16,6 +16,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use App\Services\DistributionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -609,4 +610,24 @@ it('post allows when B/F Out is zero with mixed sold, returned, shortage', funct
     $response->assertRedirect();
     $errorMessage = session('error') ?? '';
     expect($errorMessage)->not->toContain('B/F Out');
+});
+
+it('post blocks a returned line that has no batch rows, so its returned stock is not lost', function () {
+    $fx = issueFromTwoBatches();
+    $settlement = draftSettlementForIssue($fx, 'SETTLE-NO-BATCH');
+
+    // Line 2 (Q, 5) is returned in full, but its batch rows are gone.
+    $returnedItem = $settlement->items()->where('goods_issue_item_id', $fx['line2']->id)->firstOrFail();
+    $returnedValue = (float) $returnedItem->total_sales_value;
+    $returnedItem->update(['quantity_sold' => 0, 'quantity_returned' => 5, 'total_sales_value' => 0, 'total_cogs' => 0]);
+    $returnedItem->batches()->delete();
+
+    $total = round((float) $settlement->total_sales_amount - $returnedValue, 2);
+    $settlement->update(['cash_sales_amount' => $total, 'total_sales_amount' => $total, 'cash_collected' => $total]);
+
+    $result = app(DistributionService::class)->postSalesSettlement($settlement->fresh());
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('Tarang 220ml has returned quantities but no matching stock batch rows')
+        ->and($settlement->fresh()->status)->toBe('draft');
 });

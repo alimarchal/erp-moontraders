@@ -1813,5 +1813,22 @@ class DistributionService
                 );
             }
         }
+
+        // Returns only go back to the warehouse through the batch rows: a line with returns but no usable batch row
+        // would still come off the van while the returned goods never reach warehouse stock or the stock ledger.
+        foreach ($settlement->items as $item) {
+            if ((float) $item->quantity_returned <= 0) {
+                continue;
+            }
+
+            $usableBatches = $item->batches->filter(fn ($itemBatch) => $itemBatch->stockBatch !== null);
+            $orphanReturnedQuantity = (float) $item->batches
+                ->filter(fn ($itemBatch) => $itemBatch->stockBatch === null)
+                ->sum('quantity_returned');
+
+            if ($usableBatches->isEmpty() || $orphanReturnedQuantity > 0) {
+                throw new \Exception("{$this->productName($item->product_id)} has returned quantities but no matching stock batch rows, so the returns would not reach the warehouse. Open the settlement, save it again so its batches are rebuilt, then post.");
+            }
+        }
     }
 }

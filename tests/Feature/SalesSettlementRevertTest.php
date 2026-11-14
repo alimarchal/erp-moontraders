@@ -196,7 +196,7 @@ it('allows revert when cheque is bounced', function () {
 // Service: Revert operations
 // ──────────────────────────────────────────────────────
 
-it('resets settlement to draft and clears financial fields after revert', function () {
+it('resets settlement to draft, clears posting fields and keeps the cash sale amount after revert', function () {
     $user = makeRevertUser();
     $settlement = makePostedSettlement(['created_by' => $user->id]);
 
@@ -224,7 +224,7 @@ it('resets settlement to draft and clears financial fields after revert', functi
         ->and($fresh->journal_entry_id)->toBeNull()
         ->and($fresh->gross_profit)->toBeNull()
         ->and($fresh->total_cogs)->toBeNull()
-        ->and((float) $fresh->cash_sales_amount)->toBe(0.0)
+        ->and((float) $fresh->cash_sales_amount)->toBe(1500.0)
         ->and($fresh->reverted_at)->not->toBeNull()
         ->and($fresh->reverted_by)->toBe($user->id);
 });

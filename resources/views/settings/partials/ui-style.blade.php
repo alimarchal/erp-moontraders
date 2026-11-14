@@ -145,7 +145,7 @@
     .ak-seg-sm button + button { border-left: 1px solid var(--ak-border); }
     .ak-seg-sm button.is-on { background: var(--ak-navy); color: #fff; }
 
-    .ak-dt-scroll { max-height: 40rem; overflow: auto; border-top: 1px solid var(--ak-line); border-bottom: 1px solid var(--ak-line); }
+    .ak-dt-scroll { max-height: 40rem; position: relative; overflow: auto; border-top: 1px solid var(--ak-line); border-bottom: 1px solid var(--ak-line); }
     .ak-dt-scroll:focus-visible { outline: 3px solid #93c5fd; outline-offset: -3px; }
     .ak-dt { width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0; font-size: 14px; color: var(--ak-text); background: #fff; }
     .ak-dt th, .ak-dt td { padding: 14px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid #e5e7eb; background: #fff; }

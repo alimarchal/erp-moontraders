@@ -524,7 +524,8 @@ class InventoryService
             $orderByRaw = 'CAST(SUBSTRING(batch_code, ?) AS UNSIGNED) DESC';
         }
 
-        $query = StockBatch::where('batch_code', 'like', "{$prefix}%");
+        // Locked so two GRNs posted at the same time queue here instead of taking the same batch code.
+        $query = StockBatch::where('batch_code', 'like', "{$prefix}%")->lockForUpdate();
 
         $lastBatch = $driver === 'pgsql'
             ? $query->orderByRaw($orderByRaw)->first()

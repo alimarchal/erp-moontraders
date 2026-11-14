@@ -1335,7 +1335,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         $productIds = collect($validated['items'] ?? [])->pluck('product_id')->filter()->unique();
 
-        $foreignProducts = Product::whereIn('id', $productIds)
+        $foreignProducts = Product::withTrashed()->whereIn('id', $productIds)
             ->where(fn ($query) => $query->where('supplier_id', '!=', $userSupplierId)->orWhereNull('supplier_id'))
             ->exists();
 

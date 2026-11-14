@@ -332,3 +332,18 @@ it('non-admin user can still create a grn for their own supplier', function () {
 
     expect(GoodsReceiptNote::where('supplier_id', $ownSupplier->id)->count())->toBe(1);
 });
+
+it('non-admin user cannot add another supplier\'s deleted product to their grn', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $foreignProduct = Product::factory()->create(['supplier_id' => Supplier::factory()->create()->id]);
+    $foreignProduct->delete();
+
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->assignRole('user');
+
+    $this->actingAs($user)
+        ->post(route('goods-receipt-notes.store'), scopedGrnPayload($ownSupplier, $foreignProduct))
+        ->assertForbidden();
+
+    expect(GoodsReceiptNote::count())->toBe(0);
+});

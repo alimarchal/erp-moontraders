@@ -891,9 +891,7 @@
                         const fmrForUnitCost = fmrAllowance;
                         const qtyReceived = parseFloat(item.quantity_received) || 0;
                         if (qtyReceived > 0) {
-                            item.unit_cost = this.isCartonMode
-                                ? parseFloat((extendedValue / qtyReceived).toFixed(6))
-                                : parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
+                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
                         }
 
                         // total_cost = qty_accepted × unit_cost (4 decimal precision)

@@ -519,6 +519,24 @@ class InventoryService
             }
         }
 
+        // A GRN restated at its cost before FMR carries a second entry that moved its Round Off to the stock;
+        // the receipt it restated is going away, so that entry goes with it.
+        $fmrFixEntryId = JournalEntry::where('reference', GrnCostDriftService::fmrCostFixReference($grn->grn_number))
+            ->where('status', 'posted')
+            ->whereNotExists(fn ($query) => $query->from('journal_entries as reversal')->whereColumn('reversal.reverses_entry_id', 'journal_entries.id'))
+            ->value('id');
+
+        if ($fmrFixEntryId) {
+            $fmrFixReversal = app(AccountingService::class)->reverseJournalEntry(
+                (int) $fmrFixEntryId,
+                "REVERSAL: GRN {$grn->grn_number} - restatement at cost before FMR"
+            );
+
+            if (! $fmrFixReversal['success']) {
+                throw new \RuntimeException($fmrFixReversal['message']);
+            }
+        }
+
         // Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} mirrors JE #{$grn->journal_entry_id}");
 
         return $result['data'];
@@ -636,6 +654,30 @@ class InventoryService
 
         // Sync CurrentStock from current_stock_by_batch
         $this->syncCurrentStockFromValuationLayers($productId, $warehouseId);
+    }
+
+    /**
+     * Rewrite the running quantity and value of a product's stock ledger in one warehouse, in posting order, after
+     * a quantity or cost on it was corrected.
+     */
+    public function recalculateStockLedgerBalances(int $productId, int $warehouseId): void
+    {
+        $balance = 0.0;
+
+        $entries = DB::table('stock_ledger_entries')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->orderBy('id')
+            ->get(['id', 'quantity_in', 'quantity_out', 'valuation_rate']);
+
+        foreach ($entries as $entry) {
+            $balance += (float) $entry->quantity_in - (float) $entry->quantity_out;
+
+            DB::table('stock_ledger_entries')->where('id', $entry->id)->update([
+                'quantity_balance' => $balance,
+                'stock_value' => round($balance * (float) $entry->valuation_rate, 4),
+            ]);
+        }
     }
 
     /**

@@ -701,7 +701,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 'unit_price_per_case' => $cartons > 0 ? round($result['total'] / $cartons, 6) : null,
                 'discounted_value_before_tax' => $beforeTax,
                 'total_value_with_taxes' => $payable,
-                'unit_cost' => $result['unit_cost'],
+                // As on a pieces-mode line: the stock costs its value with taxes before FMR (FMR is income).
+                'unit_cost' => $result['pieces'] > 0 ? round(($payable + $fmr) / $result['pieces'], 6) : $result['unit_cost'],
             ]);
         }
 
@@ -1192,7 +1193,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             }
 
             foreach ($processedProducts as $entry) {
-                $this->recalculateStockLedgerBalances($entry['product_id'], $entry['warehouse_id']);
+                app(InventoryService::class)->recalculateStockLedgerBalances($entry['product_id'], $entry['warehouse_id']);
                 $this->recalculateInventoryLedgerBalances($entry['product_id']);
             }
 
@@ -1268,26 +1269,6 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         return ($amount >= 0 ? '+' : '−').number_format(abs($amount), 2);
     }
 
-    private function recalculateStockLedgerBalances(int $productId, int $warehouseId): void
-    {
-        $balance = 0.0;
-
-        $entries = DB::table('stock_ledger_entries')
-            ->where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->orderBy('id')
-            ->get(['id', 'quantity_in', 'quantity_out', 'valuation_rate']);
-
-        foreach ($entries as $entry) {
-            $balance += (float) $entry->quantity_in - (float) $entry->quantity_out;
-
-            DB::table('stock_ledger_entries')->where('id', $entry->id)->update([
-                'quantity_balance' => $balance,
-                'stock_value' => round($balance * (float) $entry->valuation_rate, 4),
-            ]);
-        }
-    }
-
     private function recalculateInventoryLedgerBalances(int $productId): void
     {
         $balance = 0.0;
@@ -1311,7 +1292,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      * The stock is carried at what the supplier's invoice line says it cost before FMR (FMR is income), so on a
      * pieces-mode line quantity × unit cost must equal the line's value with taxes plus its FMR allowance. A line
      * that disagrees would otherwise be absorbed by Round Off when the GRN is posted. Carton-mode lines are
-     * costed on the server from the carton rate.
+     * costed by the server the same way, in applyCartonEntry().
      *
      * @param  array<int, array<string, mixed>>  $items
      *

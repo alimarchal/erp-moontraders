@@ -141,6 +141,21 @@ it('restates a GRN costed net of FMR at its cost before FMR and moves the Round 
         ->and($service->repairFmrNettedCost($fx['grn']->id)['note'])->toBe('No line is costed net of FMR.');
 });
 
+it('reverses a restated GRN together with its restatement, leaving no stock or Round Off behind', function () {
+    $fx = postGrnCostedNetOfFmr();
+    DB::transaction(fn () => app(GrnCostDriftService::class)->repairFmrNettedCost($fx['grn']->id));
+
+    $result = app(InventoryService::class)->reverseGrnInventory($fx['grn']->fresh());
+
+    $gaps = app(InventoryGlAdjustmentService::class)->stockLedgerGaps();
+
+    expect($result['success'])->toBeTrue($result['message'] ?? '')
+        ->and(round(roundOffBalance(), 2))->toBe(0.0)
+        ->and($gaps['1151']['ledger'])->toBe(0.0)
+        ->and($gaps['1151']['stock'])->toBe(0.0)
+        ->and(JournalEntry::where('reverses_entry_id', JournalEntry::where('reference', GrnCostDriftService::fmrCostFixReference($fx['grn']->grn_number))->value('id'))->exists())->toBeTrue();
+});
+
 it('leaves a GRN alone when its Round Off does not hold the FMR', function () {
     $fx = postGrnCostedNetOfFmr(roundOff: 250.0);
 

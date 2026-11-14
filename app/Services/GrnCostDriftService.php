@@ -217,6 +217,14 @@ class GrnCostDriftService
     }
 
     /**
+     * Reference of the entry that restated a GRN costed net of FMR; reversing the GRN reverses it too.
+     */
+    public static function fmrCostFixReference(string $grnNumber): string
+    {
+        return "FMR-COST-FIX-{$grnNumber}";
+    }
+
+    /**
      * Posted GRNs with lines costed net of their FMR allowance while the GRN journal also credited that allowance as
      * income, so Round Off carried it. The GRN form did this for suppliers marked "FMR allowed" (Engro) until it was
      * changed to cost every line before FMR, as the Excel import always has.
@@ -334,13 +342,26 @@ class GrnCostDriftService
             $result['lines']++;
         }
 
+        // The stock ledger's running values and the current stock summary are derived from the costs just restated.
+        $inventory = app(InventoryService::class);
+        $locations = DB::table('current_stock_by_batch')
+            ->whereIn('stock_batch_id', $batchIds)
+            ->select('product_id', 'warehouse_id')
+            ->union(DB::table('stock_ledger_entries')->whereIn('stock_batch_id', $batchIds)->select('product_id', 'warehouse_id'))
+            ->get();
+
+        foreach ($locations as $location) {
+            $inventory->recalculateStockLedgerBalances((int) $location->product_id, (int) $location->warehouse_id);
+            $inventory->syncCurrentStockFromValuationLayers((int) $location->product_id, (int) $location->warehouse_id);
+        }
+
         $journal = $this->glAdjustmentService->postReceiptRestatement(
             $roundOff,
             self::ROUND_OFF,
             $this->warehouseValueOf($batchIds) - $warehouseValueBefore,
             $vanValueDelta,
             $valueDeltas,
-            "FMR-COST-FIX-{$grn->grn_number}",
+            self::fmrCostFixReference($grn->grn_number),
             "{$grn->grn_number}: lines were costed net of FMR while FMR was also booked as income, so Round Off carried it; the stock is restated at its cost before FMR"
         );
 
@@ -566,7 +587,9 @@ class GrnCostDriftService
                 ->where('reference_type', SalesSettlement::class)
                 ->where('reference_id', $settlementId)
                 ->where('product_id', $productId)
-                ->selectRaw('SUM(ABS(quantity) * unit_cost) as value, SUM(ABS(quantity)) as quantity')
+                // Signed, so a revert's reversing movement cancels the sale it undid: sold, reverted and posted
+                // again counts once, and a settlement reverted and still in draft nets to nothing and is skipped.
+                ->selectRaw('SUM(-quantity * unit_cost) as value, SUM(-quantity) as quantity')
                 ->first();
 
             if (! $sold || (float) $sold->quantity <= 0) {

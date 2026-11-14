@@ -2,6 +2,7 @@
 
 use App\Models\AccountingPeriod;
 use App\Models\Currency;
+use App\Models\CurrentStockByBatch;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
@@ -18,6 +19,7 @@ use App\Models\User;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
 use App\Services\AccountingService;
+use App\Services\DistributionService;
 use App\Services\InventoryLedgerService;
 use App\Services\InventoryService;
 use App\Services\SalesSettlementRevertService;
@@ -384,6 +386,14 @@ it('restores van stock balance after revert', function () {
         'quantity_on_hand' => 0,
         'average_cost' => 100,
     ]);
+    VanStockBatch::create([
+        'vehicle_id' => $settlement->vehicle_id,
+        'product_id' => $product->id,
+        'goods_issue_number' => 'GI-REVERT-TEST',
+        'quantity_on_hand' => 0,
+        'unit_cost' => 100,
+        'selling_price' => 150,
+    ]);
 
     $this->actingAs($user);
 
@@ -425,6 +435,22 @@ it('creates reversing stock movement entries after revert', function () {
         'total_sales_value' => 1500,
         'unit_cost' => 100,
         'total_cogs' => 1000,
+    ]);
+
+    // Posting left the van row and its batch row at 0; the revert puts the 10 back on them.
+    VanStockBalance::create([
+        'vehicle_id' => $settlement->vehicle_id,
+        'product_id' => $product->id,
+        'quantity_on_hand' => 0,
+        'average_cost' => 100,
+    ]);
+    VanStockBatch::create([
+        'vehicle_id' => $settlement->vehicle_id,
+        'product_id' => $product->id,
+        'goods_issue_number' => 'GI-REVERT-TEST',
+        'quantity_on_hand' => 0,
+        'unit_cost' => 100,
+        'selling_price' => 150,
     ]);
 
     $uom = Uom::factory()->create();
@@ -777,4 +803,70 @@ it('keeps every attachment, the rows and the stored files, when a settlement is 
     expect($settlement->fresh()->status)->toBe('draft')
         ->and($cheque->fresh()->attachment)->toBe('sales-settlement/'.$settlement->settlement_number.'/cheques/kept.pdf');
     Storage::disk(SettlementAttachmentService::disk())->assertExists($cheque->attachment);
+});
+
+// ──────────────────────────────────────────────────────
+// Service: stock that moved on after posting
+// ──────────────────────────────────────────────────────
+
+/**
+ * The fixture issue settled with line 2 (Q, 5 from batch C) returned in full instead of sold, then posted.
+ *
+ * @return array{fx: array<string, mixed>, settlement: SalesSettlement}
+ */
+function postedSettlementWithReturnedLine(): array
+{
+    $fx = issueFromTwoBatches();
+    $settlement = draftSettlementForIssue($fx, 'SETTLE-REVERT-RET');
+
+    $returnedItem = $settlement->items()->where('goods_issue_item_id', $fx['line2']->id)->firstOrFail();
+    $returnedValue = (float) $returnedItem->total_sales_value;
+    $returnedItem->update(['quantity_sold' => 0, 'quantity_returned' => 5, 'total_sales_value' => 0, 'total_cogs' => 0]);
+    $returnedItem->batches()->update(['quantity_sold' => 0, 'quantity_returned' => 5]);
+
+    $total = round((float) $settlement->total_sales_amount - $returnedValue, 2);
+    $settlement->update(['cash_sales_amount' => $total, 'total_sales_amount' => $total, 'cash_collected' => $total]);
+
+    $result = app(DistributionService::class)->postSalesSettlement($settlement->fresh());
+    expect($result['success'])->toBeTrue($result['message'] ?? '');
+
+    return ['fx' => $fx, 'settlement' => $settlement->fresh()];
+}
+
+it('refuses to revert when stock it returned to the warehouse has since been issued again', function () {
+    ['fx' => $fx, 'settlement' => $settlement] = postedSettlementWithReturnedLine();
+
+    // 3 of the 5 returned units of batch C left the warehouse again after posting.
+    CurrentStockByBatch::where('stock_batch_id', $fx['batches']['C'])
+        ->where('warehouse_id', $fx['warehouse']->id)
+        ->update(['quantity_on_hand' => 2]);
+
+    $result = app(SalesSettlementRevertService::class)->revert($settlement);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('has since been issued, sold or adjusted')
+        ->and($result['message'])->toContain('has 2 of the 5 returned')
+        ->and($settlement->fresh()->status)->toBe('posted')
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $fx['batches']['C'])->value('quantity_on_hand'))->toBe(2.0);
+});
+
+it('reverts a settlement whose returned stock is still in the warehouse', function () {
+    ['fx' => $fx, 'settlement' => $settlement] = postedSettlementWithReturnedLine();
+
+    $result = app(SalesSettlementRevertService::class)->revert($settlement);
+
+    expect($result['success'])->toBeTrue($result['message'])
+        ->and($settlement->fresh()->status)->toBe('draft');
+});
+
+it('refuses to revert when the van stock row is missing instead of dropping the quantity', function () {
+    ['fx' => $fx, 'settlement' => $settlement] = postedSettlementWithReturnedLine();
+
+    VanStockBalance::where('vehicle_id', $fx['vehicle']->id)->where('product_id', $fx['p']->id)->delete();
+
+    $result = app(SalesSettlementRevertService::class)->revert($settlement);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('van stock row for Olper TBA 250ml')
+        ->and($settlement->fresh()->status)->toBe('posted');
 });

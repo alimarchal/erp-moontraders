@@ -152,7 +152,7 @@
     .apl-on .ak-dt th:first-child, .apl-on .ak-dt td:first-child { padding-left: 20px; }
     .apl-on .ak-dt th:last-child, .apl-on .ak-dt td:last-child { padding-right: 20px; }
     .apl-on .ak-dt thead th {
-        background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: saturate(180%) blur(12px); backdrop-filter: saturate(180%) blur(12px);
+        background: var(--apl-surface);
         border-bottom: 1px solid var(--apl-sep); padding-top: 10px; padding-bottom: 10px;
         font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--apl-label-2);
     }
@@ -210,7 +210,9 @@
     .apl-on [x-transition], .apl-menu-in { transform-origin: top center; }
 
     /* ---------- Tabs on the other screens (no segmented wrapper): the track is the .ak-tabs row itself ---------- */
-    .apl-on .ak-tabs:not(:has(.apl-seg)) { width: fit-content; max-width: calc(100% - 40px); margin: 16px 20px 0; padding: 3px; gap: 2px; border-radius: 12px; background: var(--apl-fill); }
+    .apl-on .ak-tabs:not(:has(.apl-seg)) { width: fit-content; max-width: calc(100% - 40px); margin: 16px 20px 0; padding: 3px; gap: 2px; border-radius: 12px; background: linear-gradient(var(--apl-fill), var(--apl-fill)), var(--apl-surface); }
+    /* Sticky status tabs float over the scrolling table: opaque track + halo so rows never show through */
+    .apl-on .ak-tabs:not(:has(.apl-seg)) { box-shadow: 0 0 0 8px var(--apl-surface); }
     .apl-on .ak-tabs .ak-tab {
         gap: 6px; margin: 0; padding: 6px 12px; border: 0; border-radius: 9px;
         font-size: 13px; font-weight: 500; letter-spacing: -.01em; color: var(--apl-label); white-space: nowrap;
@@ -412,7 +414,7 @@
     html.apl-on .ev-ranges a.ev-clear { background: transparent; color: var(--apl-red); }
     html.apl-on .ev-ranges-label { font-weight: 500; color: var(--apl-label-2); }
     html.apl-on .ak-filters .select2-container .select2-selection--single { border: 0; border-radius: var(--apl-radius-sm); background: var(--apl-fill-2); }
-    html.apl-on .ev-table tfoot td, html.apl-on .ak-dt tfoot td { background: rgba(255, 255, 255, .92); border-top: 1px solid var(--apl-sep); font-weight: 600; }
+    html.apl-on .ev-table tfoot td, html.apl-on .ak-dt tfoot td { background: var(--apl-surface); border-top: 1px solid var(--apl-sep); font-weight: 600; }
     html.apl-on .ak-dt th .ev-ur { color: inherit; }
     /* voucher page: progress steps, details, ledger lines */
     html.apl-on .ev-pad, html.apl-on .pv-pad { padding: 20px 22px; }

@@ -206,10 +206,15 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function store(StoreProductRequest $request)
     {
+        $this->authorizeSupplierChoice($request);
+
         DB::beginTransaction();
 
         try {
             $payload = $request->validated();
+            if ($userSupplierId = $this->getUserSupplierScope()) {
+                $payload['supplier_id'] = $userSupplierId;
+            }
             $payload['valuation_method'] = $payload['valuation_method'] ?? Product::VALUATION_METHODS[0];
             $payload['is_active'] = array_key_exists('is_active', $payload)
                 ? (bool) $payload['is_active']
@@ -269,6 +274,8 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function show(Product $product)
     {
+        $this->authorizeProductSupplierAccess($product);
+
         $product->load(['supplier', 'uom', 'salesUom', 'category']);
 
         return view('products.show', [
@@ -281,6 +288,8 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function edit(Product $product)
     {
+        $this->authorizeProductSupplierAccess($product);
+
         $product->load(['supplier', 'uom', 'salesUom', 'category']);
 
         return view('products.edit', [
@@ -297,10 +306,16 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
+        $this->authorizeProductSupplierAccess($product);
+        $this->authorizeSupplierChoice($request);
+
         DB::beginTransaction();
 
         try {
             $payload = $request->validated();
+            if ($userSupplierId = $this->getUserSupplierScope()) {
+                $payload['supplier_id'] = $userSupplierId;
+            }
             $payload['valuation_method'] = $payload['valuation_method'] ?? $product->valuation_method;
             $payload['is_active'] = array_key_exists('is_active', $payload)
                 ? (bool) $payload['is_active']
@@ -417,6 +432,8 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function destroy(Product $product)
     {
+        $this->authorizeProductSupplierAccess($product);
+
         try {
             $product->update(['is_active' => false]);
 
@@ -447,6 +464,34 @@ class ProductController extends Controller implements HasMiddleware
         }
 
         return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    /**
+     * A supplier-scoped user may only open and change their own supplier's products.
+     */
+    private function authorizeProductSupplierAccess(Product $product): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId && (int) $product->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this product.');
+        }
+    }
+
+    /**
+     * A supplier-scoped user may only save products under their own supplier (left empty, it is set to theirs).
+     */
+    private function authorizeSupplierChoice(Request $request): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId) {
+            return;
+        }
+
+        if (filled($request->input('supplier_id')) && (int) $request->input('supplier_id') !== $userSupplierId) {
+            abort(403, 'You can only save products for your own supplier.');
+        }
     }
 
     /**

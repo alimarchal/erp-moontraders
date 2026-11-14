@@ -14,7 +14,18 @@ class UpdateProductRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        // A supplier-scoped user may only update their own supplier's products. Checked here, before
+        // validation, so another supplier's product never reaches the validation rules.
+        $isScoped = $user->is_super_admin !== 'Yes' && ! $user->hasRole('super-admin') && ! $user->hasRole('admin') && $user->supplier_id;
+        $product = $this->route('product');
+
+        return ! $isScoped || ! $product instanceof Product || (int) $product->supplier_id === (int) $user->supplier_id;
     }
 
     /**

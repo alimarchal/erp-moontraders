@@ -355,6 +355,14 @@ it('restores van stock balance after revert', function () {
         'quantity_on_hand' => 0,
         'average_cost' => 100,
     ]);
+    VanStockBatch::create([
+        'vehicle_id' => $settlement->vehicle_id,
+        'product_id' => $product->id,
+        'goods_issue_number' => 'GI-REVERT-TEST',
+        'quantity_on_hand' => 0,
+        'unit_cost' => 100,
+        'selling_price' => 150,
+    ]);
 
     $this->actingAs($user);
 
@@ -396,6 +404,22 @@ it('creates reversing stock movement entries after revert', function () {
         'total_sales_value' => 1500,
         'unit_cost' => 100,
         'total_cogs' => 1000,
+    ]);
+
+    // Posting left the van row and its batch row at 0; the revert puts the 10 back on them.
+    VanStockBalance::create([
+        'vehicle_id' => $settlement->vehicle_id,
+        'product_id' => $product->id,
+        'quantity_on_hand' => 0,
+        'average_cost' => 100,
+    ]);
+    VanStockBatch::create([
+        'vehicle_id' => $settlement->vehicle_id,
+        'product_id' => $product->id,
+        'goods_issue_number' => 'GI-REVERT-TEST',
+        'quantity_on_hand' => 0,
+        'unit_cost' => 100,
+        'selling_price' => 150,
     ]);
 
     $uom = Uom::factory()->create();

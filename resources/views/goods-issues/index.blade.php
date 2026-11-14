@@ -226,8 +226,9 @@
         .ak-filters .select2-container--focus .select2-selection--single, .ak-filters .select2-container--open .select2-selection--single { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
         .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
         .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
-        .gl-table > tbody > tr > td { border-bottom: 1px solid #e5e7eb; }
-        .gl-table > tbody:last-of-type > tr:last-child > td { border-bottom: 0; }
+        /* Each issue is its own <tbody>, so every row is a :last-child; re-draw the separator explicitly (last issue stays open). */
+        .ak-dt.gl-table > tbody > tr:last-child > td { border-bottom: 1px solid rgba(60,60,67,.14); }
+        .ak-dt.gl-table > tbody:last-of-type > tr:last-child > td { border-bottom: 0; }
 /* Row number, and the issue number / products that open the Quick look */
         .gl-c-no { width: 40px; }
         .gl-table td.gl-no { width: 40px; color: #8e8e93; font-size: 12.5px; font-variant-numeric: tabular-nums; }

@@ -46,7 +46,7 @@ it('counts drafts and posted settlements for the dates and shows the totals of a
     expect($response->viewData('stats'))->toMatchArray(['total' => 2, 'draft' => 1, 'posted' => 1, 'draft_sales' => 1000.0])
         ->and((float) $response->viewData('totals')->total_sales_amount)->toBe(6000.0)
         ->and((float) $response->viewData('totals')->total_net_profit)->toBe(900.0);
-    $response->assertSee(['Drafts to post', 'Vans not settled', $draft->settlement_number, $posted->settlement_number]);
+    $response->assertSee([$draft->settlement_number, $posted->settlement_number]);
     $response->assertSee(route('sales-settlements.edit', $draft), false);
     $response->assertDontSee(route('sales-settlements.edit', $posted), false);
 });

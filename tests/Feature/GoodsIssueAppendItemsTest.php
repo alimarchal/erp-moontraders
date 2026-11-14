@@ -160,9 +160,10 @@ it('stays in balance from issue through added items to the posted settlement', f
         ]);
     }
     // The settlement entry books sales to cost center 4 and stock to cost center 6.
-    foreach ([4 => 'CC004', 6 => 'CC006-SETTLE'] as $id => $code) {
-        DB::table('cost_centers')->insert(['id' => $id, 'code' => $code, 'name' => $code, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
-    }
+    DB::table('cost_centers')->insertOrIgnore([
+        ['id' => 4, 'code' => 'CC004', 'name' => 'CC004', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        ['id' => 6, 'code' => 'CC006-SETTLE', 'name' => 'CC006-SETTLE', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+    ]);
     post(route('goods-issues.store-appended-items', $data['goodsIssue']), appendPayload($data, 10));
     [$mainLine, $addedLine] = $data['goodsIssue']->items()->orderBy('line_no')->get()->all();
     $settlement = SalesSettlement::factory()->create([

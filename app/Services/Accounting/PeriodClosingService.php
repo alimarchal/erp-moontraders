@@ -210,6 +210,9 @@ class PeriodClosingService
                     throw new \Exception('Only closed periods can be reopened.');
                 }
 
+                // Open the period first: the reversal is posted today, and posting refuses a date in a closed period.
+                $period->update(['status' => 'open']);
+
                 // Reverse the closing entry if it exists
                 if ($period->closing_journal_entry_id) {
                     $result = $this->accountingService->reverseJournalEntry(

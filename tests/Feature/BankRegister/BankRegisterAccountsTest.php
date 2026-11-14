@@ -21,6 +21,7 @@ beforeEach(function () {
     $this->maker = bankUser(['bank-statement-entry-list', 'bank-statement-entry-submit', 'bank-statement-entry-post'], 'Maker');
 });
 
+
 function postRegisterEntry(array $fixture, $maker, array $overrides = []): BankStatementEntry
 {
     $entry = BankStatementEntry::factory()->create($overrides + [
@@ -34,9 +35,17 @@ function postRegisterEntry(array $fixture, $maker, array $overrides = []): BankS
 /**
  * A balanced, posted journal on the given accounts.
  */
-function memoJournal(string $reference, int $debitAccountId, int $creditAccountId, float $amount): JournalEntry
+function memoJournal(string $reference, int $debitAccountId, int $creditAccountId, float $amount, ?int $reversesEntryId = null): JournalEntry
 {
-    $journal = JournalEntry::create(['currency_id' => Currency::value('id'), 'entry_date' => now()->toDateString(), 'reference' => $reference, 'description' => $reference, 'status' => 'draft']);
+    $journal = new JournalEntry([
+        'currency_id' => Currency::value('id'),
+        'entry_date' => now()->toDateString(),
+        'reference' => $reference,
+        'description' => $reference,
+        'status' => 'draft',
+    ]);
+    $journal->reverses_entry_id = $reversesEntryId;
+    $journal->save();
     $journal->details()->create(['chart_of_account_id' => $debitAccountId, 'line_no' => 1, 'debit' => $amount, 'credit' => 0]);
     $journal->details()->create(['chart_of_account_id' => $creditAccountId, 'line_no' => 2, 'debit' => 0, 'credit' => $amount]);
     $journal->update(['status' => 'posted']);
@@ -106,8 +115,7 @@ test('a category with its own account keeps using it and unknown categories go t
 test('the former memo ledger is removed for good and its posted lines go back to the register', function () {
     $memo = memoLedger($this->fixture);
     $journal = memoJournal('BR-2026-27-000001', $memo['bank']->id, $memo['clearing']->id, 2500);
-    $reversal = memoJournal('REV-BR-2026-27-000001', $memo['clearing']->id, $memo['bank']->id, 2500);
-    DB::table('journal_entries')->where('id', $reversal->id)->update(['reverses_entry_id' => $journal->id]);
+    $reversal = memoJournal('REV-BR-2026-27-000001', $memo['clearing']->id, $memo['bank']->id, 2500, $journal->id);
     $live = memoJournal('SETTLE-1', $this->fixture['liveLedger']->id, $this->fixture['liveReceivable']->id, 9000);
 
     $entry = BankStatementEntry::factory()->create([
@@ -165,4 +173,3 @@ test('the live-gap report lists statement lines the live ledger has no entry for
     expect($report['rows'])->toHaveCount(1)->and($report['rows'][0][2])->toBe('ONLY IN BANK')->and($report['rows'][0][6])->toBe(3300.0)
         ->and($report['notes'][0])->toContain('1 statement line(s) were found');
 });
-

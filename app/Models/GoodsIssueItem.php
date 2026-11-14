@@ -86,6 +86,7 @@ class GoodsIssueItem extends Model
             ->selectRaw('sb.id as stock_batch_id, sb.batch_code, SUM(-sm.quantity) as quantity, MAX(sm.unit_cost) as unit_cost, sb.selling_price, sb.is_promotional')
             ->havingRaw('SUM(-sm.quantity) > 0.0005')
             ->orderBy('sb.priority_order')
+            ->orderBy('sb.id')
             ->get();
     }
 }

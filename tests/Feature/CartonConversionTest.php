@@ -122,3 +122,31 @@ it('leaves pieces-mode suppliers exactly as submitted', function () {
         ->and($item->entered_cartons)->toBeNull()
         ->and($item->rate_per_th)->toBeNull();
 });
+
+it('rejects a GRN line whose accepted quantity is more than received', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces']);
+    $product = cartonProduct(['supplier_id' => $supplier->id]);
+
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), cartonGrnPayload($supplier, $product, [
+            'quantity_received' => 3,
+            'quantity_accepted' => 5,
+        ]))
+        ->assertSessionHasErrors('items.0.quantity_accepted');
+
+    expect(GoodsReceiptNote::count())->toBe(0);
+});
+
+it('rejects a GRN line whose accepted plus rejected does not equal received', function () {
+    $supplier = Supplier::factory()->create(['qty_entry_mode' => 'pieces']);
+    $product = cartonProduct(['supplier_id' => $supplier->id]);
+
+    $this->actingAs($this->admin)
+        ->post(route('goods-receipt-notes.store'), cartonGrnPayload($supplier, $product, [
+            'quantity_received' => 3,
+            'quantity_accepted' => 2,
+        ]))
+        ->assertSessionHasErrors('items.0.quantity_rejected');
+
+    expect(GoodsReceiptNote::count())->toBe(0);
+});

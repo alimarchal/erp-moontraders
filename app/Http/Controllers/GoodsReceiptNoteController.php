@@ -27,6 +27,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException as RequestValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -218,6 +219,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $this->authorizeSupplierSelection($validated);
 
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
+
+        $this->assertLineQuantitiesAddUp($validated['items']);
 
         DB::beginTransaction();
 
@@ -469,6 +472,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
+        $this->assertLineQuantitiesAddUp($validated['items']);
+
         DB::beginTransaction();
 
         try {
@@ -668,7 +673,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             try {
                 $result = $service->convert($product, $cartons, $loose, $rate);
             } catch (\DomainException $e) {
-                throw \Illuminate\Validation\ValidationException::withMessages(["items.$index.entered_cartons" => $e->getMessage()]);
+                throw RequestValidationException::withMessages(["items.$index.entered_cartons" => $e->getMessage()]);
             }
 
             $discount = (float) ($item['discount_value'] ?? 0);
@@ -1295,6 +1300,36 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
                 'running_balance' => $balance,
             ]);
+        }
+    }
+
+    /**
+     * Stock is posted from quantity_accepted, so it may not exceed what was received, and accepted plus rejected
+     * must account for everything received.
+     *
+     * @param  array<int, array{quantity_received: float|int|string, quantity_accepted: float|int|string, quantity_rejected?: float|int|string|null}>  $items
+     *
+     * @throws RequestValidationException
+     */
+    private function assertLineQuantitiesAddUp(array $items): void
+    {
+        $errors = [];
+
+        foreach ($items as $index => $item) {
+            // Compared as stored: the quantity columns keep 2 decimals.
+            $received = round((float) $item['quantity_received'], 2);
+            $accepted = round((float) $item['quantity_accepted'], 2);
+            $rejected = round((float) ($item['quantity_rejected'] ?? 0), 2);
+
+            if ($accepted - $received > 0.0001) {
+                $errors["items.{$index}.quantity_accepted"] = 'Line '.($index + 1).': accepted quantity cannot be more than the quantity received.';
+            } elseif (abs($accepted + $rejected - $received) > 0.0001) {
+                $errors["items.{$index}.quantity_rejected"] = 'Line '.($index + 1).': accepted plus rejected quantity must equal the quantity received.';
+            }
+        }
+
+        if ($errors !== []) {
+            throw RequestValidationException::withMessages($errors);
         }
     }
 

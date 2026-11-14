@@ -221,6 +221,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         $this->assertLineQuantitiesAddUp($validated['items']);
+        $this->assertLineCostMatchesInvoice((int) $validated['supplier_id'], $validated['items']);
 
         DB::beginTransaction();
 
@@ -473,6 +474,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         $this->assertLineQuantitiesAddUp($validated['items']);
+        $this->assertLineCostMatchesInvoice((int) $validated['supplier_id'], $validated['items']);
 
         DB::beginTransaction();
 
@@ -1302,6 +1304,47 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
                 'running_balance' => $balance,
             ]);
+        }
+    }
+
+    /**
+     * The stock is carried at what the supplier's invoice line says it cost before FMR (FMR is income), so on a
+     * pieces-mode line quantity × unit cost must equal the line's value with taxes plus its FMR allowance. A line
+     * that disagrees would otherwise be absorbed by Round Off when the GRN is posted. Carton-mode lines are
+     * costed on the server from the carton rate.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     *
+     * @throws RequestValidationException
+     */
+    private function assertLineCostMatchesInvoice(int $supplierId, array $items): void
+    {
+        if (Supplier::find($supplierId)?->usesCartonEntry()) {
+            return;
+        }
+
+        $errors = [];
+
+        foreach ($items as $index => $item) {
+            if (! isset($item['total_value_with_taxes']) || $item['total_value_with_taxes'] === '') {
+                continue;
+            }
+
+            $lineCost = round((float) $item['quantity_received'] * (float) $item['unit_cost'], 2);
+            $invoiceValue = round((float) $item['total_value_with_taxes'] + (float) ($item['fmr_allowance'] ?? 0), 2);
+
+            if (abs($lineCost - $invoiceValue) > 1.0) {
+                $errors["items.{$index}.unit_cost"] = sprintf(
+                    'Line %d: quantity × unit cost is %s, but the line\'s value with taxes plus FMR is %s. Recheck the unit cost.',
+                    $index + 1,
+                    number_format($lineCost, 2),
+                    number_format($invoiceValue, 2)
+                );
+            }
+        }
+
+        if ($errors !== []) {
+            throw RequestValidationException::withMessages($errors);
         }
     }
 

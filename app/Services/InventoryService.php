@@ -332,6 +332,23 @@ class InventoryService
                 2
             );
 
+            // Other charges and withholding tax are in the stock's cost but not on the supplier's line, so they
+            // land here by design. Anything beyond them and a paisa of rounding per line means the line costs do
+            // not add up to the invoice: refuse the posting instead of hiding the gap in Round Off.
+            $explainedByCharges = round((float) $grn->items->sum('other_charges') + (float) $grn->items->sum('withholding_tax'), 2);
+            $unexplainedRoundOff = round($roundingDifference + $explainedByCharges, 2);
+            $roundOffTolerance = max(1.0, round(0.01 * $grn->items->count(), 2));
+
+            if (abs($unexplainedRoundOff) > $roundOffTolerance) {
+                throw new \RuntimeException(sprintf(
+                    'GRN %s does not balance: its lines cost %s, but the invoice less FMR comes to %s (a difference of %s). Recheck the unit costs and amounts before posting.',
+                    $grn->grn_number,
+                    number_format($actualInventoryValue, 2),
+                    number_format($creditorAmount + $totalFmrAllowance + $explainedByCharges, 2),
+                    number_format(abs($unexplainedRoundOff), 2)
+                ));
+            }
+
             if (abs($roundingDifference) >= 0.01) {
                 if (! $roundOffAccount) {
                     Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping journal entry for GRN: '.$grn->id);

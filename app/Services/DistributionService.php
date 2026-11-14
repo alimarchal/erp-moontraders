@@ -1826,7 +1826,13 @@ class DistributionService
                 ->filter(fn ($itemBatch) => $itemBatch->stockBatch === null)
                 ->sum('quantity_returned');
 
-            if ($usableBatches->isEmpty() || $orphanReturnedQuantity > 0) {
+            // When every batch row is zero, posting puts the line's quantities on its first batch (the fallback);
+            // otherwise the usable rows must carry all of the line's returns.
+            $batchRowsAreEmpty = $item->batches->sum(fn ($itemBatch) => (float) $itemBatch->quantity_sold + (float) $itemBatch->quantity_returned + (float) $itemBatch->quantity_shortage) == 0;
+            $usableReturnedQuantity = (float) $usableBatches->sum('quantity_returned');
+            $returnsMissing = ! $batchRowsAreEmpty && abs($usableReturnedQuantity - (float) $item->quantity_returned) > 0.001;
+
+            if ($usableBatches->isEmpty() || $orphanReturnedQuantity > 0 || $returnsMissing) {
                 throw new \Exception("{$this->productName($item->product_id)} has returned quantities but no matching stock batch rows, so the returns would not reach the warehouse. Open the settlement, save it again so its batches are rebuilt, then post.");
             }
         }

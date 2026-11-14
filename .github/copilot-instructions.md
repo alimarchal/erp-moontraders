@@ -1,5 +1,24 @@
 # Moontrader ERP - AI Coding Agent Instructions
 
+## Session setup (read first)
+
+The environment is prepared by `.github/workflows/copilot-setup-steps.yml`: PHP 8.4, MariaDB 10.11 on
+127.0.0.1:3306 (user `root`, no password), dependencies installed and assets built, and the sample database
+`database/backup/database.sql.gz` imported into `moontrader` and migrated. Work and test against that data;
+do not build an empty or hand-made database.
+
+If you have to redo it yourself:
+1. Create the dump's trigger owner first: `CREATE USER 'user_moontraders'@'localhost'; GRANT ALL ON *.* TO 'user_moontraders'@'localhost';`
+   (without it, deletes on accounting tables fail with "definer does not exist").
+2. `zcat database/backup/database.sql.gz | mysql -uroot moontrader`
+3. `php artisan db:sync-objects` (the dump has no stored procedures; migrations need `sp_check_journal_balance`), then `php artisan migrate --force`.
+   If a migration fails halfway, re-import the dump before retrying: MySQL DDL is not rolled back.
+
+Tests: `vendor/bin/pest --configuration=phpunit.mariadb.xml` (CI uses this file and the `moontraders_test`
+database). Run the narrowest file or `--filter` while working. PHP 8.4 is required: `composer.lock` needs it.
+Use `npm install`, not `npm ci`; the lock file lags `package.json`.
+
+
 ## Project Overview
 Laravel 12 ERP system with **double-entry accounting core**, inventory, and basic business operations. Built with Livewire 3, Jetstream, TailwindCSS 3, and Pest testing framework. Uses Spatie packages for permissions (`spatie/laravel-permission`) and filtering (`spatie/laravel-query-builder`).
 

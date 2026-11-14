@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
- * The one Payroll screen: monthly runs, employee salaries, bonus & deductions and the categories, as tabs. Each tab shows
+ * The one Payroll screen: monthly runs, employee salaries, incentives & adjustments and the categories, as tabs. Each tab shows
  * only to the people allowed to use it.
  */
 class PayrollHubController extends Controller
@@ -140,12 +140,22 @@ class PayrollHubController extends Controller
         $monthDate = Carbon::parse($month.'-01')->toDateString();
         $ownStaff = fn ($query) => $query->when(! $user->hasAllSupplierAccess(), fn ($q) => $q->where('supplier_id', $user->supplier_id ?? 0));
 
-        $base = PayrollAdjustment::query()->whereHas('employee', $ownStaff)->whereDate('period_month', $monthDate);
+        $monthStart = Carbon::parse($monthDate);
+        $base = PayrollAdjustment::query()->whereHas('employee', $ownStaff)->coversMonth($monthStart);
+        $paidThisMonth = fn ($query) => $query->whereHas('slip.run', fn ($q) => $q->whereDate('period_month', $monthDate)->whereIn('status', PayrollRun::LOCKED_STATUSES));
 
         $adjustments = (clone $base)
             ->with(['employee:id,name,employee_code,designation,supplier_id', 'component:id,name,type', 'appliedRun:id,uuid,run_number', 'creator:id,name'])
+            ->with(['slipLines' => fn ($query) => $paidThisMonth($query)->with('slip.run:id,uuid,run_number,period_month,status')])
             ->when($filters['type'] ?? null, fn ($query, $type) => $query->whereHas('component', fn ($q) => $q->where('type', $type)))
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when(($filters['repeat'] ?? null) === 'monthly', fn ($query) => $query->where('is_recurring', true))
+            ->when(($filters['repeat'] ?? null) === 'once', fn ($query) => $query->where('is_recurring', false))
+            ->when(($filters['status'] ?? null) === PayrollAdjustment::STATUS_PENDING, fn ($query) => $query->where(fn ($q) => $q
+                ->where(fn ($one) => $one->where('is_recurring', false)->where('status', PayrollAdjustment::STATUS_PENDING))
+                ->orWhere(fn ($every) => $every->where('is_recurring', true)->whereDoesntHave('slipLines', $paidThisMonth))))
+            ->when(($filters['status'] ?? null) === PayrollAdjustment::STATUS_APPLIED, fn ($query) => $query->where(fn ($q) => $q
+                ->where(fn ($one) => $one->where('is_recurring', false)->where('status', PayrollAdjustment::STATUS_APPLIED))
+                ->orWhere(fn ($every) => $every->where('is_recurring', true)->whereHas('slipLines', $paidThisMonth))))
             ->when($filters['component_id'] ?? null, fn ($query, $id) => $query->where('salary_component_id', $id))
             ->when($filters['search'] ?? null, fn ($query, $term) => $query->whereHas('employee', fn ($q) => $q->where(fn ($w) => $w->whereLike('name', "%{$term}%")->orWhereLike('employee_code', "%{$term}%"))))
             ->orderByDesc('id')
@@ -160,6 +170,7 @@ class PayrollHubController extends Controller
             'month' => $month,
             'monthTotals' => $totals,
             'oneOffComponents' => SalaryComponent::active()->where('calculation', SalaryComponent::CALC_INPUT)->get(['id', 'name', 'type']),
+            'nextMonth' => $monthStart->copy()->addMonthNoOverflow()->format('Y-m'),
             'pickEmployees' => $this->employeeQuery($user, [])->get(['id', 'name', 'employee_code', 'designation']),
         ];
     }
@@ -190,7 +201,7 @@ class PayrollHubController extends Controller
         return [
             'runs' => $tabs->contains('runs') ? PayrollRun::query()->visibleTo($user)->count() : 0,
             'salaries' => $tabs->contains('salaries') ? $this->employeeQuery($user, [])->count() : 0,
-            'adjustments' => $tabs->contains('adjustments') ? PayrollAdjustment::query()->where('status', PayrollAdjustment::STATUS_PENDING)
+            'adjustments' => $tabs->contains('adjustments') ? PayrollAdjustment::query()->coversMonth(now())
                 ->whereHas('employee', fn ($query) => $query->when(! $user->hasAllSupplierAccess(), fn ($q) => $q->where('supplier_id', $user->supplier_id ?? 0)))->count() : 0,
             'categories' => $tabs->contains('categories') ? SalaryComponent::query()->where('is_active', true)->count() : 0,
         ];

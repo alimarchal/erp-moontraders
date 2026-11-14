@@ -199,7 +199,7 @@
         <div class="pr-sheet" style="max-width:420px" x-show="confirm.open"
             x-transition:enter="pr-enter" x-transition:enter-start="pr-from" x-transition:enter-end="pr-to" x-transition:leave="pr-leave" x-transition:leave-start="pr-to" x-transition:leave-end="pr-from">
             <div class="pr-sheet-head">
-                <div><h3 id="pr-run-del-title">Delete <span x-text="confirm.number"></span>?</h3><p>The draft and its payslips are removed. Bonuses and deductions stay waiting for the next payroll.</p></div>
+                <div><h3 id="pr-run-del-title">Delete <span x-text="confirm.number"></span>?</h3><p>The draft and its payslips are removed. Incentives and adjustments stay waiting for the next payroll.</p></div>
             </div>
             <form method="POST" :action="confirm.url" class="pr-sheet-foot" x-data="{ busy: false }" @submit="busy = true">
                 @csrf @method('DELETE')
@@ -219,7 +219,7 @@
                     x-transition:enter="pr-enter" x-transition:enter-start="pr-from" x-transition:enter-end="pr-to" x-transition:leave="pr-leave" x-transition:leave-start="pr-to" x-transition:leave-end="pr-from">
                     @csrf
                     <div class="pr-sheet-head">
-                        <div><h3 id="pr-new-title">New payroll <button type="button" class="rg-info no-print" @click.stop="$dispatch('rg-help', { topic: 'lifecycle' })" aria-label="Help: how a monthly payroll goes" title="Help: how a monthly payroll goes">i</button></h3><p>Every employee with a salary gets a payslip: basic, allowances, absent days, bonuses, advances and settlement shorts are filled in by themselves.</p></div>
+                        <div><h3 id="pr-new-title">New payroll <button type="button" class="rg-info no-print" @click.stop="$dispatch('rg-help', { topic: 'lifecycle' })" aria-label="Help: how a monthly payroll goes" title="Help: how a monthly payroll goes">i</button></h3><p>Every employee with a salary gets a payslip: basic, allowances, absent days, incentives, advances and settlement shorts are filled in by themselves.</p></div>
                         <button type="button" class="pr-x" @click="open = false" aria-label="Close">✕</button>
                     </div>
                     <div class="pr-sheet-body" style="display:grid; gap:14px">

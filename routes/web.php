@@ -51,6 +51,7 @@ use App\Http\Controllers\OpeningCustomerBalanceController;
 use App\Http\Controllers\OpeningStockController;
 use App\Http\Controllers\PayrollAdjustmentController;
 use App\Http\Controllers\PayrollHubController;
+use App\Http\Controllers\PayrollImportController;
 use App\Http\Controllers\PayrollRunController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
@@ -574,6 +575,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::post('adjustments', [PayrollAdjustmentController::class, 'store'])->name('adjustments.store');
         Route::get('adjustments/employees', [PayrollAdjustmentController::class, 'employees'])->name('adjustments.employees');
         Route::delete('adjustments/{adjustment}', [PayrollAdjustmentController::class, 'destroy'])->name('adjustments.destroy');
+        Route::post('adjustments/{adjustment}/stop', [PayrollAdjustmentController::class, 'stop'])->name('adjustments.stop');
+        Route::get('import/{kind}/template', [PayrollImportController::class, 'template'])->name('import.template');
+        Route::post('import/{kind}', [PayrollImportController::class, 'store'])->name('import.store');
         Route::get('salaries', [EmployeeSalaryController::class, 'index'])->name('salaries.index');
         Route::post('salaries/bulk', [EmployeeSalaryController::class, 'bulkUpdate'])->name('salaries.bulk');
         Route::get('salaries/{employee}/edit', [EmployeeSalaryController::class, 'edit'])->name('salaries.edit');

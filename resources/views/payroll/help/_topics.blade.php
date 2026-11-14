@@ -13,7 +13,7 @@
         <tr><th>ٹیب</th><th>کام</th></tr>
         <tr><td><span class="en">Payroll runs</span></td><td>ہر مہینے کا پے رول: بنانا، جانچنا، منظور اور ادا کرنا۔</td></tr>
         <tr><td><span class="en">Employee salaries</span></td><td>ہر ملازم کی مستقل تنخواہ: بنیادی، الاؤنس، مستقل کٹوتی۔ ایک یا سب کو اکٹھا۔</td></tr>
-        <tr><td><span class="en">Bonus &amp; deductions</span></td><td>کسی ایک مہینے کی رقم: عید بونس، کمیشن، جرمانہ وغیرہ، کئی ملازمین کو ایک ساتھ۔</td></tr>
+        <tr><td><span class="en">Incentives &amp; adjustments</span></td><td>کسی ایک مہینے کی رقم: عید بونس، کمیشن، جرمانہ وغیرہ، کئی ملازمین کو ایک ساتھ۔</td></tr>
         <tr><td><span class="en">Categories</span></td><td>آمدن اور کٹوتی کی مدیں؛ نئی مد کبھی بھی بنائیں۔</td></tr>
     </table>
     <div class="tip">ہر ٹیب صرف اسے دکھتی ہے جسے اس کی اجازت ہو: <button type="button" class="rgh-link" @click="go('permissions')">اجازتیں دیکھیں</button>۔ مزید: <button type="button" class="rgh-link" @click="go('incentive')">ایک بار کا انسینٹو / کمیشن</button>، <button type="button" class="rgh-link" @click="go('excess')">ایکسس</button>، <button type="button" class="rgh-link" @click="go('death-fund')">ڈیتھ فنڈ</button>۔ پوری گائیڈ ایک صفحے پر: <a href="{{ route('payroll.help') }}" target="_blank" rel="noopener">کھولیں</a>۔</div>
@@ -85,7 +85,7 @@
 
 <section data-topic="variable-part">
     <h2>ویری ایبل حصہ (ہر مہینے الگ)</h2>
-    <p>کارکردگی پر: <span class="en">Zero Return, MOP Achievement, POS, Numerics, Punctuality, LPPC, Distribution Incentive, OS Patrol</span>، اوور ٹائم، بونس۔ یہ مدیں <span class="en">Decided each month</span> ہوتی ہیں۔ <b>کہاں لکھیں:</b> پے رول کھول کر <span class="en">Enter variable pay</span> (گرڈ)، یا ایک ہی رقم کئی لوگوں کو ہو تو <span class="en">Bonus &amp; deductions</span>۔</p>
+    <p>کارکردگی پر: <span class="en">Zero Return, MOP Achievement, POS, Numerics, Punctuality, LPPC, Distribution Incentive, OS Patrol</span>، اوور ٹائم، بونس۔ یہ مدیں <span class="en">Decided each month</span> ہوتی ہیں۔ <b>کہاں لکھیں:</b> پے رول کھول کر <span class="en">Enter variable pay</span> (گرڈ)، یا ایک ہی رقم کئی لوگوں کو ہو تو <span class="en">Incentives &amp; adjustments</span>۔</p>
 </section>
 
 <section data-topic="categories">
@@ -107,7 +107,7 @@
         <tr><td>سیٹلمنٹ شارٹ</td><td>مہینے کی پوسٹ شدہ سیٹلمنٹس میں <bdi class="lt" dir="ltr">5293 Short Amount</bdi></td><td>سیل سیٹلمنٹ؛ یا سلپ پر معاف کریں</td></tr>
         <tr><td>غیر حاضری</td><td>صرف <span class="en">Basic</span> قسم</td><td>گرڈ میں <span class="en">Absent days</span> یا سلپ میں</td></tr>
         <tr><td>ڈیتھ فنڈ</td><td>تنخواہ کی ونڈو (ہر مہینے)</td><td><span class="en">Employee salaries</span></td></tr>
-        <tr><td>جرمانہ، ٹیکس، قرض</td><td>گرڈ یا <span class="en">Bonus &amp; deductions</span></td><td>وہیں</td></tr>
+        <tr><td>جرمانہ، ٹیکس، قرض</td><td>گرڈ یا <span class="en">Incentives &amp; adjustments</span></td><td>وہیں</td></tr>
     </table>
 </section>
 
@@ -145,11 +145,28 @@
 <section data-topic="one-off">
     <h2>بونس اور ایک بار کی کٹوتی</h2>
     <ul>
-        <li><span class="en">Bonus &amp; deductions</span> ٹیب: مہینہ، آمدن یا کٹوتی، مد، رقم اور ملازمین چنیں۔ ایک ہی رقم سب چنے ہوئے ملازمین کو (مثلاً عید بونس)۔</li>
+        <li><span class="en">Incentives &amp; adjustments</span> ٹیب: مہینہ، آمدن یا کٹوتی، مد، رقم اور ملازمین چنیں۔ ایک ہی رقم سب چنے ہوئے ملازمین کو (مثلاً عید بونس)۔</li>
         <li>اس مہینے کا پے رول ڈرافٹ ہو تو سلپ فوراً بدل جاتی ہے، ورنہ پے رول بنتے وقت خود آ جاتی ہے۔</li>
         <li>اس مہینے کا پے رول منظوری کو چلا جائے تو ہٹائی نہیں جا سکتی؛ منظوری پر حالت <span class="en">Applied</span> ہو جاتی ہے۔</li>
         <li>سلپ کے اندر <span class="en">Add a line</span> سے صرف اسی سلپ میں ایک لائن؛ <bdi class="lt" dir="ltr">×</bdi> سے صرف ہاتھ کی لائن ہٹتی ہے۔</li>
     </ul>
+</section>
+
+<section data-topic="recurring">
+    <h2>ایک بار یا ہر مہینے</h2>
+    <table>
+        <tr><th>انتخاب</th><th>کب لگتا ہے</th></tr>
+        <tr><td><span class="en">One time</span></td><td>صرف چنے ہوئے مہینے کی سلپ پر۔ اگلے مہینے خود نہیں آتا۔ پے رول منظور ہوتے ہی <span class="en">Applied</span>۔</td></tr>
+        <tr><td><span class="en">Every month</span></td><td>پہلے مہینے سے ہر مہینے کی سلپ پر، آخری مہینے تک یا <span class="en">Stop</span> دبانے تک۔ ہر مہینے کی حالت الگ دکھتی ہے۔</td></tr>
+    </table>
+    <div class="tip"><span class="en">Stop</span>: جو مہینے ادا ہو چکے وہ ویسے ہی رہتے ہیں؛ چنے ہوئے مہینے سے یہ نہیں لگتا اور مسودہ سلپ سے فوراً ہٹ جاتا ہے۔ <b>Narration</b> سلپ پر مد کے نام کے ساتھ دکھتی ہے۔</div>
+</section>
+
+<section data-topic="import">
+    <h2>Excel سے امپورٹ</h2>
+    <p><b>تنخواہ کا سیٹ اپ</b> (<span class="en">Employee salaries</span> ٹیب): ٹیمپلیٹ میں سب ملازمین ان کی موجودہ تنخواہ کے ساتھ آتے ہیں۔ شیٹ <span class="en">Salaries</span> میں ملازم کوڈ، <span class="en">Salary type</span>، <span class="en">Pay by</span> اور بنیادی تنخواہ؛ شیٹ <span class="en">Earnings &amp; Deductions</span> میں ہر الاؤنس یا کٹوتی کی ایک لائن: مد (ڈراپ ڈاؤن)، <span class="en">Fixed amount / % of basic / % of another allowance</span> اور رقم۔ رقم 0 لکھیں تو وہ مد ہٹ جاتی ہے۔</p>
+    <p><b>انسینٹو</b> (<span class="en">Incentives &amp; adjustments</span> ٹیب): ملازم کوڈ، مہینہ، مد، رقم، <span class="en">One time / Every month</span>، آخری مہینہ اور <span class="en">Narration</span>۔ جس لائن میں رقم نہ ہو وہ چھوڑ دی جاتی ہے۔</p>
+    <div class="tip">کسی ایک لائن میں بھی غلطی ہو تو کچھ بھی محفوظ نہیں ہوتا اور لائن نمبر کے ساتھ غلطیاں دکھتی ہیں؛ درست کر کے دوبارہ اپ لوڈ کریں۔ یہ اختیار صرف <span class="en">payroll-import-excel</span> اجازت والوں (سپر ایڈمن، ایڈمن) کے پاس ہے۔</div>
 </section>
 
 <section data-topic="incentive">
@@ -160,7 +177,7 @@
         <tr><td>سب کو ایک جیسی رقم</td><td>پے رول → <span class="en">Enter variable pay</span></td><td>اوپر <span class="en">Same for everyone</span> کی لائن میں رقم، <span class="en">Enter</span></td></tr>
         <tr><td>ہر ایک کی الگ رقم</td><td>پے رول → <span class="en">Enter variable pay</span></td><td>ہر ملازم کے خانے میں رقم، یا ایکسل سے پیسٹ</td></tr>
         <tr><td>ایک ملازم</td><td>پے رول → اس کی سلپ</td><td><span class="en">Add for this month</span> سے مد اور رقم</td></tr>
-        <tr><td>پے رول بننے سے پہلے</td><td><span class="en">Bonus &amp; deductions</span> ٹیب</td><td>مہینہ، مد، رقم، اور ایک یا سب ملازمین چنیں؛ پے رول بنتے وقت خود آ جاتا ہے</td></tr>
+        <tr><td>پے رول بننے سے پہلے</td><td><span class="en">Incentives &amp; adjustments</span> ٹیب</td><td>مہینہ، مد، رقم، اور ایک یا سب ملازمین چنیں؛ پے رول بنتے وقت خود آ جاتا ہے</td></tr>
     </table>
     <div class="tip">نئی قسم کا انسینٹو چاہیے تو <span class="en">Categories</span> میں "ہر مہینے الگ" والی نئی آمدن کی مد بنائیں؛ وہ گرڈ میں نیا کالم بن جاتی ہے۔</div>
 </section>
@@ -247,7 +264,8 @@
         <tr><td><span class="en">payroll-approve</span></td><td>منظور یا واپس (چیکر)</td></tr>
         <tr><td><span class="en">payroll-pay</span></td><td>تنخواہ ادا کرنا</td></tr>
         <tr><td><span class="en">payroll-salary-manage</span></td><td>تنخواہیں اور مدیں</td></tr>
-        <tr><td><span class="en">payroll-adjustment-manage</span></td><td>بونس اور ایک بار کی کٹوتی</td></tr>
+        <tr><td><span class="en">payroll-adjustment-manage</span></td><td>انسینٹو، بونس اور کٹوتی (ایک بار یا ہر مہینے)</td></tr>
+        <tr><td><span class="en">payroll-import-excel</span></td><td>Excel ٹیمپلیٹ سے تنخواہ کا سیٹ اپ اور انسینٹو امپورٹ کرنا (سپر ایڈمن اور ایڈمن)</td></tr>
     </table>
     <div class="tip">سب ملازمین کا پے رول صرف ایڈمن یا <span class="en">payroll-view-all</span> والا دیکھتا ہے؛ <span class="en">payroll-view-company</span> والا اپنی کمپنی کے؛ باقی صرف وہ پے رول جو خود بنائے۔ سپلائر کا صارف صرف اپنی کمپنی کے ملازمین کی تنخواہ دیکھتا اور بدلتا ہے۔</div>
 </section>

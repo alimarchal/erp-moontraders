@@ -93,7 +93,7 @@
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <small class="pr-label" x-text="form.calculation === 'input' ? 'Added as a bonus or deduction for a month (Bonus & deductions tab).' : 'Set once on the employee and paid every month; each employee can still choose another way.'"></small>
+                            <small class="pr-label" x-text="form.calculation === 'input' ? 'Added as an incentive or adjustment, one time or every month (Incentives & adjustments tab).' : 'Set once on the employee and paid every month; each employee can still choose another way.'"></small>
                         </label>
                         <label class="pr-field"><span x-text="['percent_of_basic', 'percent_of_component'].includes(form.calculation) ? 'Default percentage (%)' : 'Default amount (Rs)'"></span>
                             <input type="number" name="default_value" x-model="form.default_value" step="0.01" min="0" class="pr-input" inputmode="decimal"></label>
@@ -106,7 +106,7 @@
                             </select></label>
                         <template x-if="form.id">
                             <label style="display:flex; align-items:center; gap:10px; font-size:14px">
-                                <input type="checkbox" class="pr-check" name="is_active" value="1" x-model="form.is_active"> Active (offered for salaries and bonuses)
+                                <input type="checkbox" class="pr-check" name="is_active" value="1" x-model="form.is_active"> Active (offered for salaries and incentives)
                             </label>
                         </template>
                     </div>

@@ -73,7 +73,7 @@
                             <tr><td>Absent days</td><td>Deduction</td><td><b>Basic</b> type only: basic ÷ days in the month × absent days. <b>Fixed</b> type is never cut automatically.</td></tr>
                             <tr><td>Advance</td><td>Deduction</td><td>Taken automatically from every open advance: the instalment, or everything left. Never more than what remains of the pay.</td></tr>
                             <tr><td>Settlement short</td><td>Deduction</td><td>Taken automatically: what the employee's posted settlements of the month booked to <b>Short Amount (5293)</b>. Can be waived on one payslip. A cash <b>excess</b> (4250) is the employee's own money and is paid as an earning.</td></tr>
-                            <tr><td>Death insurance, tax, loan, fine</td><td>Deduction</td><td>Standing deductions are set in the salary window; one-off ones (fine, tax) under Bonus &amp; deductions.</td></tr>
+                            <tr><td>Death insurance, tax, loan, fine</td><td>Deduction</td><td>Standing deductions are set in the salary window; one-off or monthly ones (fine, tax) under Incentives &amp; adjustments.</td></tr>
                         </tbody></table>
                         <div class="gh-note"><b>Net pay = total earnings − total deductions.</b> A negative net pay cannot be sent for approval. Press <b>Recalculate all</b> after changing a salary or an advance; lines you added yourself are kept.</div>
                     </div>
@@ -85,7 +85,7 @@
                             <tr><td>غیر حاضری</td><td>کٹوتی</td><td>صرف <b>Basic</b> قسم میں: بنیادی تنخواہ ÷ مہینے کے دن × غیر حاضر دن۔ <b>Fixed</b> قسم میں خود کوئی کٹوتی نہیں ہوتی۔</td></tr>
                             <tr><td>ایڈوانس</td><td>کٹوتی</td><td>ہر کھلے ایڈوانس سے خود کٹتا ہے: قسط، یا جو باقی ہو۔ بچی ہوئی تنخواہ سے زیادہ کبھی نہیں۔</td></tr>
                             <tr><td>سیٹلمنٹ شارٹ</td><td>کٹوتی</td><td>خود کٹتا ہے: مہینے کی پوسٹ شدہ سیٹلمنٹس میں جو رقم <b>Short Amount (5293)</b> میں گئی۔ کسی ایک سلپ پر معاف کی جا سکتی ہے۔ نقد <b>ایکسس</b> (4250) ملازم کی اپنی رقم ہے اور تنخواہ میں آمدن کے طور پر ملتی ہے۔</td></tr>
-                            <tr><td>ڈیتھ انشورنس، ٹیکس، قرض، جرمانہ</td><td>کٹوتی</td><td>مستقل کٹوتیاں تنخواہ والی ونڈو میں؛ ایک بار والی (جرمانہ، ٹیکس) Bonus &amp; deductions میں۔</td></tr>
+                            <tr><td>ڈیتھ انشورنس، ٹیکس، قرض، جرمانہ</td><td>کٹوتی</td><td>مستقل کٹوتیاں تنخواہ والی ونڈو میں؛ ایک بار یا ہر مہینے والی (جرمانہ، ٹیکس) Incentives &amp; adjustments میں۔</td></tr>
                         </tbody></table>
                         <div class="gh-note"><b>خالص تنخواہ = کل آمدن − کل کٹوتی۔</b> منفی خالص تنخواہ والی سلپ منظوری کے لیے نہیں بھیجی جا سکتی۔ تنخواہ یا ایڈوانس بدلنے کے بعد <b>Recalculate all</b> دبائیں؛ آپ کی ہاتھ سے لگائی ہوئی مدیں قائم رہتی ہیں۔</div>
                     </div>
@@ -94,19 +94,23 @@
 
 
             <section class="uf-card gh-card" aria-labelledby="pr-bonus">
-                <header class="uf-card-head ev-bihead"><h2 class="uf-card-title" id="pr-bonus">3a. Bonus, commission and new employees</h2><h2 class="uf-card-title gh-rtl" dir="rtl" lang="ur">۳الف۔ بونس، کمیشن اور نئے ملازمین</h2></header>
+                <header class="uf-card-head ev-bihead"><h2 class="uf-card-title" id="pr-bonus">3a. Incentives, adjustments and new employees</h2><h2 class="uf-card-title gh-rtl" dir="rtl" lang="ur">۳الف۔ انسینٹو، ایڈجسٹمنٹ اور نئے ملازمین</h2></header>
                 <div class="uf-body"><div class="ev-cols">
                     <div class="ev-en" lang="en"><ol>
-                        <li>Open <b>Payroll → Bonus &amp; commission</b> and press <b>＋ Add bonus or commission</b>.</li>
-                        <li>Pick the <b>month</b>, the <b>kind</b> (bonus, commission, incentive, overtime, fine...), the <b>amount</b> and one or many <b>employees</b>. Save.</li>
+                        <li>Open <b>Payroll → Incentives &amp; adjustments</b> and press <b>＋ Add incentive / adjustment</b>.</li>
+                        <li>Pick the <b>month</b>, the <b>kind</b> (bonus, commission, incentive, overtime, fine...), the <b>amount</b>, a <b>narration</b> (shown on the payslip), <b>One time</b> or <b>Every month</b>, and one or many <b>employees</b>. Save.</li>
+                        <li><b>One time</b> is paid in that month only. <b>Every month</b> is paid each month from the first month until the last month or until you press <b>Stop</b>.</li>
+                        <li>Many employees with different amounts? Press <b>Import Excel</b>, download the template, fill it by employee code and upload it.</li>
                         <li>When that month's payroll is built, the amount is on the employee's slip by itself. If the payroll is still a draft it appears at once.</li>
                         <li>Once the payroll is approved, the entry shows "In PR-..." and cannot be removed. Before that you can remove it.</li>
-                        <li>Someone joined, or got a salary, after the payroll was built? Open the draft payroll and press <b>Add them to this payroll</b>: they get their slip with allowances, advances and any bonus waiting for the month.</li>
+                        <li>Someone joined, or got a salary, after the payroll was built? Open the draft payroll and press <b>Add them to this payroll</b>: they get their slip with allowances, advances and any incentive waiting for the month.</li>
                     </ol>
                     <div class="gh-note">Anything for one employee only this once can also be typed directly on the slip with <b>Add this month</b>.</div></div>
                     <div class="ev-ur-col gh-rtl" dir="rtl" lang="ur"><ol>
-                        <li><b>Payroll ← Bonus &amp; commission</b> کھولیں اور <b>"＋ Add bonus or commission"</b> دبائیں۔</li>
-                        <li><b>مہینہ</b>، <b>قسم</b> (بونس، کمیشن، انسینٹو، اوور ٹائم، جرمانہ...)، <b>رقم</b> اور ایک یا کئی <b>ملازمین</b> چنیں، پھر محفوظ کریں۔</li>
+                        <li><b>Payroll ← Incentives &amp; adjustments</b> کھولیں اور <b>"＋ Add incentive / adjustment"</b> دبائیں۔</li>
+                        <li><b>مہینہ</b>، <b>قسم</b> (بونس، کمیشن، انسینٹو، اوور ٹائم، جرمانہ...)، <b>رقم</b> ، <b>تفصیل (narration)</b> جو سلپ پر دکھے، <b>One time</b> یا <b>Every month</b>، اور ایک یا کئی <b>ملازمین</b> چنیں، پھر محفوظ کریں۔</li>
+                        <li><b>One time</b> صرف اسی مہینے؛ <b>Every month</b> پہلے مہینے سے آخری مہینے تک یا <b>Stop</b> دبانے تک ہر مہینے۔</li>
+                        <li>بہت سے ملازمین، الگ الگ رقمیں؟ <b>Import Excel</b> دبائیں، ٹیمپلیٹ ڈاؤن لوڈ کریں، ملازم کوڈ سے بھریں اور اپ لوڈ کریں۔</li>
                         <li>اس مہینے کا payroll بنتے ہی رقم ملازم کی سلپ میں خود شامل ہو جاتی ہے۔ اگر payroll ابھی مسودہ ہے تو فوراً نظر آ جاتی ہے۔</li>
                         <li>payroll منظور ہو جائے تو یہ اندراج "In PR-..." دکھاتا ہے اور ہٹایا نہیں جا سکتا۔ اس سے پہلے ہٹا سکتے ہیں۔</li>
                         <li>payroll بننے کے بعد کوئی نیا ملازم آیا یا کسی کی تنخواہ طے ہوئی؟ مسودہ payroll کھول کر <b>"Add them to this payroll"</b> دبائیں: اسے الاؤنس، ایڈوانس اور مہینے کے بونس سمیت سلپ مل جاتی ہے۔</li>
@@ -145,7 +149,8 @@
                         <tr><td><span class="gh-code">payroll-list</span></td><td>See payroll runs and slips.</td></tr>
                         <tr><td><span class="gh-code">payroll-create</span></td><td>Build, adjust and send a run for approval (the maker).</td></tr>
                         <tr><td><span class="gh-code">payroll-approve</span></td><td>Approve or reject (a different user from the one who sent it).</td></tr>
-                        <tr><td><span class="gh-code">payroll-adjustment-manage</span></td><td>Plan bonus, commission and other extra pay for a month.</td></tr>
+                        <tr><td><span class="gh-code">payroll-adjustment-manage</span></td><td>Plan incentives, commission and other extra pay or cuts, one time or every month.</td></tr>
+                        <tr><td><span class="gh-code">payroll-import-excel</span></td><td>Import salary set-up and incentives from the Excel templates (super-admin and admin).</td></tr>
                         <tr><td><span class="gh-code">payroll-pay</span></td><td>Mark salaries as paid.</td></tr>
                         <tr><td><span class="gh-code">payroll-view-all / payroll-view-company</span></td><td>See every company's payroll, or only the user's own company's. Without either, a user sees only the runs they made. Admins see all.</td></tr>
                     </tbody></table></div>
@@ -154,7 +159,8 @@
                         <tr><td><bdi class="gh-code">payroll-list</bdi></td><td>payroll اور سلپیں دیکھنا۔</td></tr>
                         <tr><td><bdi class="gh-code">payroll-create</bdi></td><td>payroll بنانا، تبدیل کرنا اور منظوری کے لیے بھیجنا (میکر)۔</td></tr>
                         <tr><td><bdi class="gh-code">payroll-approve</bdi></td><td>منظور یا مسترد کرنا (بھیجنے والے سے مختلف صارف)۔</td></tr>
-                        <tr><td><bdi class="gh-code">payroll-adjustment-manage</bdi></td><td>مہینے کے لیے بونس، کمیشن اور اضافی رقم طے کرنا۔</td></tr>
+                        <tr><td><bdi class="gh-code">payroll-adjustment-manage</bdi></td><td>انسینٹو، کمیشن اور اضافی رقم یا کٹوتی، ایک بار یا ہر مہینے، طے کرنا۔</td></tr>
+                        <tr><td><bdi class="gh-code">payroll-import-excel</bdi></td><td>تنخواہ کا سیٹ اپ اور انسینٹو Excel ٹیمپلیٹ سے امپورٹ کرنا (سپر ایڈمن اور ایڈمن)۔</td></tr>
                         <tr><td><bdi class="gh-code">payroll-pay</bdi></td><td>تنخواہیں ادا ہونے کا نشان لگانا۔</td></tr>
                         <tr><td><bdi class="gh-code">payroll-view-all / payroll-view-company</bdi></td><td>سب کمپنیوں کا یا صرف اپنی کمپنی کا payroll دیکھنا۔ دونوں نہ ہوں تو صارف صرف اپنے بنائے ہوئے دیکھتا ہے۔ ایڈمن کو سب نظر آتا ہے۔</td></tr>
                     </tbody></table></div>

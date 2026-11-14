@@ -1,5 +1,5 @@
 {{--
-    Payroll (/payroll): the one screen for salaries. Tabs: Payroll runs · Employee salaries · Bonus & deductions ·
+    Payroll (/payroll): the one screen for salaries. Tabs: Payroll runs · Employee salaries · Incentives & adjustments ·
     Categories. Same look as Goods Issues (Apple skin, hidden filters, sticky tabs, quick-look sheets). Each tab shows
     only to people with its permission (PayrollHubController::TABS). Every edit happens in a sheet on this page.
 --}}
@@ -7,14 +7,14 @@
     $tabMeta = [
         'runs' => ['Payroll runs', 'Monthly payroll: build, check, approve and pay'],
         'salaries' => ['Employee salaries', 'Basic salary, allowances and standing deductions of each employee'],
-        'adjustments' => ['Bonus & deductions', 'One-off pay or cuts for a month: Eid bonus, commission, fine, insurance'],
+        'adjustments' => ['Incentives & adjustments', 'Extra pay or cuts for one month or every month: incentive, commission, Eid bonus, fine'],
         'categories' => ['Categories', 'The allowances and deductions a payslip can have'],
     ];
     $tabUrl = fn (string $key) => route('payroll.index', ['tab' => $key]);
     $headerCreate = match ($tab) {
         'runs' => auth()->user()->can('payroll-create') ? ['New payroll', "\$dispatch('pr-new-run')"] : null,
         'salaries' => ['Set salary', "\$dispatch('pr-salary', { ids: [] })"],
-        'adjustments' => ['Add bonus / deduction', "\$dispatch('pr-adjust')"],
+        'adjustments' => ['Add incentive / adjustment', "\$dispatch('pr-adjust')"],
         'categories' => ['New category', "\$dispatch('pr-category', null)"],
         default => null,
     };
@@ -34,6 +34,9 @@
                 @elseif ($tab === 'salaries')
                     <a href="{{ request()->fullUrlWithQuery(['export' => 'xlsx', 'page' => null]) }}" class="pr-head-btn" title="Download the salary register as Excel">Excel</a>
                     <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf', 'page' => null]) }}" class="pr-head-btn" title="Download the salary register as PDF">PDF</a>
+                @endif
+                @if (in_array($tab, ['salaries', 'adjustments'], true) && auth()->user()->can('payroll-import-excel'))
+                    <button type="button" class="pr-head-btn" x-data @click="$dispatch('pr-import', @js($tab))" title="Fill an Excel template and upload it">Import Excel</button>
                 @endif
                 @if (in_array($tab, ['runs', 'salaries'], true))
                     <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'exports' })" aria-label="Help: downloads" title="Help: downloads">i</button>
@@ -71,5 +74,11 @@
         </nav>
 
         @include('payroll.hub._'.$tab)
+
+        @can('payroll-import-excel')
+            @if (in_array($tab, ['salaries', 'adjustments'], true))
+                @include('payroll.hub._import', ['importKind' => $tab])
+            @endif
+        @endcan
     </div>
 </x-app-layout>

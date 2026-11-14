@@ -192,7 +192,7 @@ class PayrollRunController extends Controller implements HasMiddleware
             return redirect()->route('payroll.show', $payroll)->with('error', $e->getMessage());
         }
 
-        return redirect()->route('payroll.show', $payroll)->with('success', $added === 0 ? 'Everyone who can be paid is already in this payroll.' : $added.' '.Str::plural('employee', $added).' added with their salary, allowances, advances and any bonus or commission for the month.');
+        return redirect()->route('payroll.show', $payroll)->with('success', $added === 0 ? 'Everyone who can be paid is already in this payroll.' : $added.' '.Str::plural('employee', $added).' added with their salary, allowances, advances and any incentive or adjustment for the month.');
     }
 
     public function submit(Request $request, PayrollRun $payroll): RedirectResponse

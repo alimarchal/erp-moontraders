@@ -14,6 +14,7 @@ use App\Models\PayrollSlipLine;
 use App\Models\SalaryComponent;
 use App\Models\SalesSettlement;
 use App\Models\User;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -161,17 +162,15 @@ class PayrollService
     }
 
     /**
-     * Bonuses, commissions and other one-off pay decided for this employee and month.
+     * Incentives & adjustments for this employee and month: the one-time items of the month and the recurring ones still
+     * running. The narration is shown with the category on the payslip.
      */
     private function addAdjustmentLines(PayrollSlip $slip, Employee $employee): void
     {
-        $month = $slip->run->period_month->copy()->startOfMonth()->toDateString();
-
         $adjustments = PayrollAdjustment::query()
             ->with('component')
             ->where('employee_id', $employee->id)
-            ->whereDate('period_month', $month)
-            ->where('status', PayrollAdjustment::STATUS_PENDING)
+            ->dueIn($slip->run->period_month)
             ->orderBy('id')
             ->get();
 
@@ -384,19 +383,27 @@ class PayrollService
     }
 
     /**
-     * Put a newly saved adjustment on the slip right away when that month's run is still open to changes.
+     * Put a newly saved, stopped or removed adjustment on (or off) the slips right away while those months' runs are still
+     * open to changes: its own month for a one-time item, every month from its start for a recurring one.
      */
     public function refreshAdjustment(PayrollAdjustment $adjustment): void
     {
         $employee = Employee::find($adjustment->employee_id);
 
-        $slip = PayrollSlip::query()
-            ->where('employee_id', $adjustment->employee_id)
-            ->whereHas('run', fn ($query) => $query->whereDate('period_month', $adjustment->period_month->toDateString())->whereIn('status', [PayrollRun::STATUS_DRAFT, PayrollRun::STATUS_REJECTED]))
-            ->with('run')
-            ->first();
+        if (! $employee) {
+            return;
+        }
 
-        if ($slip && $employee) {
+        $start = $adjustment->period_month->toDateString();
+
+        $slips = PayrollSlip::query()
+            ->where('employee_id', $adjustment->employee_id)
+            ->whereHas('run', fn ($query) => $query->whereIn('status', [PayrollRun::STATUS_DRAFT, PayrollRun::STATUS_REJECTED])
+                ->when($adjustment->is_recurring, fn ($q) => $q->whereDate('period_month', '>=', $start), fn ($q) => $q->whereDate('period_month', $start)))
+            ->with('run')
+            ->get();
+
+        foreach ($slips as $slip) {
             $this->rebuild($slip, $employee);
         }
     }
@@ -408,8 +415,84 @@ class PayrollService
     {
         return PayrollSlip::query()
             ->where('employee_id', $employee->id)
-            ->whereHas('run', fn ($query) => $query->whereDate('period_month', $month->copy()->startOfMonth()->toDateString())->whereIn('status', [PayrollRun::STATUS_PENDING, PayrollRun::STATUS_APPROVED, PayrollRun::STATUS_PAID]))
+            ->whereHas('run', fn ($query) => $query->whereDate('period_month', $month->copy()->startOfMonth()->toDateString())->whereIn('status', PayrollRun::LOCKED_STATUSES))
             ->exists();
+    }
+
+    /**
+     * The latest month on or after $month whose payroll for this employee is already pending, approved or paid, if any.
+     * A recurring item cannot start (or be stopped) before it, since that payroll is final.
+     */
+    public function lastLockedMonthFrom(Employee $employee, CarbonInterface $month): ?CarbonInterface
+    {
+        $date = PayrollRun::query()
+            ->whereIn('status', PayrollRun::LOCKED_STATUSES)
+            ->whereDate('period_month', '>=', $month->copy()->startOfMonth()->toDateString())
+            ->whereHas('slips', fn ($query) => $query->where('employee_id', $employee->id))
+            ->max('period_month');
+
+        return $date ? Carbon::parse($date)->startOfMonth() : null;
+    }
+
+    /**
+     * Save an incentive or adjustment for one employee and put it on any draft slip it belongs to. A one-time item needs its
+     * month to be open; a recurring one needs every month from its start to be open, since it is paid in each of them.
+     *
+     * @throws RuntimeException when that month's payroll is already pending, approved or paid
+     */
+    public function addAdjustment(Employee $employee, int $componentId, CarbonInterface $month, float $amount, ?string $note, bool $recurring = false, ?CarbonInterface $endMonth = null): PayrollAdjustment
+    {
+        $month = $month->copy()->startOfMonth();
+        $locked = $recurring ? $this->lastLockedMonthFrom($employee, $month) : ($this->monthIsLocked($employee, $month) ? $month : null);
+
+        if ($locked) {
+            throw new RuntimeException($employee->name.' already has an approved or pending payroll for '.$locked->format('F Y').'. Start it from '.$locked->copy()->addMonthNoOverflow()->format('F Y').', or ask for that payroll to be rejected first.');
+        }
+
+        $adjustment = PayrollAdjustment::create([
+            'employee_id' => $employee->id, 'salary_component_id' => $componentId, 'period_month' => $month,
+            'amount' => $amount, 'note' => $note, 'is_recurring' => $recurring,
+            'end_month' => $recurring && $endMonth ? $endMonth->copy()->startOfMonth() : null,
+            'status' => PayrollAdjustment::STATUS_PENDING,
+        ]);
+        $this->refreshAdjustment($adjustment);
+
+        return $adjustment;
+    }
+
+    /**
+     * Stop a recurring item: it is paid up to the month before $from and not from $from on. Draft slips from $from drop it
+     * at once. An item stopped before it ever started is removed instead.
+     *
+     * @throws RuntimeException when the payroll of $from (or later) is already final for this employee
+     */
+    public function stopAdjustment(PayrollAdjustment $adjustment, CarbonInterface $from): void
+    {
+        $from = $from->copy()->startOfMonth();
+        $employee = $adjustment->employee;
+        $locked = $this->lastLockedMonthFrom($employee, $from);
+
+        if ($locked && $adjustment->slipLines()->whereHas('slip.run', fn ($query) => $query->whereIn('status', PayrollRun::LOCKED_STATUSES)->whereDate('period_month', '>=', $from->toDateString()))->exists()) {
+            throw new RuntimeException('It is already on the '.$locked->format('F Y').' payroll of '.$employee->name.'. Stop it from '.$locked->copy()->addMonthNoOverflow()->format('F Y').' or later.');
+        }
+
+        DB::transaction(function () use ($adjustment, $from) {
+            if ($from->lessThanOrEqualTo($adjustment->period_month) && ! $this->adjustmentIsLocked($adjustment)) {
+                $adjustment->delete();
+            } else {
+                $adjustment->update(['end_month' => $from->copy()->subMonthNoOverflow()]);
+            }
+
+            $this->refreshAdjustment($adjustment);
+        });
+    }
+
+    /**
+     * Whether a recurring or one-time item already sits on a payroll that is pending, approved or paid.
+     */
+    public function adjustmentIsLocked(PayrollAdjustment $adjustment): bool
+    {
+        return $adjustment->slipLines()->whereHas('slip.run', fn ($query) => $query->whereIn('status', PayrollRun::LOCKED_STATUSES))->exists();
     }
 
     /**
@@ -672,7 +755,7 @@ class PayrollService
             }
 
             $adjustmentIds = $run->slips->flatMap->lines->where('source', PayrollSlipLine::SOURCE_ADJUSTMENT)->pluck('payroll_adjustment_id')->filter()->all();
-            PayrollAdjustment::query()->whereIn('id', $adjustmentIds)->update(['status' => PayrollAdjustment::STATUS_APPLIED, 'applied_payroll_run_id' => $run->id]);
+            PayrollAdjustment::query()->whereIn('id', $adjustmentIds)->where('is_recurring', false)->update(['status' => PayrollAdjustment::STATUS_APPLIED, 'applied_payroll_run_id' => $run->id]);
 
             $run->update([
                 'status' => PayrollRun::STATUS_APPROVED, 'checked_by' => $checker->id, 'checked_at' => now(),

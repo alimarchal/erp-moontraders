@@ -176,7 +176,7 @@ class DistributionService
 
                 // Update latest issue details
                 $vanStock->last_issue_number = $goodsIssue->issue_number;
-                $vanStock->last_unit_cost = $item->unit_cost;
+                $vanStock->last_unit_cost = $this->allocatedUnitCost($batchAllocations['batches'], (float) $item->quantity_issued);
                 $vanStock->last_selling_price = $item->selling_price;
 
                 $vanStock->last_updated = now();
@@ -189,7 +189,7 @@ class DistributionService
                     'goods_issue_item_id' => $item->id,
                     'goods_issue_number' => $goodsIssue->issue_number,
                     'quantity_on_hand' => $item->quantity_issued,
-                    'unit_cost' => $item->unit_cost,
+                    'unit_cost' => $this->allocatedUnitCost($batchAllocations['batches'], (float) $item->quantity_issued),
                     'selling_price' => $item->selling_price,
                 ]);
                 // Note: Ledger recording is now done at batch level inside the batch loop above
@@ -370,7 +370,7 @@ class DistributionService
                 $this->addToVanStock($vanStock, (float) $item->quantity_issued, $batchAllocations['batches']);
 
                 $vanStock->last_issue_number = $goodsIssue->issue_number;
-                $vanStock->last_unit_cost = $item->unit_cost;
+                $vanStock->last_unit_cost = $this->allocatedUnitCost($batchAllocations['batches'], (float) $item->quantity_issued);
                 $vanStock->last_selling_price = $item->selling_price;
                 $vanStock->last_updated = now();
                 $vanStock->save();
@@ -381,7 +381,7 @@ class DistributionService
                     'goods_issue_item_id' => $item->id,
                     'goods_issue_number' => $goodsIssue->issue_number,
                     'quantity_on_hand' => $item->quantity_issued,
-                    'unit_cost' => $item->unit_cost,
+                    'unit_cost' => $this->allocatedUnitCost($batchAllocations['batches'], (float) $item->quantity_issued),
                     'selling_price' => $item->selling_price,
                 ]);
 
@@ -413,6 +413,23 @@ class DistributionService
                 'data' => null,
             ];
         }
+    }
+
+    /**
+     * The cost per unit of what actually left the warehouse: the FIFO batches' costs weighted by the
+     * quantity taken from each, which is what the GL moved to Van Stock.
+     *
+     * @param  array<int, array{batch: StockBatch, quantity: float|int|string}>  $allocations
+     */
+    private function allocatedUnitCost(array $allocations, float $quantity): float
+    {
+        if ($quantity <= 0) {
+            return 0.0;
+        }
+
+        $allocatedValue = collect($allocations)->sum(fn (array $allocation) => (float) $allocation['quantity'] * (float) $allocation['batch']->unit_cost);
+
+        return round($allocatedValue / $quantity, 2);
     }
 
     /**

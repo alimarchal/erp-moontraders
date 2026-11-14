@@ -176,11 +176,9 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
         'receipt_date' => now(),
     ]);
 
-    // Service calculates:
-    // - Invoice value = extended - discount + GST + advance_tax = 10000 - 500 + 1710 + 92 = 11302
-    // - Actual inventory = total_cost = 9200 (qty × unit_cost)
-    // - Rounding difference = 11302 - 9200 = 2102 (Dr. Round Off)
-    // - Creditors = 11302 - 300 (FMR) = 11002
+    // Invoice value = extended - discount + GST + advance tax = 10000 - 500 + 1710 + 92 = 11302.
+    // The stock is carried at that cost before FMR; FMR (300) is income, and the supplier is owed 11002.
+    // Nothing is left for Round Off.
     $grn->items()->create([
         'line_no' => 1,
         'product_id' => $this->product->id,
@@ -196,8 +194,8 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
         'advance_income_tax' => 92, // Advance tax (included in invoice value)
         'quantity_received' => 100,
         'quantity_accepted' => 100,
-        'unit_cost' => 92, // Unit cost per stock unit
-        'total_cost' => 9200, // Actual inventory value: 100 × 92
+        'unit_cost' => 113.02, // (value with taxes 11002 + FMR 300) / 100: cost before FMR
+        'total_cost' => 11302,
     ]);
 
     // Post GRN
@@ -218,19 +216,18 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     // Verify journal entry details
     $details = $journalEntry->details;
 
-    // Should have 4 lines: Inventory Dr, Round Off Dr, FMR Allowance Cr, Stock Received But Not Billed Cr
+    // Should have 3 lines: Inventory Dr, FMR Allowance Cr, Stock Received But Not Billed Cr
     // (GST and advance tax are included in invoice value, difference goes to Round Off)
-    expect($details)->toHaveCount(4);
+    expect($details)->toHaveCount(3);
 
-    // Dr. Inventory = actual cost (9200), NOT invoice value
+    // Dr. Inventory = cost before FMR (11302)
     $inventoryLine = $details->where('chart_of_account_id', $this->inventoryAccount->id)->first();
-    expect((float) $inventoryLine->debit)->toBe(9200.00);
+    expect((float) $inventoryLine->debit)->toBe(11302.00);
     expect((float) $inventoryLine->credit)->toBe(0.00);
 
-    // Dr. Round Off = invoice value - actual = 11302 - 9200 = 2102
+    // No Round Off: the lines cost exactly the invoice before FMR
     $roundOffLine = $details->where('chart_of_account_id', $this->roundOffAccount->id)->first();
-    expect((float) $roundOffLine->debit)->toBe(2102.00);
-    expect((float) $roundOffLine->credit)->toBe(0.00);
+    expect($roundOffLine)->toBeNull();
 
     // Cr. FMR Allowance (300) - reduces amount payable
     $fmrLine = $details->where('chart_of_account_id', $this->fmrAllowanceAccount->id)->first();
@@ -246,7 +243,7 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     $totalDebits = $details->sum('debit');
     $totalCredits = $details->sum('credit');
     expect((float) $totalDebits)->toBe((float) $totalCredits);
-    expect((float) $totalDebits)->toBe(11302.00); // 9200 + 2102
+    expect((float) $totalDebits)->toBe(11302.00);
 });
 
 it('refuses to post a GRN when the journal entry cannot be written', function () {
@@ -350,7 +347,7 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
 
     // Same data as posting test
     // - Invoice value = 10000 - 500 + 1710 + 92 = 11302
-    // - Actual = 9200, Rounding = 2102
+    // - Stock at 11302 (before FMR), no Round Off
     $grn->items()->create([
         'line_no' => 1,
         'product_id' => $this->product->id,
@@ -366,8 +363,8 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
         'advance_income_tax' => 92,
         'quantity_received' => 100,
         'quantity_accepted' => 100,
-        'unit_cost' => 92,
-        'total_cost' => 9200,
+        'unit_cost' => 113.02,
+        'total_cost' => 11302,
     ]);
 
     // Post GRN
@@ -393,9 +390,9 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
 
     $details = $reversingEntry->details;
 
-    // Should have 4 lines (opposite of posting):
-    // Dr. Stock Received But Not Billed, Dr. FMR, Cr. Inventory, Cr. Round Off
-    expect($details)->toHaveCount(4);
+    // Should have 3 lines (opposite of posting):
+    // Dr. Stock Received But Not Billed, Dr. FMR, Cr. Inventory
+    expect($details)->toHaveCount(3);
 
     // Dr. Stock Received But Not Billed (11002 - reverse the credit)
     $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
@@ -407,15 +404,14 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
     expect((float) $fmrLine->debit)->toBe(300.00);
     expect((float) $fmrLine->credit)->toBe(0.00);
 
-    // Cr. Inventory (9200 - reverse the debit, actual cost)
+    // Cr. Inventory (11302, reversing the debit)
     $inventoryLine = $details->where('chart_of_account_id', $this->inventoryAccount->id)->first();
     expect((float) $inventoryLine->debit)->toBe(0.00);
-    expect((float) $inventoryLine->credit)->toBe(9200.00);
+    expect((float) $inventoryLine->credit)->toBe(11302.00);
 
-    // Cr. Round Off (2102 - reverse the debit)
+    // No Round Off to reverse
     $roundOffLine = $details->where('chart_of_account_id', $this->roundOffAccount->id)->first();
-    expect((float) $roundOffLine->debit)->toBe(0.00);
-    expect((float) $roundOffLine->credit)->toBe(2102.00);
+    expect($roundOffLine)->toBeNull();
 
     // Verify debits = credits
     $totalDebits = $details->sum('debit');
@@ -493,8 +489,8 @@ it('ensures books remain balanced after posting and reversing', function () {
         'advance_income_tax' => 92,
         'quantity_received' => 100,
         'quantity_accepted' => 100,
-        'unit_cost' => 92,
-        'total_cost' => 9200,
+        'unit_cost' => 113.02,
+        'total_cost' => 11302,
     ]);
 
     // Post GRN
@@ -542,8 +538,8 @@ it('posts inventory at actual cost (qty × unit_cost) with rounding difference t
 
     // Create GRN item where:
     // - Accounting value (extended - discount + GST) = 10000 - 500 + 1700 = 11200
-    // - Actual inventory value (total_cost = qty × unit_cost) = 100 × 111.86 = 11186
-    // - Rounding difference = 11200 - 11186 = 14 (should go to Round Off)
+    // - Actual inventory value (total_cost = qty × unit_cost) = 100 × 111.9952 = 11199.52
+    // - Rounding difference = 11200 - 11199.52 = 0.48 (goes to Round Off)
     $grn->items()->create([
         'line_no' => 1,
         'product_id' => $this->product->id,
@@ -559,8 +555,8 @@ it('posts inventory at actual cost (qty × unit_cost) with rounding difference t
         'advance_income_tax' => 0, // No advance tax for simpler test
         'quantity_received' => 100,
         'quantity_accepted' => 100,
-        'unit_cost' => 111.86, // Actual unit cost (slightly different due to rounding)
-        'total_cost' => 11186, // Actual inventory value: 100 × 111.86
+        'unit_cost' => 111.9952, // unit cost rounded to 4 places
+        'total_cost' => 11199.52, // 100 × 111.9952
     ]);
 
     // Post GRN
@@ -575,14 +571,14 @@ it('posts inventory at actual cost (qty × unit_cost) with rounding difference t
     // Should have 3 lines: Inventory Dr, Round Off Dr, Stock Received But Not Billed Cr
     expect($details)->toHaveCount(3);
 
-    // Dr. Inventory should be ACTUAL cost (11186), not accounting value (11200)
+    // Dr. Inventory should be ACTUAL cost (11199.52), not accounting value (11200)
     $inventoryLine = $details->where('chart_of_account_id', $this->inventoryAccount->id)->first();
-    expect((float) $inventoryLine->debit)->toBe(11186.00);
+    expect((float) $inventoryLine->debit)->toBe(11199.52);
     expect((float) $inventoryLine->credit)->toBe(0.00);
 
-    // Dr. Round Off should be the difference (11200 - 11186 = 14)
+    // Dr. Round Off should be the difference (11200 - 11199.52 = 0.48)
     $roundOffLine = $details->where('chart_of_account_id', $this->roundOffAccount->id)->first();
-    expect((float) $roundOffLine->debit)->toBe(14.00);
+    expect((float) $roundOffLine->debit)->toBe(0.48);
     expect((float) $roundOffLine->credit)->toBe(0.00);
 
     // Cr. Stock Received But Not Billed should be full accounting value (11200)
@@ -594,11 +590,10 @@ it('posts inventory at actual cost (qty × unit_cost) with rounding difference t
     $totalDebits = $details->sum('debit');
     $totalCredits = $details->sum('credit');
     expect((float) $totalDebits)->toBe((float) $totalCredits);
-    expect((float) $totalDebits)->toBe(11200.00); // 11186 + 14 = 11200
+    expect((float) $totalDebits)->toBe(11200.00); // 11199.52 + 0.48 = 11200
 });
 
-it('handles negative rounding difference (actual > accounting) by crediting Round Off', function () {
-    // Scenario where actual inventory cost is higher than accounting value
+it('refuses to post a GRN whose line costs miss the invoice by more than rounding', function () {
     $grn = GoodsReceiptNote::factory()->create([
         'supplier_id' => $this->supplier->id,
         'warehouse_id' => $this->warehouse->id,
@@ -606,10 +601,7 @@ it('handles negative rounding difference (actual > accounting) by crediting Roun
         'receipt_date' => now(),
     ]);
 
-    // Create GRN item where:
-    // - Accounting value = 10000 - 500 + 1700 = 11200
-    // - Actual inventory value = 100 × 112.10 = 11210
-    // - Rounding difference = 11200 - 11210 = -10 (negative, credit to Round Off)
+    // Invoice 10000 - 500 + 1700 = 11200, but the line costs 11186: a 14 rupee gap is not rounding.
     $grn->items()->create([
         'line_no' => 1,
         'product_id' => $this->product->id,
@@ -625,8 +617,48 @@ it('handles negative rounding difference (actual > accounting) by crediting Roun
         'advance_income_tax' => 0,
         'quantity_received' => 100,
         'quantity_accepted' => 100,
-        'unit_cost' => 112.10, // Higher unit cost
-        'total_cost' => 11210, // 100 × 112.10
+        'unit_cost' => 111.86,
+        'total_cost' => 11186,
+    ]);
+
+    $result = app(InventoryService::class)->postGrnToInventory($grn->fresh());
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('does not balance')
+        ->and($grn->fresh()->status)->toBe('draft')
+        ->and(JournalEntry::count())->toBe(0);
+});
+
+it('handles negative rounding difference (actual > accounting) by crediting Round Off', function () {
+    // Scenario where actual inventory cost is higher than accounting value
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    // Create GRN item where:
+    // - Accounting value = 10000 - 500 + 1700 = 11200
+    // - Actual inventory value = 100 × 112.0048 = 11200.48
+    // - Rounding difference = 11200 - 11200.48 = -0.48 (negative, credit to Round Off)
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $this->product->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 100,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 100,
+        'extended_value' => 10000,
+        'discount_value' => 500,
+        'fmr_allowance' => 0,
+        'sales_tax_value' => 1700,
+        'advance_income_tax' => 0,
+        'quantity_received' => 100,
+        'quantity_accepted' => 100,
+        'unit_cost' => 112.0048, // Higher unit cost
+        'total_cost' => 11200.48, // 100 × 112.0048
     ]);
 
     // Post GRN
@@ -641,14 +673,14 @@ it('handles negative rounding difference (actual > accounting) by crediting Roun
     // Should have 3 lines: Inventory Dr, Round Off Cr, Stock Received But Not Billed Cr
     expect($details)->toHaveCount(3);
 
-    // Dr. Inventory should be ACTUAL cost (11210)
+    // Dr. Inventory should be ACTUAL cost (11200.48)
     $inventoryLine = $details->where('chart_of_account_id', $this->inventoryAccount->id)->first();
-    expect((float) $inventoryLine->debit)->toBe(11210.00);
+    expect((float) $inventoryLine->debit)->toBe(11200.48);
 
-    // Cr. Round Off should be 10 (negative difference means credit)
+    // Cr. Round Off should be 0.48 (negative difference means credit)
     $roundOffLine = $details->where('chart_of_account_id', $this->roundOffAccount->id)->first();
     expect((float) $roundOffLine->debit)->toBe(0.00);
-    expect((float) $roundOffLine->credit)->toBe(10.00);
+    expect((float) $roundOffLine->credit)->toBe(0.48);
 
     // Cr. Stock Received But Not Billed = 11200
     $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();

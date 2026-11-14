@@ -28,6 +28,12 @@ class GrnCostDriftService
     /** A line whose total_cost misses quantity × unit_cost by more than this share is stale. */
     public const TOTAL_COST_TOLERANCE_RATIO = 0.001;
 
+    /**
+     * A line costed net of its FMR: its total cost is nearer its value with taxes (after FMR) than that value plus
+     * the FMR. True for any FMR, however small, and false again once the line is costed before FMR.
+     */
+    private const COSTED_NET_OF_FMR = 'ABS(item.total_cost - item.total_value_with_taxes) < ABS(item.total_cost - (item.total_value_with_taxes + item.fmr_allowance))';
+
     public const ROUND_OFF = '5271';
 
     public const STOCK_IN_HAND = '1151';
@@ -208,6 +214,176 @@ class GrnCostDriftService
         $this->guardLedgerStaysInStep($gapsBefore, $postRecostJournal || $staleTotal);
 
         return $result;
+    }
+
+    /**
+     * Reference of the entry that restated a GRN costed net of FMR; reversing the GRN reverses it too.
+     */
+    public static function fmrCostFixReference(string $grnNumber): string
+    {
+        return "FMR-COST-FIX-{$grnNumber}";
+    }
+
+    /**
+     * Posted GRNs with lines costed net of their FMR allowance while the GRN journal also credited that allowance as
+     * income, so Round Off carried it. The GRN form did this for suppliers marked "FMR allowed" (Engro) until it was
+     * changed to cost every line before FMR, as the Excel import always has.
+     *
+     * @return Collection<int, int> GRN ids
+     */
+    public function fmrNettedGrnIds(): Collection
+    {
+        return DB::table('goods_receipt_note_items as item')
+            ->join('goods_receipt_notes as grn', 'grn.id', '=', 'item.grn_id')
+            ->where('grn.status', 'posted')
+            ->whereNull('grn.deleted_at')
+            ->whereNotNull('grn.journal_entry_id')
+            ->where('item.fmr_allowance', '>', 0)
+            ->whereRaw(self::COSTED_NET_OF_FMR)
+            ->distinct()
+            ->orderBy('grn.id')
+            ->pluck('grn.id');
+    }
+
+    /**
+     * Restate a GRN from fmrNettedGrnIds() at its cost before FMR. Each such line takes (value with taxes + FMR) /
+     * quantity received, as the form and the import cost a line; its receipt, batch, valuation layers and current
+     * stock follow, and so does everything already issued, sold or returned from the batch. One entry then takes the
+     * amount off Round Off and puts it on Stock In Hand, Van Stock and cost of goods sold, wherever that stock is now.
+     *
+     * A GRN is left untouched, with a note, when one of its batches was revalued by a stock adjustment or when its
+     * journal's Round Off does not hold the amount (within a rupee): those need a person to look at them.
+     *
+     * @return array{lines: int, movements: int, settlements: int, round_off: float, journal_entry_id: ?int, note: ?string}
+     */
+    public function repairFmrNettedCost(int $grnId): array
+    {
+        $result = ['lines' => 0, 'movements' => 0, 'settlements' => 0, 'round_off' => 0.0, 'journal_entry_id' => null, 'note' => null];
+
+        $grn = DB::table('goods_receipt_notes')->where('id', $grnId)->first(['id', 'grn_number', 'status', 'journal_entry_id']);
+
+        if (! $grn || $grn->status !== 'posted' || ! $grn->journal_entry_id) {
+            return ['note' => 'Not a posted GRN with a journal entry.'] + $result;
+        }
+
+        $lines = DB::table('goods_receipt_note_items as item')
+            ->join('stock_valuation_layers as layer', 'layer.grn_item_id', '=', 'item.id')
+            ->join('stock_movements as movement', 'movement.id', '=', 'layer.stock_movement_id')
+            ->where('item.grn_id', $grn->id)
+            ->where('movement.movement_type', 'grn')
+            ->where('item.fmr_allowance', '>', 0)
+            ->whereRaw(self::COSTED_NET_OF_FMR)
+            ->get([
+                'item.id as grn_item_id',
+                'item.quantity_received',
+                'item.quantity_accepted',
+                'item.total_value_with_taxes',
+                'item.fmr_allowance',
+                'item.total_cost',
+                'layer.stock_batch_id',
+                'movement.id as grn_movement_id',
+                'movement.quantity',
+            ]);
+
+        if ($lines->isEmpty()) {
+            return ['note' => 'No line is costed net of FMR.'] + $result;
+        }
+
+        $revalued = StockMovement::query()->revaluations()->whereIn('stock_batch_id', $lines->pluck('stock_batch_id'))->exists();
+
+        if ($revalued) {
+            return ['note' => "{$grn->grn_number}: a batch was revalued by a stock adjustment; left for review."] + $result;
+        }
+
+        $lines = $lines->map(function (object $line) use ($grn): object {
+            $line->grn_id = $grn->id;
+            $line->new_unit_cost = round(((float) $line->total_value_with_taxes + (float) $line->fmr_allowance) / (float) $line->quantity_received, 6);
+            $line->new_total_cost = round((float) $line->quantity_accepted * $line->new_unit_cost, 4);
+
+            return $line;
+        });
+
+        $receiptDelta = round($lines->sum(fn (object $line) => $line->new_total_cost - (float) $line->total_cost), 2);
+        $roundOff = round((float) DB::table('journal_entry_details as line')
+            ->join('chart_of_accounts as account', 'account.id', '=', 'line.chart_of_account_id')
+            ->where('line.journal_entry_id', $grn->journal_entry_id)
+            ->where('account.account_code', self::ROUND_OFF)
+            ->selectRaw('COALESCE(SUM(line.debit - line.credit), 0) as balance')
+            ->value('balance'), 2);
+
+        if (abs($roundOff - $receiptDelta) > 1.0) {
+            return ['note' => sprintf('%s: Round Off holds %s but the lines move %s; left for review.', $grn->grn_number, number_format($roundOff, 2), number_format($receiptDelta, 2))] + $result;
+        }
+
+        $gapsBefore = $this->glAdjustmentService->stockLedgerGaps();
+        $batchIds = $lines->pluck('stock_batch_id')->unique()->all();
+        $warehouseValueBefore = $this->warehouseValueOf($batchIds);
+        $valueDeltas = [];
+        $vanValueDelta = 0.0;
+
+        foreach ($lines as $line) {
+            DB::table('goods_receipt_note_items')->where('id', $line->grn_item_id)->update([
+                'unit_cost' => $line->new_unit_cost,
+                'total_cost' => $line->new_total_cost,
+            ]);
+
+            $batchCost = round($line->new_unit_cost, 2);
+            $this->restateReceipt($line, $line->new_unit_cost, $batchCost);
+
+            $recost = $this->batchRecostService->recostBatch($line->stock_batch_id, $batchCost, $line->grn_movement_id);
+
+            foreach ($recost['value_deltas'] as $type => $delta) {
+                $valueDeltas[$type] = ($valueDeltas[$type] ?? 0.0) + $delta;
+            }
+
+            $vanValueDelta += $recost['van_value_delta'];
+            $result['movements'] += $recost['movements'];
+            $result['settlements'] += $this->restateSettlementCogs($line->stock_batch_id);
+            $result['lines']++;
+        }
+
+        // The stock ledger's running values and the current stock summary are derived from the costs just restated.
+        $inventory = app(InventoryService::class);
+        $locations = DB::table('current_stock_by_batch')
+            ->whereIn('stock_batch_id', $batchIds)
+            ->select('product_id', 'warehouse_id')
+            ->union(DB::table('stock_ledger_entries')->whereIn('stock_batch_id', $batchIds)->select('product_id', 'warehouse_id'))
+            ->get();
+
+        foreach ($locations as $location) {
+            $inventory->recalculateStockLedgerBalances((int) $location->product_id, (int) $location->warehouse_id);
+            $inventory->syncCurrentStockFromValuationLayers((int) $location->product_id, (int) $location->warehouse_id);
+        }
+
+        $journal = $this->glAdjustmentService->postReceiptRestatement(
+            $roundOff,
+            self::ROUND_OFF,
+            $this->warehouseValueOf($batchIds) - $warehouseValueBefore,
+            $vanValueDelta,
+            $valueDeltas,
+            self::fmrCostFixReference($grn->grn_number),
+            "{$grn->grn_number}: lines were costed net of FMR while FMR was also booked as income, so Round Off carried it; the stock is restated at its cost before FMR"
+        );
+
+        $this->guardLedgerStaysInStep($gapsBefore, false);
+
+        $result['round_off'] = $roundOff;
+        $result['journal_entry_id'] = $journal?->id;
+
+        return $result;
+    }
+
+    /**
+     * What the warehouse stock of these batches is worth, the way stockLedgerGaps() values it.
+     *
+     * @param  array<int, int>  $batchIds
+     */
+    private function warehouseValueOf(array $batchIds): float
+    {
+        return (float) DB::table('current_stock_by_batch')
+            ->whereIn('stock_batch_id', $batchIds)
+            ->selectRaw('COALESCE(SUM(quantity_on_hand * unit_cost), 0) as value')
+            ->value('value');
     }
 
     /**
@@ -411,7 +587,9 @@ class GrnCostDriftService
                 ->where('reference_type', SalesSettlement::class)
                 ->where('reference_id', $settlementId)
                 ->where('product_id', $productId)
-                ->selectRaw('SUM(ABS(quantity) * unit_cost) as value, SUM(ABS(quantity)) as quantity')
+                // Signed, so a revert's reversing movement cancels the sale it undid: sold, reverted and posted
+                // again counts once, and a settlement reverted and still in draft nets to nothing and is skipped.
+                ->selectRaw('SUM(-quantity * unit_cost) as value, SUM(-quantity) as quantity')
                 ->first();
 
             if (! $sold || (float) $sold->quantity <= 0) {

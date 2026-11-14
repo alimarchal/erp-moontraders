@@ -97,13 +97,22 @@ class LedgerRegisterService
         }
 
         $invoiceNumber = trim((string) $grn->supplier_invoice_number);
+        $documentNumber = $grn->supplier_invoice_number;
 
-        // The invoice may already have been entered by hand; a second row would post it twice.
-        if ($invoiceNumber !== '' && LedgerRegister::where('supplier_id', $grn->supplier_id)
+        $invoiceRows = $invoiceNumber === '' ? collect() : LedgerRegister::where('supplier_id', $grn->supplier_id)
             ->where('document_type', DocumentType::Dr->value)
             ->where('document_number', $invoiceNumber)
-            ->exists()) {
-            return null;
+            ->get(['id', 'goods_receipt_note_id']);
+
+        if ($invoiceRows->isNotEmpty()) {
+            // The invoice may already have been entered by hand for its full amount; a second row would post it twice.
+            if ($invoiceRows->contains(fn (LedgerRegister $row) => $row->goods_receipt_note_id === null)) {
+                return null;
+            }
+
+            // Raised from another GRN: this is a later part of one invoice delivered in parts (a GRN repeating an
+            // invoice is only saved when the user says so). Each part carries what its own GRN left unbilled.
+            $documentNumber = "{$invoiceNumber} / {$grn->grn_number}";
         }
 
         $owed = round((float) DB::table('journal_entry_details as lines')
@@ -122,7 +131,7 @@ class LedgerRegisterService
             'supplier_id' => $grn->supplier_id,
             'transaction_date' => ($grn->supplier_invoice_date ?? $grn->receipt_date)->toDateString(),
             'document_type' => DocumentType::Dr,
-            'document_number' => $grn->supplier_invoice_number,
+            'document_number' => $documentNumber,
             'invoice_amount' => $owed,
             'remarks' => "Auto-created from {$grn->grn_number}".($grn->warehouse ? " ({$grn->warehouse->warehouse_name})" : ''),
             'goods_receipt_note_id' => $grn->id,

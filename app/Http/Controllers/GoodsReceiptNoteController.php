@@ -221,11 +221,13 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         $this->assertLineQuantitiesAddUp($validated['items']);
-        $this->assertSupplierInvoiceIsNew($request, $validated);
 
         DB::beginTransaction();
 
         try {
+            // Checked under a lock on the supplier, so two saves of the same invoice cannot both pass.
+            $this->assertSupplierInvoiceIsNew($request, $validated);
+
             // Generate GRN number
             $grn_number = $this->generateGRNNumber();
 
@@ -342,6 +344,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->route('goods-receipt-notes.show', $grn)
                 ->with('success', "GRN '{$grn->grn_number}' created successfully.");
 
+        } catch (RequestValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -474,11 +480,13 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $validated['items'] = $this->applyCartonEntry((int) $validated['supplier_id'], $validated['items']);
 
         $this->assertLineQuantitiesAddUp($validated['items']);
-        $this->assertSupplierInvoiceIsNew($request, $validated, $goodsReceiptNote->id);
 
         DB::beginTransaction();
 
         try {
+            // Checked under a lock on the supplier, so two saves of the same invoice cannot both pass.
+            $this->assertSupplierInvoiceIsNew($request, $validated, $goodsReceiptNote->id);
+
             // Calculate totals
             $total_quantity = 0;
             $total_amount = 0; // Total inventory cost (includes FMR)
@@ -594,6 +602,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->route('goods-receipt-notes.show', $goodsReceiptNote)
                 ->with('success', "GRN '{$goodsReceiptNote->grn_number}' updated successfully.");
 
+        } catch (RequestValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -768,13 +780,14 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->with('error', 'You do not have permission to import GRNs for this supplier.');
         }
 
-        $this->assertSupplierInvoiceIsNew($request, $validated);
-
         $withholdingTaxRate = $this->resolveActiveWithholdingTaxRate();
 
         DB::beginTransaction();
 
         try {
+            // Checked under a lock on the supplier, so two saves of the same invoice cannot both pass.
+            $this->assertSupplierInvoiceIsNew($request, $validated);
+
             $import = new GoodsReceiptNoteItemsImport($validated['supplier_id'], $withholdingTaxRate);
             Excel::import($import, $request->file('import_file'));
 
@@ -914,6 +927,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->withInput()
                 ->withErrors(['import_file' => $errors]);
 
+        } catch (RequestValidationException $e) {
+            DB::rollBack();
+
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -1324,6 +1341,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         if ($invoiceNumber === '' || $request->boolean('confirm_split_invoice')) {
             return;
         }
+
+        Supplier::whereKey($validated['supplier_id'])->lockForUpdate()->first();
 
         $existing = GoodsReceiptNote::where('supplier_id', $validated['supplier_id'])
             ->where('supplier_invoice_number', $invoiceNumber)

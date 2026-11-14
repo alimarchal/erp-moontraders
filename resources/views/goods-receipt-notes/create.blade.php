@@ -96,13 +96,15 @@
                                 <x-label for="supplier_invoice_number" value="Supplier Invoice Number" />
                                 <x-input id="supplier_invoice_number" name="supplier_invoice_number" type="text"
                                     class="mt-1 block w-full" :value="old('supplier_invoice_number')" />
-                                @error('supplier_invoice_number')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
-                                        <input type="checkbox" name="confirm_split_invoice" value="1" class="rounded border-gray-300">
-                                        Same invoice, delivered in parts
-                                    </label>
-                                @enderror
+                                @if (old('submitted_form') !== 'import')
+                                    @error('supplier_invoice_number')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                        <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                                            <input type="checkbox" name="confirm_split_invoice" value="1" class="rounded border-gray-300">
+                                            Same invoice, delivered in parts
+                                        </label>
+                                    @enderror
+                                @endif
                             </div>
 
                         </div>
@@ -1281,6 +1283,7 @@
 
                     <form method="POST" action="{{ route('goods-receipt-notes.import') }}" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="submitted_form" value="import">
                         <div class="px-6 py-5 space-y-5">
                             @if($errors->has('import_file'))
                                 <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -1345,12 +1348,15 @@
                                     <x-input id="import_supplier_invoice_number" name="supplier_invoice_number" type="text"
                                         class="mt-1 block w-full text-sm" :value="old('supplier_invoice_number')"
                                         placeholder="e.g., INV-2026-001" />
-                                    @error('supplier_invoice_number')
-                                        <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
-                                            <input type="checkbox" name="confirm_split_invoice" value="1" class="rounded border-gray-300">
-                                            Same invoice, delivered in parts
-                                        </label>
-                                    @enderror
+                                    @if (old('submitted_form') === 'import')
+                                        @error('supplier_invoice_number')
+                                            <p class="mt-1 text-sm text-red-600">{{ $message }} Choose the file again before importing.</p>
+                                            <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                                                <input type="checkbox" name="confirm_split_invoice" value="1" class="rounded border-gray-300">
+                                                Same invoice, delivered in parts
+                                            </label>
+                                        @enderror
+                                    @endif
                                 </div>
                             </div>
 
@@ -1403,7 +1409,7 @@
         @push('scripts')
             <script>
                 // Auto-open import modal if there are import errors
-                @if($errors->has('import_file'))
+                @if($errors->has('import_file') || (old('submitted_form') === 'import' && $errors->has('supplier_invoice_number')))
                     document.addEventListener('DOMContentLoaded', function () {
                         window.dispatchEvent(new CustomEvent('open-import-modal'));
                     });

@@ -711,8 +711,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $year = now()->year;
         $prefix = "GRN-{$year}-";
 
+        // Locked so two GRNs saved at the same time queue here instead of taking the same number.
         $lastGRN = GoodsReceiptNote::where('grn_number', 'like', "{$prefix}%")
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         $sequence = $lastGRN ? ((int) str_replace($prefix, '', $lastGRN->grn_number)) + 1 : 1;

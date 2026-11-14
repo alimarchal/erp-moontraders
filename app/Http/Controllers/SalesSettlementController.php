@@ -2206,8 +2206,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $year = now()->year;
         $prefix = "SETTLE-{$year}-";
 
+        // Locked so two settlements saved at the same time queue here instead of taking the same number.
         $lastSettlement = SalesSettlement::where('settlement_number', 'like', "{$prefix}%")
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         $sequence = 1;

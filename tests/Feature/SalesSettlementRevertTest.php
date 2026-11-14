@@ -104,6 +104,22 @@ it('returns error when password is wrong', function () {
         ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'Invalid password'));
 });
 
+it('flashes a success message after a settlement is reverted', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+
+    $mockRevertService = Mockery::mock(SalesSettlementRevertService::class);
+    $mockRevertService->shouldReceive('revert')
+        ->once()
+        ->andReturn(['success' => true, 'message' => 'Settlement reverted to draft.']);
+    app()->instance(SalesSettlementRevertService::class, $mockRevertService);
+
+    $this->actingAs($user)
+        ->post(route('sales-settlements.revert', $settlement->id), ['password' => 'password'])
+        ->assertRedirect(route('sales-settlements.show', $settlement->id))
+        ->assertSessionHas('success', 'Settlement reverted to draft.');
+});
+
 it('returns validation error when password field is missing', function () {
     $user = makeRevertUser();
     $settlement = makePostedSettlement(['created_by' => $user->id]);

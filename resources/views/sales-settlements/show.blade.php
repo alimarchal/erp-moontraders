@@ -1000,7 +1000,7 @@
                                                     items × unit price)</span>
                                             </td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->sales_return_amount, 2) }}
+                                                {{ number_format($valueTotals['returned_value'], 2) }}
                                             </td>
                                         </tr>
                                         <tr>
@@ -1010,7 +1010,7 @@
                                                     items × unit price)</span>
                                             </td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->shortage_amount, 2) }}
+                                                {{ number_format($valueTotals['shortage_value'], 2) }}
                                             </td>
                                         </tr>
                                         <tr>

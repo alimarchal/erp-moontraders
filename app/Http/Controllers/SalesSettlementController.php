@@ -2190,7 +2190,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         if ($result['success']) {
             return redirect()
                 ->route('sales-settlements.show', $salesSettlement->id)
-                ->with('status', $result['message']);
+                ->with('success', $result['message']);
         }
 
         return redirect()

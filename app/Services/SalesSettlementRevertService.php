@@ -408,7 +408,6 @@ class SalesSettlementRevertService
             'journal_entry_id' => null,
             'gross_profit' => null,
             'total_cogs' => null,
-            'cash_sales_amount' => 0,
             'reverted_at' => now(),
             'reverted_by' => auth()->id(),
         ]);

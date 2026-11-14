@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\GoodsReceiptNote;
+use App\Models\Product;
 use App\Models\Supplier;
+use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\UploadedFile;
@@ -246,4 +248,102 @@ it('non-admin user can access products from their assigned supplier via ajax', f
     $this->actingAs($user)
         ->get("/api/suppliers/{$supplier1->id}/products")
         ->assertSuccessful();
+});
+
+function scopedGrnPayload(Supplier $supplier, Product $product): array
+{
+    $uom = Uom::factory()->create();
+
+    return [
+        'receipt_date' => now()->toDateString(),
+        'supplier_id' => $supplier->id,
+        'warehouse_id' => Warehouse::factory()->create()->id,
+        'items' => [[
+            'product_id' => $product->id,
+            'stock_uom_id' => $uom->id,
+            'purchase_uom_id' => $uom->id,
+            'qty_in_purchase_uom' => 1,
+            'uom_conversion_factor' => 1,
+            'qty_in_stock_uom' => 1,
+            'quantity_received' => 1,
+            'quantity_accepted' => 1,
+            'unit_cost' => 10,
+        ]],
+    ];
+}
+
+it('non-admin user cannot create a grn for a different supplier', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $product = Product::factory()->create(['supplier_id' => $otherSupplier->id]);
+
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->assignRole('user');
+
+    $this->actingAs($user)
+        ->post(route('goods-receipt-notes.store'), scopedGrnPayload($otherSupplier, $product))
+        ->assertForbidden();
+
+    expect(GoodsReceiptNote::count())->toBe(0);
+});
+
+it('non-admin user cannot add another supplier\'s products to their own grn', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $foreignProduct = Product::factory()->create(['supplier_id' => $otherSupplier->id]);
+
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->assignRole('user');
+
+    $this->actingAs($user)
+        ->post(route('goods-receipt-notes.store'), scopedGrnPayload($ownSupplier, $foreignProduct))
+        ->assertForbidden();
+
+    expect(GoodsReceiptNote::count())->toBe(0);
+});
+
+it('non-admin user cannot move a draft grn to a different supplier', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $product = Product::factory()->create(['supplier_id' => $otherSupplier->id]);
+
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->assignRole('user');
+
+    $grn = GoodsReceiptNote::factory()->create(['supplier_id' => $ownSupplier->id, 'status' => 'draft']);
+
+    $this->actingAs($user)
+        ->put(route('goods-receipt-notes.update', $grn), scopedGrnPayload($otherSupplier, $product))
+        ->assertForbidden();
+
+    expect($grn->fresh()->supplier_id)->toBe($ownSupplier->id);
+});
+
+it('non-admin user can still create a grn for their own supplier', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $product = Product::factory()->create(['supplier_id' => $ownSupplier->id]);
+
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->assignRole('user');
+
+    $this->actingAs($user)
+        ->post(route('goods-receipt-notes.store'), scopedGrnPayload($ownSupplier, $product))
+        ->assertRedirect();
+
+    expect(GoodsReceiptNote::where('supplier_id', $ownSupplier->id)->count())->toBe(1);
+});
+
+it('non-admin user cannot add another supplier\'s deleted product to their grn', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $foreignProduct = Product::factory()->create(['supplier_id' => Supplier::factory()->create()->id]);
+    $foreignProduct->delete();
+
+    $user = User::factory()->create(['supplier_id' => $ownSupplier->id]);
+    $user->assignRole('user');
+
+    $this->actingAs($user)
+        ->post(route('goods-receipt-notes.store'), scopedGrnPayload($ownSupplier, $foreignProduct))
+        ->assertForbidden();
+
+    expect(GoodsReceiptNote::count())->toBe(0);
 });

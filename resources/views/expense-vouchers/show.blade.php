@@ -39,7 +39,7 @@
     $creditName = $voucher->isCredit() ? 'Expense Payables (the shop is paid later)' : ($voucher->isPaidByBank() ? $voucher->bankAccount?->bank_name.' ('.$voucher->bankAccount?->account_name.')' : 'Cash');
 
     /** The bill lines; a voucher saved before bill lines existed shows its own single line. */
-    $billLines = $voucher->isAdvance() ? collect() : $voucher->postingLines()->each->loadMissing('expenseAccount');
+    $billLines = $voucher->isAdvance() ? collect() : $voucher->postingLines();
     $extraLines = max($billLines->count() - 1, 0);
 
     /** Particulars: the posted journal lines (one debit per bill line), or what approval will post. */

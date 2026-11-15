@@ -34,7 +34,7 @@
         ])
         : ($voucher->isAdvance()
             ? collect([['code' => $voucher->expenseAccount?->account_code, 'name' => $voucher->expenseAccount?->account_name, 'narration' => $voucher->narration, 'debit' => $amount, 'credit' => 0.0]])
-            : $voucher->postingLines()->each->loadMissing('expenseAccount')->map(fn ($line) => [
+            : $voucher->postingLines()->map(fn ($line) => [
                 'code' => $line->expenseAccount?->account_code, 'name' => $line->expenseAccount?->account_name,
                 'narration' => $line->description ?: $voucher->narration, 'debit' => (float) $line->amount, 'credit' => 0.0,
             ]))->push(['code' => $paidFromAccount?->account_code, 'name' => $creditLabel, 'narration' => ($voucher->isCredit() ? 'Owed to ' : 'Paid to ').$voucher->party_name, 'debit' => 0.0, 'credit' => $amount]);

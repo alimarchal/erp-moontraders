@@ -22,12 +22,14 @@ use App\Services\ExpenseVoucherReversalService;
 use App\Services\ExpenseVoucherService;
 use App\Support\CashNotes;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -268,12 +270,45 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'companies' => $this->companiesFor($request),
             'byOwner' => (clone $base)->selectRaw("supplier_id, company_id, {$totals}")->groupBy('supplier_id', 'company_id')->orderByDesc('total')->get()
                 ->each(fn ($row) => $row->label = $row->supplier_id ? Supplier::find($row->supplier_id)?->supplier_name : (Company::find($row->company_id)?->company_name ?? 'Moon Traders').' (general)'),
-            'byCategory' => (clone $base)->selectRaw("expense_category_id, {$totals}")->groupBy('expense_category_id')->orderByDesc('total')->get()
-                ->each(fn ($row) => $row->label = $row->expense_category_id ? ExpenseCategory::find($row->expense_category_id)?->name : 'No category (advances, older vouchers)'),
+            'byCategory' => $this->totalsByLineCategory($base),
             'byVendor' => (clone $base)->whereNotNull('expense_vendor_id')->selectRaw("expense_vendor_id, {$totals}")->groupBy('expense_vendor_id')->orderByDesc('total')->limit(50)->get()
                 ->each(fn ($row) => $row->label = ExpenseVendor::withTrashed()->find($row->expense_vendor_id)?->name),
             'grand' => (clone $base)->selectRaw($totals)->first(),
         ]);
+    }
+
+    /**
+     * Totals by category from the bill lines, so a voucher of toner and a repair counts each under its own category.
+     * Vouchers counts each voucher once per category. What is still owed on a credit voucher is shared over its
+     * lines by amount, so the column adds up to the voucher's own balance. Advances (no category) get their own
+     * row; a voucher saved without lines counts with its own category and amount.
+     *
+     * @param  Builder<ExpenseVoucher>  $vouchers
+     * @return Collection<int, object>
+     */
+    private function totalsByLineCategory(Builder $vouchers): Collection
+    {
+        $amount = 'COALESCE(l.amount, v.amount)';
+        $advanceKey = -1;
+
+        return DB::table('expense_vouchers as v')
+            ->leftJoin('expense_voucher_lines as l', 'l.expense_voucher_id', '=', 'v.id')
+            ->whereIn('v.id', (clone $vouchers)->select('expense_vouchers.id'))
+            ->selectRaw("CASE WHEN v.payment_type = 'advance' THEN {$advanceKey} ELSE COALESCE(l.expense_category_id, v.expense_category_id) END as category_key")
+            ->selectRaw('COUNT(DISTINCT v.id) as vouchers')
+            ->selectRaw("SUM({$amount}) as total")
+            ->selectRaw("SUM(CASE WHEN v.payment_type = 'credit' AND v.amount > 0 THEN {$amount} * (v.amount - v.paid_amount) / v.amount ELSE 0 END) as owed")
+            ->groupBy('category_key')
+            ->orderByDesc('total')
+            ->get()
+            ->each(function ($row) use ($advanceKey) {
+                $row->owed = round((float) $row->owed, 2);
+                $row->label = match (true) {
+                    (int) $row->category_key === $advanceKey => 'Employee advance',
+                    $row->category_key === null => 'No category (older vouchers)',
+                    default => ExpenseCategory::find($row->category_key)?->name,
+                };
+            });
     }
 
     public function help(Request $request)

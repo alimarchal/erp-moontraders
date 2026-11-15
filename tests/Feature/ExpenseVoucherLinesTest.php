@@ -234,3 +234,33 @@ it('lists every bill line on the voucher page and the extra lines on the list', 
     $voucher->update(['status' => 'draft']);
     $this->actingAs($this->maker)->get(route('expense-vouchers.edit', $voucher))->assertOk()->assertSee('Printer repair', false);
 });
+
+it('totals the summary by each line\'s category, not the first line\'s', function () {
+    $repair = ExpenseCategory::factory()->create(['name' => 'Repair', 'default_expense_account_id' => $this->ledger['5281']->id]);
+    ($this->store)(['payment_method' => 'credit', 'lines' => [
+        ['expense_category_id' => $this->category->id, 'expense_account_id' => $this->ledger['5221']->id, 'description' => 'Toner', 'amount' => '2500'],
+        ['expense_category_id' => $repair->id, 'expense_account_id' => $this->ledger['5281']->id, 'description' => 'Repair', 'amount' => '1800'],
+    ]]);
+    ($this->approve)(ExpenseVoucher::sole())->assertSessionHas('success');
+
+    $response = $this->actingAs($this->checker)->get(route('expense-vouchers.summary'))->assertOk();
+    $byCategory = $response->viewData('byCategory')->keyBy('label');
+
+    expect((float) $byCategory['Toner']->total)->toBe(2500.0)
+        ->and((float) $byCategory['Repair']->total)->toBe(1800.0)
+        ->and((int) $byCategory['Toner']->vouchers)->toBe(1)
+        ->and((float) $byCategory['Toner']->owed + (float) $byCategory['Repair']->owed)->toBe(4300.0)
+        ->and((float) $response->viewData('grand')->total)->toBe(4300.0)
+        ->and((float) $byCategory->sum('total'))->toBe(4300.0);
+});
+
+it('lists every bill line on the 80mm slip', function () {
+    Permission::findOrCreate('expense-voucher-print');
+    $this->checker->givePermissionTo('expense-voucher-print');
+    ($this->store)(['payment_method' => 'credit']);
+    $voucher = ExpenseVoucher::sole();
+    ($this->approve)($voucher);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.print', [$voucher, 'format' => 'slip', 'autoprint' => 0]))->assertOk()
+        ->assertSeeInOrder(['Miscellaneous Expenses Rs 2,500.00', 'Salary Rs 1,800.00', 'Short Amount Rs 450.00']);
+});

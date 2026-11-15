@@ -232,7 +232,7 @@ class ExpenseVoucher extends Model
      */
     public function postingLines(): Collection
     {
-        $lines = $this->lines()->get();
+        $lines = $this->lines()->with('expenseAccount')->get();
 
         if ($lines->isNotEmpty()) {
             return $lines->toBase();
@@ -245,7 +245,7 @@ class ExpenseVoucher extends Model
             'vehicle_id' => $this->vehicle_id,
             'description' => null,
             'amount' => $this->amount,
-        ])]);
+        ])->setRelation('expenseAccount', $this->expenseAccount)]);
     }
 
     public function expenseVendor(): BelongsTo

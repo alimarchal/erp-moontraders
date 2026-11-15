@@ -41,12 +41,14 @@
                             </select>
                             <button type="button" class="ak-btn ak-btn-ghost ev-add-shop" @click="$dispatch('open-shop-modal')">＋ New shop</button>
                         </div>
+                        @error('expense_vendor_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     </div>
                 </template>
                 <template x-if="payee === 'vendor'">
                     <div class="ak-field">
                         <label for="vendor_bill_no">Shop bill no. (optional)</label>
                         <input id="vendor_bill_no" type="text" name="vendor_bill_no" maxlength="80" value="{{ old('vendor_bill_no', $voucher->vendor_bill_no) }}">
+                        @error('vendor_bill_no')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     </div>
                 </template>
 
@@ -57,12 +59,14 @@
                             @if($employeeModel)<option value="{{ $employeeModel->id }}" selected>{{ \App\Http\Controllers\ExpenseVoucherController::employeeLabel($employeeModel) }}</option>@endif
                         </select>
                         <p class="ak-hint">Shown as Name · Company. The advance is booked to the employee's own company.</p>
+                        @error('employee_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     </div>
                 </template>
                 <template x-if="payee === 'employee'">
                     <div class="ak-field">
                         <label for="advance_installment">Monthly instalment (optional)</label>
-                        <input id="advance_installment" type="number" step="0.01" min="0.01" name="advance_installment" value="{{ old('advance_installment', $voucher->advance_installment) }}" placeholder="Empty = all from next salary">
+                        <input id="advance_installment" type="number" step="0.01" min="0.01" name="advance_installment" inputmode="decimal" value="{{ old('advance_installment', $voucher->advance_installment) }}" placeholder="Empty = all from next salary">
+                        @error('advance_installment')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     </div>
                 </template>
 
@@ -70,6 +74,7 @@
                     <div class="ak-field ev-span-2">
                         <label for="party_name">Paid to (name)</label>
                         <input id="party_name" type="text" name="party_name" maxlength="255" autocomplete="off" value="{{ old('party_name', $voucher->payee_type === 'other' ? $voucher->party_name : '') }}" placeholder="Person or company paid">
+                        @error('party_name')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     </div>
                 </template>
 
@@ -88,6 +93,7 @@
                             <option value="supplier:{{ $supplier->id }}" @selected($currentOwner === 'supplier:'.$supplier->id || ($isOwnCompanyOnly && ! $currentOwner))>{{ $supplier->supplier_name }}</option>
                         @endforeach
                     </select>
+                    @error('owner')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
             </div>
             <p class="ev-note" x-show="payee === 'employee'" x-cloak>This is not an expense: it is money the employee owes back. Payroll takes the instalment out of the next salary and keeps the balance.</p>
@@ -107,6 +113,7 @@
                 <div class="ak-field">
                     <label for="voucher_date">Voucher date</label>
                     <input id="voucher_date" type="date" name="voucher_date" required max="{{ now()->toDateString() }}" value="{{ old('voucher_date', optional($voucher->voucher_date)->format('Y-m-d')) }}">
+                    @error('voucher_date')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field" x-show="payee !== 'employee'">
                     <label for="expense_category_id">Category (what is it for?)</label>
@@ -116,6 +123,7 @@
                             <option value="{{ $category->id }}" data-account="{{ $category->default_expense_account_id }}" @selected((int) old('expense_category_id', $voucher->expense_category_id) === $category->id)>{{ $category->name }}</option>
                         @endforeach
                     </select>
+                    @error('expense_category_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     @can('expense-category-manage')<p class="ak-hint"><a href="{{ route('expense-categories.index') }}" class="ak-primary-link" target="_blank">Manage categories</a></p>@endcan
                 </div>
                 <div class="ak-field" x-show="payee !== 'employee'">
@@ -126,6 +134,7 @@
                             <option value="{{ $account->id }}" @selected($accountOld === $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
                         @endforeach
                     </select>
+                    @error('expense_account_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field" x-show="payee === 'vendor'" x-effect="if (payee !== 'vendor' && window.jQuery) { jQuery('#vehicle_id').val(null).trigger('change'); }">
                     <label for="vehicle_id">Vehicle (optional)</label>
@@ -139,6 +148,7 @@
                 <div class="ak-field">
                     <label for="amount">Amount (Rs)</label>
                     <input id="amount" class="ev-amount-input" type="number" step="0.01" min="0.01" name="amount" required x-model="amount" inputmode="decimal" value="{{ old('amount', $voucher->amount) }}">
+                    @error('amount')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>
@@ -163,6 +173,7 @@
                             <option value="{{ $value }}" @selected($paymentMethod === $value) @if($value === 'credit') :disabled="payee !== 'vendor'" @endif>{{ $label }}</option>
                         @endforeach
                     </select>
+                    @error('payment_method')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field ev-span-2" x-show="method === 'bank_transfer' || method === 'cheque'" x-cloak>
                     <label for="bank_account_id">Paid from bank account</label>
@@ -173,18 +184,22 @@
                         @endforeach
                     </select>
                     @if($bankAccounts->isEmpty())<p class="ak-hint">No active bank account is linked to the chart of accounts yet.</p>@endif
+                    @error('bank_account_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field" x-show="method === 'cheque'" x-cloak>
                     <label for="cheque_number">Cheque number</label>
                     <input id="cheque_number" type="text" name="cheque_number" maxlength="50" autocomplete="off" :disabled="method !== 'cheque'" :required="method === 'cheque'" value="{{ old('cheque_number', $voucher->cheque_number) }}">
+                    @error('cheque_number')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field" x-show="method === 'cheque'" x-cloak>
                     <label for="cheque_date">Cheque date</label>
                     <input id="cheque_date" type="date" name="cheque_date" :disabled="method !== 'cheque'" :required="method === 'cheque'" value="{{ old('cheque_date', optional($voucher->cheque_date)->format('Y-m-d')) }}">
+                    @error('cheque_date')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field" x-show="method === 'bank_transfer' || method === 'cheque'" x-cloak>
                     <label for="transaction_reference">Reference (optional)</label>
                     <input id="transaction_reference" type="text" name="transaction_reference" maxlength="100" autocomplete="off" :disabled="method !== 'bank_transfer' && method !== 'cheque'" placeholder="IBFT / transfer ID" value="{{ old('transaction_reference', $voucher->transaction_reference) }}">
+                    @error('transaction_reference')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>
@@ -199,6 +214,7 @@
             <div class="ak-field">
                 <label for="narration">Narration</label>
                 <textarea id="narration" name="narration" rows="2" maxlength="1000" placeholder="What was this expense for?">{{ old('narration', $voucher->narration) }}</textarea>
+                @error('narration')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
             </div>
             @if(\App\Services\ExpenseVoucherAttachmentService::enabled())
                 <div class="ak-field" x-data="{ names: [] }" style="margin-top:12px">
@@ -206,6 +222,7 @@
                     <x-attachment-compressor />
                     <input id="attachments" type="file" name="attachments[]" data-compress multiple accept=".pdf,.jpg,.jpeg,.png,.webp" class="ev-file" @change="names = [...$event.target.files].map(f => f.name)">
                     <p class="ak-hint">Pick several files together. PDF, JPG, PNG or WEBP, up to {{ round(config('voucher_attachments.max_kb') / 1024) }} MB each.</p>
+                    @error('attachments')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     <ul class="ev-files" x-show="names.length" x-cloak><template x-for="name in names" :key="name"><li x-text="name"></li></template></ul>
                     @if($voucher->exists && $voucher->attachments->isNotEmpty())
                         <div class="ev-current-file" style="flex-direction:column; align-items:flex-start; gap:8px">
@@ -229,9 +246,9 @@
             <span x-text="{ cash: 'Cash', bank_transfer: 'Bank transfer', cheque: 'Cheque', credit: 'Credit, pay later' }[method]"></span>
         </div>
         <div>
-            <a href="{{ $voucher->exists ? route('expense-vouchers.show', $voucher) : route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
-            <button type="submit" name="action" value="draft" class="ak-btn ak-btn-outline">{{ $voucher->exists ? 'Save changes' : 'Save draft' }}</button>
-            <button type="submit" name="action" value="submit" class="ak-btn ak-btn-primary gf-submit">Submit for approval</button>
+            <a href="{{ $voucher->exists ? route('expense-vouchers.show', $voucher) : route('expense-vouchers.index') }}" class="ak-btn ak-btn-ghost">Cancel</a>
+            <button type="submit" name="action" value="draft" class="ak-btn ak-btn-ghost" data-busy-label="Saving…">{{ $voucher->exists ? 'Save changes' : 'Save draft' }}</button>
+            <button type="submit" name="action" value="submit" class="ak-btn ak-btn-primary gf-submit" data-busy-label="Sending…">Submit for approval</button>
         </div>
     </div>
 </div>
@@ -249,7 +266,7 @@
                     <div class="ak-field" style="grid-column:1/-1"><label for="ns_name">Shop name *</label><input id="ns_name" x-ref="name" type="text" x-model="form.name" maxlength="255" @keydown.enter.prevent="save()"></div>
                     <div class="ak-field"><label for="ns_category">Category</label>
                         <select id="ns_category" x-model="form.category">@foreach($vendorCategories as $key => $label)<option value="{{ $key }}">{{ $label }}</option>@endforeach</select></div>
-                    <div class="ak-field"><label for="ns_phone">Phone</label><input id="ns_phone" type="text" x-model="form.phone" maxlength="40"></div>
+                    <div class="ak-field"><label for="ns_phone">Phone</label><input id="ns_phone" type="tel" inputmode="tel" autocomplete="off" x-model="form.phone" maxlength="40"></div>
                     <div class="ak-field"><label for="ns_city">City</label><input id="ns_city" type="text" x-model="form.city" maxlength="80"></div>
                     <div class="ak-field"><label for="ns_contact">Contact person</label><input id="ns_contact" type="text" x-model="form.contact_person" maxlength="255"></div>
                     <div class="ak-field" style="grid-column:1/-1"><label for="ns_address">Address</label><input id="ns_address" type="text" x-model="form.address" maxlength="500"></div>
@@ -258,12 +275,12 @@
                     <span x-text="duplicate && duplicate.message"></span>
                     <div style="display:flex; gap:8px; margin-top:8px">
                         <button type="button" class="ak-btn ak-btn-primary" @click="useExisting()">Use the existing shop</button>
-                        <button type="button" class="ak-btn ak-btn-outline" @click="save(true)">It is a different shop, save anyway</button>
+                        <button type="button" class="ak-btn ak-btn-ghost" @click="save(true)">It is a different shop, save anyway</button>
                     </div>
                 </div>
             </div>
             <div class="uf-modal-foot">
-                <button type="button" class="ak-btn ak-btn-outline" @click="open = false">Cancel</button>
+                <button type="button" class="ak-btn ak-btn-ghost" @click="open = false">Cancel</button>
                 <button type="button" class="ak-btn ak-btn-primary" @click="save()" :disabled="busy"><span x-text="busy ? 'Saving…' : 'Save shop'"></span></button>
             </div>
         </div>

@@ -13,6 +13,9 @@
     .ev-form .select2-container { width: 100% !important; display: block; position: relative; margin-top: 0 !important; }
     .ev-amount-input { font-size: 17px !important; font-weight: 600; font-variant-numeric: tabular-nums; }
     .ak-hint { margin: 2px 0 0; font-size: 12px; color: #6e6e73; }
+    html.apl-on .ev-form .ev-add-shop { height: 40px; }
+    .ev-field-error { margin: 2px 0 0; font-size: 12.5px; color: #c4161c; }
+    html.apl-on .ev-form .ak-btn[disabled] { opacity: .45; cursor: progress; transform: none; }
 
     /* Who is paid: a segmented switch */
     .ev-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 11px; background: rgba(118,118,128,.12); }
@@ -33,6 +36,9 @@
     .ev-remove { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     .ev-ur { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; }
     @media (max-width: 640px) {
+        .ev-form .gf-actions > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+        .ev-form .gf-actions > div:last-child .ak-btn { flex: 1 1 0; min-width: 0; margin: 0; }
+        .ev-form .gf-actions > div:last-child .gf-submit { flex: 1 1 100%; order: -1; }
         .ev-seg { display: flex; }
         .ev-seg label { display: flex !important; flex: 1 1 100%; justify-content: center; }
         .ev-inline { flex-wrap: wrap; }

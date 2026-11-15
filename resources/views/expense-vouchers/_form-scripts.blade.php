@@ -1,5 +1,21 @@
 @push('scripts')
     <script>
+        // One click only: a second submit of the voucher form is ignored and the pressed button shows its busy label.
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (! form.matches('form[data-once-form]') || event.defaultPrevented) { return; }
+            if (form.dataset.sending === '1') { event.preventDefault(); return; }
+            form.dataset.sending = '1';
+            form.setAttribute('aria-busy', 'true');
+            const pressed = event.submitter;
+            if (pressed && pressed.dataset.busyLabel) { pressed.textContent = pressed.dataset.busyLabel; }
+            setTimeout(() => form.querySelectorAll('button[type=submit]').forEach((button) => { button.disabled = true; }), 0);
+        });
+        window.addEventListener('pageshow', (event) => {
+            if (! event.persisted) { return; }
+            document.querySelectorAll('form[data-once-form][data-sending]').forEach((form) => { location.reload(); });
+        });
+
         // Plain dropdowns are searchable. Shops and employees are loaded on request while typing, so the form
         // stays light however many exist.
         function evAjaxSelect(selector, onPick) {

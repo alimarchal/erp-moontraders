@@ -98,6 +98,12 @@
             .amount .fig { min-width: 0; }
             .signs { grid-template-columns: repeat(2, 1fr); row-gap: 18mm; margin-top: 14mm; }
             table.grid .n { width: auto; }
+            .scroll { overflow-x: auto; }
+            .scroll table.grid { min-width: 520px; }
+            table.pay, table.pay tbody { display: block; }
+            table.pay tr { display: grid; grid-template-columns: minmax(0, 36%) minmax(0, 1fr); }
+            table.pay td { display: block; margin: 0 0 -1px -1px; }
+            table.pay td.l { width: auto; }
             table.grid td { overflow-wrap: anywhere; }
             .duplicate { font-size: 40px; }
         }
@@ -138,7 +144,7 @@
         @endif
 
         <div class="section">Payee and payment</div>
-        <table class="grid" aria-label="Payee and payment">
+        <table class="grid pay" aria-label="Payee and payment">
             <tr><td class="l">Paid to</td><td colspan="3"><b>{{ $voucher->party_name }}</b>@if($voucher->employee) <span style="color:#555">(Employee {{ $voucher->employee->employee_code }}{{ $voucher->isAdvance() ? ', advance salary' : '' }})</span>@endif</td></tr>
             <tr><td class="l">Company</td><td>{{ $owner }}</td><td class="l">Method</td><td>{{ ExpenseVoucher::paymentMethodLabels()[$voucher->payment_method] ?? $voucher->payment_method }}</td></tr>
             @if($voucher->isPaidByBank())
@@ -159,7 +165,7 @@
         </div>
 
         <div class="section">Particulars</div>
-        <table class="grid" aria-label="Particulars">
+        <div class="scroll"><table class="grid" aria-label="Particulars">
             <thead><tr><th style="width:20mm">Code</th><th>Account</th><th>Narration</th><th class="n">Debit (Rs)</th><th class="n">Credit (Rs)</th></tr></thead>
             <tbody>
                 @foreach($particulars as $line)
@@ -167,7 +173,7 @@
                 @endforeach
             </tbody>
             <tfoot><tr><td colspan="3">Total</td><td class="n">{{ number_format($particulars->sum('debit'), 2) }}</td><td class="n">{{ number_format($particulars->sum('credit'), 2) }}</td></tr></tfoot>
-        </table>
+        </table></div>
 
         @if($showNotes)
             <div class="section">Notes paid out</div>

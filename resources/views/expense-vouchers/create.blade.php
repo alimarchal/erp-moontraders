@@ -22,7 +22,7 @@
         <p class="gf-lede">Saved as a draft or sent straight to a checker. Nothing is posted until it is approved.</p>
         <x-status-message />
         <x-validation-errors class="mb-4" />
-        <form method="POST" action="{{ route('expense-vouchers.store') }}" class="ev-form apl-fields" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('expense-vouchers.store') }}" class="ev-form apl-fields" enctype="multipart/form-data" data-once-form>
             @csrf
             @include('expense-vouchers._form')
         </form>

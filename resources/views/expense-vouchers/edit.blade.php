@@ -25,7 +25,7 @@
         @if($voucher->status === 'rejected' && $voucher->rejection_reason)
             <div class="ak-alert ak-alert-error" role="status"><b>Rejected{{ $voucher->checker ? ' by '.$voucher->checker->name : '' }}:</b> {{ $voucher->rejection_reason }}</div>
         @endif
-        <form method="POST" action="{{ route('expense-vouchers.update', $voucher) }}" class="ev-form apl-fields" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('expense-vouchers.update', $voucher) }}" class="ev-form apl-fields" enctype="multipart/form-data" data-once-form>
             @csrf
             @method("PUT")
             @include('expense-vouchers._form')

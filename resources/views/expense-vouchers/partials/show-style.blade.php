@@ -91,10 +91,11 @@
     .ev-particulars tfoot td { font-weight: 700; border-bottom: 0; border-top: 1px solid rgba(60,60,67,.18); }
 
     /* Notes paid out */
-    .ev-notes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+    .ev-notes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
     .ev-notes li { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; gap: 6px; padding: 8px 12px; border-radius: 12px; background: var(--apl-bg, #f5f5f7); font-size: 14px; }
     .ev-note-face { font-weight: 600; }
-    .ev-note-x { color: #6e6e73; }
+    .ev-note-x { color: #6e6e73; white-space: nowrap; }
+    .ev-notes li > * { white-space: nowrap; }
     .ev-notes b { font-variant-numeric: tabular-nums; }
     .ev-notes .ev-notes-total { grid-column: 1 / -1; background: rgba(52,199,89,.12); color: #1f5c2e; }
 
@@ -166,7 +167,7 @@
     }
     /* Phone: the action bar sits at the bottom, the particulars become stacked rows */
     @media (max-width: 767px) {
-        .ev-show.has-actionbar { padding-bottom: 132px; }
+        .ev-show.has-actionbar { padding-bottom: 156px; }
         .ev-actionbar { position: fixed; top: auto; left: 0; right: 0; bottom: 0; border-radius: 18px 18px 0 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
         .ev-actionbar-info { flex-basis: 100%; }
         .ev-actionbar-buttons { width: 100%; justify-content: stretch; }

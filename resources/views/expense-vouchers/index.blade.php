@@ -94,7 +94,7 @@
             <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        <section id="ev-filter-panel" class="ak-card rg-gi-filters apl-fields" aria-label="Filters" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @ev-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
+        <section id="ev-filter-panel" class="ak-card rg-gi-filters apl-fields" aria-label="Filters" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @ev-toggle-filters.window="open = ! open" @ev-open-search.window="open = true; $nextTick(() => document.getElementById('f_search')?.focus())" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
             <form method="GET" action="{{ route('expense-vouchers.index') }}" class="ak-filters"
                 x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
                 @if ($tab !== '' && ! $opensOnPending) <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
@@ -107,7 +107,7 @@
                             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
                             <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
                                 placeholder="Voucher no., party or narration" x-ref="search"
-                                @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $refs.search.focus(); }">
+                                @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $dispatch('ev-open-search'); }">
                             <kbd aria-hidden="true">/</kbd>
                         </div>
                     </div>
@@ -345,7 +345,7 @@
                     <p>Every voucher has been checked. To find an older one, press <kbd>/</kbd> and search by voucher no., party or narration, or show all vouchers.</p>
                     <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
                         <a href="{{ $tabUrl('') }}" class="ak-btn ak-btn-primary">Show all</a>
-                        @can('expense-voucher-create') <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-ghost">＋ New voucher</a> @endcan
+                        <button type="button" class="ak-btn ak-btn-ghost" x-data @click="$dispatch('ev-open-search')">Search</button>
                     </div>
                 </div>
             @else

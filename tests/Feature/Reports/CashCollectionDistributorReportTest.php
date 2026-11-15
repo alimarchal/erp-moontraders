@@ -463,3 +463,9 @@ it('hides the signed note rows when they are zero and shows them when they are n
     $busy = distributorTableHtml($html(), '3 - Cash Denominations');
     expect($busy)->toContain('Paid out, no note count')->not->toContain('Coins');
 });
+
+it('prints no stray bracket under the Cash Denominations table', function () {
+    $html = $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all']))->assertOk()->getContent();
+
+    expect($html)->not->toMatch('/<\/table>\s*\)/');
+});

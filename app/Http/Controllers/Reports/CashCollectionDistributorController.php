@@ -14,6 +14,7 @@ use App\Models\Supplier;
 use App\Support\CashNotes;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -137,26 +138,8 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             ->orderBy('name')
             ->get();
 
-        $scope = fn ($query) => $query
-            ->when($designation, fn ($q) => $q->whereHas('employee', fn ($e) => $e->where('designation', $designation)))
-            ->when($employeeIds !== [], fn ($q) => $q->whereIn('employee_id', $employeeIds));
-
-        $settlements = $scope(SalesSettlement::query())
-            ->with(['employee:id,name,supplier_id,designation', 'cashDenominations', 'bankSlips.bankAccount', 'bankTransfers', 'recoveries', 'cheques'])
-            ->where('status', 'posted')
-            ->whereDate('settlement_date', $date)
-            ->get()
-            ->each(fn (SalesSettlement $settlement) => $settlement->setAttribute('company_id', (int) ($settlement->supplier_id ?? $settlement->employee?->supplier_id)))
-            ->when($supplierId, fn (Collection $rows) => $rows->where('company_id', $supplierId));
-
-        $clearedCheques = SalesSettlementCheque::query()
-            ->with('salesSettlement.employee:id,name,supplier_id,designation')
-            ->where('status', 'cleared')
-            ->whereDate('cleared_date', $date)
-            ->whereHas('salesSettlement', fn ($query) => $scope($query))
-            ->get()
-            ->each(fn (SalesSettlementCheque $cheque) => $cheque->setAttribute('company_id', (int) ($cheque->salesSettlement->supplier_id ?? $cheque->salesSettlement->employee?->supplier_id)))
-            ->when($supplierId, fn (Collection $rows) => $rows->where('company_id', $supplierId));
+        $settlements = $this->settlementsOn($date, $supplierId, $designation, $employeeIds);
+        $clearedCheques = $this->clearedChequesOn($date, $supplierId, $designation, $employeeIds);
         // A cheque the bank cleared brought no cash back; it is shown on its own as cleared into bank.
         [$intoBank, $clearings] = $clearedCheques->partition(fn (SalesSettlementCheque $cheque) => $cheque->cleared_via === 'bank');
 
@@ -268,6 +251,66 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             ],
             'tables' => $tables,
         ]);
+    }
+
+    /**
+     * The net notes of the day for one company (or all companies when none is given), every salesman included: the
+     * "Net notes" column of the Cash Denominations table. The expense voucher approve dialog warns with it.
+     */
+    public function notesOnHand(?int $supplierId, string $date): CashNotes
+    {
+        $clearings = $this->clearedChequesOn($date, $supplierId, null, [])
+            ->reject(fn (SalesSettlementCheque $cheque) => $cheque->cleared_via === 'bank');
+        $notesIn = $this->notesIn($this->settlementsOn($date, $supplierId, null, []), $clearings, $supplierId, $date);
+
+        return $notesIn['notes']->minus($this->cashVouchers($supplierId, $date)['notes']);
+    }
+
+    /**
+     * Posted settlements of the day, each tagged with its company (its own, else its salesman's).
+     *
+     * @param  array<int, int|string>  $employeeIds
+     * @return Collection<int, SalesSettlement>
+     */
+    private function settlementsOn(string $date, ?int $supplierId, ?string $designation, array $employeeIds): Collection
+    {
+        return $this->ofSalesmen(SalesSettlement::query(), $designation, $employeeIds)
+            ->with(['employee:id,name,supplier_id,designation', 'cashDenominations', 'bankSlips.bankAccount', 'bankTransfers', 'recoveries', 'cheques'])
+            ->where('status', 'posted')
+            ->whereDate('settlement_date', $date)
+            ->get()
+            ->each(fn (SalesSettlement $settlement) => $settlement->setAttribute('company_id', (int) ($settlement->supplier_id ?? $settlement->employee?->supplier_id)))
+            ->when($supplierId, fn (Collection $rows) => $rows->where('company_id', $supplierId));
+    }
+
+    /**
+     * Cheques cleared on the day (cash and bank), each tagged with its settlement's company.
+     *
+     * @param  array<int, int|string>  $employeeIds
+     * @return Collection<int, SalesSettlementCheque>
+     */
+    private function clearedChequesOn(string $date, ?int $supplierId, ?string $designation, array $employeeIds): Collection
+    {
+        return SalesSettlementCheque::query()
+            ->with('salesSettlement.employee:id,name,supplier_id,designation')
+            ->where('status', 'cleared')
+            ->whereDate('cleared_date', $date)
+            ->whereHas('salesSettlement', fn ($query) => $this->ofSalesmen($query, $designation, $employeeIds))
+            ->get()
+            ->each(fn (SalesSettlementCheque $cheque) => $cheque->setAttribute('company_id', (int) ($cheque->salesSettlement->supplier_id ?? $cheque->salesSettlement->employee?->supplier_id)))
+            ->when($supplierId, fn (Collection $rows) => $rows->where('company_id', $supplierId));
+    }
+
+    /**
+     * Narrow a settlement query to the chosen designation and salesmen.
+     *
+     * @param  array<int, int|string>  $employeeIds
+     */
+    private function ofSalesmen(Builder $query, ?string $designation, array $employeeIds): Builder
+    {
+        return $query
+            ->when($designation, fn ($q) => $q->whereHas('employee', fn ($e) => $e->where('designation', $designation)))
+            ->when($employeeIds !== [], fn ($q) => $q->whereIn('employee_id', $employeeIds));
     }
 
     /**

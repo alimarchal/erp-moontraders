@@ -295,3 +295,17 @@ it('stores voucher attachments on Amazon S3 when VOUCHER_ATTACHMENTS_DISK is s3'
     Storage::disk('s3')->assertExists($file->file_path);
     $this->actingAs($this->maker)->get(route('expense-vouchers.attachment', [ExpenseVoucher::first(), $file]))->assertOk();
 });
+
+it('drops the newly uploaded files when an update fails unexpectedly', function () {
+    Storage::fake(ExpenseVoucherAttachmentService::disk());
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'draft', 'voucher_date' => '2026-10-28'] + $this->payload)->assertRedirect();
+    $voucher = ExpenseVoucher::first();
+    $this->partialMock(ExpenseVoucherService::class, fn ($mock) => $mock->shouldReceive('update')->andThrow(new LogicException('unexpected')));
+
+    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), [
+        'action' => 'draft', 'voucher_date' => '2026-10-28', 'attachments' => [UploadedFile::fake()->image('bill.jpg')],
+    ] + $this->payload)->assertServerError();
+
+    expect(Storage::disk(ExpenseVoucherAttachmentService::disk())->allFiles())->toBe([])
+        ->and($voucher->fresh()->attachments)->toHaveCount(0);
+});

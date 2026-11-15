@@ -16,12 +16,20 @@
         .amount { font-size: 20px; font-weight: bold; text-align: center; margin: 6px 0; }
         .sign { margin-top: 26px; display: flex; gap: 8px; }
         .sign div { flex: 1; border-top: 1px solid #000; text-align: center; padding-top: 2px; font-size: 10px; }
+        .reversed { margin: 6px 0; padding: 4px 0; border: 2px solid #000; text-align: center; font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+        .reversed small { display: block; font-size: 10px; font-weight: normal; letter-spacing: 0; }
         @media screen { body { margin: 10px auto; padding: 8px; border: 1px solid #ccc; } }
     </style>
 </head>
 <body>
     <h1>MOON TRADERS</h1>
     <div class="center">Expense Voucher</div>
+    @if($voucher->isReversed())
+        <div class="reversed">*** REVERSED ***
+            <small>{{ $voucher->reversed_at?->format('d-M-y h:i A') }}{{ $voucher->reverser ? ' by '.$voucher->reverser->name : '' }}</small>
+            @if($voucher->reversal_reason)<small>{{ $voucher->reversal_reason }}</small>@endif
+        </div>
+    @endif
     <div class="rule"></div>
     <table>
         <tr><td class="l">Voucher</td><td><b>{{ $voucher->voucher_number }}</b></td></tr>

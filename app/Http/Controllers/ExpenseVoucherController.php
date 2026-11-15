@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Reports\CashCollectionDistributorController;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Company;
@@ -20,6 +21,7 @@ use App\Services\ExpenseVoucherReversalService;
 use App\Services\ExpenseVoucherService;
 use App\Support\CashNotes;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -103,7 +105,9 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         if ($opensOnPending) {
             $filters = ['status' => ExpenseVoucher::STATUS_PENDING];
         }
-        $dateFrom = $filters['date_from'] ?? ($opensOnPending ? self::EARLIEST_DATE : now()->startOfMonth()->toDateString());
+        // A status tab clicked without dates keeps "all dates", so an old pending voucher does not vanish from its tab.
+        $allDates = array_diff(array_keys($filters), ['status']) === [];
+        $dateFrom = $filters['date_from'] ?? ($allDates ? self::EARLIEST_DATE : now()->startOfMonth()->toDateString());
         $dateTo = $filters['date_to'] ?? $today;
 
         $sort = (string) $request->input('sort', '-voucher_date');
@@ -159,6 +163,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'statusCounts' => $statusCounts,
             'filters' => $filters,
             'opensOnPending' => $opensOnPending,
+            'allDates' => $allDates,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'sort' => $sort,
@@ -302,7 +307,16 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         return view('expense-vouchers.show', [
             'voucher' => $voucher,
             'companyName' => Company::query()->orderBy('id')->value('company_name') ?? config('app.name'),
-            'vendorOutstanding' => $voucher->expenseVendor?->outstanding(),
+            // Only the credit of vouchers this user may see, so a company user never sees another company's balance.
+            'vendorOutstanding' => $voucher->expenseVendor
+                ? round((float) ExpenseVoucher::query()->visibleTo($request->user())
+                    ->where('expense_vendor_id', $voucher->expense_vendor_id)
+                    ->where('status', ExpenseVoucher::STATUS_APPROVED)
+                    ->where('payment_type', ExpenseVoucher::TYPE_CREDIT)
+                    ->selectRaw('COALESCE(SUM(amount - paid_amount), 0) as due')
+                    ->value('due'), 2)
+                : null,
+            'notesOnHand' => $this->notesOnHandFor($request, $voucher),
             'vendorHistory' => $voucher->expenseVendor
                 ? ExpenseVoucher::query()->visibleTo($request->user())->where('expense_vendor_id', $voucher->expense_vendor_id)->whereKeyNot($voucher->id)
                     ->latest('voucher_date')->latest('id')->limit(5)->get(['id', 'uuid', 'voucher_number', 'voucher_date', 'amount', 'status'])
@@ -333,22 +347,28 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $removedPaths = [];
         $uploaded = $this->attachments->upload($request->file('attachments', []), Carbon::parse($data['voucher_date']));
 
-        $redirect = $this->attempt(function () use ($expenseVoucher, $data, $request, $submit, $remove, $uploaded, &$removedPaths) {
-            DB::transaction(function () use ($expenseVoucher, $data, $request, $submit, $remove, $uploaded, &$removedPaths) {
-                $this->service->update($expenseVoucher, $data);
+        try {
+            $redirect = $this->attempt(function () use ($expenseVoucher, $data, $request, $submit, $remove, $uploaded, &$removedPaths) {
+                DB::transaction(function () use ($expenseVoucher, $data, $request, $submit, $remove, $uploaded, &$removedPaths) {
+                    $this->service->update($expenseVoucher, $data);
 
-                foreach ($expenseVoucher->attachments()->whereIn('id', $remove)->get() as $file) {
-                    $removedPaths[] = $file->file_path;
-                    $file->delete();
-                }
+                    foreach ($expenseVoucher->attachments()->whereIn('id', $remove)->get() as $file) {
+                        $removedPaths[] = $file->file_path;
+                        $file->delete();
+                    }
 
-                $this->attachments->record($expenseVoucher, $uploaded);
+                    $this->attachments->record($expenseVoucher, $uploaded);
 
-                if ($submit) {
-                    $this->service->submit($expenseVoucher->fresh(), $request->user());
-                }
-            });
-        }, $expenseVoucher, $submit ? 'Voucher submitted for approval.' : 'Voucher updated.');
+                    if ($submit) {
+                        $this->service->submit($expenseVoucher->fresh(), $request->user());
+                    }
+                });
+            }, $expenseVoucher, $submit ? 'Voucher submitted for approval.' : 'Voucher updated.');
+        } catch (\Throwable $e) {
+            $this->attachments->discard($uploaded);
+
+            throw $e;
+        }
 
         // Files go only after the database change is safely saved; files stored for a refused save are dropped.
         if (session()->has('error')) {
@@ -472,6 +492,28 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'companyName' => Company::query()->orderBy('id')->value('company_name') ?? config('app.name'),
             'paidFromAccount' => $this->paidFromAccount($expenseVoucher),
         ]);
+    }
+
+    /**
+     * For the checker of a pending cash voucher: the notes on hand for its company and day before this voucher, as the
+     * cash collection report nets them, so the approve dialog can warn (never block) when a note runs short.
+     *
+     * @return array{counts: array<int, int>, company: string, date: string}|null
+     */
+    private function notesOnHandFor(Request $request, ExpenseVoucher $voucher): ?array
+    {
+        if ($voucher->status !== ExpenseVoucher::STATUS_PENDING || $voucher->payment_method !== ExpenseVoucher::METHOD_CASH
+            || (int) $voucher->created_by === $request->user()->id || ! $request->user()->can('expense-voucher-approve')) {
+            return null;
+        }
+
+        $notes = app(CashCollectionDistributorController::class)->notesOnHand($voucher->supplier_id, $voucher->voucher_date->toDateString());
+
+        return [
+            'counts' => collect(CashNotes::NOTES)->mapWithKeys(fn (int $note) => [$note => $notes->count($note)])->all(),
+            'company' => $voucher->supplier ? ($voucher->supplier->short_name ?: $voucher->supplier->supplier_name) : 'all companies',
+            'date' => $voucher->voucher_date->format('j M'),
+        ];
     }
 
     /**
@@ -687,6 +729,11 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         try {
             $action();
+        } catch (QueryException $e) {
+            // A database error is a RuntimeException too, but its SQL must never reach the user.
+            report($e);
+
+            return redirect()->route('expense-vouchers.show', $voucher)->with('error', ExpenseVoucherService::POSTING_FAILED);
         } catch (RuntimeException $e) {
             return redirect()->route('expense-vouchers.show', $voucher)->with('error', $e->getMessage());
         }

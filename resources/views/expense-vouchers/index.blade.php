@@ -48,7 +48,7 @@
     $advancedKeys = ['expense_account_id', 'category_id', 'party_name', 'payment_type', 'payment_status', 'created_by', 'checked_by', 'amount_min', 'amount_max'];
     $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
     $activeFilterCount = count($chips) + (($filters['date_from'] ?? null) || ($filters['date_to'] ?? null) ? 1 : 0);
-    $periodLabel = $opensOnPending ? 'all dates' : ($dateFrom === $dateTo
+    $periodLabel = ($allDates ?? $opensOnPending) ? 'all dates' : ($dateFrom === $dateTo
         ? \Carbon\Carbon::parse($dateFrom)->format('d M Y')
         : \Carbon\Carbon::parse($dateFrom)->format('d M Y').' – '.\Carbon\Carbon::parse($dateTo)->format('d M Y'));
     $statusTone = ['draft' => 'ak-status-slate', 'pending' => 'ak-status-amber', 'approved' => 'ak-status-green', 'rejected' => 'ak-status-red', 'reversed' => 'ak-status-red'];

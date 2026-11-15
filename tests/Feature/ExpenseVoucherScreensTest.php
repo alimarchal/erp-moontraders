@@ -5,11 +5,14 @@ use App\Models\Employee;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseVendor;
 use App\Models\ExpenseVoucher;
+use App\Models\SalesSettlement;
+use App\Models\SalesSettlementCashDenomination;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\ExpenseVoucherService;
 use App\Support\CashNotes;
+use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -275,7 +278,8 @@ it('opens the list on the vouchers waiting for approval', function () {
     expect($parties($bare))->toBe(['Waiting Party'])
         ->and($bare->viewData('statusCounts')->all())->toMatchArray(['pending' => 1, 'approved' => 1, 'draft' => 1]);
 
-    expect($parties($this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Approved Party', 'Draft Party'])
+    // A status tab with no dates keeps every date; any other filter starts from this month.
+    expect($parties($this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Approved Party', 'Draft Party', 'Waiting Party'])
         ->and($parties($this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['search' => 'Party']]))))->toBe(['Approved Party', 'Draft Party']);
 });
 
@@ -336,4 +340,74 @@ it('prints a reversed voucher marked as reversed with who, when and why', functi
         ->assertSee('REVERSED')
         ->assertSee('by '.$this->checker->name)
         ->assertSee('Reason: Paid twice by mistake');
+});
+
+it('shows a plain message, never the SQL, when the database throws while approving', function () {
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'amount' => 1500, 'payment_method' => 'credit', 'payment_type' => 'credit']);
+    $voucher->forceFill(['created_by' => $this->maker->id])->save();
+    $this->partialMock(ExpenseVoucherService::class, fn ($mock) => $mock->shouldReceive('approve')
+        ->andThrow(new QueryException('pgsql', 'update expense_vouchers set status = ?', ['approved'], new Exception('SQLSTATE[40001]: Serialization failure'))));
+
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])
+        ->assertSessionHas('error', 'Posting failed. Please contact the admin.');
+
+    expect(json_encode(session()->all()))->not->toContain('SQLSTATE')->not->toContain('update expense_vouchers');
+});
+
+it('keeps an old pending voucher on the list after the Pending tab is clicked, with tab counts that match', function () {
+    ExpenseVoucher::factory()->create([
+        'supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id,
+        'status' => 'pending', 'party_name' => 'Old Waiting Party', 'voucher_date' => now()->subMonths(2)->toDateString(),
+    ]);
+    $parties = fn ($response) => $response->viewData('vouchers')->getCollection()->pluck('party_name')->all();
+
+    $bare = $this->actingAs($this->checker)->get(route('expense-vouchers.index'))->assertOk();
+    $tab = $this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['status' => 'pending']]))->assertOk();
+
+    expect($parties($bare))->toBe(['Old Waiting Party'])
+        ->and($parties($tab))->toBe(['Old Waiting Party'])
+        ->and($tab->viewData('statusCounts')->get('pending'))->toBe(1)
+        ->and($this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))->viewData('statusCounts')->get('pending'))->toBe(1);
+});
+
+it('shows a shop\'s credit owed only from the vouchers the user may see', function () {
+    $shop = ExpenseVendor::factory()->create(['name' => 'Bismillah Autos']);
+    $base = ['expense_account_id' => $this->ledger['5221']->id, 'expense_vendor_id' => $shop->id, 'payee_type' => 'vendor', 'party_name' => 'Bismillah Autos', 'payment_type' => 'credit', 'payment_method' => 'credit'];
+    ExpenseVoucher::factory()->create($base + ['supplier_id' => $this->supplier->id, 'status' => 'approved', 'amount' => 2500, 'paid_amount' => 500]);
+    ExpenseVoucher::factory()->create($base + ['supplier_id' => Supplier::factory()->create()->id, 'status' => 'approved', 'amount' => 9000, 'paid_amount' => 0]);
+    $voucher = ExpenseVoucher::factory()->pending()->create($base + ['supplier_id' => $this->supplier->id, 'amount' => 900]);
+
+    $response = $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk();
+
+    expect($response->viewData('vendorOutstanding'))->toBe(2000.0);
+});
+
+it('marks a reversed voucher clearly on the 80mm slip', function () {
+    $voucher = ($this->approved)();
+    $voucher->update(['status' => ExpenseVoucher::STATUS_REVERSED, 'reversed_at' => now(), 'reversed_by' => $this->checker->id, 'reversal_reason' => 'Paid twice by mistake']);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.print', [$voucher, 'format' => 'slip']))->assertOk()
+        ->assertSee('*** REVERSED ***')
+        ->assertSee('Paid twice by mistake');
+});
+
+it('gives the approve dialog the notes on hand for the company and day, before this voucher', function () {
+    $this->travelTo('2026-11-14 10:00:00');
+    $settlement = SalesSettlement::factory()->create([
+        'supplier_id' => $this->supplier->id, 'employee_id' => Employee::factory()->create(['supplier_id' => $this->supplier->id])->id,
+        'settlement_date' => '2026-11-14', 'status' => 'posted', 'cash_collected' => 7000,
+    ]);
+    SalesSettlementCashDenomination::create(['sales_settlement_id' => $settlement->id, 'total_amount' => 7000] + CashNotes::fromInput(['5000' => 1, '1000' => 2])->columns());
+    ($this->approved)(['voucher_date' => '2026-11-14']);
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'payment_method' => 'cash', 'payment_type' => 'cash', 'amount' => 50, 'voucher_date' => '2026-11-14']);
+    $voucher->forceFill(['created_by' => $this->maker->id])->save();
+
+    $response = $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk();
+
+    expect($response->viewData('notesOnHand'))->toBe([
+        'counts' => [5000 => 1, 1000 => 1, 500 => -1, 100 => 0, 50 => 0, 20 => 0, 10 => 0],
+        'company' => 'NFL',
+        'date' => '14 Nov',
+    ]);
+    $response->assertSee('notes on hand for');
 });

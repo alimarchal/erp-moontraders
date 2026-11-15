@@ -381,6 +381,11 @@
                               needsNotes: @js($needsNotes),
                               needsConfirm: @js(! $hasAttachments),
                               confirmed: @js((bool) old('approve_without_attachment')),
+                              onHand: @js($notesOnHand['counts'] ?? null),
+                              get shortNotes() {
+                                  if (! this.onHand) { return []; }
+                                  return @js(CashNotes::NOTES).filter(n => (Math.max(0, parseInt(this.denom[n], 10)) || 0) > this.onHand[n]);
+                              },
                               get counted() {
                                   let total = Number(this.denom.coins) || 0;
                                   @js(CashNotes::NOTES).forEach(n => { total += n * (Math.max(0, parseInt(this.denom[n], 10)) || 0); });
@@ -420,6 +425,14 @@
                             @if($needsNotes)
                                 <p class="ev-sheet-text">Enter the notes you hand to {{ $voucher->party_name }}. They must add up to <b>Rs {{ number_format((float) $voucher->amount, 2) }}</b>.</p>
                                 <x-cash-notes model="denom" required="amount" />
+                                @if($notesOnHand)
+                                    {{-- A warning only: the checker may still approve when the box looks short. --}}
+                                    <div class="ev-sheet-warn" role="status" x-show="shortNotes.length" x-cloak>
+                                        <template x-for="n in shortNotes" :key="n">
+                                            <p x-text="'Only ' + Math.max(0, onHand[n]) + ' × Rs ' + n.toLocaleString('en-PK') + ' notes on hand for ' + @js($notesOnHand['company']) + ' on ' + @js($notesOnHand['date']) + '.'"></p>
+                                        </template>
+                                    </div>
+                                @endif
                                 @if($notesFailed)
                                     <p class="ev-error">{{ $errors->first('denom') ?: collect($errors->getMessages())->filter(fn ($m, $key) => str_starts_with($key, 'denom.'))->flatten()->first() }}</p>
                                 @endif

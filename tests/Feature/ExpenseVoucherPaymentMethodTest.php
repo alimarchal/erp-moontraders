@@ -161,3 +161,15 @@ it('saves no notes from the maker, and switches a draft from cash to bank transf
     $voucher->refresh();
     expect($voucher->payment_method)->toBe('bank_transfer')->and($voucher->cashPayout)->toBeNull();
 });
+
+it('refuses to approve a bank voucher whose bank or its ledger account was made inactive', function (string $what) {
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
+        'payment_method' => 'bank_transfer', 'bank_account_id' => $this->bank->id,
+    ] + $this->payload)->assertSessionHasNoErrors();
+    $what === 'bank' ? $this->bank->update(['is_active' => false]) : $this->ledger['1171']->update(['is_active' => false]);
+
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', ExpenseVoucher::first()), ['approve_without_attachment' => 1])
+        ->assertSessionHas('error', 'The chosen bank account or its ledger account is no longer active. Reject the voucher so the maker can choose another bank.');
+
+    expect(ExpenseVoucher::first()->status)->toBe('pending')->and(JournalEntry::count())->toBe(0);
+})->with(['bank', 'ledger account']);

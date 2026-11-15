@@ -211,10 +211,16 @@ class ExpenseVoucherService
         }
 
         if ($voucher->isPaidByBank()) {
-            $accountId = $voucher->bankAccount?->chart_of_account_id;
+            $bank = $voucher->bankAccount;
+            $accountId = $bank?->chart_of_account_id;
 
             if (! $accountId) {
                 throw new RuntimeException('The chosen bank account is not linked to a ledger account; the voucher cannot be posted.');
+            }
+
+            // The bank, or its ledger account, may have been closed since the voucher was made.
+            if (! $bank->is_active || ! $bank->chartOfAccount?->is_active) {
+                throw new RuntimeException('The chosen bank account or its ledger account is no longer active. Reject the voucher so the maker can choose another bank.');
             }
 
             return (int) $accountId;

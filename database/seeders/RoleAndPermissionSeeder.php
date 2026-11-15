@@ -59,7 +59,7 @@ class RoleAndPermissionSeeder extends Seeder
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
             'claim-register' => ['list', 'create', 'edit', 'delete', 'post'],
             'expense-detail' => ['list', 'create', 'edit', 'delete', 'post'],
-            'expense-voucher' => ['list', 'create', 'edit', 'delete', 'approve', 'print'],
+            'expense-voucher' => ['list', 'create', 'edit', 'delete', 'approve', 'print', 'reverse'],
             'category-revenue' => ['list', 'create', 'edit', 'delete'],
             'revenue-detail' => ['create', 'edit', 'delete', 'post'],
             'profit-category' => ['list', 'create', 'edit', 'delete'],
@@ -81,7 +81,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
 
             // Reports - Audit & Operational (granular per report)
-            'report-audit' => ['cash-detail', 'cash-detail-all-companies', 'cash-collection-distributor', 'cash-collection-distributor-all-companies', 'custom-settlement', 'creditors-ledger', 'customer-account-statement', 'claim-register', 'expense-detail', 'revenue-detail', 'profit-after-category', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'company-target-summary', 'advance-tax-customer-summary', 'sku-fmr-amr', 'stock-availability', 'product-price-change-log'],
+            'report-audit' => ['cash-detail', 'cash-detail-all-companies', 'cash-collection-distributor', 'cash-collection-distributor-all-companies', 'cheque-register-all-companies', 'custom-settlement', 'creditors-ledger', 'customer-account-statement', 'claim-register', 'expense-detail', 'revenue-detail', 'profit-after-category', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'company-target-summary', 'advance-tax-customer-summary', 'sku-fmr-amr', 'stock-availability', 'product-price-change-log'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],

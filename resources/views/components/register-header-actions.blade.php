@@ -1,6 +1,6 @@
 {{-- Header buttons of the Claim Register and the Supplier Ledger Register: download the period as an A4 PDF
      (portrait by default, landscape on request, like the sales settlement) and open the Urdu help. --}}
-@props(['page', 'help' => true, 'excelUrl' => null])
+@props(['page', 'help' => true, 'excelUrl' => null, 'pdfOrientations' => ['portrait', 'landscape']])
 
 @php
     $headerButton = 'inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150';
@@ -14,6 +14,14 @@
     </a>
 @endif
 
+@if (count($pdfOrientations) === 1)
+<a href="{{ $pdfUrl($pdfOrientations[0]) }}" class="{{ $headerButton }} no-print" title="Download PDF (A4 {{ $pdfOrientations[0] }})">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    </svg>
+    <span class="sr-only">Download PDF</span>
+</a>
+@else
 <div class="relative no-print" x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false">
     <button type="button" class="{{ $headerButton }}" @click="open = ! open" :aria-expanded="open" aria-haspopup="menu" title="Download PDF">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" aria-hidden="true">
@@ -35,6 +43,7 @@
         </a>
     </div>
 </div>
+@endif
 
 @if ($help)
 <button type="button" class="{{ $headerButton }} no-print" x-data @click="$dispatch('rg-help', { topic: null })" aria-haspopup="dialog" title="How this register works, in Urdu">

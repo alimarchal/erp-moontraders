@@ -204,6 +204,19 @@ it('charges the bank charge to the customer against the deposit bank on a bounce
         ->and((float) $cheque->histories()->first()->bank_charge)->toBe(150.0);
 });
 
+it('charges the bank charge against the deposit bank chosen in the bounce dialog', function () {
+    $bank = BankAccount::factory()->create(['chart_of_account_id' => $this->ledger['1171']->id, 'is_active' => true]);
+    $cheque = ($this->cheque)(10000);
+
+    ($this->changeStatus)($cheque, ['status' => 'bounced', 'status_date' => '2026-11-14', 'bank_charge' => 150, 'bank_account_id' => $bank->id])
+        ->assertSessionMissing('error');
+
+    expect($cheque->fresh()->status)->toBe('bounced')
+        ->and($cheque->fresh()->bank_account_id)->toBe($bank->id)
+        ->and(batchLedgerNet('1112'))->toBe(10150.0)
+        ->and(batchLedgerNet('1171'))->toBe(-150.0);
+});
+
 it('clears only once when submitted twice', function () {
     $cheque = ($this->cheque)(1000);
 

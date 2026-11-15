@@ -115,29 +115,39 @@ class ChequeClearingService
 
     /**
      * Move a cheque to pending, bounced or cancelled. A cleared cheque is first un-cleared (same day only, reopening
-     * its batch); a pending cheque that bounces is booked onto the customer; a bounced cheque that goes back to
-     * pending has its bounce taken back.
+     * its batch); a pending cheque that bounces or is cancelled is booked onto the customer (Dr 1112 / Cr 1122); a
+     * bounced cheque that is cancelled keeps its bounce journal; a bounced or cancelled cheque that goes back to
+     * pending has that journal taken back.
+     *
+     * @return list<string> the numbers of the other cheques of the batch that were reopened with it
      */
-    public function changeStatus(SalesSettlementCheque $cheque, string $status, ?string $date, ?float $bankCharge, ?string $remarks, User $by, ?int $chargeBankAccountId = null): void
+    public function changeStatus(SalesSettlementCheque $cheque, string $status, ?string $date, ?float $bankCharge, ?string $remarks, User $by, ?int $chargeBankAccountId = null): array
     {
         if (! in_array($status, ['pending', 'bounced', 'cancelled'], true)) {
             throw new RuntimeException('Use the clearing form to clear a cheque.');
         }
 
-        DB::transaction(function () use ($cheque, $status, $date, $bankCharge, $remarks, $by, $chargeBankAccountId) {
-            $cheque = $this->lock(collect([$cheque->id]))->first()
+        return DB::transaction(function () use ($cheque, $status, $date, $bankCharge, $remarks, $by, $chargeBankAccountId) {
+            // The cheque and every cheque of its batch are locked together, in id order, before any of them is touched.
+            $batchId = SalesSettlementCheque::whereKey($cheque->id)->value('cheque_clearing_id');
+            $ids = $batchId
+                ? SalesSettlementCheque::where('cheque_clearing_id', $batchId)->pluck('id')->push($cheque->id)->unique()->values()
+                : collect([$cheque->id]);
+            $cheque = $this->lock($ids)->firstWhere('id', $cheque->id)
                 ?? throw new RuntimeException('This cheque no longer exists. Reload the page.');
 
             if ($cheque->status === $status) {
                 throw new RuntimeException("This cheque is already {$status}.");
             }
 
+            $reopened = [];
+
             if ($cheque->isCleared()) {
-                $this->unclear($cheque, $by, $status === 'pending' ? $remarks : null);
+                $reopened = $this->unclear($cheque, $by, $status === 'pending' ? $remarks : null);
                 $cheque->refresh();
 
                 if ($status === 'pending') {
-                    return;
+                    return $reopened;
                 }
             }
 
@@ -154,6 +164,10 @@ class ChequeClearingService
                 $charge = $this->posting->chargeableBankCharge($cheque, (float) ($bankCharge ?? 0), $chargeBankAccountId) ?: null;
                 $journal = $this->posting->postBounce($cheque, $bouncedOn, (float) ($bankCharge ?? 0), $by, $chargeBankAccountId);
                 $chargeBankId = $charge ? $this->posting->chargeBank($cheque, $chargeBankAccountId)?->id : null;
+            } elseif ($status === 'cancelled' && ! $cheque->bounce_journal_entry_id) {
+                $cancelledOn = $date ?? now()->toDateString();
+                $this->guardDate(collect([$cheque]), $cancelledOn, 'Cancel date');
+                $journal = $this->posting->postCancel($cheque, $cancelledOn, $by);
             } elseif ($status === 'pending' && $cheque->bounce_journal_entry_id) {
                 // Whatever the cheque went through since (e.g. bounced, then cancelled), a pending cheque is back in 1122.
                 $reversedId = $cheque->bounce_journal_entry_id;
@@ -168,6 +182,8 @@ class ChequeClearingService
                 'bank_charge' => $charge,
                 'bank_account_id' => $chargeBankId,
             ]);
+
+            return $reopened;
         });
     }
 
@@ -175,8 +191,10 @@ class ChequeClearingService
      * Take a cleared cheque back to pending on the day it was cleared, or on the day the clearing was entered. Its whole
      * batch reopens: every cheque in it goes back to pending with its clearing journal reversed and its own history
      * row, and the batch is deleted.
+     *
+     * @return list<string> the numbers of the other cheques of the batch that went back to pending with it
      */
-    private function unclear(SalesSettlementCheque $cheque, User $by, ?string $remarks): void
+    private function unclear(SalesSettlementCheque $cheque, User $by, ?string $remarks): array
     {
         $clearedOn = $cheque->cleared_date ?? $cheque->status_updated_at;
         $enteredToday = $cheque->status_updated_at instanceof CarbonInterface && $cheque->status_updated_at->isToday();
@@ -223,6 +241,8 @@ class ChequeClearingService
         }
 
         $batch?->delete();
+
+        return $cheques->reject(fn (SalesSettlementCheque $member) => $member->is($cheque))->pluck('cheque_number')->values()->all();
     }
 
     /**

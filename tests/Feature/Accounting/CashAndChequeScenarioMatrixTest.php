@@ -692,7 +692,7 @@ it('13b. un-clears a back-dated clearing on the day it was entered and keeps bot
     expect($cheque->fresh()->status)->toBe('pending');
     ($this->assertBalanced)('2026-11-14');
     ($this->assertBalanced)('2026-11-15');
-})->skip('BUG: the clearing reversal is dated today (ChequeClearingPostingService::reverseOnce, app/Services/ChequeClearingPostingService.php:288), but the cheque drops off the back-dated cleared day sheet, so GL 1121 on the 14th keeps Rs 1,000 the sheet no longer shows and the 15th has -1,000 the sheet never shows.');
+});
 
 it('14. refuses to un-clear or bounce a cleared cheque on a later day', function () {
     $cheque = ($this->receive)(($this->oldSettlement)($this->nestle), 1000);
@@ -747,11 +747,45 @@ it('15. books a bounce with a bank charge, takes it back, and never credits 1122
 it('15b. takes a pending cheque that is cancelled out of Cheques in Hand', function () {
     $cheque = ($this->receive)(($this->oldSettlement)($this->nestle), 10000);
 
+    $before = matrixBalances(['1112', '1122']);
+
     ($this->status)($cheque, ['status' => 'cancelled', 'notes' => 'customer took the cheque back'])->assertSessionHas('success');
 
-    expect($cheque->fresh()->status)->toBe('cancelled');
+    $cheque->refresh();
+    $history = $cheque->histories()->first();
+    expect($cheque->status)->toBe('cancelled')
+        ->and(matrixLines($cheque->bounce_journal_entry_id))->toBe(['1112' => [10000.0, 0.0], '1122' => [0.0, 10000.0]])
+        ->and([$history->from_status, $history->to_status, $history->journal_entry_id])->toBe(['pending', 'cancelled', $cheque->bounce_journal_entry_id]);
     matrixAssertChequesInHand();
-})->skip('BUG: pending -> cancelled posts no journal, so GL 1122 still holds the cancelled cheque (ChequeClearingService::changeStatus, app/Services/ChequeClearingService.php:151-160 has branches only for bounced and pending).');
+
+    ($this->status)($cheque, ['status' => 'pending'])->assertSessionHas('success');
+
+    expect($cheque->fresh()->bounce_journal_entry_id)->toBeNull()
+        ->and(matrixBalances(['1112', '1122']))->toBe($before);
+    matrixAssertChequesInHand();
+});
+
+it('15c. cancels a cleared cheque only through the same-day un-clear, and 1122 is credited once', function () {
+    $cheque = ($this->receive)(($this->oldSettlement)($this->nestle), 1000);
+    ($this->bulk)([$cheque], ['cleared_via' => 'cash', 'denom' => ['1000' => 1]])->assertSessionHas('success');
+
+    ($this->status)($cheque, ['status' => 'cancelled'])->assertSessionHas('success');
+
+    $cheque->refresh();
+    expect($cheque->status)->toBe('cancelled')
+        ->and($cheque->clearing_journal_entry_id)->toBeNull()
+        ->and(JournalEntry::where('reference', 'CHQ-CANCEL-'.$cheque->cheque_number)->count())->toBe(1);
+    matrixAssertChequesInHand();
+    ($this->assertBalanced)();
+
+    $other = ($this->receive)(($this->oldSettlement)($this->nestle), 500);
+    ($this->bulk)([$other], ['cleared_via' => 'cash', 'denom' => ['500' => 1]])->assertSessionHas('success');
+    $this->travelTo('2026-11-16 09:00:00');
+
+    ($this->status)($other, ['status' => 'cancelled'])
+        ->assertSessionHas('error', 'This cheque was cleared on 15-Nov-2026; it can only be changed on that day.');
+    expect($other->fresh()->status)->toBe('cleared');
+});
 
 it('16. counts a cheque received and cleared on the same day once in Total collection', function () {
     $settlement = ($this->settle)($this->nestle, 10000, ['5000' => 2]);

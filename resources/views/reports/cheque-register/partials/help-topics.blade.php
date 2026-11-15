@@ -21,7 +21,7 @@
         <tr><td><span class="en">Pending</span></td><td>ابھی ہاتھ میں ہیں (<bdi class="lt" dir="ltr">1122</bdi>)؛ انہی کو کلیئر کیا جا سکتا ہے۔</td></tr>
         <tr><td><span class="en">Cleared</span></td><td>نقد واپس آیا یا بینک نے رقم دے دی۔</td></tr>
         <tr><td><span class="en">Bounced</span></td><td>بینک نے واپس کر دیا؛ رقم دکاندار کے کھاتے میں واپس لکھی گئی۔</td></tr>
-        <tr><td><span class="en">Cancelled</span></td><td>منسوخ۔</td></tr>
+        <tr><td><span class="en">Cancelled</span></td><td>منسوخ (دکاندار نے چیک واپس لے لیا)۔ باؤنس کی طرح رقم <bdi class="lt" dir="ltr">1122</bdi> سے نکل کر دکاندار کے کھاتے (<bdi class="lt" dir="ltr">1112 Debtors</bdi>) میں لکھی جاتی ہے؛ دوبارہ Pending کرنے پر یہ اندراج واپس ہو جاتا ہے۔</td></tr>
     </table>
     <p>ہر ٹیب پر چیکوں کی تعداد ہے، اور فہرست کے اوپر کل رقم۔ ٹیب بدلنے سے باقی فلٹر نہیں بدلتے۔</p>
 </section>

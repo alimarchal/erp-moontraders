@@ -9,7 +9,9 @@ use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\JournalEntry;
 use App\Models\SalesSettlementCheque;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
@@ -17,8 +19,12 @@ use RuntimeException;
  *
  * The settlement put the cheque in 1122. When it clears, either the salesman brings the cash back and hands the cheque
  * back (Dr 1121 Cash), or, rarely, the cheque is deposited and cleared by the bank (Dr that bank's ledger). Changing
- * the status away from cleared reverses that journal, so 1122 always equals the cheques still pending. A pending
- * cheque that bounces leaves 1122 for the customer's debtors account (1112).
+ * the status away from cleared reverses that journal on the day it was cleared. A pending cheque that bounces, or is
+ * cancelled (the customer took it back), leaves 1122 for the customer's debtors account (1112); a bounced cheque that
+ * is then cancelled keeps its bounce journal and posts nothing more, and going back to pending reverses that one
+ * journal. So 1122 always equals the pending cheques of posted settlements.
+ *
+ * What the ledger refused is logged; the user only ever sees "Posting failed. Please contact the admin."
  */
 class ChequeClearingPostingService
 {
@@ -33,6 +39,8 @@ class ChequeClearingPostingService
     public const DEBTORS_CODE = '1112';
 
     public const BOUNCE_TRANSACTION_TYPE = 'cheque_bounce';
+
+    public const POSTING_FAILED = 'Posting failed. Please contact the admin.';
 
     public function __construct(private AccountingService $accounting) {}
 
@@ -81,7 +89,7 @@ class ChequeClearingPostingService
         ]);
 
         if (! $result['success']) {
-            throw new RuntimeException($result['message']);
+            $this->failed('Cheque clearing posting failed', $cheque, $result);
         }
 
         $cheque->forceFill(['clearing_journal_entry_id' => $result['data']->id])->saveQuietly();
@@ -100,7 +108,10 @@ class ChequeClearingPostingService
             return null;
         }
 
-        $reversal = $this->reverseOnce((int) $cheque->clearing_journal_entry_id, "REVERSAL: cheque {$cheque->cheque_number} changed from cleared to {$toStatus}");
+        // Dated on the cleared day, so a back-dated clearing taken back nets to nothing on that day's sheet and ledger.
+        $clearedOn = JournalEntry::whereKey($cheque->clearing_journal_entry_id)->value('entry_date');
+        $reversal = $this->reverseOnce((int) $cheque->clearing_journal_entry_id, "REVERSAL: cheque {$cheque->cheque_number} changed from cleared to {$toStatus}",
+            $clearedOn ? Carbon::parse($clearedOn)->toDateString() : null);
 
         $cheque->forceFill(['clearing_journal_entry_id' => null])->saveQuietly();
 
@@ -116,8 +127,26 @@ class ChequeClearingPostingService
      */
     public function postBounce(SalesSettlementCheque $cheque, string $date, float $bankCharge = 0, ?User $by = null, ?int $chargeBankAccountId = null): JournalEntry
     {
+        return $this->postToDebtors($cheque, $date, 'bounced', 'CHQ-BOUNCE-', $bankCharge, $by, $chargeBankAccountId);
+    }
+
+    /**
+     * Book a pending cheque the customer took back (cancelled) onto the customer, like a bounce with no bank charge:
+     * Dr 1112 Debtors / Cr 1122 Cheques in Hand, plus the debit on the customer's account with the salesman. The
+     * journal is kept in bounce_journal_entry_id, so going back to pending reverses it as a bounce is reversed.
+     */
+    public function postCancel(SalesSettlementCheque $cheque, string $date, ?User $by = null): JournalEntry
+    {
+        return $this->postToDebtors($cheque, $date, 'cancelled', 'CHQ-CANCEL-', 0, $by);
+    }
+
+    /**
+     * Move a pending cheque out of 1122 onto the customer's debtors account (bounced or cancelled).
+     */
+    private function postToDebtors(SalesSettlementCheque $cheque, string $date, string $outcome, string $referencePrefix, float $bankCharge, ?User $by, ?int $chargeBankAccountId = null): JournalEntry
+    {
         if ($cheque->bounce_journal_entry_id) {
-            throw new RuntimeException("Cheque {$cheque->cheque_number} is already booked as bounced.");
+            throw new RuntimeException("Cheque {$cheque->cheque_number} is already booked as {$outcome}.");
         }
 
         $cheque->loadMissing('salesSettlement', 'bankAccount', 'customer');
@@ -129,7 +158,7 @@ class ChequeClearingPostingService
         $amount = round((float) $cheque->amount, 2);
         $bankCharge = $this->chargeableBankCharge($cheque, $bankCharge, $chargeBankAccountId);
         $debtorsId = $this->accountId(self::DEBTORS_CODE);
-        $description = "Cheque {$cheque->cheque_number} bounced".($cheque->customer ? " - {$cheque->customer->customer_name}" : '');
+        $description = "Cheque {$cheque->cheque_number} {$outcome}".($cheque->customer ? " - {$cheque->customer->customer_name}" : '');
 
         $lines = [
             ['account_id' => $debtorsId, 'debit' => $amount, 'credit' => 0, 'description' => $description, 'cost_center_id' => 1],
@@ -143,7 +172,7 @@ class ChequeClearingPostingService
 
         $result = $this->accounting->createJournalEntry([
             'entry_date' => $date,
-            'reference' => 'CHQ-BOUNCE-'.$cheque->cheque_number,
+            'reference' => $referencePrefix.$cheque->cheque_number,
             'description' => $description." ({$cheque->salesSettlement->settlement_number})",
             'reference_type' => SalesSettlementCheque::class,
             'reference_id' => $cheque->id,
@@ -152,12 +181,12 @@ class ChequeClearingPostingService
         ]);
 
         if (! $result['success']) {
-            throw new RuntimeException($result['message']);
+            $this->failed("Cheque {$outcome} posting failed", $cheque, $result);
         }
 
         $journal = $result['data'];
         $cheque->forceFill(['bounce_journal_entry_id' => $journal->id])->saveQuietly();
-        $this->debitCustomerAccount($cheque, $journal, $date, round($amount + $bankCharge, 2), $by);
+        $this->debitCustomerAccount($cheque, $journal, $date, round($amount + $bankCharge, 2), $by, $outcome);
 
         return $journal;
     }
@@ -275,9 +304,9 @@ class ChequeClearingPostingService
     }
 
     /**
-     * Reverse a journal today, or return the reversal already made for it.
+     * Reverse a journal on $entryDate (today when not given), or return the reversal already made for it.
      */
-    private function reverseOnce(int $journalEntryId, string $description): JournalEntry
+    private function reverseOnce(int $journalEntryId, string $description, ?string $entryDate = null): JournalEntry
     {
         $existing = JournalEntry::where('reverses_entry_id', $journalEntryId)->first();
 
@@ -285,19 +314,21 @@ class ChequeClearingPostingService
             return $existing;
         }
 
-        $result = $this->accounting->reverseJournalEntry($journalEntryId, $description, now()->toDateString());
+        $result = $this->accounting->reverseJournalEntry($journalEntryId, $description, $entryDate ?? now()->toDateString());
 
         if (! $result['success']) {
-            throw new RuntimeException($result['message']);
+            Log::error('Cheque journal reversal failed', ['journal_entry_id' => $journalEntryId, 'message' => $result['message'] ?? null]);
+
+            throw new RuntimeException(self::POSTING_FAILED);
         }
 
         return $result['data'];
     }
 
     /**
-     * Debit the bounced amount on the customer's account with the settlement's salesman, when that account exists.
+     * Debit the bounced (or cancelled) amount on the customer's account with the settlement's salesman, when that account exists.
      */
-    private function debitCustomerAccount(SalesSettlementCheque $cheque, JournalEntry $journal, string $date, float $amount, ?User $by): void
+    private function debitCustomerAccount(SalesSettlementCheque $cheque, JournalEntry $journal, string $date, float $amount, ?User $by, string $outcome = 'bounced'): void
     {
         $employeeId = $cheque->salesSettlement?->employee_id;
 
@@ -317,7 +348,7 @@ class ChequeClearingPostingService
             'transaction_type' => self::BOUNCE_TRANSACTION_TYPE,
             'reference_number' => $cheque->cheque_number,
             'sales_settlement_id' => $cheque->sales_settlement_id,
-            'description' => "Cheque {$cheque->cheque_number} bounced ({$cheque->salesSettlement->settlement_number})",
+            'description' => "Cheque {$cheque->cheque_number} {$outcome} ({$cheque->salesSettlement->settlement_number})",
             'debit' => $amount,
             'credit' => 0,
             'payment_method' => 'cheque',
@@ -328,6 +359,18 @@ class ChequeClearingPostingService
             'posted_at' => now(),
             'posted_by' => $by?->id ?? auth()->id(),
         ]);
+    }
+
+    /**
+     * Log what the ledger refused and give the user a plain message.
+     *
+     * @param  array{success: bool, data: mixed, message?: string}  $result
+     */
+    private function failed(string $context, SalesSettlementCheque $cheque, array $result): never
+    {
+        Log::error($context, ['cheque_id' => $cheque->id, 'cheque_number' => $cheque->cheque_number, 'message' => $result['message'] ?? null]);
+
+        throw new RuntimeException(self::POSTING_FAILED);
     }
 
     private function bankLedger(?BankAccount $bank): int

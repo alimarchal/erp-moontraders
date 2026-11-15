@@ -191,3 +191,16 @@ These are written as feature tests (Pest, pgsql), run once at the end:
 - Un-clearing on a later day is refused, and a future cleared date is refused.
 - The cheque register filters and tab counts work, and the export works.
 - The report's Collection total matches the summary, draft settlements are left out, and a cheque cleared by bank shows.
+
+## Owner changes during the build (these override the sections above)
+- **Notes are counted by the approver.** For a cash voucher, Approve always opens a modal with the notes grid. The notes are required, and Approve stays disabled until they balance. The maker's form has no notes.
+- **Missing receipt.** With no attachment, approval shows an amber warning and needs an "approve without a receipt" checkbox, which the server also enforces.
+- **Payee card.** The voucher page shows the payee's details. For a shop: phone, city, address, category, default account, outstanding credit (scoped to the user's companies) and its last 5 vouchers. For an employee: code, company, designation and open advance.
+- **Voucher list.** It opens on Pending approval when there is no search or filter, and the tab counts match the list in every state.
+- **One look everywhere.** Every touched page uses the goods-issues skin, Urdu help (Inter and Noto Nastaliq Urdu from Google Fonts) and goods-issues dropdowns (`<x-apple-fields-style>`).
+- **Voucher page as a document.** The view reads like a Cash/Bank Payment Voucher, with one primary action per status. The maker does not see Reverse. A reversed voucher prints with a REVERSED mark.
+- **Multiple bill lines (Task 11).** A voucher holds 1–30 bill lines (`expense_voucher_lines`), and its total is the sum of the lines. The journal debits each line's account and credits the total once. Existing vouchers were back-filled with one line each. Summary by category uses the lines.
+- **Cheque history.** Every cheque status change writes an immutable history row (via, bank, batch, posted/reversed JE, bank charge, notes).
+- **Cancelling a cheque.** Cancelling a pending posted cheque posts Dr 1112 / Cr 1122, the same as a bounce without a charge.
+- **Back-dated clearings.** Un-clearing a back-dated clearing reverses it on its original date.
+- **Notes the company does not hold.** The approver is warned (never blocked) when a counted note exceeds the notes on hand that day.

@@ -6,6 +6,7 @@ use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\EmployeeAdvance;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseVendor;
 use App\Models\ExpenseVoucher;
@@ -50,6 +51,9 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
 
     public const PER_PAGE = ['15', '25', '50', '100', 'all'];
 
+    /** The first day the list looks back to when it shows every date (the "All" quick range). */
+    public const EARLIEST_DATE = '2020-01-01';
+
     /** @var array<string, string> */
     public const VALIDATION_MESSAGES = [
         'amount.max' => 'Amount is too large.',
@@ -93,7 +97,13 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $user = $request->user();
         $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
         $today = now()->toDateString();
-        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
+
+        // A bare visit opens on the vouchers waiting for approval, whatever their date; "all" shows every status.
+        $opensOnPending = $filters === [];
+        if ($opensOnPending) {
+            $filters = ['status' => ExpenseVoucher::STATUS_PENDING];
+        }
+        $dateFrom = $filters['date_from'] ?? ($opensOnPending ? self::EARLIEST_DATE : now()->startOfMonth()->toDateString());
         $dateTo = $filters['date_to'] ?? $today;
 
         $sort = (string) $request->input('sort', '-voucher_date');
@@ -128,7 +138,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
 
         $query = (clone $scoped)
             ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr', 'expenseAccount:id,account_code,account_name', 'creator:id,name', 'checker:id,name', 'attachments:id,expense_voucher_id', 'category:id,name'])
-            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status));
+            ->when(($filters['status'] ?? 'all') !== 'all', fn ($q) => $q->where('status', $filters['status']));
 
         $totalAmount = (float) (clone $query)->sum('amount');
         $vouchers = $query->orderBy($sortField, $sortDirection)->orderByDesc('id')
@@ -148,6 +158,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'categories' => ExpenseCategory::query()->orderBy('name')->get(['id', 'name']),
             'statusCounts' => $statusCounts,
             'filters' => $filters,
+            'opensOnPending' => $opensOnPending,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'sort' => $sort,
@@ -286,8 +297,19 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $this->authorizeCompany($request, $expenseVoucher);
 
+        $voucher = $expenseVoucher->load(['supplier', 'company', 'category', 'expenseVendor.defaultExpenseAccount', 'employee.supplier', 'employee.company', 'vehicle', 'attachments', 'expenseAccount', 'creator', 'submitter', 'checker', 'journalEntry.details.account', 'bankAccount.chartOfAccount', 'cashPayout', 'reverser']);
+
         return view('expense-vouchers.show', [
-            'voucher' => $expenseVoucher->load(['supplier', 'company', 'category', 'expenseVendor', 'employee', 'vehicle', 'attachments', 'expenseAccount', 'creator', 'submitter', 'checker', 'journalEntry.details.account', 'bankAccount', 'cashPayout', 'reverser']),
+            'voucher' => $voucher,
+            'companyName' => Company::query()->orderBy('id')->value('company_name') ?? config('app.name'),
+            'vendorOutstanding' => $voucher->expenseVendor?->outstanding(),
+            'vendorHistory' => $voucher->expenseVendor
+                ? ExpenseVoucher::query()->visibleTo($request->user())->where('expense_vendor_id', $voucher->expense_vendor_id)->whereKeyNot($voucher->id)
+                    ->latest('voucher_date')->latest('id')->limit(5)->get(['id', 'uuid', 'voucher_number', 'voucher_date', 'amount', 'status'])
+                : collect(),
+            'advanceBalance' => $voucher->employee
+                ? round((float) $voucher->employee->advances()->where('status', EmployeeAdvance::STATUS_OPEN)->selectRaw('COALESCE(SUM(amount - recovered_amount), 0) as due')->value('due'), 2)
+                : null,
         ]);
     }
 
@@ -370,6 +392,11 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             return redirect()->route('expense-vouchers.show', $expenseVoucher)->with('error', $e->getMessage());
         }
 
+        $request->validate(
+            ['approve_without_attachment' => [Rule::when($expenseVoucher->attachments()->doesntExist(), ['accepted'])]],
+            ['approve_without_attachment.accepted' => 'No receipt or bill is attached. Tick the box to approve without one.'],
+        );
+
         $notes = $this->approvalNotes($request, $expenseVoucher);
 
         $redirect = $this->attempt(fn () => $this->service->approve($expenseVoucher, $request->user(), $notes), $expenseVoucher, 'Voucher approved and posted to the ledger.');
@@ -430,9 +457,9 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     public function print(Request $request, ExpenseVoucher $expenseVoucher)
     {
         $this->authorizeCompany($request, $expenseVoucher);
-        abort_unless($expenseVoucher->isApproved(), 403, 'Only an approved voucher can be printed.');
+        abort_unless($expenseVoucher->isApproved() || $expenseVoucher->isReversed(), 403, 'Only an approved or reversed voucher can be printed.');
 
-        $expenseVoucher->load(['supplier', 'company', 'expenseVendor', 'employee', 'expenseAccount', 'creator', 'checker', 'bankAccount', 'cashPayout']);
+        $expenseVoucher->load(['supplier', 'company', 'category', 'expenseVendor', 'employee', 'expenseAccount', 'creator', 'submitter', 'checker', 'bankAccount', 'cashPayout', 'journalEntry.details.account', 'reverser']);
         $isDuplicate = $expenseVoucher->printed_at !== null;
         $expenseVoucher->forceFill(['printed_at' => $expenseVoucher->printed_at ?? now()])->saveQuietly();
 

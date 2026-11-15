@@ -1,19 +1,41 @@
+{{--
+    A4 payment voucher, the paper twin of the voucher page: document header (company, title, voucher no., date,
+    status), payee and payment, the amount with its words, the particulars (one row per journal line, so a bill
+    with several expense lines prints as it is), the notes paid out for cash, four signature boxes and DUPLICATE
+    on a reprint. ?format=slip prints the 80mm slip instead.
+--}}
 @php
     use App\Models\ExpenseVoucher;
     use App\Support\AmountInWords;
     use App\Support\CashNotes;
 
-    $title = match (true) {
-        $voucher->isPaidByBank() => 'Bank Payment Voucher',
-        $voucher->payment_method === ExpenseVoucher::METHOD_CREDIT => 'Credit Expense Voucher',
+    $title = match ($voucher->payment_method) {
+        ExpenseVoucher::METHOD_BANK_TRANSFER => 'Bank Payment Voucher',
+        ExpenseVoucher::METHOD_CHEQUE => 'Cheque Payment Voucher',
+        ExpenseVoucher::METHOD_CREDIT => 'Credit Expense Voucher',
         default => 'Cash Payment Voucher',
     };
     $amount = (float) $voucher->amount;
+    $isCash = $voucher->payment_method === ExpenseVoucher::METHOD_CASH;
     $notes = $voucher->cashPayout ? CashNotes::fromColumns($voucher->cashPayout) : null;
+    $showNotes = $isCash && $notes && ! $notes->isEmpty();
     $owner = $voucher->supplier?->supplier_name ?? (($voucher->company?->company_name ?? $companyName).' (general)');
     $creditLabel = $paidFromAccount
-        ? $paidFromAccount->account_code.' '.$paidFromAccount->account_name
-        : ($voucher->isCredit() ? '2113 Expense Payables' : ($voucher->isPaidByBank() ? $voucher->bankAccount?->account_name : '1121 Cash'));
+        ? $paidFromAccount->account_name
+        : ($voucher->isCredit() ? 'Expense Payables' : ($voucher->isPaidByBank() ? $voucher->bankAccount?->account_name : 'Cash'));
+    $journalLines = $voucher->journalEntry?->details ?? collect();
+    $particulars = $journalLines->isNotEmpty()
+        ? $journalLines->map(fn ($line) => [
+            'code' => $line->account?->account_code,
+            'name' => $line->account?->account_name,
+            'narration' => $line->description ?: $voucher->narration,
+            'debit' => (float) $line->debit,
+            'credit' => (float) $line->credit,
+        ])
+        : collect([
+            ['code' => $voucher->expenseAccount?->account_code, 'name' => $voucher->expenseAccount?->account_name, 'narration' => $voucher->narration, 'debit' => $amount, 'credit' => 0.0],
+            ['code' => $paidFromAccount?->account_code, 'name' => $creditLabel, 'narration' => ($voucher->isCredit() ? 'Owed to ' : 'Paid to ').$voucher->party_name, 'debit' => 0.0, 'credit' => $amount],
+        ]);
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -35,13 +57,20 @@
         .meta { min-width: 64mm; border-collapse: collapse; }
         .meta td { padding: 3px 8px; border: 1px solid #999; }
         .meta td:first-child { width: 28mm; background: #f3f4f6; font-weight: 600; }
+        .status { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        .status-reversed { color: #b91c1c; }
         .duplicate { position: absolute; top: 34mm; right: 0; left: 0; text-align: center; font-size: 64px; font-weight: 800; letter-spacing: 12px; color: rgba(185, 28, 28, .12); transform: rotate(-18deg); pointer-events: none; }
+        .reversed-mark { top: 60mm; color: rgba(185, 28, 28, .16); }
+        .reversed { margin-top: 12px; padding: 8px 12px; border: 2px solid #b91c1c; color: #7f1d1d; }
+        .reversed b { letter-spacing: .1em; }
+        .reversed span { display: block; }
         .duplicate-tag { display: inline-block; margin-top: 6px; padding: 2px 8px; border: 1.5px solid #b91c1c; color: #b91c1c; font-weight: 700; letter-spacing: 2px; font-size: 11px; }
-        table.grid { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        .section { margin-top: 14px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #555; }
+        table.grid { width: 100%; border-collapse: collapse; margin-top: 4px; }
         table.grid th, table.grid td { border: 1px solid #999; padding: 5px 8px; text-align: left; vertical-align: top; }
         table.grid th { background: #f3f4f6; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-        table.grid td.l { width: 34mm; background: #fafafa; font-weight: 600; }
-        table.grid .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 32mm; }
+        table.grid td.l { width: 30mm; background: #fafafa; font-weight: 600; }
+        table.grid .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 28mm; }
         table.grid tfoot td { font-weight: 700; background: #f3f4f6; }
         .amount { display: flex; gap: 12px; align-items: stretch; margin-top: 14px; }
         .amount .fig { min-width: 52mm; padding: 8px 12px; border: 2px solid #111; font-size: 18px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
@@ -49,24 +78,27 @@
         .amount .words b { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: #555; }
         .amount .words span { display: block; font-weight: 600; }
         .amount .words span::first-letter { text-transform: uppercase; }
-        .narration { margin-top: 14px; padding: 8px 12px; border: 1px solid #999; min-height: 18mm; }
-        .narration b { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: #555; }
-        .notes { margin-top: 8px; font-size: 11.5px; color: #333; }
-        .signs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26mm; }
+        .notes { margin-top: 4px; font-size: 11.5px; color: #333; }
+        .signs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 24mm; }
         .signs div { border-top: 1px solid #111; padding-top: 4px; text-align: center; font-size: 11.5px; }
         .signs small { display: block; color: #555; min-height: 15px; }
-        .foot { margin-top: 10mm; display: flex; justify-content: space-between; font-size: 10.5px; color: #555; border-top: 1px dashed #999; padding-top: 4px; }
+        .foot { margin-top: 10mm; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 10.5px; color: #555; border-top: 1px dashed #999; padding-top: 4px; }
         .actions { max-width: 182mm; margin: 0 auto 12px; display: flex; justify-content: flex-end; gap: 8px; }
-        .actions a, .actions button { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid #94a3b8; border-radius: 6px; background: #fff; color: #111; text-decoration: none; cursor: pointer; }
+        .actions a, .actions button { font: inherit; font-size: 13px; height: 34px; display: inline-flex; align-items: center; padding: 0 14px; border: 0; border-radius: 980px; background: rgba(118,118,128,.14); color: #111; text-decoration: none; cursor: pointer; }
+        .actions button { background: #0071e3; color: #fff; }
+        .actions a:focus-visible, .actions button:focus-visible { outline: 3px solid rgba(0,113,227,.45); outline-offset: 2px; }
         @media print { .actions { display: none; } }
         @media screen and (max-width: 640px) {
             body { padding: 8px 0; }
+            .actions { padding: 0 12px; }
             .sheet { padding: 12px; }
             .head { flex-direction: column; }
             .meta { width: 100%; min-width: 0; }
             .amount { flex-direction: column; }
+            .amount .fig { min-width: 0; }
             .signs { grid-template-columns: repeat(2, 1fr); row-gap: 18mm; margin-top: 14mm; }
             table.grid .n { width: auto; }
+            table.grid td { overflow-wrap: anywhere; }
             .duplicate { font-size: 40px; }
         }
     </style>
@@ -77,7 +109,11 @@
         <button type="button" onclick="window.print()">Print</button>
     </div>
     <div class="sheet">
-        @if($isDuplicate)<div class="duplicate" aria-hidden="true">DUPLICATE</div>@endif
+        @if($voucher->isReversed())
+            <div class="duplicate reversed-mark" aria-hidden="true">REVERSED</div>
+        @elseif($isDuplicate)
+            <div class="duplicate" aria-hidden="true">DUPLICATE</div>
+        @endif
 
         <header class="head">
             <div>
@@ -89,27 +125,32 @@
             <table class="meta">
                 <tr><td>Voucher no.</td><td><b>{{ $voucher->voucher_number }}</b></td></tr>
                 <tr><td>Date</td><td>{{ $voucher->voucher_date->format('d-M-Y') }}</td></tr>
-                <tr><td>Method</td><td>{{ ExpenseVoucher::paymentMethodLabels()[$voucher->payment_method] ?? $voucher->payment_method }}</td></tr>
-                @if($voucher->vendor_bill_no)<tr><td>Bill no.</td><td>{{ $voucher->vendor_bill_no }}</td></tr>@endif
+                <tr><td>Status</td><td class="status status-{{ $voucher->status }}">{{ $voucher->statusLabel() }}</td></tr>
             </table>
         </header>
 
-        <table class="grid" aria-label="Payee and payment">
-            <tr><td class="l">Paid to</td><td><b>{{ $voucher->party_name }}</b>@if($voucher->employee) <span style="color:#555">(Employee {{ $voucher->employee->employee_code }}{{ $voucher->isAdvance() ? ', advance salary' : '' }})</span>@endif</td></tr>
-            @if($voucher->isPaidByBank())
-                <tr><td class="l">Bank</td><td>{{ $voucher->bankAccount?->bank_name }} · {{ $voucher->bankAccount?->account_name }}{{ $voucher->bankAccount?->account_number ? ' · A/C '.$voucher->bankAccount->account_number : '' }}</td></tr>
-                @if($voucher->cheque_number)<tr><td class="l">Cheque</td><td>No. {{ $voucher->cheque_number }}{{ $voucher->cheque_date ? ', dated '.$voucher->cheque_date->format('d-M-Y') : '' }}</td></tr>@endif
-                @if($voucher->transaction_reference)<tr><td class="l">Reference</td><td>{{ $voucher->transaction_reference }}</td></tr>@endif
-            @endif
-        </table>
+        @if($voucher->isReversed())
+            <div class="reversed" role="note">
+                <b>REVERSED</b> on {{ $voucher->reversed_at?->format('d-M-Y h:i A') }}{{ $voucher->reverser ? ' by '.$voucher->reverser->name : '' }}{{ $voucher->reversal_journal_entry_id ? ' · reversal journal #'.$voucher->reversal_journal_entry_id : '' }}.
+                This voucher no longer counts; the ledger entry was offset.
+                <span>Reason: {{ $voucher->reversal_reason }}</span>
+            </div>
+        @endif
 
-        <table class="grid" aria-label="Accounts">
-            <thead><tr><th style="width:24mm">Code</th><th>Account</th><th class="n">Debit (Rs)</th><th class="n">Credit (Rs)</th></tr></thead>
-            <tbody>
-                <tr><td>{{ $voucher->expenseAccount?->account_code }}</td><td>{{ $voucher->expenseAccount?->account_name }}</td><td class="n">{{ number_format($amount, 2) }}</td><td class="n"></td></tr>
-                <tr><td>{{ $paidFromAccount?->account_code }}</td><td>{{ $paidFromAccount?->account_name ?? $creditLabel }}</td><td class="n"></td><td class="n">{{ number_format($amount, 2) }}</td></tr>
-            </tbody>
-            <tfoot><tr><td colspan="2">Total</td><td class="n">{{ number_format($amount, 2) }}</td><td class="n">{{ number_format($amount, 2) }}</td></tr></tfoot>
+        <div class="section">Payee and payment</div>
+        <table class="grid" aria-label="Payee and payment">
+            <tr><td class="l">Paid to</td><td colspan="3"><b>{{ $voucher->party_name }}</b>@if($voucher->employee) <span style="color:#555">(Employee {{ $voucher->employee->employee_code }}{{ $voucher->isAdvance() ? ', advance salary' : '' }})</span>@endif</td></tr>
+            <tr><td class="l">Company</td><td>{{ $owner }}</td><td class="l">Method</td><td>{{ ExpenseVoucher::paymentMethodLabels()[$voucher->payment_method] ?? $voucher->payment_method }}</td></tr>
+            @if($voucher->isPaidByBank())
+                <tr><td class="l">Bank</td><td colspan="3">{{ $voucher->bankAccount?->bank_name }} · {{ $voucher->bankAccount?->account_name }}{{ $voucher->bankAccount?->account_number ? ' · A/C '.$voucher->bankAccount->account_number : '' }}</td></tr>
+                @if($voucher->cheque_number || $voucher->transaction_reference)
+                    <tr>
+                        <td class="l">{{ $voucher->cheque_number ? 'Cheque' : 'Reference' }}</td>
+                        <td colspan="3">{{ $voucher->cheque_number ? 'No. '.$voucher->cheque_number.($voucher->cheque_date ? ', dated '.$voucher->cheque_date->format('d-M-Y') : '') : $voucher->transaction_reference }}{{ $voucher->cheque_number && $voucher->transaction_reference ? ' · Ref. '.$voucher->transaction_reference : '' }}</td>
+                    </tr>
+                @endif
+            @endif
+            <tr><td class="l">Shop bill no.</td><td>{{ $voucher->vendor_bill_no ?: '—' }}</td><td class="l">Category</td><td>{{ $voucher->category?->name ?? '—' }}</td></tr>
         </table>
 
         <div class="amount">
@@ -117,15 +158,24 @@
             <div class="words"><b>Amount in words</b><span>{{ AmountInWords::rupees($amount) }}</span></div>
         </div>
 
-        <div class="narration">
-            <b>Narration</b>
-            {{ $voucher->narration ?: '—' }}
-            @if($notes && ! $notes->isEmpty())
-                <div class="notes">Notes paid out:
-                    {{ collect(CashNotes::NOTES)->filter(fn ($note) => $notes->count($note) > 0)->map(fn ($note) => number_format($note).' × '.$notes->count($note))->push($notes->coins() > 0 ? 'coins '.number_format($notes->coins(), 2) : null)->filter()->implode(', ') }}
-                </div>
-            @endif
-        </div>
+        <div class="section">Particulars</div>
+        <table class="grid" aria-label="Particulars">
+            <thead><tr><th style="width:20mm">Code</th><th>Account</th><th>Narration</th><th class="n">Debit (Rs)</th><th class="n">Credit (Rs)</th></tr></thead>
+            <tbody>
+                @foreach($particulars as $line)
+                    <tr><td>{{ $line['code'] }}</td><td>{{ $line['name'] }}</td><td>{{ $line['narration'] ?: '—' }}</td><td class="n">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td><td class="n">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td></tr>
+                @endforeach
+            </tbody>
+            <tfoot><tr><td colspan="3">Total</td><td class="n">{{ number_format($particulars->sum('debit'), 2) }}</td><td class="n">{{ number_format($particulars->sum('credit'), 2) }}</td></tr></tfoot>
+        </table>
+
+        @if($showNotes)
+            <div class="section">Notes paid out</div>
+            <div class="notes">
+                {{ collect(CashNotes::NOTES)->filter(fn ($note) => $notes->count($note) > 0)->map(fn ($note) => number_format($note).' × '.$notes->count($note))->push($notes->coins() > 0 ? 'coins '.number_format($notes->coins(), 2) : null)->filter()->implode(', ') }}
+                = Rs {{ number_format($notes->total(), 2) }}, counted and handed over by {{ $voucher->checker?->name ?? 'the checker' }}.
+            </div>
+        @endif
 
         <div class="signs">
             <div>Prepared by<small>{{ $voucher->creator?->name }}</small></div>
@@ -135,7 +185,7 @@
         </div>
 
         <div class="foot">
-            <span>Approved {{ $voucher->checked_at?->format('d-M-Y h:i A') }}</span>
+            <span>Prepared {{ $voucher->created_at?->format('d-M-Y h:i A') }}{{ $voucher->submitted_at ? ' · submitted '.$voucher->submitted_at->format('d-M-Y h:i A') : '' }} · approved {{ $voucher->checked_at?->format('d-M-Y h:i A') }}{{ $voucher->journal_entry_id ? ' · journal #'.$voucher->journal_entry_id : '' }}</span>
             <span>{{ $isDuplicate ? 'Duplicate printed' : 'Printed' }} {{ now()->format('d-M-Y h:i A') }} by {{ auth()->user()?->name }}</span>
         </div>
     </div>

@@ -82,7 +82,7 @@ it('lets a different user approve, which posts the ledger entry', function () {
         })->andReturn(['success' => true, 'data' => $entry]);
     });
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
 
     $voucher->refresh();
     expect($voucher->status)->toBe('approved')
@@ -94,7 +94,7 @@ it('does not let the maker check their own voucher', function () {
     $this->actingAs($this->maker); // the voucher is stamped with the signed-in user as its maker
     $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'submitted_by' => $this->maker->id]);
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertSessionHas('error');
 
     expect($voucher->fresh()->status)->toBe('pending');
 });
@@ -157,10 +157,10 @@ it('lists vouchers with filters and opens the guide', function () {
     $admin = User::factory()->create(['is_super_admin' => 'Yes']);
     $parties = fn ($response) => $response->viewData('vouchers')->getCollection()->pluck('party_name')->sort()->values()->all();
 
-    expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall', 'Other Co Party'])
+    expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Ali Tea Stall', 'Other Co Party'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['owner' => 'supplier:'.$this->supplier->id]]))))->toBe(['Ali Tea Stall'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'other co', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
-        ->and($parties($this->actingAs($this->maker->givePermissionTo('expense-voucher-view-company'))->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
+        ->and($parties($this->actingAs($this->maker->givePermissionTo('expense-voucher-view-company'))->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Ali Tea Stall']);
 
     $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('اخراجاتی واؤچر کیسے کام کرتا ہے')->assertSee('What each step writes to the database');
 });
@@ -276,10 +276,10 @@ it('blocks only the user who made the voucher from checking it, even when someon
     $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'amount' => 1500]);
     $voucher->forceFill(['submitted_by' => $this->checker->id])->saveQuietly();
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertSessionHas('error');
     expect($voucher->fresh()->status)->toBe('pending');
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
     expect($voucher->fresh()->status)->toBe('approved');
 });
 

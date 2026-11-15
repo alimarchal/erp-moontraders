@@ -3,6 +3,7 @@
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\ExpenseCategory;
+use App\Models\ExpenseVendor;
 use App\Models\ExpenseVoucher;
 use App\Models\Supplier;
 use App\Models\User;
@@ -108,7 +109,7 @@ it('shows a friendly message for a posting failure', function () {
     $this->mock(AccountingService::class, fn ($mock) => $mock->shouldReceive('createJournalEntry')
         ->andReturn(['success' => false, 'message' => 'SQLSTATE[23505]: Unique violation']));
 
-    $this->actingAs($this->checker)->followingRedirects()->post(route('expense-vouchers.approve', $voucher))->assertOk()
+    $this->actingAs($this->checker)->followingRedirects()->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertOk()
         ->assertSee('Posting failed. Please contact the admin.')
         ->assertDontSee('SQLSTATE');
 
@@ -160,8 +161,8 @@ it('refuses to approve a cash voucher without the notes or with notes that do no
     $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'amount' => 1500, 'payment_method' => 'cash']);
     $voucher->forceFill(['created_by' => $this->maker->id])->save();
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHasErrors('denom');
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1]])
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertSessionHasErrors('denom');
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['1000' => 1]])
         ->assertSessionHasErrors(['denom' => 'The notes paid out add up to Rs 1,000.00 but the voucher is Rs 1,500.00.']);
 
     expect($voucher->fresh()->status)->toBe(ExpenseVoucher::STATUS_PENDING)
@@ -174,7 +175,7 @@ it('saves the notes the checker paid out when approving a cash voucher', functio
     $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'amount' => 1505, 'payment_method' => 'cash']);
     $voucher->forceFill(['created_by' => $this->maker->id])->save();
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1, 'coins' => 5]])
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['1000' => 1, '500' => 1, 'coins' => 5]])
         ->assertSessionHas('success');
 
     $voucher->refresh();
@@ -192,7 +193,147 @@ it('approves a credit voucher without notes', function () {
     $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'amount' => 1500, 'payment_method' => 'credit', 'payment_type' => 'credit']);
     $voucher->forceFill(['created_by' => $this->maker->id])->save();
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('success');
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertSessionHas('success');
 
     expect($voucher->fresh()->status)->toBe(ExpenseVoucher::STATUS_APPROVED)->and($voucher->cashPayout()->exists())->toBeFalse();
+});
+
+it('titles the voucher page after the payment method', function (string $method, string $title) {
+    $voucher = ExpenseVoucher::factory()->pending()->create([
+        'supplier_id' => $this->supplier->id,
+        'expense_account_id' => $this->ledger['5221']->id,
+        'payment_method' => $method,
+        'payment_type' => $method === ExpenseVoucher::METHOD_CREDIT ? ExpenseVoucher::TYPE_CREDIT : ExpenseVoucher::TYPE_CASH,
+        'cheque_number' => $method === ExpenseVoucher::METHOD_CHEQUE ? '001122' : null,
+    ]);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()
+        ->assertSee('<h1 class="ev-doc-title">'.$title.'</h1>', false);
+})->with([
+    'cash' => ['cash', 'Cash Payment Voucher'],
+    'bank transfer' => ['bank_transfer', 'Bank Payment Voucher'],
+    'cheque' => ['cheque', 'Cheque Payment Voucher'],
+    'credit' => ['credit', 'Credit Expense Voucher'],
+]);
+
+it('shows the notes paid out only once a cash voucher is approved', function () {
+    $voucher = ($this->approved)();
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()
+        ->assertSee('Counted and handed over by '.$this->checker->name);
+
+    $voucher->forceFill(['status' => ExpenseVoucher::STATUS_PENDING])->save();
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()
+        ->assertDontSee('Counted and handed over by');
+});
+
+it('offers exactly one primary action for each status', function (string $status, string $viewer, string $primary) {
+    $voucher = ExpenseVoucher::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'expense_account_id' => $this->ledger['5221']->id,
+        'payment_method' => ExpenseVoucher::METHOD_CREDIT,
+        'payment_type' => ExpenseVoucher::TYPE_CREDIT,
+        'status' => $status,
+    ]);
+    $voucher->forceFill(['created_by' => $this->maker->id])->save();
+
+    $html = $this->actingAs($this->{$viewer})->get(route('expense-vouchers.show', $voucher))->assertOk()->getContent();
+
+    expect(substr_count($html, 'data-primary-action='))->toBe(1)
+        ->and($html)->toContain('data-primary-action="'.$primary.'"');
+})->with([
+    'draft, maker submits' => ['draft', 'maker', 'submit'],
+    'pending, checker approves' => ['pending', 'checker', 'approve'],
+    'approved, checker prints' => ['approved', 'checker', 'print'],
+    'rejected, maker edits' => ['rejected', 'maker', 'edit'],
+]);
+
+it('guards every dialog form against a second click', function () {
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'payment_method' => 'credit', 'payment_type' => 'credit']);
+    $voucher->forceFill(['created_by' => $this->maker->id])->save();
+
+    $html = $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()->getContent();
+
+    preg_match_all('/<form method="POST" action="[^"]*expense-vouchers[^"]*"[^>]*>/', $html, $forms);
+
+    expect($forms[0])->toHaveCount(2)
+        ->each->toContain('data-once-form');
+});
+
+it('opens the list on the vouchers waiting for approval', function () {
+    $make = fn (string $status, string $party, string $date) => ExpenseVoucher::factory()->create([
+        'supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id,
+        'status' => $status, 'party_name' => $party, 'voucher_date' => $date,
+    ]);
+    $make('pending', 'Waiting Party', now()->subMonths(2)->toDateString());
+    $make('approved', 'Approved Party', now()->toDateString());
+    $make('draft', 'Draft Party', now()->toDateString());
+    $parties = fn ($response) => $response->viewData('vouchers')->getCollection()->pluck('party_name')->sort()->values()->all();
+
+    $bare = $this->actingAs($this->checker)->get(route('expense-vouchers.index'))->assertOk();
+    expect($parties($bare))->toBe(['Waiting Party'])
+        ->and($bare->viewData('statusCounts')->all())->toMatchArray(['pending' => 1, 'approved' => 1, 'draft' => 1]);
+
+    expect($parties($this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Approved Party', 'Draft Party'])
+        ->and($parties($this->actingAs($this->checker)->get(route('expense-vouchers.index', ['filter' => ['search' => 'Party']]))))->toBe(['Approved Party', 'Draft Party']);
+});
+
+it('shows a friendly empty state with a way to every voucher when nothing waits for approval', function () {
+    ExpenseVoucher::factory()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'status' => 'approved']);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.index'))->assertOk()
+        ->assertSee('Nothing is waiting for approval')
+        ->assertSee('filter%5Bstatus%5D=all', false);
+});
+
+it('asks the checker to confirm before approving a voucher with no receipt', function () {
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'payment_method' => 'credit', 'payment_type' => 'credit']);
+    $voucher->forceFill(['created_by' => $this->maker->id])->save();
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()
+        ->assertSee('No receipt or bill attached to this voucher.')
+        ->assertSee('name="approve_without_attachment"', false);
+
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHasErrors('approve_without_attachment');
+    expect($voucher->fresh()->status)->toBe(ExpenseVoucher::STATUS_PENDING);
+
+    $voucher->attachments()->create(['file_name' => 'bill.jpg', 'file_path' => 'expense-vouchers/bill.jpg', 'file_type' => 'image/jpeg', 'file_size' => 100]);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()->assertDontSee('No receipt or bill attached to this voucher.');
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('success');
+    expect($voucher->fresh()->status)->toBe(ExpenseVoucher::STATUS_APPROVED);
+});
+
+it('shows the shop on a payee card with its outstanding credit and its last vouchers', function () {
+    $shop = ExpenseVendor::factory()->create(['name' => 'Bismillah Autos', 'phone' => '0300-1234567', 'city' => 'Sargodha', 'category' => 'workshop']);
+    $base = ['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'expense_vendor_id' => $shop->id, 'payee_type' => 'vendor', 'party_name' => 'Bismillah Autos'];
+    $older = ExpenseVoucher::factory()->create($base + ['status' => 'approved', 'payment_type' => 'credit', 'payment_method' => 'credit', 'amount' => 2500, 'paid_amount' => 500, 'voucher_date' => now()->subDays(3)->toDateString()]);
+    $voucher = ExpenseVoucher::factory()->pending()->create($base + ['payment_type' => 'credit', 'payment_method' => 'credit', 'amount' => 900]);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.show', $voucher))->assertOk()
+        ->assertSee('0300-1234567')
+        ->assertSee('Sargodha')
+        ->assertSee('Workshop / Garage')
+        ->assertSee('Rs 2,000.00')
+        ->assertSee($older->voucher_number)
+        ->assertSee(route('expense-vouchers.show', $older), false);
+});
+
+it('hides the reverse button from the maker even with the permission', function () {
+    $voucher = ($this->approved)();
+    $this->maker->givePermissionTo('expense-voucher-reverse');
+
+    $this->actingAs($this->maker->fresh())->get(route('expense-vouchers.show', $voucher))->assertOk()
+        ->assertDontSee(route('expense-vouchers.reverse', $voucher), false);
+});
+
+it('prints a reversed voucher marked as reversed with who, when and why', function () {
+    $voucher = ($this->approved)();
+    $voucher->update(['status' => ExpenseVoucher::STATUS_REVERSED, 'reversed_at' => now(), 'reversed_by' => $this->checker->id, 'reversal_reason' => 'Paid twice by mistake']);
+
+    $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertOk()
+        ->assertSee('REVERSED')
+        ->assertSee('by '.$this->checker->name)
+        ->assertSee('Reason: Paid twice by mistake');
 });

@@ -5,18 +5,19 @@
 --}}
 @php
     $filters = $filters ?? [];
+    $opensOnPending = $opensOnPending ?? false;
     $today = now()->toDateString();
-    $tab = $filters['status'] ?? '';
+    $tab = ($filters['status'] ?? 'all') === 'all' ? '' : $filters['status'];
+    // A bare visit opens on "Pending approval"; links built from it start from no filters at all.
+    $linkFilters = $opensOnPending ? [] : $filters;
     $withFilters = fn (array $f) => request()->fullUrlWithQuery(['filter' => $f ?: null, 'page' => null]);
-    $tabUrl = function (string $status) use ($filters, $withFilters) {
-        $f = \Illuminate\Support\Arr::except($filters, ['status']);
-        if ($status !== '') {
-            $f['status'] = $status;
-        }
+    $tabUrl = function (string $status) use ($linkFilters, $withFilters) {
+        $f = \Illuminate\Support\Arr::except($linkFilters, ['status']);
+        $f['status'] = $status === '' ? 'all' : $status;
 
         return $withFilters($f);
     };
-    $rangeUrl = fn (string $from, string $to) => $withFilters(array_merge($filters, ['date_from' => $from, 'date_to' => $to]));
+    $rangeUrl = fn (string $from, string $to) => $withFilters(array_merge($linkFilters, ['date_from' => $from, 'date_to' => $to]));
     $ranges = [
         'Today' => [$today, $today],
         'Yesterday' => [now()->subDay()->toDateString(), now()->subDay()->toDateString()],
@@ -47,9 +48,9 @@
     $advancedKeys = ['expense_account_id', 'category_id', 'party_name', 'payment_type', 'payment_status', 'created_by', 'checked_by', 'amount_min', 'amount_max'];
     $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
     $activeFilterCount = count($chips) + (($filters['date_from'] ?? null) || ($filters['date_to'] ?? null) ? 1 : 0);
-    $periodLabel = $dateFrom === $dateTo
+    $periodLabel = $opensOnPending ? 'all dates' : ($dateFrom === $dateTo
         ? \Carbon\Carbon::parse($dateFrom)->format('d M Y')
-        : \Carbon\Carbon::parse($dateFrom)->format('d M Y').' – '.\Carbon\Carbon::parse($dateTo)->format('d M Y');
+        : \Carbon\Carbon::parse($dateFrom)->format('d M Y').' – '.\Carbon\Carbon::parse($dateTo)->format('d M Y'));
     $statusTone = ['draft' => 'ak-status-slate', 'pending' => 'ak-status-amber', 'approved' => 'ak-status-green', 'rejected' => 'ak-status-red', 'reversed' => 'ak-status-red'];
     $statusTotal = $statusCounts->sum();
     $statusTabs = ['' => ['All', $statusTotal], 'draft' => ['Draft', $statusCounts['draft'] ?? 0], 'pending' => ['Pending approval', $statusCounts['pending'] ?? 0],
@@ -96,7 +97,7 @@
         <section id="ev-filter-panel" class="ak-card rg-gi-filters apl-fields" aria-label="Filters" x-data="{ open: {{ $activeFilterCount ? 'true' : 'false' }} }" @ev-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $activeFilterCount ? '' : 'display:none' }}">
             <form method="GET" action="{{ route('expense-vouchers.index') }}" class="ak-filters"
                 x-data="{ advanced: {{ $advancedCount ? 'true' : 'false' }}, busy: false }" @submit="busy = true">
-                @if ($tab !== '') <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
+                @if ($tab !== '' && ! $opensOnPending) <input type="hidden" name="filter[status]" value="{{ $tab }}"> @endif
                 @if (request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
 
                 <div class="gl-filter-row">
@@ -226,7 +227,7 @@
                     @foreach ($ranges as $label => [$from, $to])
                         <a href="{{ $rangeUrl($from, $to) }}" @if ($dateFrom === $from && $dateTo === $to) aria-current="true" @endif>{{ $label }}</a>
                     @endforeach
-                    <a href="{{ route('expense-vouchers.index') }}" class="gl-clear" title="Remove every filter and go back to this month">&times; Clear</a>
+                    <a href="{{ route('expense-vouchers.index') }}" class="gl-clear" title="Remove every filter and go back to the vouchers waiting for approval">&times; Clear</a>
                 </nav>
             </form>
         </section>
@@ -248,7 +249,7 @@
                             <b>{{ $chipLabels[$key] ?? \Illuminate\Support\Str::headline($key) }}:</b> {{ $chipValue($key, $value) }} <span aria-hidden="true">×</span>
                         </a>
                     @endforeach
-                    <a href="{{ $withFilters(\Illuminate\Support\Arr::only($filters, ['status', 'date_from', 'date_to'])) }}" class="ak-chips-clear">Clear all</a>
+                    <a href="{{ $withFilters(\Illuminate\Support\Arr::only($filters, ['status', 'date_from', 'date_to']) ?: ['status' => 'all']) }}" class="ak-chips-clear">Clear all</a>
                 </div>
             @endif
 
@@ -258,7 +259,7 @@
                         setDensity(v) { this.compact = v; try { localStorage.setItem('ev-density', v ? 'compact' : 'comfortable'); } catch (e) {} }
                     }">
                     <div class="ak-dt-toolbar">
-                        <p><b>{{ number_format($vouchers->total()) }}</b> {{ \Illuminate\Support\Str::plural('voucher', $vouchers->total()) }} &middot; Rs <b>{{ number_format($totalAmount, 2) }}</b> &middot; {{ $periodLabel }}</p>
+                        <p><b>{{ number_format($vouchers->total()) }}</b> {{ $opensOnPending ? \Illuminate\Support\Str::plural('voucher', $vouchers->total()).' waiting for approval' : \Illuminate\Support\Str::plural('voucher', $vouchers->total()) }} &middot; Rs <b>{{ number_format($totalAmount, 2) }}</b> &middot; {{ $periodLabel }}@if ($opensOnPending) &middot; <a href="{{ $tabUrl('') }}" class="ak-primary-link">Show all vouchers</a>@endif</p>
                         <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
                             <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
                             <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>
@@ -336,6 +337,16 @@
                 <div class="ak-pager">
                     <p>Showing <b>{{ number_format($vouchers->firstItem()) }}–{{ number_format($vouchers->lastItem()) }}</b> of <b>{{ number_format($vouchers->total()) }}</b> vouchers</p>
                     <div class="ak-pager-right"><div>{{ $vouchers->onEachSide(1)->links() }}</div></div>
+                </div>
+            @elseif ($opensOnPending)
+                <div class="ak-empty">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    <h2>Nothing is waiting for approval</h2>
+                    <p>Every voucher has been checked. To find an older one, press <kbd>/</kbd> and search by voucher no., party or narration, or show all vouchers.</p>
+                    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
+                        <a href="{{ $tabUrl('') }}" class="ak-btn ak-btn-primary">Show all</a>
+                        @can('expense-voucher-create') <a href="{{ route('expense-vouchers.create') }}" class="ak-btn ak-btn-ghost">＋ New voucher</a> @endcan
+                    </div>
                 </div>
             @else
                 <div class="ak-empty">

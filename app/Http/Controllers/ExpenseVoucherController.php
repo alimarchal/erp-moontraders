@@ -443,8 +443,25 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'autoprint' => $request->boolean('autoprint', true),
             'isDuplicate' => $isDuplicate,
             'companyName' => Company::query()->orderBy('id')->value('company_name') ?? config('app.name'),
-            'paidFromAccount' => ChartOfAccount::find($expenseVoucher->paid_from_account_id, ['id', 'account_code', 'account_name']),
+            'paidFromAccount' => $this->paidFromAccount($expenseVoucher),
         ]);
+    }
+
+    /**
+     * The account the money left from. Vouchers approved before it was stored fall back to the method's account.
+     */
+    private function paidFromAccount(ExpenseVoucher $voucher): ?ChartOfAccount
+    {
+        $accountId = $voucher->paid_from_account_id
+            ?? ($voucher->isPaidByBank() ? $voucher->bankAccount?->chart_of_account_id : null);
+
+        if ($accountId) {
+            return ChartOfAccount::find($accountId, ['id', 'account_code', 'account_name']);
+        }
+
+        $code = $voucher->isCredit() ? ExpenseVoucherService::PAYABLES_ACCOUNT : ExpenseVoucherService::CASH_ACCOUNT;
+
+        return ChartOfAccount::query()->where('account_code', $code)->first(['id', 'account_code', 'account_name']);
     }
 
     /**

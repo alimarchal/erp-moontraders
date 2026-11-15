@@ -34,7 +34,7 @@
             const bind = () => { evAjaxSelect('#expense_vendor_id', evSetAccountFromShop); evAjaxSelect('#employee_id'); };
             bind();
             // The payee panels are rendered on demand (x-if), so wire the dropdowns whenever one appears.
-            new MutationObserver(bind).observe(document.querySelector('.ev-form-grid'), { childList: true, subtree: true });
+            new MutationObserver(bind).observe(document.querySelector('.ev-sections'), { childList: true, subtree: true });
         });
 
         function shopModal() {

@@ -1,36 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('expense-vouchers.index') }}">Expense Vouchers</a><span aria-hidden="true">›</span><span>{{ $voucher->voucher_number }}</span>
-                </nav>
-                <h1 class="ak-title">Edit {{ $voucher->voucher_number }} <span class="ev-ur" lang="ur" dir="rtl" style="font-size:18px">اخراجاتی واؤچر میں ترمیم</span></h1>
-                <p class="ak-sub">A draft or rejected voucher can be changed and submitted again.</p>
-            </div>
-            <div class="ak-head-actions">
-                <a href="{{ route('expense-vouchers.help') }}" class="ak-btn ak-btn-outline">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
-                <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to vouchers</a>
-            </div>
-        </div>
+        <x-page-header title="Edit {{ $voucher->voucher_number }}" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" backRoute="{{ route('expense-vouchers.index') }}">
+            <x-slot name="actions">
+                <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150 no-print"
+                    x-data @click="$dispatch('rg-help', { topic: 'method' })" aria-haspopup="dialog" aria-label="Help in Urdu" title="How vouchers work, in Urdu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+                </button>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
     <x-apple-skin />
+    <x-register-apple-style />
+    <x-register-help page="expense-vouchers" />
+    @include('goods-issues.partials.form-style')
+    <x-apple-fields-style />
     @include('expense-vouchers._form-styles')
 
-    <div class="ak-page">
+    <div class="ak-page gf-page">
+        <p class="gf-lede">A draft or rejected voucher can be changed and submitted again.</p>
         <x-status-message />
         <x-validation-errors class="mb-4" />
-        <form method="POST" action="{{ route('expense-vouchers.update', $voucher) }}" class="ak-card ev-form" enctype="multipart/form-data">
+        @if($voucher->status === 'rejected' && $voucher->rejection_reason)
+            <div class="ak-alert ak-alert-error" role="status"><b>Rejected{{ $voucher->checker ? ' by '.$voucher->checker->name : '' }}:</b> {{ $voucher->rejection_reason }}</div>
+        @endif
+        <form method="POST" action="{{ route('expense-vouchers.update', $voucher) }}" class="ev-form apl-fields" enctype="multipart/form-data">
             @csrf
             @method("PUT")
             @include('expense-vouchers._form')
-            <div class="ev-form-foot">
-                <a href="{{ route('expense-vouchers.index') }}" class="ak-btn ak-btn-outline">Cancel <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:15px">منسوخ کریں</span></a>
-                <button type="submit" name="action" value="draft" class="ak-btn ak-btn-outline">Save changes <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:15px">تبدیلیاں محفوظ کریں</span></button>
-                <button type="submit" name="action" value="submit" class="ak-btn ak-btn-primary">Submit for approval <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:15px">منظوری کے لیے جمع کرائیں</span></button>
-            </div>
         </form>
     </div>
 

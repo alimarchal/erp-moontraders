@@ -8,7 +8,7 @@
 
 @php
     $isClaims = $page === 'claims';
-    $defaultTopic = $page === 'payroll' ? 'what' : ($hasSupplier ? 'read' : 'start');
+    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
 @endphp
 
 <div class="no-print" x-data="{
@@ -36,8 +36,8 @@
         <div class="rgh-box" @click.outside="open = false">
             <div class="rgh-head">
                 <div>
-                    <h3 id="rgh-title">Help: {{ $isClaims ? 'Claim Register' : ($page === 'goods-issues' ? 'Goods Issues' : ($page === 'payroll' ? 'Payroll' : 'Supplier Ledger Register')) }}</h3>
-                    <p>{{ $page === 'payroll' ? 'How salaries work, in Urdu' : 'How this register works, in Urdu' }}</p>
+                    <h3 id="rgh-title">Help: {{ $isClaims ? 'Claim Register' : ($page === 'goods-issues' ? 'Goods Issues' : ($page === 'payroll' ? 'Payroll' : ($page === 'expense-vouchers' ? 'Expense Vouchers' : 'Supplier Ledger Register'))) }}</h3>
+                    <p>{{ $page === 'payroll' ? 'How salaries work, in Urdu' : ($page === 'expense-vouchers' ? 'How vouchers work, in Urdu' : 'How this register works, in Urdu') }}</p>
                 </div>
                 <button type="button" class="rgh-close" x-ref="close" @click="open = false" aria-label="Close">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path stroke-linecap="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -126,6 +126,8 @@
                             <section data-topic="flow"><x-help-flow flow="claims" /></section>
                         @elseif ($page === 'payroll')
                             @include('payroll.help._topics')
+                        @elseif ($page === 'expense-vouchers')
+                            @include('expense-vouchers.partials.help-topics')
                         @elseif ($page === 'goods-issues')
                             <section data-topic="what">
                                 <h2>گڈز ایشو کیا ہے؟</h2>

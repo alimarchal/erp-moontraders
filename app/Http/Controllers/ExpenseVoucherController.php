@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Rules\ExpenseAccount;
 use App\Services\ExpenseVoucherAttachmentService;
+use App\Services\ExpenseVoucherReversalService;
 use App\Services\ExpenseVoucherService;
 use App\Support\CashNotes;
 use Carbon\Carbon;
@@ -23,6 +24,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -40,6 +43,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             new Middleware('can:expense-voucher-delete', only: ['destroy']),
             new Middleware('can:expense-voucher-approve', only: ['approve', 'reject']),
             new Middleware('can:expense-voucher-print', only: ['print']),
+            new Middleware('can:expense-voucher-reverse', only: ['reverse']),
         ];
     }
 
@@ -334,6 +338,32 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $validated = $request->validate(['rejection_reason' => ['required', 'string', 'max:500']]);
 
         return $this->attempt(fn () => $this->service->reject($expenseVoucher, $request->user(), $validated['rejection_reason']), $expenseVoucher, 'Voucher rejected and returned to the maker.');
+    }
+
+    /**
+     * Take back an approved voucher. Needs the permission, a reason and the user's own password.
+     */
+    public function reverse(Request $request, ExpenseVoucher $expenseVoucher): RedirectResponse
+    {
+        $this->authorizeCompany($request, $expenseVoucher);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+            'password' => ['required', 'string'],
+        ]);
+
+        if (! Hash::check($validated['password'], $request->user()->password)) {
+            Log::warning("Failed expense voucher reversal attempt for {$expenseVoucher->voucher_number} - invalid password by user: ".$request->user()->name);
+
+            return redirect()->route('expense-vouchers.show', $expenseVoucher)
+                ->with('error', 'Invalid password. Reversing a voucher requires your password confirmation.');
+        }
+
+        return $this->attempt(
+            fn () => app(ExpenseVoucherReversalService::class)->reverse($expenseVoucher, $request->user(), $validated['reason']),
+            $expenseVoucher,
+            'Voucher reversed.',
+        );
     }
 
     /**

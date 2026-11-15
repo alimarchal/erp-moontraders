@@ -15,6 +15,7 @@ use App\Models\SalesSettlementCheque;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\AccountingService;
+use App\Services\ChequeClearingService;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -281,4 +282,80 @@ it('refuses a company user un-clearing a bank batch that holds another company\'
     ($this->changeStatus)($own, ['status' => 'pending'])->assertForbidden();
 
     expect($foreign->fresh()->status)->toBe('cleared')->and($own->fresh()->status)->toBe('cleared');
+});
+
+it('takes the bounce back when a bounced then cancelled cheque goes back to pending, so a later clear books 1122 once', function () {
+    $cheque = ($this->cheque)(10000);
+    app(AccountingService::class)->createJournalEntry([
+        'entry_date' => '2026-11-10', 'reference' => 'SS-TEST', 'description' => 'Settlement received the cheque',
+        'lines' => [
+            ['account_id' => $this->ledger['1122']->id, 'debit' => 10000, 'credit' => 0, 'cost_center_id' => 1],
+            ['account_id' => $this->ledger['1112']->id, 'debit' => 0, 'credit' => 10000, 'cost_center_id' => 1],
+        ],
+        'auto_post' => true,
+    ]);
+
+    ($this->changeStatus)($cheque, ['status' => 'bounced'])->assertSessionMissing('error');
+    $bounceJournalId = $cheque->fresh()->bounce_journal_entry_id;
+    ($this->changeStatus)($cheque, ['status' => 'cancelled'])->assertSessionMissing('error');
+    ($this->changeStatus)($cheque, ['status' => 'pending'])->assertSessionMissing('error');
+
+    expect($cheque->fresh()->bounce_journal_entry_id)->toBeNull()
+        ->and(JournalEntry::where('reverses_entry_id', $bounceJournalId)->exists())->toBeTrue()
+        ->and(batchLedgerNet('1122'))->toBe(10000.0)
+        ->and(batchLedgerNet('1112'))->toBe(-10000.0);
+
+    ($this->changeStatus)($cheque, ['status' => 'cleared', 'cleared_date' => '2026-11-15', 'denom' => ['5000' => 2]])->assertSessionMissing('error');
+
+    expect(batchLedgerNet('1122'))->toBe(0.0)->and(batchLedgerNet('1121'))->toBe(10000.0);
+});
+
+it('refuses a cash clearing that mixes a company cheque with a cheque that has no company', function () {
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+    $noCompany = SalesSettlement::factory()->create([
+        'employee_id' => $this->employee->id, 'supplier_id' => null, 'status' => 'posted', 'settlement_date' => '2026-11-10',
+    ]);
+    $first = ($this->cheque)(1000);
+    $second = ($this->cheque)(1000, $noCompany);
+
+    ($this->bulkClear)([$first, $second], ['denom' => ['1000' => 2]])
+        ->assertSessionHas('error', 'Cash clearing must be one company at a time. Selected: Kausar Oil, No company.');
+
+    expect($first->fresh()->status)->toBe('pending')->and(ChequeClearing::count())->toBe(0);
+});
+
+it('lets a back-dated clearing entered today be un-cleared today', function () {
+    $cheque = ($this->cheque)(1000);
+    ($this->bulkClear)([$cheque], ['cleared_date' => '2026-11-14', 'denom' => ['1000' => 1]])->assertSessionMissing('error');
+
+    ($this->changeStatus)($cheque, ['status' => 'pending'])->assertSessionMissing('error');
+
+    expect($cheque->fresh()->status)->toBe('pending')->and(ChequeClearing::count())->toBe(0)->and(batchLedgerNet('1121'))->toBe(0.0);
+});
+
+it('refuses a bank charge on a bounce when the cheque has no deposit bank', function () {
+    $cheque = ($this->cheque)(10000);
+
+    ($this->changeStatus)($cheque, ['status' => 'bounced', 'bank_charge' => 150])
+        ->assertSessionHas('error', 'Choose the bank that charged the fee, or leave the bank charge empty.');
+
+    expect($cheque->fresh()->status)->toBe('pending')->and(JournalEntry::count())->toBe(0);
+});
+
+it('records the acting user on the customer ledger rows of a bounce and its reversal', function () {
+    $customer = Customer::factory()->create();
+    $account = CustomerEmployeeAccount::create([
+        'account_number' => CustomerEmployeeAccount::generateAccountNumber(), 'customer_id' => $customer->id,
+        'employee_id' => $this->employee->id, 'opened_date' => '2026-11-01', 'status' => 'active',
+    ]);
+    $cheque = ($this->cheque)(10000, null, ['customer_id' => $customer->id]);
+
+    app(ChequeClearingService::class)->changeStatus($cheque, 'bounced', null, null, null, $this->user);
+    app(ChequeClearingService::class)->changeStatus($cheque->fresh(), 'pending', null, null, null, $this->user);
+
+    $rows = CustomerEmployeeAccountTransaction::where('customer_employee_account_id', $account->id)->get();
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows->pluck('created_by')->unique()->all())->toBe([$this->user->id])
+        ->and($rows->pluck('posted_by')->unique()->all())->toBe([$this->user->id]);
 });

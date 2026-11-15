@@ -136,7 +136,7 @@ it('lets a cleared cheque be corrected on the day it was cleared but not on a la
     $batch = fn () => ChequeClearing::find($this->cheque->fresh()->cheque_clearing_id);
     expect($batch()->denom_5000)->toBe(0)->and($batch()->denom_1000)->toBe(10)->and(ChequeClearing::count())->toBe(1);
 
-    $this->cheque->update(['cleared_date' => now()->subDay()->toDateString()]);
+    $this->cheque->update(['cleared_date' => now()->subDay()->toDateString(), 'status_updated_at' => now()->subDay()]);
     $clear(['5000' => 2])->assertSessionHas('error');
     expect($batch()->denom_1000)->toBe(10);
 });

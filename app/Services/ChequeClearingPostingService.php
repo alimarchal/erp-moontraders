@@ -8,6 +8,7 @@ use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\JournalEntry;
 use App\Models\SalesSettlementCheque;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -111,7 +112,7 @@ class ChequeClearingPostingService
      * bank took one, is put on the customer too: Dr 1112 / Cr the deposit bank (skipped when no deposit bank is known).
      * When the customer has an account with the settlement's salesman, the same amount is debited on that account.
      */
-    public function postBounce(SalesSettlementCheque $cheque, string $date, float $bankCharge = 0): JournalEntry
+    public function postBounce(SalesSettlementCheque $cheque, string $date, float $bankCharge = 0, ?User $by = null): JournalEntry
     {
         if ($cheque->bounce_journal_entry_id) {
             throw new RuntimeException("Cheque {$cheque->cheque_number} is already booked as bounced.");
@@ -154,19 +155,29 @@ class ChequeClearingPostingService
 
         $journal = $result['data'];
         $cheque->forceFill(['bounce_journal_entry_id' => $journal->id])->saveQuietly();
-        $this->debitCustomerAccount($cheque, $journal, $date, round($amount + $bankCharge, 2));
+        $this->debitCustomerAccount($cheque, $journal, $date, round($amount + $bankCharge, 2), $by);
 
         return $journal;
     }
 
     /**
-     * The bank charge a bounce books: nothing when the cheque has no deposit bank linked to its ledger account.
+     * The bank charge a bounce books. A charge needs the deposit bank (linked to its ledger account) to credit.
      */
     public function chargeableBankCharge(SalesSettlementCheque $cheque, float $bankCharge): float
     {
+        $bankCharge = round(max(0, $bankCharge), 2);
+
+        if ($bankCharge <= 0) {
+            return 0.0;
+        }
+
         $cheque->loadMissing('bankAccount');
 
-        return $cheque->bankAccount?->chart_of_account_id ? round(max(0, $bankCharge), 2) : 0.0;
+        if (! $cheque->bankAccount?->chart_of_account_id) {
+            throw new RuntimeException('Choose the bank that charged the fee, or leave the bank charge empty.');
+        }
+
+        return $bankCharge;
     }
 
     /**
@@ -174,7 +185,7 @@ class ChequeClearingPostingService
      *
      * @return JournalEntry|null the reversing journal, or null when the cheque had no bounce journal
      */
-    public function reverseBounce(SalesSettlementCheque $cheque): ?JournalEntry
+    public function reverseBounce(SalesSettlementCheque $cheque, ?User $by = null): ?JournalEntry
     {
         if (! $cheque->bounce_journal_entry_id) {
             return null;
@@ -203,9 +214,9 @@ class ChequeClearingPostingService
                 'cheque_number' => $bounceTransaction->cheque_number,
                 'cheque_date' => $bounceTransaction->cheque_date,
                 'journal_entry_id' => $reversal->id,
-                'created_by' => auth()->id(),
+                'created_by' => $by?->id ?? auth()->id(),
                 'posted_at' => now(),
-                'posted_by' => auth()->id(),
+                'posted_by' => $by?->id ?? auth()->id(),
             ]);
         }
 
@@ -273,7 +284,7 @@ class ChequeClearingPostingService
     /**
      * Debit the bounced amount on the customer's account with the settlement's salesman, when that account exists.
      */
-    private function debitCustomerAccount(SalesSettlementCheque $cheque, JournalEntry $journal, string $date, float $amount): void
+    private function debitCustomerAccount(SalesSettlementCheque $cheque, JournalEntry $journal, string $date, float $amount, ?User $by): void
     {
         $employeeId = $cheque->salesSettlement?->employee_id;
 
@@ -300,9 +311,9 @@ class ChequeClearingPostingService
             'cheque_number' => $cheque->cheque_number,
             'cheque_date' => $cheque->cheque_date,
             'journal_entry_id' => $journal->id,
-            'created_by' => auth()->id(),
+            'created_by' => $by?->id ?? auth()->id(),
             'posted_at' => now(),
-            'posted_by' => auth()->id(),
+            'posted_by' => $by?->id ?? auth()->id(),
         ]);
     }
 

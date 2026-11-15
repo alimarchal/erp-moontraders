@@ -44,10 +44,15 @@ class ChequeClearingService
                 throw new RuntimeException('Only pending cheques can be cleared. Already '.$notPending->pluck('status')->unique()->implode(' / ').': '.$notPending->pluck('cheque_number')->implode(', ').'.');
             }
 
-            $suppliers = $locked->map(fn (SalesSettlementCheque $cheque) => $cheque->salesSettlement?->supplier)->filter()->unique('id')->sortBy('supplier_name')->values();
+            // A cheque without a company counts as its own company, so a cash batch is always exactly one company.
+            $companies = $locked->map(fn (SalesSettlementCheque $cheque) => $cheque->salesSettlement?->supplier)
+                ->unique(fn ($supplier) => $supplier?->id ?? 'none')
+                ->sortBy(fn ($supplier) => $supplier ? '0'.$supplier->supplier_name : '1')
+                ->values();
+            $suppliers = $companies->filter()->values();
 
-            if ($byCash && $suppliers->count() > 1) {
-                throw new RuntimeException('Cash clearing must be one company at a time. Selected: '.$suppliers->pluck('supplier_name')->implode(', ').'.');
+            if ($byCash && ($companies->count() > 1 || $suppliers->isEmpty())) {
+                throw new RuntimeException('Cash clearing must be one company at a time. Selected: '.$companies->map(fn ($supplier) => $supplier?->supplier_name ?? 'No company')->implode(', ').'.');
             }
 
             $this->guardDate($locked, $clearedDate);
@@ -69,7 +74,7 @@ class ChequeClearingService
                 'cleared_date' => $clearedDate,
                 'cleared_via' => $via,
                 'bank_account_id' => $bankId,
-                'supplier_id' => $suppliers->count() === 1 ? $suppliers->first()->id : null,
+                'supplier_id' => $companies->count() === 1 ? $suppliers->first()?->id : null,
                 'notes' => $remarks,
                 'created_by' => $by->id,
             ]);
@@ -142,14 +147,15 @@ class ChequeClearingService
             $reversedId = null;
             $charge = null;
 
-            if ($status === 'bounced') {
+            if ($status === 'bounced' && ! $cheque->bounce_journal_entry_id) {
                 $bouncedOn = $date ?? now()->toDateString();
                 $this->guardDate(collect([$cheque]), $bouncedOn, 'Bounce date');
                 $charge = $this->posting->chargeableBankCharge($cheque, (float) ($bankCharge ?? 0)) ?: null;
-                $journal = $this->posting->postBounce($cheque, $bouncedOn, (float) ($bankCharge ?? 0));
-            } elseif ($status === 'pending' && $cheque->isBounced()) {
+                $journal = $this->posting->postBounce($cheque, $bouncedOn, (float) ($bankCharge ?? 0), $by);
+            } elseif ($status === 'pending' && $cheque->bounce_journal_entry_id) {
+                // Whatever the cheque went through since (e.g. bounced, then cancelled), a pending cheque is back in 1122.
                 $reversedId = $cheque->bounce_journal_entry_id;
-                $reversal = $this->posting->reverseBounce($cheque);
+                $reversal = $this->posting->reverseBounce($cheque, $by);
             }
 
             $cheque->update(['status' => $status, 'status_updated_at' => now()]);
@@ -163,14 +169,17 @@ class ChequeClearingService
     }
 
     /**
-     * Take a cleared cheque back to pending on the day it was cleared. Its whole batch reopens: every cheque in it
-     * goes back to pending with its clearing journal reversed and its own history row, and the batch is deleted.
+     * Take a cleared cheque back to pending on the day it was cleared, or on the day the clearing was entered. Its whole
+     * batch reopens: every cheque in it goes back to pending with its clearing journal reversed and its own history
+     * row, and the batch is deleted.
      */
     private function unclear(SalesSettlementCheque $cheque, User $by, ?string $remarks): void
     {
         $clearedOn = $cheque->cleared_date ?? $cheque->status_updated_at;
+        $enteredToday = $cheque->status_updated_at instanceof CarbonInterface && $cheque->status_updated_at->isToday();
 
-        if (! $clearedOn instanceof CarbonInterface || ! $clearedOn->isToday()) {
+        // A wrong back-dated clearing can still be fixed on the day it was entered.
+        if (! $enteredToday && (! $clearedOn instanceof CarbonInterface || ! $clearedOn->isToday())) {
             throw new RuntimeException('This cheque was cleared on '.($clearedOn ? Carbon::parse($clearedOn)->format('d-M-Y') : 'an earlier day').'; it can only be changed on that day.');
         }
 

@@ -82,7 +82,7 @@ it('lets a different user approve, which posts the ledger entry', function () {
         })->andReturn(['success' => true, 'data' => $entry]);
     });
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
 
     $voucher->refresh();
     expect($voucher->status)->toBe('approved')
@@ -116,7 +116,7 @@ it('prints only approved vouchers', function () {
     $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertForbidden();
 
     $voucher->update(['status' => 'approved', 'checked_by' => $this->checker->id, 'checked_at' => now()]);
-    $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertOk()->assertSee('Ali Tea Stall', false)->assertSee('80mm', false);
+    $this->actingAs($this->checker)->get(route('expense-vouchers.print', ['expense_voucher' => $voucher, 'format' => 'slip']))->assertOk()->assertSee('Ali Tea Stall', false)->assertSee('80mm', false);
 });
 
 it('shows approved vouchers by party on the distributor report, general ones only under All Companies', function () {
@@ -187,7 +187,7 @@ it('submits a new voucher for approval in one step and resubmits an edited one',
     $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800, 'denom' => ['1000' => 1, '500' => 1, '100' => 3]] + $this->payload)->assertRedirect();
 
     $voucher->refresh();
-    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull()->and($voucher->checked_by)->toBeNull()->and($voucher->checked_at)->toBeNull();
+    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBe('No receipt')->and($voucher->checked_by)->toBeNull()->and($voucher->checked_at)->toBeNull();
 });
 
 it('lets anyone who works with vouchers open the guide, and a clearable company means a general expense', function () {
@@ -273,13 +273,13 @@ it('blocks only the user who made the voucher from checking it, even when someon
     });
 
     $this->actingAs($this->maker);
-    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id]);
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'amount' => 1500]);
     $voucher->forceFill(['submitted_by' => $this->checker->id])->saveQuietly();
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
     expect($voucher->fresh()->status)->toBe('pending');
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
     expect($voucher->fresh()->status)->toBe('approved');
 });
 

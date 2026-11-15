@@ -49,6 +49,8 @@
     .ev-panel { border: 1px solid var(--ak-line); background: #f8fafc; border-radius: 12px; padding: 16px; }
     .ev-panel-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
     @media (min-width: 900px) { .ev-panel-grid { grid-template-columns: 2fr 1fr; } .ev-panel-grid .ev-span-2 { grid-column: auto; } }
+    .ev-pay-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 900px) { .ev-pay-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     .ev-inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
     .ev-inline .select2-container { flex: 1 1 220px; }
     .ev-inline .select2-container { flex: 1; min-width: 0; }

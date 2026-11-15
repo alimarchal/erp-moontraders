@@ -5,13 +5,14 @@
         ? ($voucher->supplier_id ? 'supplier:'.$voucher->supplier_id : ($voucher->company_id ? 'company:'.$voucher->company_id : ''))
         : ($defaultOwner ?? ''));
     $payee = old('payee_type', $voucher->exists ? $voucher->payee_type : 'vendor');
-    $paymentType = old('payment_type', $voucher->exists && $voucher->payment_type === 'credit' ? 'credit' : 'cash');
+    $paymentMethod = old('payment_method', $voucher->exists ? ($voucher->payment_method ?: \App\Models\ExpenseVoucher::METHOD_CASH) : \App\Models\ExpenseVoucher::METHOD_CASH);
     $vendorOld = old('expense_vendor_id', $voucher->expense_vendor_id);
     $employeeOld = old('employee_id', $voucher->employee_id);
     $vendorModel = $vendorOld ? \App\Models\ExpenseVendor::withTrashed()->find($vendorOld) : null;
     $employeeModel = $employeeOld ? \App\Models\Employee::withTrashed()->find($employeeOld) : null;
 @endphp
-<div class="ev-form-grid" x-data="{ payee: @js($payee), paymentType: @js($paymentType) }">
+<div class="ev-form-grid" x-data="{ payee: @js($payee), method: @js($paymentMethod) }"
+    x-effect="if (payee !== 'vendor' && method === 'credit') { method = 'cash'; }">
     <div class="ak-field">
         <label for="voucher_date" class="ev-bi"><span>Voucher date</span><span class="ev-ur" lang="ur" dir="rtl">واؤچر کی تاریخ</span></label>
         <input id="voucher_date" type="date" name="voucher_date" required max="{{ now()->toDateString() }}" value="{{ old('voucher_date', optional($voucher->voucher_date)->format('Y-m-d')) }}">
@@ -65,14 +66,6 @@
                     <input id="vendor_bill_no" type="text" name="vendor_bill_no" maxlength="80" value="{{ old('vendor_bill_no', $voucher->vendor_bill_no) }}">
                 </div>
             </div>
-            <div class="ak-field" style="margin-top:14px">
-                <label class="ev-bi"><span>How is it paid?</span><span class="ev-ur" lang="ur" dir="rtl">ادائیگی کیسے ہوگی؟</span></label>
-                <div class="ev-seg" role="radiogroup">
-                    <label :class="{ 'is-on': paymentType === 'cash' }"><input type="radio" name="payment_type" value="cash" x-model="paymentType"> Paid in cash today <span class="ev-ur" lang="ur" dir="rtl">آج نقد ادا</span></label>
-                    <label :class="{ 'is-on': paymentType === 'credit' }"><input type="radio" name="payment_type" value="credit" x-model="paymentType"> On credit, pay later <span class="ev-ur" lang="ur" dir="rtl">ادھار، بعد میں ادائیگی</span></label>
-                </div>
-                <p class="ev-note" x-show="paymentType === 'credit'" x-cloak>The expense is booked today, but no cash goes out. The shop's balance grows until you pay it with a <b>Vendor payment</b> (usually at month end).</p>
-            </div>
         </div>
     </template>
 
@@ -82,8 +75,8 @@
             <div class="ev-panel-grid">
                 <div class="ak-field ev-span-2">
                     <label for="employee_id" class="ev-bi"><span>Employee</span><span class="ev-ur" lang="ur" dir="rtl">ملازم</span></label>
-                    <select id="employee_id" name="employee_id" data-search-url="{{ route('expense-vouchers.employees.search') }}" data-placeholder="Type a name or employee code">
-                        @if($employeeModel)<option value="{{ $employeeModel->id }}" selected>{{ $employeeModel->name }} ({{ $employeeModel->employee_code }})</option>@endif
+                    <select id="employee_id" name="employee_id" data-search-url="{{ route('expense-vouchers.employees.search') }}" data-placeholder="Type a name or employee code (shown as Name · Company)">
+                        @if($employeeModel)<option value="{{ $employeeModel->id }}" selected>{{ \App\Http\Controllers\ExpenseVoucherController::employeeLabel($employeeModel) }}</option>@endif
                     </select>
                 </div>
                 <div class="ak-field">
@@ -124,7 +117,7 @@
             @endforeach
         </select>
     </div>
-    <div class="ak-field" x-show="payee === 'vendor'">
+    <div class="ak-field" x-show="payee === 'vendor'" x-effect="if (payee !== 'vendor' && window.jQuery) { jQuery('#vehicle_id').val(null).trigger('change'); }">
         <label for="vehicle_id" class="ev-bi"><span>Vehicle (optional)</span><span class="ev-ur" lang="ur" dir="rtl">گاڑی</span></label>
         <select id="vehicle_id" class="ev-select" name="vehicle_id" data-clearable="1" data-placeholder="For a vehicle expense">
             <option value=""></option>
@@ -136,6 +129,45 @@
     <div class="ak-field">
         <label for="amount" class="ev-bi"><span>Amount (Rs.)</span><span class="ev-ur" lang="ur" dir="rtl">رقم (روپے)</span></label>
         <input id="amount" type="number" step="0.01" min="0.01" name="amount" required value="{{ old('amount', $voucher->amount) }}">
+    </div>
+
+    {{-- How it is paid: a bank payment names the bank; the notes of a cash payment are counted by the checker --}}
+    <div class="ev-span-3 ev-panel" aria-label="Payment">
+        <div class="ev-pay-grid">
+            <div class="ak-field">
+                <label for="payment_method" class="ev-bi"><span>Payment method</span><span class="ev-ur" lang="ur" dir="rtl">ادائیگی کا طریقہ</span></label>
+                <select id="payment_method" name="payment_method" x-model="method" required>
+                    <option value="cash" @selected($paymentMethod === 'cash')>Cash</option>
+                    <option value="bank_transfer" @selected($paymentMethod === 'bank_transfer')>Bank transfer</option>
+                    <option value="cheque" @selected($paymentMethod === 'cheque')>Cheque</option>
+                    <option value="credit" @selected($paymentMethod === 'credit') :disabled="payee !== 'vendor'">Credit, pay later (shops only)</option>
+                </select>
+            </div>
+            <div class="ak-field ev-span-2" x-show="method === 'bank_transfer' || method === 'cheque'" x-cloak>
+                <label for="bank_account_id" class="ev-bi"><span>Paid from bank account</span><span class="ev-ur" lang="ur" dir="rtl">بینک اکاؤنٹ</span></label>
+                <select id="bank_account_id" name="bank_account_id" :disabled="method !== 'bank_transfer' && method !== 'cheque'" :required="method === 'bank_transfer' || method === 'cheque'">
+                    <option value="">Select bank account</option>
+                    @foreach($bankAccounts as $bank)
+                        <option value="{{ $bank->id }}" @selected((int) old('bank_account_id', $voucher->bank_account_id) === $bank->id)>{{ $bank->bank_name }} · {{ $bank->account_name }}{{ $bank->account_number ? ' · …'.substr($bank->account_number, -4) : '' }}</option>
+                    @endforeach
+                </select>
+                @if($bankAccounts->isEmpty())<p class="ak-hint">No active bank account is linked to the chart of accounts yet.</p>@endif
+            </div>
+            <div class="ak-field" x-show="method === 'cheque'" x-cloak>
+                <label for="cheque_number" class="ev-bi"><span>Cheque number</span><span class="ev-ur" lang="ur" dir="rtl">چیک نمبر</span></label>
+                <input id="cheque_number" type="text" name="cheque_number" maxlength="50" autocomplete="off" :disabled="method !== 'cheque'" :required="method === 'cheque'" value="{{ old('cheque_number', $voucher->cheque_number) }}">
+            </div>
+            <div class="ak-field" x-show="method === 'cheque'" x-cloak>
+                <label for="cheque_date" class="ev-bi"><span>Cheque date</span><span class="ev-ur" lang="ur" dir="rtl">چیک کی تاریخ</span></label>
+                <input id="cheque_date" type="date" name="cheque_date" :disabled="method !== 'cheque'" :required="method === 'cheque'" value="{{ old('cheque_date', optional($voucher->cheque_date)->format('Y-m-d')) }}">
+            </div>
+            <div class="ak-field" x-show="method === 'bank_transfer' || method === 'cheque'" x-cloak>
+                <label for="transaction_reference" class="ev-bi"><span>Reference (optional)</span><span class="ev-ur" lang="ur" dir="rtl">حوالہ</span></label>
+                <input id="transaction_reference" type="text" name="transaction_reference" maxlength="100" autocomplete="off" :disabled="method !== 'bank_transfer' && method !== 'cheque'" placeholder="IBFT / transfer ID" value="{{ old('transaction_reference', $voucher->transaction_reference) }}">
+            </div>
+        </div>
+        <p class="ev-note" x-show="method === 'cash'" x-cloak>The checker counts the notes when approving and hands over the cash.</p>
+        <p class="ev-note" x-show="method === 'credit'" x-cloak>The expense is booked today, but no cash goes out. The shop's balance grows until you pay it with a <b>Vendor payment</b> (usually at month end).</p>
     </div>
     <div class="ak-field ev-span-3">
         <label for="narration" class="ev-bi"><span>Narration</span><span class="ev-ur" lang="ur" dir="rtl">تفصیل / بیان</span></label>

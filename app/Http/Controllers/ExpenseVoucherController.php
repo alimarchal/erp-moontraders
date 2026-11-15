@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Company;
 use App\Models\Employee;
@@ -48,6 +49,42 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     }
 
     public const PER_PAGE = ['15', '25', '50', '100', 'all'];
+
+    /** @var array<string, string> */
+    public const VALIDATION_MESSAGES = [
+        'amount.max' => 'Amount is too large.',
+        'amount.gt' => 'Amount must be more than zero.',
+        'amount.decimal' => 'Amount can have at most two decimals (paisa).',
+        'voucher_date.before_or_equal' => 'The voucher date cannot be in the future.',
+        'bank_account_id.exists' => 'Choose an active bank account that is linked to the chart of accounts.',
+        'denom.required' => 'Enter the notes paid out.',
+        'attachments.max' => 'You can attach at most :max files.',
+    ];
+
+    /** @var array<string, string> */
+    public const VALIDATION_ATTRIBUTES = [
+        'voucher_date' => 'voucher date',
+        'owner' => 'company',
+        'payee_type' => 'payee',
+        'payment_method' => 'payment method',
+        'bank_account_id' => 'bank account',
+        'cheque_number' => 'cheque number',
+        'cheque_date' => 'cheque date',
+        'transaction_reference' => 'reference',
+        'denom' => 'notes paid out',
+        'denom.*' => 'note count',
+        'denom.coins' => 'coins',
+        'expense_vendor_id' => 'shop',
+        'employee_id' => 'employee',
+        'vehicle_id' => 'vehicle',
+        'party_name' => 'paid to',
+        'vendor_bill_no' => 'shop bill no.',
+        'expense_category_id' => 'category',
+        'expense_account_id' => 'expense account',
+        'advance_installment' => 'monthly instalment',
+        'attachments' => 'attachments',
+        'attachments.*' => 'attachment',
+    ];
 
     public const SORTS = ['voucher_date' => 'voucher_date', 'voucher_number' => 'voucher_number', 'amount' => 'amount', 'created_at' => 'created_at'];
 
@@ -144,14 +181,25 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             ->where('is_active', true)
             ->when(! $user->hasAllSupplierAccess(), fn ($query) => $query->where('supplier_id', $user->supplier_id ?? 0))
             ->when($term !== '', fn ($query) => $query->where(fn ($q) => $q->whereLike('name', "%{$term}%")->orWhereLike('employee_code', "%{$term}%")))
+            ->with('supplier:id,supplier_name,short_name')
             ->orderBy('name')
             ->limit(30)
-            ->get(['id', 'name', 'employee_code', 'designation']);
+            ->get(['id', 'name', 'employee_code', 'supplier_id']);
 
         return response()->json(['results' => $employees->map(fn (Employee $employee) => [
             'id' => $employee->id,
-            'text' => $employee->name.' ('.$employee->employee_code.')'.($employee->designation ? ' - '.$employee->designation : ''),
+            'text' => self::employeeLabel($employee),
         ])->values()]);
+    }
+
+    /**
+     * "Name · Company", so two employees of the same name in different companies are told apart.
+     */
+    public static function employeeLabel(Employee $employee): string
+    {
+        $company = $employee->supplier?->short_name ?: $employee->supplier?->supplier_name;
+
+        return $employee->name.($company ? ' · '.$company : '');
     }
 
     /**
@@ -239,7 +287,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $this->authorizeCompany($request, $expenseVoucher);
 
         return view('expense-vouchers.show', [
-            'voucher' => $expenseVoucher->load(['supplier', 'company', 'category', 'expenseVendor', 'employee', 'vehicle', 'attachments', 'expenseAccount', 'creator', 'submitter', 'checker', 'journalEntry.details.account']),
+            'voucher' => $expenseVoucher->load(['supplier', 'company', 'category', 'expenseVendor', 'employee', 'vehicle', 'attachments', 'expenseAccount', 'creator', 'submitter', 'checker', 'journalEntry.details.account', 'bankAccount', 'cashPayout', 'reverser']),
         ]);
     }
 
@@ -315,7 +363,16 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $this->authorizeCompany($request, $expenseVoucher);
 
-        $redirect = $this->attempt(fn () => $this->service->approve($expenseVoucher, $request->user()), $expenseVoucher, 'Voucher approved and posted to the ledger.');
+        // The voucher's own state is checked before the notes, so the maker is told why they cannot approve.
+        try {
+            $this->service->ensurePendingFor($expenseVoucher, $request->user());
+        } catch (RuntimeException $e) {
+            return redirect()->route('expense-vouchers.show', $expenseVoucher)->with('error', $e->getMessage());
+        }
+
+        $notes = $this->approvalNotes($request, $expenseVoucher);
+
+        $redirect = $this->attempt(fn () => $this->service->approve($expenseVoucher, $request->user(), $notes), $expenseVoucher, 'Voucher approved and posted to the ledger.');
 
         // Paying out more cash than the day brought in is allowed, but the checker is told. The voucher is
         // approved by now, so the day's figure already includes it.
@@ -367,17 +424,27 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     }
 
     /**
-     * 80mm thermal slip; only an approved voucher is printed.
+     * The A4 payment voucher by default; ?format=slip gives the 80mm thermal slip. Only an approved voucher
+     * is printed. The first print is stamped, so every later print is marked as a duplicate.
      */
     public function print(Request $request, ExpenseVoucher $expenseVoucher)
     {
         $this->authorizeCompany($request, $expenseVoucher);
         abort_unless($expenseVoucher->isApproved(), 403, 'Only an approved voucher can be printed.');
 
-        $expenseVoucher->load(['supplier', 'company', 'expenseVendor', 'employee', 'expenseAccount', 'creator', 'checker']);
+        $expenseVoucher->load(['supplier', 'company', 'expenseVendor', 'employee', 'expenseAccount', 'creator', 'checker', 'bankAccount', 'cashPayout']);
+        $isDuplicate = $expenseVoucher->printed_at !== null;
         $expenseVoucher->forceFill(['printed_at' => $expenseVoucher->printed_at ?? now()])->saveQuietly();
 
-        return view('expense-vouchers.print', ['voucher' => $expenseVoucher, 'autoprint' => $request->boolean('autoprint', true)]);
+        $view = $request->query('format') === 'slip' ? 'expense-vouchers.print' : 'expense-vouchers.print-a4';
+
+        return view($view, [
+            'voucher' => $expenseVoucher,
+            'autoprint' => $request->boolean('autoprint', true),
+            'isDuplicate' => $isDuplicate,
+            'companyName' => Company::query()->orderBy('id')->value('company_name') ?? config('app.name'),
+            'paidFromAccount' => ChartOfAccount::find($expenseVoucher->paid_from_account_id, ['id', 'account_code', 'account_name']),
+        ]);
     }
 
     /**
@@ -399,8 +466,6 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'cheque_number' => [$method === ExpenseVoucher::METHOD_CHEQUE ? 'required' : 'nullable', 'string', 'max:50'],
             'cheque_date' => [$method === ExpenseVoucher::METHOD_CHEQUE ? 'required' : 'nullable', 'date'],
             'transaction_reference' => ['nullable', 'string', 'max:100'],
-            'denom' => [$method === ExpenseVoucher::METHOD_CASH ? 'required' : 'nullable', 'array'],
-            'denom.coins' => ['nullable', 'numeric', 'min:0'],
             'expense_vendor_id' => ['nullable', 'integer', 'exists:expense_vendors,id'],
             'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
             'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
@@ -411,7 +476,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'amount' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999999'],
             'advance_installment' => ['nullable', 'numeric', 'gt:0', 'lte:amount'],
             'narration' => ['nullable', 'string', 'max:1000'],
-        ] + $this->noteRules() + ExpenseVoucherAttachmentService::manyRules());
+        ] + ExpenseVoucherAttachmentService::manyRules(), self::VALIDATION_MESSAGES, self::VALIDATION_ATTRIBUTES);
         unset($data['attachments']);
 
         $data = $this->withPaymentDetails($data);
@@ -468,7 +533,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
 
     /**
      * Keeps only the details of the chosen payment method, so a voucher switched from cheque to cash
-     * does not keep a stale bank or cheque. Cash notes must add up to the voucher amount.
+     * does not keep a stale bank or cheque. The notes of a cash voucher are counted by the approver.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
@@ -483,20 +548,32 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $data['cheque_date'] = $method === ExpenseVoucher::METHOD_CHEQUE ? $data['cheque_date'] : null;
         $data['transaction_reference'] = $byBank ? ($data['transaction_reference'] ?? null) : null;
 
-        if ($method !== ExpenseVoucher::METHOD_CASH) {
-            unset($data['denom']);
+        return $data;
+    }
 
-            return $data;
+    /**
+     * The notes the approver hands out for a cash voucher; they must add up to the voucher amount.
+     * Other payment methods need none.
+     */
+    private function approvalNotes(Request $request, ExpenseVoucher $voucher): ?CashNotes
+    {
+        if ($voucher->payment_method !== ExpenseVoucher::METHOD_CASH) {
+            return null;
         }
 
-        $counted = CashNotes::fromInput($data['denom'])->total();
-        $amount = round((float) $data['amount'], 2);
+        $data = $request->validate([
+            'denom' => ['required', 'array'],
+            'denom.coins' => ['nullable', 'numeric', 'min:0'],
+        ] + $this->noteRules(), self::VALIDATION_MESSAGES, self::VALIDATION_ATTRIBUTES);
 
-        throw_if(abs($counted - $amount) > 0.009, ValidationException::withMessages([
-            'denom' => 'The notes paid out add up to Rs '.number_format($counted, 2).' but the voucher is Rs '.number_format($amount, 2).'.',
+        $notes = CashNotes::fromInput($data['denom']);
+        $amount = round((float) $voucher->amount, 2);
+
+        throw_if(abs($notes->total() - $amount) > 0.009, ValidationException::withMessages([
+            'denom' => 'The notes paid out add up to Rs '.number_format($notes->total(), 2).' but the voucher is Rs '.number_format($amount, 2).'.',
         ]));
 
-        return $data;
+        return $notes;
     }
 
     /**
@@ -601,6 +678,8 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'vehicles' => Vehicle::query()->where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number']),
             'vendorCategories' => ExpenseVendor::CATEGORIES,
             'categories' => ExpenseCategory::active()->get(['id', 'name', 'default_expense_account_id']),
+            'bankAccounts' => BankAccount::query()->active()->whereNotNull('chart_of_account_id')->orderBy('bank_name')->orderBy('account_name')->get(['id', 'account_name', 'account_number', 'bank_name']),
+            'paymentMethods' => ExpenseVoucher::paymentMethodLabels(),
         ];
     }
 

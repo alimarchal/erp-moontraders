@@ -40,14 +40,10 @@ class ExpenseVoucherService
     public function create(array $data): ExpenseVoucher
     {
         return DB::transaction(function () use ($data) {
-            $notes = Arr::pull($data, 'denom');
             $data['voucher_number'] = $this->nextNumber();
             $data['status'] = ExpenseVoucher::STATUS_DRAFT;
 
-            $voucher = ExpenseVoucher::create($data);
-            $this->syncCashPayout($voucher, $notes);
-
-            return $voucher;
+            return ExpenseVoucher::create(Arr::except($data, ['denom']));
         });
     }
 
@@ -59,32 +55,16 @@ class ExpenseVoucherService
         $this->ensureEditable($voucher);
 
         return DB::transaction(function () use ($voucher, $data) {
-            $notes = Arr::pull($data, 'denom');
-            $voucher->update($data);
-            $this->syncCashPayout($voucher, $notes);
+            $voucher->update(Arr::except($data, ['denom']));
 
             return $voucher->fresh();
         });
     }
 
     /**
-     * The notes handed out are kept with a cash voucher; a voucher paid any other way has none.
-     *
-     * @param  array<int|string, mixed>|null  $notes  note value => count, plus 'coins'; null leaves cash notes as they are
+     * Sends the voucher to the checker. The last rejection reason stays on a resubmitted voucher, so the
+     * checker sees what was asked for; it is cleared only on approval.
      */
-    private function syncCashPayout(ExpenseVoucher $voucher, ?array $notes): void
-    {
-        if ($voucher->payment_method !== ExpenseVoucher::METHOD_CASH) {
-            $voucher->cashPayout()->delete();
-
-            return;
-        }
-
-        if ($notes !== null) {
-            $voucher->cashPayout()->updateOrCreate([], CashNotes::fromInput($notes)->columns());
-        }
-    }
-
     public function submit(ExpenseVoucher $voucher, User $maker): ExpenseVoucher
     {
         $this->ensureEditable($voucher);
@@ -95,7 +75,6 @@ class ExpenseVoucherService
             'submitted_at' => now(),
             'checked_by' => null,
             'checked_at' => null,
-            'rejection_reason' => null,
         ]);
 
         return $voucher->fresh();
@@ -108,14 +87,18 @@ class ExpenseVoucherService
      * Debit: Employee Advances (1131) for an advance, otherwise the expense account. Credit, by how it was
      * paid: Cash (1121), the bank's own ledger account for a bank transfer or cheque, or Expense Payables
      * (2113) for credit, paid later by a vendor payment. An advance also opens an advance record for payroll.
+     *
+     * A cash voucher needs the notes the checker hands out; they are saved with the posting, so a voucher
+     * that is not approved has none. Bank, cheque and credit vouchers need no notes.
      */
-    public function approve(ExpenseVoucher $voucher, User $checker): ExpenseVoucher
+    public function approve(ExpenseVoucher $voucher, User $checker, ?CashNotes $notes = null): ExpenseVoucher
     {
         $this->ensurePendingFor($voucher, $checker);
 
-        return DB::transaction(function () use ($voucher, $checker) {
+        return DB::transaction(function () use ($voucher, $checker, $notes) {
             $voucher = ExpenseVoucher::query()->whereKey($voucher->getKey())->lockForUpdate()->firstOrFail();
             $this->ensurePendingFor($voucher, $checker);
+            $this->ensureNotesFor($voucher, $notes);
 
             $creditSide = $this->paidFromAccountId($voucher);
             $debitSide = $voucher->isAdvance() ? $this->accountId(self::ADVANCES_ACCOUNT, 'Employee Advances (1131)') : (int) $voucher->expense_account_id;
@@ -145,6 +128,10 @@ class ExpenseVoucherService
                 'payment_status' => $voucher->isCredit() ? ExpenseVoucher::UNPAID : ExpenseVoucher::PAID,
                 'paid_amount' => $voucher->isCredit() ? 0 : $voucher->amount,
             ]);
+
+            if ($voucher->payment_method === ExpenseVoucher::METHOD_CASH) {
+                $voucher->cashPayout()->updateOrCreate([], $notes->columns());
+            }
 
             if ($voucher->isAdvance()) {
                 $this->openAdvance($voucher);
@@ -192,6 +179,26 @@ class ExpenseVoucherService
             ->sum('amount');
 
         return round($settlementCash + $clearedCash - $paidOut, 2);
+    }
+
+    /**
+     * A cash voucher is approved only with the notes paid out, adding up to its amount.
+     */
+    private function ensureNotesFor(ExpenseVoucher $voucher, ?CashNotes $notes): void
+    {
+        if ($voucher->payment_method !== ExpenseVoucher::METHOD_CASH) {
+            return;
+        }
+
+        if ($notes === null || $notes->isEmpty()) {
+            throw new RuntimeException('Count the notes paid out before approving a cash voucher.');
+        }
+
+        $amount = round((float) $voucher->amount, 2);
+
+        if (abs($notes->total() - $amount) > 0.009) {
+            throw new RuntimeException('The notes paid out add up to Rs '.number_format($notes->total(), 2).' but the voucher is Rs '.number_format($amount, 2).'.');
+        }
     }
 
     /**
@@ -289,7 +296,10 @@ class ExpenseVoucherService
         }
     }
 
-    private function ensurePendingFor(ExpenseVoucher $voucher, User $checker): void
+    /**
+     * Only a pending voucher, and never by its own maker.
+     */
+    public function ensurePendingFor(ExpenseVoucher $voucher, User $checker): void
     {
         if ($voucher->status !== ExpenseVoucher::STATUS_PENDING) {
             throw new RuntimeException('Only a voucher waiting for approval can be approved or rejected.');

@@ -61,7 +61,7 @@ it('books a credit voucher to Expense Payables and leaves cash alone', function 
 it('books a cash voucher against cash and marks it paid', function () {
     $voucher = ($this->makeVoucher)(['payment_type' => 'cash']);
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['5000' => 2]])->assertRedirect();
 
     expect($voucher->fresh()->payment_status)->toBe('paid')
         ->and(($this->balanceOf)('1121'))->toBe(-10000.0)
@@ -143,13 +143,13 @@ it('opens an advance for the employee when an advance voucher is approved', func
     $employee = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
         'payee_type' => 'employee', 'employee_id' => $employee->id, 'voucher_date' => now()->toDateString(), 'amount' => 6000, 'advance_installment' => 2000, 'narration' => 'Medical',
-        'payment_method' => 'cash', 'denom' => ['5000' => 1, '1000' => 1],
+        'payment_method' => 'cash',
     ])->assertRedirect();
 
     $voucher = ExpenseVoucher::first();
     expect($voucher->payment_type)->toBe('advance')->and($voucher->supplier_id)->toBe($this->supplier->id)->and($voucher->party_name)->toBe($employee->name);
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['5000' => 1, '1000' => 1]])->assertRedirect();
 
     $advance = EmployeeAdvance::first();
     expect($advance->employee_id)->toBe($employee->id)
@@ -181,7 +181,7 @@ it('keeps credit vouchers out of the cash report until they are paid in cash', f
     $cash = ($this->makeVoucher)(['payment_type' => 'cash', 'amount' => 700, 'party_name' => 'Tea Stall', 'expense_vendor_id' => null, 'payee_type' => 'other']);
     $credit = ($this->makeVoucher)(['amount' => 10000]);
     foreach ([$cash, $credit] as $voucher) {
-        $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+        $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['500' => 1, '100' => 2]]);
     }
 
     $rows = fn () => $this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->supplier->id, 'date' => $today]))->viewData('tables');
@@ -224,7 +224,7 @@ it('rolls the whole approval back when posting fails, so no voucher is half done
     $voucher = ($this->makeVoucher)(['payment_type' => 'advance', 'payee_type' => 'employee', 'employee_id' => Employee::factory()->create(['supplier_id' => $this->supplier->id])->id, 'expense_vendor_id' => null]);
     $this->ledger['1131']->delete();
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['5000' => 2]])->assertSessionHas('error');
 
     expect($voucher->fresh()->status)->toBe('pending')->and(EmployeeAdvance::count())->toBe(0);
 });

@@ -50,7 +50,7 @@
     $periodLabel = $dateFrom === $dateTo
         ? \Carbon\Carbon::parse($dateFrom)->format('d M Y')
         : \Carbon\Carbon::parse($dateFrom)->format('d M Y').' – '.\Carbon\Carbon::parse($dateTo)->format('d M Y');
-    $statusTone = ['draft' => 'ak-status-slate', 'pending' => 'ak-status-amber', 'approved' => 'ak-status-green', 'rejected' => 'ak-status-red'];
+    $statusTone = ['draft' => 'ak-status-slate', 'pending' => 'ak-status-amber', 'approved' => 'ak-status-green', 'rejected' => 'ak-status-red', 'reversed' => 'ak-status-red'];
     $statusTotal = $statusCounts->sum();
 @endphp
 
@@ -280,7 +280,7 @@
 
         <section class="ak-card" aria-label="Expense vouchers">
             <div class="ak-tabs" role="tablist">
-                @foreach (['' => ['All', $statusTotal, 'تمام'], 'draft' => ['Draft', $statusCounts['draft'] ?? 0, 'مسودہ'], 'pending' => ['Pending approval', $statusCounts['pending'] ?? 0, 'منظوری کا منتظر'], 'approved' => ['Approved', $statusCounts['approved'] ?? 0, 'منظور شدہ'], 'rejected' => ['Rejected', $statusCounts['rejected'] ?? 0, 'مسترد']] as $key => [$label, $count, $urdu])
+                @foreach (['' => ['All', $statusTotal, 'تمام'], 'draft' => ['Draft', $statusCounts['draft'] ?? 0, 'مسودہ'], 'pending' => ['Pending approval', $statusCounts['pending'] ?? 0, 'منظوری کا منتظر'], 'approved' => ['Approved', $statusCounts['approved'] ?? 0, 'منظور شدہ'], 'rejected' => ['Rejected', $statusCounts['rejected'] ?? 0, 'مسترد'], 'reversed' => ['Reversed', $statusCounts['reversed'] ?? 0, 'واپس شدہ']] as $key => [$label, $count, $urdu])
                     <a href="{{ $tabUrl($key) }}" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === $key ? 'is-active' : '' }}">
                         {{ $label }} <span class="ev-ur" lang="ur" dir="rtl">{{ $urdu }}</span> <span class="ak-count">{{ number_format($count) }}</span>
                     </a>
@@ -347,7 +347,7 @@
                                         <td data-label="Expense account">{{ $voucher->expenseAccount?->account_name }}<div class="ak-muted ak-hide-compact">{{ $voucher->expenseAccount?->account_code }}</div></td>
                                         <td class="ak-num ak-strong" data-label="Amount (Rs)">{{ number_format((float) $voucher->amount, 2) }}</td>
                                         <td data-label="Status">
-                                            <span class="ak-status {{ $statusTone[$voucher->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $voucher->statusLabel() }} <span class="ev-ur" lang="ur" dir="rtl">{{ ['draft' => 'مسودہ', 'pending' => 'منظوری کا منتظر', 'approved' => 'منظور', 'rejected' => 'مسترد'][$voucher->status] ?? '' }}</span></span>
+                                            <span class="ak-status {{ $statusTone[$voucher->status] ?? 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $voucher->statusLabel() }} <span class="ev-ur" lang="ur" dir="rtl">{{ ['draft' => 'مسودہ', 'pending' => 'منظوری کا منتظر', 'approved' => 'منظور', 'rejected' => 'مسترد', 'reversed' => 'واپس شدہ'][$voucher->status] ?? '' }}</span></span>
                                         </td>
                                         <td data-label="Maker · checker">
                                             {{ $voucher->creator?->name ?? '—' }}
@@ -370,7 +370,7 @@
                                                 <span class="ak-slot">
                                                     @if ($voucher->isApproved())
                                                         @can('expense-voucher-print')
-                                                            <a href="{{ route('expense-vouchers.print', $voucher) }}" target="_blank" class="ak-icon" title="Print thermal slip" aria-label="Print {{ $voucher->voucher_number }}">
+                                                            <a href="{{ route('expense-vouchers.print', $voucher) }}" target="_blank" class="ak-icon" title="Print payment voucher (A4)" aria-label="Print {{ $voucher->voucher_number }}">
                                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83c-.24.03-.48.06-.72.1m.72-.1a42.4 42.4 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.17c.24.03.48.06.72.1m-.72-.1L17.66 18m0 0 .23 2.5a1.13 1.13 0 0 1-1.12 1.24H7.23a1.13 1.13 0 0 1-1.12-1.24L6.34 18m11.32 0h1.09A2.25 2.25 0 0 0 21 15.75V9.46c0-1.08-.77-2.01-1.84-2.18a48 48 0 0 0-1.41-.2M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.46c0-1.08.77-2.01 1.84-2.18.47-.07.94-.14 1.41-.2m0 0a48.6 48.6 0 0 1 11.5 0m-11.5 0V3.38c0-.62.5-1.13 1.13-1.13h9.24c.63 0 1.13.5 1.13 1.13v3.7M18 10.5h.01" /></svg>
                                                             </a>
                                                         @endcan

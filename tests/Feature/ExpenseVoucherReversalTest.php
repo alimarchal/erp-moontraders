@@ -10,6 +10,7 @@ use App\Models\JournalEntry;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\ExpenseVoucherService;
+use App\Support\CashNotes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -37,7 +38,9 @@ beforeEach(function () {
         ]);
         $voucher->forceFill(['created_by' => $this->maker->id])->save();
 
-        return app(ExpenseVoucherService::class)->approve($voucher, $this->checker);
+        $notes = $voucher->payment_method === ExpenseVoucher::METHOD_CASH ? CashNotes::fromInput(['coins' => (float) $voucher->amount]) : null;
+
+        return app(ExpenseVoucherService::class)->approve($voucher, $this->checker, $notes);
     };
 
     $this->reverse = fn (ExpenseVoucher $voucher, ?User $by = null, array $data = []) => $this->actingAs($by ?? $this->reverser)
@@ -52,7 +55,6 @@ beforeEach(function () {
 
 it('reverses an approved cash voucher with reason and password', function () {
     $voucher = ($this->approved)();
-    $voucher->cashPayout()->create(['denom_1000' => 1, 'denom_500' => 1, 'total_amount' => 1500]);
 
     ($this->reverse)($voucher)->assertSessionHas('success');
 

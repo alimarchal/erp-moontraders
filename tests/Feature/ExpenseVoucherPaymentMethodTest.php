@@ -8,6 +8,7 @@ use App\Models\JournalEntry;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\ExpenseVoucherService;
+use App\Support\CashNotes;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
@@ -55,13 +56,13 @@ it('posts a bank transfer voucher to the bank account and saves no notes', funct
         ->and($voucher->cashPayout)->toBeNull();
 });
 
-it('posts a cash voucher to 1121 and stores the notes paid out', function () {
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
-        'payment_method' => 'cash', 'denom' => ['1000' => 1, '500' => 1],
-    ] + $this->payload)->assertSessionHasNoErrors();
+it('posts a cash voucher to 1121 and stores the notes the checker paid out', function () {
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payment_method' => 'cash'] + $this->payload)->assertSessionHasNoErrors();
 
     $voucher = ExpenseVoucher::first();
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('success');
+    expect($voucher->cashPayout)->toBeNull();
+
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1]])->assertSessionHas('success');
 
     $voucher->refresh();
     expect($voucher->cashPayout->denom_1000)->toBe(1)
@@ -71,12 +72,15 @@ it('posts a cash voucher to 1121 and stores the notes paid out', function () {
         ->and($voucher->paid_from_account_id)->toBe($this->ledger['1121']->id);
 });
 
-it('refuses cash notes that do not add up', function () {
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
-        'payment_method' => 'cash', 'denom' => ['1000' => 1],
-    ] + $this->payload)->assertSessionHasErrors(['denom' => 'The notes paid out add up to Rs 1,000.00 but the voucher is Rs 1,500.00.']);
+it('refuses to approve cash notes that do not add up, or no notes at all', function () {
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payment_method' => 'cash'] + $this->payload)->assertSessionHasNoErrors();
+    $voucher = ExpenseVoucher::first();
 
-    expect(ExpenseVoucher::count())->toBe(0);
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHasErrors('denom');
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1]])
+        ->assertSessionHasErrors(['denom' => 'The notes paid out add up to Rs 1,000.00 but the voucher is Rs 1,500.00.']);
+
+    expect($voucher->fresh()->status)->toBe('pending')->and(JournalEntry::count())->toBe(0)->and($voucher->cashPayout()->exists())->toBeFalse();
 });
 
 it('refuses a non-expense account', function () {
@@ -93,9 +97,10 @@ it('posts one journal when approved twice', function () {
     $service = app(ExpenseVoucherService::class);
     $secondClick = ExpenseVoucher::find($voucher->id); // a second request that loaded the voucher while it was still pending
 
-    $service->approve($voucher, $this->checker);
+    $notes = CashNotes::fromInput(['500' => 1, '100' => 2]);
+    $service->approve($voucher, $this->checker, $notes);
 
-    expect(fn () => $service->approve($secondClick, $this->checker))->toThrow(RuntimeException::class, 'Only a voucher waiting for approval')
+    expect(fn () => $service->approve($secondClick, $this->checker, $notes))->toThrow(RuntimeException::class, 'Only a voucher waiting for approval')
         ->and(JournalEntry::count())->toBe(1);
 });
 
@@ -113,12 +118,10 @@ it('requires a bank account for a cheque voucher', function () {
 });
 
 it('warns when cash in hand goes negative', function () {
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
-        'payment_method' => 'cash', 'denom' => ['1000' => 1, '500' => 1],
-    ] + $this->payload)->assertSessionHasNoErrors();
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payment_method' => 'cash'] + $this->payload)->assertSessionHasNoErrors();
 
     $voucher = ExpenseVoucher::first();
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['denom' => ['1000' => 1, '500' => 1]])
         ->assertSessionHas('success')
         ->assertSessionHas('warning', 'Cash in hand for '.now()->toDateString().' goes negative (Rs -1,500.00).');
 
@@ -146,10 +149,10 @@ it('refuses credit for a payee that is not a shop', function () {
     expect(ExpenseVoucher::count())->toBe(0);
 });
 
-it('drops the notes when a cash voucher is changed to bank transfer', function () {
+it('saves no notes from the maker, and switches a draft from cash to bank transfer', function () {
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'draft', 'payment_method' => 'cash', 'denom' => ['1000' => 1, '500' => 1]] + $this->payload);
     $voucher = ExpenseVoucher::first();
-    expect($voucher->cashPayout)->not->toBeNull();
+    expect($voucher->cashPayout)->toBeNull();
 
     $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), [
         'action' => 'draft', 'payment_method' => 'bank_transfer', 'bank_account_id' => $this->bank->id,

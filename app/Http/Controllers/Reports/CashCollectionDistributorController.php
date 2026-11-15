@@ -361,13 +361,13 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             ];
         }
         $rows[] = ['Coins', '-', $signed($in->coins()), '-', $signed($out->coins()), '-', $signed($net->coins())];
-        $rows[] = ['Cheques cleared in a group (notes counted with other salesmen)', '-', $signed($group), '-', '-', '-', $signed($group)];
+        $rows[] = ['Group clearing (other salesmen)', '-', $signed($group), '-', '-', '-', $signed($group)];
         $rows[] = ['Cash not counted', '-', $signed($notCountedIn), '-', '-', '-', $signed($notCountedIn)];
-        $rows[] = ['Paid out, notes not counted', '-', '-', '-', $signed($notCountedOut), '-', $signed(-$notCountedOut)];
+        $rows[] = ['Paid out, no note count', '-', '-', '-', $signed($notCountedOut), '-', $signed(-$notCountedOut)];
 
         return [
-            'no' => 3, 'title' => 'Cash Denominations', 'explain' => 'notes in, notes out and net; net total = cash in hand',
-            'cols' => [['Denomination', 'c', 16], ['Notes in', 'c', 12], ['In (Rs.)', 'n', 16], ['Notes out', 'c', 12], ['Out (Rs.)', 'n', 16], ['Net notes', 'c', 12], ['Net (Rs.)', 'n', 16]],
+            'no' => 3, 'title' => 'Cash Denominations', 'explain' => 'net total = cash in hand',
+            'cols' => [['Denomination', 'c', 20], ['Notes in', 'c', 10], ['In (Rs.)', 'n', 17], ['Notes out', 'c', 10], ['Out (Rs.)', 'n', 17], ['Net notes', 'c', 10], ['Net (Rs.)', 'n', 16]],
             'rows' => $rows,
             'total' => ['label' => 'Total', 'span' => 1, 'cells' => [
                 '', $total($in->total() + $group + $notCountedIn),

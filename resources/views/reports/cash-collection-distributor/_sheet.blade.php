@@ -28,7 +28,9 @@
     <div class="p2-gap"></div>
     @include('reports.cash-collection-distributor._grid', ['left' => $tables['slips'], 'collapse' => true])
     <div class="p2-gap"></div>
-    @include('reports.cash-collection-distributor._grid', ['left' => $tables['denominations'], 'collapse' => true, 'emptyText' => 'No cash counted for this day.'])
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['denominations'], 'collapse' => true, 'emptyText' => 'No cash counted for this day.',
+        'hideZeroLabels' => ['Coins', 'Group clearing (other salesmen)', 'Cash not counted', 'Paid out, no note count'],
+        'rowTitles' => ['Group clearing (other salesmen)' => 'Cheques cleared in a group; the notes were counted with other salesmen', 'Cash not counted' => 'Cash received that no note count covers (negative: notes counted above the cash received)', 'Paid out, no note count' => 'Cash paid out whose notes were not counted by the approver']]))
     <div class="p2-gap"></div>
     @include('reports.cash-collection-distributor._grid', ['left' => $tables['expenses'], 'collapse' => true])
     <div class="p2-gap"></div>

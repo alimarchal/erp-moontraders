@@ -11,6 +11,11 @@
     if (! empty($hideZeroRows)) {
         $rows = $rows->reject($rowIsZero)->values();
     }
+    $hideWhenZero = $hideZeroLabels ?? [];
+    if ($hideWhenZero !== []) {
+        $rows = $rows->reject(fn ($row) => in_array($row[0], $hideWhenZero, true) && $rowIsZero($row))->values();
+    }
+    $rowTitles = $rowTitles ?? [];
     $numbered = ($left['cols'][0][0] ?? '') === '#';
     $none = $left['empty'] !== '' ? $left['empty'] : ($emptyText ?? 'Nothing recorded for this day.');
 @endphp
@@ -44,7 +49,7 @@
         @foreach ($rows as $i => $row)
             <tr>
                 @foreach ($left['cols'] as $c => $col)
-                    <td class="{{ $col[1] }} {{ in_array($c, $left['bold'], true) ? 'b' : '' }}">{{ $numbered && $c === 0 ? $i + 1 : $row[$c] }}</td>
+                    <td class="{{ $col[1] }} {{ in_array($c, $left['bold'], true) ? 'b' : '' }}" @if ($c === 0 && isset($rowTitles[$row[0]])) title="{{ $rowTitles[$row[0]] }}" @endif>{{ $numbered && $c === 0 ? $i + 1 : $row[$c] }}</td>
                 @endforeach
             </tr>
         @endforeach

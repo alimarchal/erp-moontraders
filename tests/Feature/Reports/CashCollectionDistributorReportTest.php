@@ -201,13 +201,13 @@ it('nets the notes paid out by cash vouchers so notes equal cash in hand', funct
     $nestle = ($this->sheet)($this->nestle->id);
     expect(($this->row)($nestle['denominations'], '5,000'))->toBe(['5,000', 2, '10,000.00', 1, '5,000.00', 1, '5,000.00'])
         ->and(($this->row)($nestle['denominations'], '500'))->toBe(['500', '-', '-', 2, '1,000.00', -2, '-1,000.00'])
-        ->and(($this->row)($nestle['denominations'], 'Paid out, notes not counted')[4])->toBe('-')
+        ->and(($this->row)($nestle['denominations'], 'Paid out, no note count')[4])->toBe('-')
         ->and($nestle['denominations']['total']['cells'])->toBe(['', '10,000.00', '', '6,000.00', '', '4,000.00'])
         ->and(($this->row)($nestle['summary'], 'Cash in hand')[1])->toBe('4,000.00');
 
     // An old voucher with no count still balances through the "not counted" line.
     $engro = ($this->sheet)($this->engro->id);
-    expect(($this->row)($engro['denominations'], 'Paid out, notes not counted')[4])->toBe('1,500.00')
+    expect(($this->row)($engro['denominations'], 'Paid out, no note count')[4])->toBe('1,500.00')
         ->and($engro['denominations']['total']['cells'][5])->toBe('18,500.00')
         ->and(($this->row)($engro['summary'], 'Cash in hand')[1])->toBe('18,500.00');
 
@@ -255,14 +255,14 @@ it('counts a batch shared by two salesmen as a group line when only one salesman
         ->viewData('tables');
 
     expect(($this->row)($tables['denominations'], '1,000')[1])->toBe('-')
-        ->and(($this->row)($tables['denominations'], 'Cheques cleared in a group (notes counted with other salesmen)')[2])->toBe('2,000.00')
+        ->and(($this->row)($tables['denominations'], 'Group clearing (other salesmen)')[2])->toBe('2,000.00')
         ->and(($this->row)($tables['denominations'], 'Cash not counted')[2])->toBe('-')
         ->and($tables['denominations']['total']['cells'][5])->toBe('12,000.00')
         ->and(($this->row)($tables['summary'], 'Cash in hand')[1])->toBe('12,000.00');
 
     $whole = ($this->sheet)($this->nestle->id);
     expect(($this->row)($whole['denominations'], '1,000')[1])->toBe(3)
-        ->and(($this->row)($whole['denominations'], 'Cheques cleared in a group (notes counted with other salesmen)')[2])->toBe('-')
+        ->and(($this->row)($whole['denominations'], 'Group clearing (other salesmen)')[2])->toBe('-')
         ->and($whole['denominations']['total']['cells'][5])->toBe('18,500.00');
 });
 
@@ -446,4 +446,20 @@ it('hides a company whose amounts are all zero', function () {
     $collection = distributorTableHtml($html, '1 - Collection by Distribution');
 
     expect($collection)->toContain('Nestle Pakistan')->not->toContain('Engro Corporation');
+});
+
+it('hides the signed note rows when they are zero and shows them when they are not', function () {
+    ($this->settle)($this->nestle, 10000);
+
+    $html = fn () => $this->actingAs($this->admin)
+        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->nestle->id, 'date' => $this->today]))
+        ->assertOk()->getContent();
+
+    $quiet = distributorTableHtml($html(), '3 - Cash Denominations');
+    expect($quiet)->not->toContain('Coins')->not->toContain('Cash not counted')->not->toContain('Paid out, no note count')->not->toContain('Group clearing');
+
+    ($this->voucher)($this->nestle, 1000, null);
+
+    $busy = distributorTableHtml($html(), '3 - Cash Denominations');
+    expect($busy)->toContain('Paid out, no note count')->not->toContain('Coins');
 });

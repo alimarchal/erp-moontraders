@@ -111,8 +111,10 @@ class ChequeClearingPostingService
      * Book a bounced cheque back onto the customer: Dr 1112 Debtors / Cr 1122 Cheques in Hand. A bank charge, when the
      * bank took one, is put on the customer too: Dr 1112 / Cr the deposit bank (skipped when no deposit bank is known).
      * When the customer has an account with the settlement's salesman, the same amount is debited on that account.
+     * The charge is credited to $chargeBankAccountId when given (the bank chosen in the bounce dialog), else to the
+     * cheque's deposit bank; the cheque row itself is never changed.
      */
-    public function postBounce(SalesSettlementCheque $cheque, string $date, float $bankCharge = 0, ?User $by = null): JournalEntry
+    public function postBounce(SalesSettlementCheque $cheque, string $date, float $bankCharge = 0, ?User $by = null, ?int $chargeBankAccountId = null): JournalEntry
     {
         if ($cheque->bounce_journal_entry_id) {
             throw new RuntimeException("Cheque {$cheque->cheque_number} is already booked as bounced.");
@@ -125,7 +127,7 @@ class ChequeClearingPostingService
         }
 
         $amount = round((float) $cheque->amount, 2);
-        $bankCharge = $this->chargeableBankCharge($cheque, $bankCharge);
+        $bankCharge = $this->chargeableBankCharge($cheque, $bankCharge, $chargeBankAccountId);
         $debtorsId = $this->accountId(self::DEBTORS_CODE);
         $description = "Cheque {$cheque->cheque_number} bounced".($cheque->customer ? " - {$cheque->customer->customer_name}" : '');
 
@@ -136,7 +138,7 @@ class ChequeClearingPostingService
 
         if ($bankCharge > 0) {
             $lines[] = ['account_id' => $debtorsId, 'debit' => $bankCharge, 'credit' => 0, 'description' => "Bank charge on bounced cheque {$cheque->cheque_number}", 'cost_center_id' => 1];
-            $lines[] = ['account_id' => (int) $cheque->bankAccount->chart_of_account_id, 'debit' => 0, 'credit' => $bankCharge, 'description' => "Bank charge on bounced cheque {$cheque->cheque_number}", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => (int) $this->chargeBank($cheque, $chargeBankAccountId)->chart_of_account_id, 'debit' => 0, 'credit' => $bankCharge, 'description' => "Bank charge on bounced cheque {$cheque->cheque_number}", 'cost_center_id' => 1];
         }
 
         $result = $this->accounting->createJournalEntry([
@@ -161,9 +163,10 @@ class ChequeClearingPostingService
     }
 
     /**
-     * The bank charge a bounce books. A charge needs the deposit bank (linked to its ledger account) to credit.
+     * The bank charge a bounce books. A charge needs a bank (linked to its ledger account) to credit: the one chosen
+     * in the bounce dialog, else the cheque's deposit bank.
      */
-    public function chargeableBankCharge(SalesSettlementCheque $cheque, float $bankCharge): float
+    public function chargeableBankCharge(SalesSettlementCheque $cheque, float $bankCharge, ?int $chargeBankAccountId = null): float
     {
         $bankCharge = round(max(0, $bankCharge), 2);
 
@@ -171,13 +174,23 @@ class ChequeClearingPostingService
             return 0.0;
         }
 
-        $cheque->loadMissing('bankAccount');
-
-        if (! $cheque->bankAccount?->chart_of_account_id) {
+        if (! $this->chargeBank($cheque, $chargeBankAccountId)?->chart_of_account_id) {
             throw new RuntimeException('Choose the bank that charged the fee, or leave the bank charge empty.');
         }
 
         return $bankCharge;
+    }
+
+    /**
+     * The bank a bounce charge is credited to: the chosen bank, else the cheque's deposit bank.
+     */
+    public function chargeBank(SalesSettlementCheque $cheque, ?int $chargeBankAccountId = null): ?BankAccount
+    {
+        if ($chargeBankAccountId) {
+            return BankAccount::query()->where('is_active', true)->find($chargeBankAccountId);
+        }
+
+        return $cheque->loadMissing('bankAccount')->bankAccount;
     }
 
     /**

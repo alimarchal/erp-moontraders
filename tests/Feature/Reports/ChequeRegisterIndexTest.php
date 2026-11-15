@@ -2,6 +2,7 @@
 
 use App\Exports\ChequeRegisterExport;
 use App\Models\BankAccount;
+use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementCheque;
@@ -175,4 +176,65 @@ it('shows an error flashed by a failed clearing', function () {
         ])
         ->assertSuccessful()
         ->assertSee('Cash clearing must be one company at a time');
+});
+
+it('rejects bad filter values with validation errors instead of failing', function (array $filter) {
+    $this->actingAs($this->allCompaniesUser)
+        ->get(($this->register)(['filter' => $filter + ['supplier_id' => 'all']]))
+        ->assertRedirect()
+        ->assertSessionHasErrors();
+})->with([
+    'cleared date' => [['cleared_date_from' => 'abc']],
+    'company' => [['supplier_id' => 'abc']],
+    'missing company' => [['supplier_id' => 999999]],
+    'amount' => [['amount_min' => 'lots']],
+    'status' => [['status' => 'lost']],
+    'cleared via' => [['cleared_via' => 'pigeon']],
+    'deposit bank' => [['deposit_bank_id' => 'x']],
+]);
+
+it('shows an old cleared cheque without a clearing method as cleared, not cash back', function () {
+    ($this->cheque)('OLD-1', ['status' => 'cleared', 'cleared_date' => '2026-11-10', 'cleared_via' => null]);
+
+    $this->actingAs($this->companyUser)->get(($this->register)(['filter' => ['supplier_id' => $this->supplier->id]]))
+        ->assertSee('10 Nov 2026 · Cleared')
+        ->assertDontSee('10 Nov 2026 · Cash back');
+});
+
+it('sorts cheques without a cleared date last', function () {
+    ($this->cheque)('PENDING-1');
+    ($this->cheque)('CLEARED-OLD', ['status' => 'cleared', 'cleared_date' => '2026-11-01']);
+    ($this->cheque)('CLEARED-NEW', ['status' => 'cleared', 'cleared_date' => '2026-11-12']);
+
+    foreach (['cleared_date' => ['CLEARED-OLD', 'CLEARED-NEW', 'PENDING-1'], '-cleared_date' => ['CLEARED-NEW', 'CLEARED-OLD', 'PENDING-1']] as $sort => $expected) {
+        $numbers = $this->actingAs($this->companyUser)
+            ->get(($this->register)(['filter' => ['supplier_id' => $this->supplier->id], 'sort' => $sort]))
+            ->viewData('cheques')->pluck('cheque_number')->all();
+
+        expect($numbers)->toBe($expected);
+    }
+});
+
+it('names the salesman, customer and deposit bank in the PDF filter line and caps the rows', function () {
+    $bank = BankAccount::factory()->create(['account_name' => 'Meezan Deposit']);
+    $employeeId = $this->settlement->employee_id;
+    Employee::whereKey($employeeId)->update(['name' => 'Asif Salesman']);
+    $customer = Customer::factory()->create(['customer_name' => 'Rehman Store']);
+    ($this->cheque)('C-1', ['customer_id' => $customer->id, 'status' => 'cleared', 'cleared_date' => '2026-11-10', 'cleared_via' => 'bank', 'cleared_bank_account_id' => $bank->id]);
+    ($this->cheque)('C-2', ['customer_id' => $customer->id, 'status' => 'cleared', 'cleared_date' => '2026-11-10', 'cleared_via' => 'bank', 'cleared_bank_account_id' => $bank->id]);
+
+    $this->actingAs($this->companyUser);
+    $html = view('reports.cheque-register.pdf', [
+        'cheques' => SalesSettlementCheque::query()->limit(1)->get(),
+        'totalCount' => 2,
+        'rowLimit' => 1,
+        'companyName' => 'Kausar Oil',
+        'filterNames' => ['employee_id' => 'Asif Salesman', 'customer_id' => 'Rehman Store', 'deposit_bank_id' => 'Meezan Deposit'],
+        'filters' => ['employee_id' => (string) $employeeId, 'customer_id' => (string) $customer->id, 'deposit_bank_id' => (string) $bank->id],
+    ])->render();
+
+    expect($html)->toContain('Salesman: Asif Salesman')
+        ->toContain('Customer: Rehman Store')
+        ->toContain('Deposit bank: Meezan Deposit')
+        ->toContain('Showing the first 1 of 2 cheques; narrow the filters or use Excel.');
 });

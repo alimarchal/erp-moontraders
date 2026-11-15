@@ -7,7 +7,7 @@
         'bank_name' => 'Bank', 'cheque_number' => 'Cheque no.', 'settlement_number' => 'Settlement',
     ];
     $filterLine = collect(\Illuminate\Support\Arr::except($filters, ['supplier_id']))
-        ->map(fn ($value, $key) => ($filterLabels[$key] ?? \Illuminate\Support\Str::headline($key)).': '.$value)
+        ->map(fn ($value, $key) => ($filterLabels[$key] ?? \Illuminate\Support\Str::headline($key)).': '.(($filterNames ?? [])[$key] ?? $value))
         ->implode(' · ');
 @endphp
 <!DOCTYPE html>
@@ -44,10 +44,14 @@
             </td>
             <td class="meta">
                 {{ $filterLine ?: 'No other filters' }}<br>
-                Cheques: {{ $cheques->count() }}
+                Cheques: {{ $totalCount ?? $cheques->count() }}
             </td>
         </tr>
     </table>
+
+    @if (isset($totalCount, $rowLimit) && $totalCount > $rowLimit)
+        <p style="margin: 0 0 6px; font-weight: bold; color: #b00;">Showing the first {{ number_format($rowLimit) }} of {{ number_format($totalCount) }} cheques; narrow the filters or use Excel.</p>
+    @endif
 
     <table class="grid">
         <thead>
@@ -81,7 +85,7 @@
                     <td>
                         @if ($cheque->status === 'cleared')
                             {{ $cheque->cleared_date?->format('d-m-Y') }}<br>
-                            <span class="muted">{{ $cheque->cleared_via === 'bank' ? 'By bank'.($cheque->deposit_bank_name ? ' · '.$cheque->deposit_bank_name : '') : 'Cash back' }}</span>
+                            <span class="muted">{{ match ($cheque->cleared_via) { 'bank' => 'By bank'.($cheque->deposit_bank_name ? ' · '.$cheque->deposit_bank_name : ''), 'cash' => 'Cash back', default => '' } }}</span>
                         @endif
                     </td>
                 </tr>
@@ -91,7 +95,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="8" class="num">Total</td>
+                <td colspan="8" class="num">Total{{ isset($totalCount) && $totalCount > $cheques->count() ? ' (rows shown)' : '' }}</td>
                 <td class="num">{{ number_format((float) $cheques->sum('amount'), 2) }}</td>
                 <td colspan="2"></td>
             </tr>

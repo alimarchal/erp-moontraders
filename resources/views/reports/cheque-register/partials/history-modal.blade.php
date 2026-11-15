@@ -30,7 +30,7 @@
                                     <td data-label="Cleared">
                                         <span x-text="entry.cleared_date || '—'"></span><span x-show="entry.cleared_amount"> · Rs <span x-text="entry.cleared_amount"></span></span>
                                         <div class="muted" x-show="entry.via" x-text="(entry.via === 'bank' ? 'By bank' : 'Cash back') + (entry.bank ? ' · ' + entry.bank : '')"></div>
-                                        <div class="muted" x-show="entry.bank_charge" x-text="'Bank charge Rs ' + entry.bank_charge"></div>
+                                        <div class="muted" x-show="entry.bank_charge" x-text="'Bank charge Rs ' + entry.bank_charge + (entry.bank && ! entry.via ? ' · ' + entry.bank : '')"></div>
                                     </td>
                                     <td data-label="Batch">
                                         <span x-show="entry.batch" x-text="'Batch #' + entry.batch"></span>

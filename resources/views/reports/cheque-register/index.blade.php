@@ -334,7 +334,11 @@
                                             $company = $shortSupplier($cheque->supplier_short_name, $cheque->supplier_name);
                                             $isCleared = $cheque->status === 'cleared';
                                             $clearedLine = $isCleared
-                                                ? trim(($cheque->cleared_date?->format('d M Y') ?? '').' · '.($cheque->cleared_via === 'bank' ? 'By bank'.($cheque->deposit_bank_name ? ' · '.$cheque->deposit_bank_name : '') : 'Cash back'), ' ·')
+                                                ? trim(($cheque->cleared_date?->format('d M Y') ?? '').' · '.match ($cheque->cleared_via) {
+                                                    'bank' => 'By bank'.($cheque->deposit_bank_name ? ' · '.$cheque->deposit_bank_name : ''),
+                                                    'cash' => 'Cash back',
+                                                    default => 'Cleared',
+                                                }, ' ·')
                                                 : null;
                                             $partlyCleared = $isCleared && $cheque->cleared_amount !== null && (float) $cheque->cleared_amount !== (float) $cheque->amount;
                                         @endphp

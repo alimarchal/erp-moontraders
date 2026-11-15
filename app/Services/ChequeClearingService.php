@@ -118,13 +118,13 @@ class ChequeClearingService
      * its batch); a pending cheque that bounces is booked onto the customer; a bounced cheque that goes back to
      * pending has its bounce taken back.
      */
-    public function changeStatus(SalesSettlementCheque $cheque, string $status, ?string $date, ?float $bankCharge, ?string $remarks, User $by): void
+    public function changeStatus(SalesSettlementCheque $cheque, string $status, ?string $date, ?float $bankCharge, ?string $remarks, User $by, ?int $chargeBankAccountId = null): void
     {
         if (! in_array($status, ['pending', 'bounced', 'cancelled'], true)) {
             throw new RuntimeException('Use the clearing form to clear a cheque.');
         }
 
-        DB::transaction(function () use ($cheque, $status, $date, $bankCharge, $remarks, $by) {
+        DB::transaction(function () use ($cheque, $status, $date, $bankCharge, $remarks, $by, $chargeBankAccountId) {
             $cheque = $this->lock(collect([$cheque->id]))->first()
                 ?? throw new RuntimeException('This cheque no longer exists. Reload the page.');
 
@@ -146,12 +146,14 @@ class ChequeClearingService
             $reversal = null;
             $reversedId = null;
             $charge = null;
+            $chargeBankId = null;
 
             if ($status === 'bounced' && ! $cheque->bounce_journal_entry_id) {
                 $bouncedOn = $date ?? now()->toDateString();
                 $this->guardDate(collect([$cheque]), $bouncedOn, 'Bounce date');
-                $charge = $this->posting->chargeableBankCharge($cheque, (float) ($bankCharge ?? 0)) ?: null;
-                $journal = $this->posting->postBounce($cheque, $bouncedOn, (float) ($bankCharge ?? 0), $by);
+                $charge = $this->posting->chargeableBankCharge($cheque, (float) ($bankCharge ?? 0), $chargeBankAccountId) ?: null;
+                $journal = $this->posting->postBounce($cheque, $bouncedOn, (float) ($bankCharge ?? 0), $by, $chargeBankAccountId);
+                $chargeBankId = $charge ? $this->posting->chargeBank($cheque, $chargeBankAccountId)?->id : null;
             } elseif ($status === 'pending' && $cheque->bounce_journal_entry_id) {
                 // Whatever the cheque went through since (e.g. bounced, then cancelled), a pending cheque is back in 1122.
                 $reversedId = $cheque->bounce_journal_entry_id;
@@ -164,6 +166,7 @@ class ChequeClearingService
                 'journal_entry_id' => $journal?->id ?? $reversal?->id,
                 'reversed_journal_entry_id' => $reversal ? $reversedId : null,
                 'bank_charge' => $charge,
+                'bank_account_id' => $chargeBankId,
             ]);
         });
     }

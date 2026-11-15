@@ -32,6 +32,9 @@ class ChequeRegisterController extends Controller implements HasMiddleware
     /** Rows a register page can show. */
     public const PER_PAGE = [25, 50, 100, 250];
 
+    /** The most rows a PDF prints; Excel has no limit. */
+    public const PDF_ROW_LIMIT = 2000;
+
     /** The cheque statuses, in tab order. */
     public const STATUSES = ['pending', 'cleared', 'bounced', 'cancelled'];
 
@@ -50,6 +53,31 @@ class ChequeRegisterController extends Controller implements HasMiddleware
      */
     public function index(Request $request): View|Response
     {
+        $request->validate([
+            'filter' => ['nullable', 'array'],
+            'filter.supplier_id' => ['nullable', function (string $attribute, mixed $value, \Closure $fail) {
+                if ($value !== 'all' && (filter_var($value, FILTER_VALIDATE_INT) === false || ! Supplier::whereKey((int) $value)->exists())) {
+                    $fail('Choose a company from the list.');
+                }
+            }],
+            'filter.status' => ['nullable', Rule::in(self::STATUSES)],
+            'filter.cleared_via' => ['nullable', Rule::in([ChequeClearingPostingService::VIA_CASH, ChequeClearingPostingService::VIA_BANK])],
+            'filter.employee_id' => ['nullable', 'integer'],
+            'filter.customer_id' => ['nullable', 'integer'],
+            'filter.deposit_bank_id' => ['nullable', 'integer'],
+            'filter.amount_min' => ['nullable', 'numeric'],
+            'filter.amount_max' => ['nullable', 'numeric'],
+            'filter.cheque_date_from' => ['nullable', 'date'],
+            'filter.cheque_date_to' => ['nullable', 'date'],
+            'filter.entry_date_from' => ['nullable', 'date'],
+            'filter.entry_date_to' => ['nullable', 'date'],
+            'filter.cleared_date_from' => ['nullable', 'date'],
+            'filter.cleared_date_to' => ['nullable', 'date'],
+            'filter.bank_name' => ['nullable', 'string', 'max:255'],
+            'filter.cheque_number' => ['nullable', 'string', 'max:100'],
+            'filter.settlement_number' => ['nullable', 'string', 'max:100'],
+        ], [], ['filter.supplier_id' => 'company']);
+
         $canViewAllSuppliers = $this->canViewAllSuppliers();
         $userSupplierId = $this->getUserSupplierScope();
         $filters = array_filter((array) $request->input('filter', []), fn ($value) => is_scalar($value) && trim((string) $value) !== '');
@@ -143,6 +171,8 @@ class ChequeRegisterController extends Controller implements HasMiddleware
                 'deposit_banks.account_name as deposit_bank_name',
             ])
             ->when($status, fn (Builder $query) => $query->where('sales_settlement_cheques.status', $status))
+            // Cheques without a cleared date (not cleared yet) go last in both directions, on pgsql and MySQL alike.
+            ->when(ltrim($sort, '-') === 'cleared_date', fn (Builder $query) => $query->orderByRaw('CASE WHEN sales_settlement_cheques.cleared_date IS NULL THEN 1 ELSE 0 END'))
             ->orderBy($sortColumns[ltrim($sort, '-')], $sortDirection)
             ->orderBy('sales_settlement_cheques.id', $sortDirection);
 
@@ -151,10 +181,19 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         }
 
         if ($request->query('format') === 'pdf') {
+            $totalCount = (clone $list)->reorder()->count();
+
             return Pdf::loadView('reports.cheque-register.pdf', [
-                'cheques' => $list->get(),
+                'cheques' => $list->limit(self::PDF_ROW_LIMIT)->get(),
+                'totalCount' => $totalCount,
+                'rowLimit' => self::PDF_ROW_LIMIT,
                 'companyName' => $supplierId ? $suppliers->firstWhere('id', $supplierId)?->supplier_name : 'All companies',
                 'filters' => $filters,
+                'filterNames' => array_filter([
+                    'employee_id' => isset($filters['employee_id']) ? $employees->firstWhere('id', (int) $filters['employee_id'])?->name : null,
+                    'customer_id' => isset($filters['customer_id']) ? $customers->firstWhere('id', (int) $filters['customer_id'])?->customer_name : null,
+                    'deposit_bank_id' => isset($filters['deposit_bank_id']) ? $depositBanks->firstWhere('id', (int) $filters['deposit_bank_id'])?->account_name : null,
+                ]),
             ])->setPaper('a4', 'landscape')->download('cheque-register-'.now()->toDateString().'.pdf');
         }
 
@@ -246,17 +285,10 @@ class ChequeRegisterController extends Controller implements HasMiddleware
                     isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null,
                     CashNotes::fromInput((array) ($validated['denom'] ?? [])), $validated['notes'] ?? null, $user);
             })
-            : DB::transaction(function () use ($cheque, $clearing, $validated, $user) {
-                $bankCharge = isset($validated['bank_charge']) ? (float) $validated['bank_charge'] : null;
-
-                // A bank charge on a bounce is credited to the deposit bank; the bounce dialog can name it.
-                if ($validated['status'] === 'bounced' && $bankCharge > 0 && ! empty($validated['bank_account_id'])) {
-                    $cheque->update(['bank_account_id' => (int) $validated['bank_account_id']]);
-                }
-
-                $clearing->changeStatus($cheque->fresh(), $validated['status'], $validated['status_date'] ?? null,
-                    $bankCharge, $validated['notes'] ?? null, $user);
-            }));
+            // A bounce's bank charge is credited to the bank named in the dialog (else the cheque's deposit bank).
+            : $clearing->changeStatus($cheque, $validated['status'], $validated['status_date'] ?? null,
+                isset($validated['bank_charge']) ? (float) $validated['bank_charge'] : null, $validated['notes'] ?? null, $user,
+                isset($validated['bank_account_id']) ? (int) $validated['bank_account_id'] : null));
 
         if ($outcome) {
             return $outcome;

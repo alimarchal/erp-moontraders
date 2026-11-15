@@ -204,17 +204,27 @@ it('charges the bank charge to the customer against the deposit bank on a bounce
         ->and((float) $cheque->histories()->first()->bank_charge)->toBe(150.0);
 });
 
-it('charges the bank charge against the deposit bank chosen in the bounce dialog', function () {
-    $bank = BankAccount::factory()->create(['chart_of_account_id' => $this->ledger['1171']->id, 'is_active' => true]);
-    $cheque = ($this->cheque)(10000);
+it('charges the bank charge against the bank chosen in the bounce dialog without touching the cheque', function () {
+    $settlementBank = BankAccount::factory()->create(['chart_of_account_id' => $this->ledger['1171']->id, 'is_active' => true]);
+    $chargeAccount = ChartOfAccount::create([
+        'account_type_id' => $this->ledger['1171']->account_type_id, 'currency_id' => $this->ledger['1171']->currency_id,
+        'account_code' => '1172', 'account_name' => 'Charge Bank', 'normal_balance' => 'debit', 'is_active' => true,
+    ]);
+    $chargeBank = BankAccount::factory()->create(['chart_of_account_id' => $chargeAccount->id, 'is_active' => true]);
+    $cheque = ($this->cheque)(10000, null, ['bank_account_id' => $settlementBank->id]);
 
-    ($this->changeStatus)($cheque, ['status' => 'bounced', 'status_date' => '2026-11-14', 'bank_charge' => 150, 'bank_account_id' => $bank->id])
+    ($this->changeStatus)($cheque, ['status' => 'bounced', 'status_date' => '2026-11-14', 'bank_charge' => 150, 'bank_account_id' => $chargeBank->id])
         ->assertSessionMissing('error');
 
+    $history = $cheque->histories()->first();
+
     expect($cheque->fresh()->status)->toBe('bounced')
-        ->and($cheque->fresh()->bank_account_id)->toBe($bank->id)
+        ->and($cheque->fresh()->bank_account_id)->toBe($settlementBank->id)
         ->and(batchLedgerNet('1112'))->toBe(10150.0)
-        ->and(batchLedgerNet('1171'))->toBe(-150.0);
+        ->and(batchLedgerNet('1172'))->toBe(-150.0)
+        ->and(batchLedgerNet('1171'))->toBe(0.0)
+        ->and($history->bank_account_id)->toBe($chargeBank->id)
+        ->and((float) $history->bank_charge)->toBe(150.0);
 });
 
 it('clears only once when submitted twice', function () {

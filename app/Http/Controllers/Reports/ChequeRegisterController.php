@@ -9,15 +9,18 @@ use App\Models\Employee;
 use App\Models\SalesSettlementCheque;
 use App\Models\Supplier;
 use App\Services\ChequeClearingPostingService;
+use App\Services\ChequeClearingService;
+use App\Support\CashNotes;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use RuntimeException;
+use Throwable;
 
 class ChequeRegisterController extends Controller implements HasMiddleware
 {
@@ -160,7 +163,7 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function updateStatus(Request $request, SalesSettlementCheque $cheque, ChequeClearingPostingService $clearing)
+    public function updateStatus(Request $request, SalesSettlementCheque $cheque, ChequeClearingService $clearing)
     {
         $cheque->loadMissing('salesSettlement');
         $this->authorizeChequeAccess($cheque);
@@ -170,49 +173,53 @@ class ChequeRegisterController extends Controller implements HasMiddleware
             'cleared_date' => ['required_if:status,cleared', 'nullable', 'date'],
             'cleared_via' => ['nullable', 'in:cash,bank'],
             'cleared_bank_account_id' => ['nullable', 'required_if:cleared_via,bank', Rule::exists('bank_accounts', 'id')->where('is_active', true)],
+            'status_date' => ['nullable', 'date'],
+            'bank_charge' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'notes' => ['nullable', 'string', 'max:500'],
             'denom' => ['nullable', 'array'],
             'denom.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
         ]);
 
+        // Changing a cleared cheque reopens its whole batch, so the user must be allowed every cheque in it.
+        if ($cheque->isCleared() && $cheque->cheque_clearing_id) {
+            SalesSettlementCheque::with('salesSettlement')->where('cheque_clearing_id', $cheque->cheque_clearing_id)->get()
+                ->each(fn (SalesSettlementCheque $member) => $this->authorizeChequeAccess($member));
+        }
+
         $isCleared = $validated['status'] === 'cleared';
         $clearedVia = $isCleared ? ($validated['cleared_via'] ?? ChequeClearingPostingService::VIA_CASH) : null;
-        $byCash = $clearedVia === ChequeClearingPostingService::VIA_CASH;
+        $user = $request->user();
 
-        // Notes are counted only when the salesman brings the cash back; a cheque the bank cleared brings no notes.
-        $denominations = $this->clearedDenominations($isCleared && $byCash ? (array) ($validated['denom'] ?? []) : []);
-        $amount = (float) $cheque->amount;
+        $outcome = $this->attempt(fn () => $isCleared
+            ? DB::transaction(function () use ($cheque, $clearing, $validated, $clearedVia, $user) {
+                // A cheque already cleared is corrected by un-clearing it (same day only) and clearing it again.
+                if ($cheque->isCleared()) {
+                    $clearing->changeStatus($cheque, 'pending', null, null, 'Corrected: cleared again', $user);
+                }
 
-        if ($isCleared && $byCash && abs($denominations['total'] - $amount) > 0.009) {
-            return back()->withInput()->with('error', $denominations['total'] > 0
-                ? 'The notes you counted add up to Rs '.number_format($denominations['total'], 2).' but the cheque is Rs '.number_format($amount, 2).'. Make them equal.'
-                : 'Count the cash notes brought back for this cleared cheque; they must add up to Rs '.number_format($amount, 2).'.');
-        }
+                $clearing->clear(collect([$cheque->fresh()]), $validated['cleared_date'], $clearedVia,
+                    isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null,
+                    CashNotes::fromInput((array) ($validated['denom'] ?? [])), $validated['notes'] ?? null, $user);
+            })
+            : $clearing->changeStatus($cheque, $validated['status'], $validated['status_date'] ?? null,
+                isset($validated['bank_charge']) ? (float) $validated['bank_charge'] : null, $validated['notes'] ?? null, $user));
 
-        // A cheque already cleared can be corrected only on the day it was cleared, because that day's cash report is already built from it.
-        if ($isCleared && $cheque->status === 'cleared' && $cheque->cleared_date && ! $cheque->cleared_date->isToday()) {
-            return back()->with('error', 'This cheque was cleared on '.$cheque->cleared_date->format('d-M-Y').'. Its cleared details can be changed only on that day.');
-        }
-
-        try {
-            DB::transaction(fn () => $this->applyStatus($cheque, $clearing, $validated['status'], $validated['cleared_date'] ?? null, $clearedVia,
-                isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null, $denominations['columns'], $validated['notes'] ?? null));
-        } catch (RuntimeException $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+        if ($outcome) {
+            return $outcome;
         }
 
         return redirect()->back()->with('success', match (true) {
             ! $isCleared => 'Cheque status updated successfully.',
-            $byCash => 'Cheque cleared: the cash brought back is booked into Cash.',
+            $clearedVia === ChequeClearingPostingService::VIA_CASH => 'Cheque cleared: the cash brought back is booked into Cash.',
             default => 'Cheque cleared by bank and booked into the bank account.',
         });
     }
 
     /**
-     * Clear several pending cheques at once (month-end). The notes are counted once for all of them and shared out
-     * over the cheques, so the day's cash report still adds up.
+     * Clear several pending cheques at once as one batch. A cash batch is one company, and the notes counted for it
+     * are stored once on the batch.
      */
-    public function bulkClear(Request $request, ChequeClearingPostingService $clearing)
+    public function bulkClear(Request $request, ChequeClearingService $clearing)
     {
         $validated = $request->validate([
             'cheque_ids' => ['required', 'array', 'min:1', 'max:500'],
@@ -233,133 +240,38 @@ class ChequeRegisterController extends Controller implements HasMiddleware
 
         $cheques->each(fn (SalesSettlementCheque $cheque) => $this->authorizeChequeAccess($cheque));
 
-        $notPending = $cheques->reject(fn (SalesSettlementCheque $cheque) => $cheque->isPending());
-
-        if ($notPending->isNotEmpty()) {
-            return back()->with('error', 'Only pending cheques can be cleared together. Already '.$notPending->pluck('status')->unique()->implode(' / ').': '.$notPending->pluck('cheque_number')->implode(', ').'.');
-        }
-
         $byCash = $validated['cleared_via'] === ChequeClearingPostingService::VIA_CASH;
-        $total = round((float) $cheques->sum('amount'), 2);
-        $counted = $this->clearedDenominations($byCash ? (array) ($validated['denom'] ?? []) : []);
+        $batch = null;
 
-        if ($byCash && abs($counted['total'] - $total) > 0.009) {
-            return back()->with('error', 'The notes you counted add up to Rs '.number_format($counted['total'], 2).' but the '.$cheques->count().' cheques come to Rs '.number_format($total, 2).'. Make them equal.');
+        $outcome = $this->attempt(function () use (&$batch, $clearing, $cheques, $validated, $request) {
+            $batch = $clearing->clear($cheques, $validated['cleared_date'], $validated['cleared_via'],
+                isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null,
+                CashNotes::fromInput((array) ($validated['denom'] ?? [])), $validated['notes'] ?? null, $request->user());
+        });
+
+        if ($outcome) {
+            return $outcome;
         }
 
-        $shares = $byCash ? $this->shareNotes($counted['columns'], $cheques) : [];
+        return redirect()->back()->with('success', $cheques->count().' cheques cleared (Rs '.number_format((float) $batch->cheques()->sum('amount'), 2).') and booked into '.($byCash ? 'Cash' : 'the bank account').'.');
+    }
 
+    /**
+     * Run a clearing step; a refused step comes back as an error flash, anything unexpected is logged.
+     */
+    private function attempt(callable $step): ?RedirectResponse
+    {
         try {
-            DB::transaction(function () use ($cheques, $clearing, $validated, $shares) {
-                foreach ($cheques as $cheque) {
-                    $this->applyStatus($cheque, $clearing, 'cleared', $validated['cleared_date'], $validated['cleared_via'],
-                        isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null,
-                        $shares[$cheque->id] ?? $this->clearedDenominations([])['columns'], $validated['notes'] ?? null);
-                }
-            });
+            $step();
         } catch (RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'Posting failed. Please contact the admin.');
         }
 
-        return redirect()->back()->with('success', $cheques->count().' cheques cleared (Rs '.number_format($total, 2).') and booked into '.($byCash ? 'Cash' : 'the bank account').'.');
-    }
-
-    /**
-     * @param  array<string, int|float|null>  $denominationColumns
-     */
-    private function applyStatus(SalesSettlementCheque $cheque, ChequeClearingPostingService $clearing, string $status, ?string $clearedDate, ?string $clearedVia, ?int $bankAccountId, array $denominationColumns, ?string $notes): void
-    {
-        $fromStatus = $cheque->status;
-        $isCleared = $status === 'cleared';
-
-        // Whatever was booked for the old clearing is taken back first; a corrected clearing is booked again below.
-        $clearing->reverse($cheque, $status);
-
-        $cheque->update($denominationColumns + [
-            'status' => $status,
-            'cleared_date' => $isCleared ? $clearedDate : null,
-            'cleared_amount' => $isCleared ? $cheque->amount : null,
-            'cleared_via' => $isCleared ? $clearedVia : null,
-            'cleared_bank_account_id' => $isCleared && $clearedVia === ChequeClearingPostingService::VIA_BANK ? $bankAccountId : null,
-            'status_updated_at' => now(),
-        ]);
-
-        if ($isCleared) {
-            $clearing->post($cheque->fresh());
-        }
-
-        $tag = $isCleared ? ($clearedVia === ChequeClearingPostingService::VIA_BANK ? '[Cleared by bank] ' : '[Cash brought back] ') : '';
-
-        $cheque->histories()->create([
-            'from_status' => $fromStatus,
-            'to_status' => $status,
-            'cleared_date' => $isCleared ? $clearedDate : null,
-            'cleared_amount' => $isCleared ? $cheque->amount : null,
-            'notes' => trim($tag.($notes ?? '')) ?: null,
-            'changed_by' => auth()->id(),
-        ]);
-    }
-
-    /**
-     * Share notes counted for several cheques out over them, biggest notes first, so each cheque carries notes close
-     * to its own amount. Whatever cannot be matched exactly stays with the last cheque; the day's total is unchanged.
-     *
-     * @param  array<string, int|float|null>  $columns
-     * @param  Collection<int, SalesSettlementCheque>  $cheques
-     * @return array<int, array<string, int|float|null>>
-     */
-    private function shareNotes(array $columns, $cheques): array
-    {
-        $pool = [];
-
-        foreach (SalesSettlementCheque::CLEARED_NOTES as $note) {
-            $pool[$note] = (int) ($columns['cleared_denom_'.$note] ?? 0);
-        }
-
-        $coins = (float) ($columns['cleared_denom_coins'] ?? 0);
-        $shares = [];
-        $last = $cheques->last();
-
-        foreach ($cheques as $cheque) {
-            $remaining = (float) $cheque->amount;
-            $share = [];
-
-            foreach (SalesSettlementCheque::CLEARED_NOTES as $note) {
-                $take = $cheque->is($last) ? $pool[$note] : min($pool[$note], (int) floor(($remaining + 0.001) / $note));
-                $share['cleared_denom_'.$note] = $take > 0 ? $take : null;
-                $pool[$note] -= $take;
-                $remaining -= $take * $note;
-            }
-
-            $takeCoins = $cheque->is($last) ? $coins : min($coins, max(0, round($remaining, 2)));
-            $share['cleared_denom_coins'] = $takeCoins > 0 ? $takeCoins : null;
-            $coins -= $takeCoins;
-
-            $shares[$cheque->id] = $share;
-        }
-
-        return $shares;
-    }
-
-    /**
-     * @param  array<string, mixed>  $entered  note value => number of notes, plus "coins" as an amount
-     * @return array{columns: array<string, int|float|null>, total: float}
-     */
-    private function clearedDenominations(array $entered): array
-    {
-        $columns = [];
-        $total = 0.0;
-
-        foreach (SalesSettlementCheque::CLEARED_NOTES as $note) {
-            $qty = (int) ($entered[$note] ?? 0);
-            $columns['cleared_denom_'.$note] = $qty > 0 ? $qty : null;
-            $total += $qty * $note;
-        }
-
-        $coins = (float) ($entered['coins'] ?? 0);
-        $columns['cleared_denom_coins'] = $coins > 0 ? $coins : null;
-
-        return ['columns' => $columns, 'total' => $total + $coins];
+        return null;
     }
 
     /**
@@ -373,7 +285,7 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         return response()->json([
             'cheque_number' => $cheque->cheque_number,
             'amount' => number_format((float) $cheque->amount, 2),
-            'entries' => $cheque->histories()->with('changedBy:id,name')->get()->map(fn ($entry) => [
+            'entries' => $cheque->histories()->with(['changedBy:id,name', 'bankAccount:id,account_name', 'journalEntry:id,reference', 'reversedJournalEntry:id,reference'])->get()->map(fn ($entry) => [
                 'when' => $entry->created_at?->format('d-M-Y h:i A'),
                 'from' => $entry->from_status ? ucfirst($entry->from_status) : 'New',
                 'to' => ucfirst($entry->to_status),
@@ -381,8 +293,27 @@ class ChequeRegisterController extends Controller implements HasMiddleware
                 'cleared_amount' => $entry->cleared_amount !== null ? number_format((float) $entry->cleared_amount, 2) : null,
                 'notes' => $entry->notes,
                 'by' => $entry->changedBy?->name,
+                'via' => $entry->cleared_via,
+                'bank' => $entry->bankAccount?->account_name,
+                'batch' => $entry->cheque_clearing_id,
+                'journal_entry' => $entry->journalEntry ? ['id' => $entry->journalEntry->id, 'reference' => $entry->journalEntry->reference] : null,
+                'reversed_journal_entry' => $entry->reversedJournalEntry ? ['id' => $entry->reversedJournalEntry->id, 'reference' => $entry->reversedJournalEntry->reference] : null,
+                'bank_charge' => $entry->bank_charge !== null ? number_format((float) $entry->bank_charge, 2) : null,
+                'batch_notes' => $entry->denominations ? $this->batchNotes(CashNotes::fromColumns($entry->denominations)) : null,
             ])->all(),
         ]);
+    }
+
+    /**
+     * @return array{notes: array<int, int>, coins: float, total: string}
+     */
+    private function batchNotes(CashNotes $notes): array
+    {
+        return [
+            'notes' => collect(CashNotes::NOTES)->mapWithKeys(fn (int $note) => [$note => $notes->count($note)])->filter()->all(),
+            'coins' => $notes->coins(),
+            'total' => number_format($notes->total(), 2),
+        ];
     }
 
     private function getUserSupplierScope(): ?int

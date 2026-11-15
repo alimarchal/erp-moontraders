@@ -143,6 +143,7 @@ it('opens an advance for the employee when an advance voucher is approved', func
     $employee = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
         'payee_type' => 'employee', 'employee_id' => $employee->id, 'voucher_date' => now()->toDateString(), 'amount' => 6000, 'advance_installment' => 2000, 'narration' => 'Medical',
+        'payment_method' => 'cash', 'denom' => ['5000' => 1, '1000' => 1],
     ])->assertRedirect();
 
     $voucher = ExpenseVoucher::first();
@@ -163,7 +164,7 @@ it('opens an advance for the employee when an advance voucher is approved', func
 it('does not let a company user give an advance to another company\'s employee', function () {
     $stranger = Employee::factory()->create(['supplier_id' => Supplier::factory()->create()->id, 'is_active' => true]);
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payee_type' => 'employee', 'employee_id' => $stranger->id, 'voucher_date' => now()->toDateString(), 'amount' => 100])->assertForbidden();
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payee_type' => 'employee', 'employee_id' => $stranger->id, 'voucher_date' => now()->toDateString(), 'amount' => 100, 'payment_method' => 'cash', 'denom' => ['100' => 1]])->assertForbidden();
 });
 
 it('searches only the maker\'s own company employees for an advance', function () {
@@ -238,4 +239,20 @@ it('lets the service count a voucher visible only to its creator, the company, o
 
 it('uses the maker-checker service constants for its accounts', function () {
     expect(ExpenseVoucherService::PAYABLES_ACCOUNT)->toBe('2113')->and(ExpenseVoucherService::ADVANCES_ACCOUNT)->toBe('1131');
+});
+
+it('posts a vendor payment only once when it is approved twice', function () {
+    $voucher = ($this->makeVoucher)(['amount' => 3000]);
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+    $service = app(ExpenseVendorPaymentService::class);
+
+    $this->actingAs($this->maker);
+    $payment = $service->create(['payment_date' => now()->toDateString(), 'expense_vendor_id' => $this->vendor->id, 'method' => 'cash'], [$voucher->id => 1000], $this->maker);
+    $secondClick = ExpenseVendorPayment::find($payment->id); // a second request that loaded the payment while it was still pending
+
+    $service->approve($payment, $this->checker);
+
+    expect(fn () => $service->approve($secondClick, $this->checker))->toThrow(RuntimeException::class, 'Only a payment waiting for approval')
+        ->and((float) $voucher->fresh()->paid_amount)->toBe(1000.0)
+        ->and(($this->balanceOf)('1121'))->toBe(-1000.0);
 });

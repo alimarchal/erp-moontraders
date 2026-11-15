@@ -43,6 +43,8 @@ beforeEach(function () {
         'party_name' => 'Ali Tea Stall',
         'expense_account_id' => $this->expense->id,
         'amount' => 1500,
+        'payment_method' => 'cash',
+        'denom' => ['1000' => 1, '500' => 1],
         'narration' => 'Office tea',
     ];
 });
@@ -182,7 +184,7 @@ it('submits a new voucher for approval in one step and resubmits an edited one',
     expect($voucher->status)->toBe('pending')->and($voucher->submitted_by)->toBe($this->maker->id);
 
     $voucher->update(['status' => 'rejected', 'checked_by' => $this->checker->id, 'rejection_reason' => 'No receipt']);
-    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800] + $this->payload)->assertRedirect();
+    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800, 'denom' => ['1000' => 1, '500' => 1, '100' => 3]] + $this->payload)->assertRedirect();
 
     $voucher->refresh();
     expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull()->and($voucher->checked_by)->toBeNull()->and($voucher->checked_at)->toBeNull();

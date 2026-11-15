@@ -12,8 +12,10 @@ use App\Models\ExpenseVoucherAttachment;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Rules\ExpenseAccount;
 use App\Services\ExpenseVoucherAttachmentService;
 use App\Services\ExpenseVoucherService;
+use App\Support\CashNotes;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -309,7 +311,21 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $this->authorizeCompany($request, $expenseVoucher);
 
-        return $this->attempt(fn () => $this->service->approve($expenseVoucher, $request->user()), $expenseVoucher, 'Voucher approved and posted to the ledger.');
+        $redirect = $this->attempt(fn () => $this->service->approve($expenseVoucher, $request->user()), $expenseVoucher, 'Voucher approved and posted to the ledger.');
+
+        // Paying out more cash than the day brought in is allowed, but the checker is told. The voucher is
+        // approved by now, so the day's figure already includes it.
+        $voucher = $expenseVoucher->fresh();
+        if (! session()->has('error') && $voucher->isApproved() && $voucher->payment_method === ExpenseVoucher::METHOD_CASH) {
+            $date = $voucher->voucher_date->toDateString();
+            $cashInHand = $this->service->cashInHandOn($date, $voucher->supplier_id);
+
+            if ($cashInHand < 0) {
+                $redirect->with('warning', 'Cash in hand for '.$date.' goes negative (Rs '.number_format($cashInHand, 2).').');
+            }
+        }
+
+        return $redirect;
     }
 
     public function reject(Request $request, ExpenseVoucher $expenseVoucher): RedirectResponse
@@ -341,39 +357,55 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
     {
         $user = $request->user();
 
+        $method = $request->input('payment_method');
+        $byBank = in_array($method, [ExpenseVoucher::METHOD_BANK_TRANSFER, ExpenseVoucher::METHOD_CHEQUE], true);
+
         $data = $request->validate([
             'voucher_date' => ['required', 'date', 'before_or_equal:today'],
             'owner' => [$user->hasAllSupplierAccess() || $request->input('payee_type') === ExpenseVoucher::PAYEE_EMPLOYEE ? 'nullable' : 'required', 'string', 'max:30'],
             'payee_type' => ['required', Rule::in([ExpenseVoucher::PAYEE_VENDOR, ExpenseVoucher::PAYEE_EMPLOYEE, ExpenseVoucher::PAYEE_OTHER])],
-            'payment_type' => ['nullable', Rule::in([ExpenseVoucher::TYPE_CASH, ExpenseVoucher::TYPE_CREDIT])],
+            'payment_method' => ['required', Rule::in(array_keys(ExpenseVoucher::paymentMethodLabels()))],
+            'bank_account_id' => [$byBank ? 'required' : 'nullable', 'integer', Rule::exists('bank_accounts', 'id')->where('is_active', true)->whereNotNull('chart_of_account_id')],
+            'cheque_number' => [$method === ExpenseVoucher::METHOD_CHEQUE ? 'required' : 'nullable', 'string', 'max:50'],
+            'cheque_date' => [$method === ExpenseVoucher::METHOD_CHEQUE ? 'required' : 'nullable', 'date'],
+            'transaction_reference' => ['nullable', 'string', 'max:100'],
+            'denom' => [$method === ExpenseVoucher::METHOD_CASH ? 'required' : 'nullable', 'array'],
+            'denom.coins' => ['nullable', 'numeric', 'min:0'],
             'expense_vendor_id' => ['nullable', 'integer', 'exists:expense_vendors,id'],
             'employee_id' => ['nullable', 'integer', 'exists:employees,id'],
             'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
             'party_name' => ['nullable', 'string', 'max:255'],
             'vendor_bill_no' => ['nullable', 'string', 'max:80'],
             'expense_category_id' => ['nullable', Rule::exists('expense_categories', 'id')->where('is_active', true)],
-            'expense_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
-            'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999999'],
+            'expense_account_id' => ['nullable', new ExpenseAccount],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999999'],
             'advance_installment' => ['nullable', 'numeric', 'gt:0', 'lte:amount'],
             'narration' => ['nullable', 'string', 'max:1000'],
-        ] + ExpenseVoucherAttachmentService::manyRules());
+        ] + $this->noteRules() + ExpenseVoucherAttachmentService::manyRules());
         unset($data['attachments']);
+
+        $data = $this->withPaymentDetails($data);
 
         $payee = $data['payee_type'];
         $data['advance_installment'] = $payee === ExpenseVoucher::PAYEE_EMPLOYEE ? ($data['advance_installment'] ?? null) : null;
         $data['vendor_bill_no'] = $payee === ExpenseVoucher::PAYEE_VENDOR ? ($data['vendor_bill_no'] ?? null) : null;
 
+        // A shop is the only payee that can be paid later; an employee always takes an advance.
+        throw_if($data['payment_method'] === ExpenseVoucher::METHOD_CREDIT && $payee !== ExpenseVoucher::PAYEE_VENDOR,
+            ValidationException::withMessages(['payment_method' => 'Only a shop (vendor) can be paid on credit. Choose cash, bank transfer or cheque.']));
+
         if ($payee === ExpenseVoucher::PAYEE_EMPLOYEE) {
             return $this->forEmployee($data, $user);
         }
 
+        $data['payment_type'] = $data['payment_method'] === ExpenseVoucher::METHOD_CREDIT ? ExpenseVoucher::TYPE_CREDIT : ExpenseVoucher::TYPE_CASH;
+
         if ($payee === ExpenseVoucher::PAYEE_VENDOR) {
             $vendor = ExpenseVendor::find($data['expense_vendor_id'] ?? null);
             throw_if(! $vendor, ValidationException::withMessages(['expense_vendor_id' => 'Choose the shop this expense was paid to.']));
-            $data = ['party_name' => $vendor->name, 'payment_type' => $data['payment_type'] ?? ExpenseVoucher::TYPE_CASH, 'employee_id' => null] + $data;
+            $data = ['party_name' => $vendor->name, 'employee_id' => null] + $data;
         } else {
             throw_if(blank($data['party_name'] ?? null), ValidationException::withMessages(['party_name' => 'Write who was paid.']));
-            $data['payment_type'] = ExpenseVoucher::TYPE_CASH;
             $data['expense_vendor_id'] = null;
             $data['employee_id'] = null;
         }
@@ -384,8 +416,57 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         $data['expense_account_id'] ??= ExpenseCategory::find($data['expense_category_id'])?->default_expense_account_id;
 
         throw_if(blank($data['expense_account_id'] ?? null), ValidationException::withMessages(['expense_account_id' => 'Choose the expense account.']));
+        throw_if(! ExpenseAccount::allows($data['expense_account_id']), ValidationException::withMessages(['expense_account_id' => 'The category\'s usual account is not an active expense account (code 52...). Choose the expense account.']));
 
         return $this->withOwner($data, $user);
+    }
+
+    /**
+     * One whole-number count per note value; coins are an amount.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function noteRules(): array
+    {
+        $rules = [];
+        foreach (CashNotes::NOTES as $note) {
+            $rules['denom.'.$note] = ['nullable', 'integer', 'min:0', 'max:1000000'];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Keeps only the details of the chosen payment method, so a voucher switched from cheque to cash
+     * does not keep a stale bank or cheque. Cash notes must add up to the voucher amount.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function withPaymentDetails(array $data): array
+    {
+        $method = $data['payment_method'];
+        $byBank = in_array($method, [ExpenseVoucher::METHOD_BANK_TRANSFER, ExpenseVoucher::METHOD_CHEQUE], true);
+
+        $data['bank_account_id'] = $byBank ? (int) $data['bank_account_id'] : null;
+        $data['cheque_number'] = $method === ExpenseVoucher::METHOD_CHEQUE ? $data['cheque_number'] : null;
+        $data['cheque_date'] = $method === ExpenseVoucher::METHOD_CHEQUE ? $data['cheque_date'] : null;
+        $data['transaction_reference'] = $byBank ? ($data['transaction_reference'] ?? null) : null;
+
+        if ($method !== ExpenseVoucher::METHOD_CASH) {
+            unset($data['denom']);
+
+            return $data;
+        }
+
+        $counted = CashNotes::fromInput($data['denom'])->total();
+        $amount = round((float) $data['amount'], 2);
+
+        throw_if(abs($counted - $amount) > 0.009, ValidationException::withMessages([
+            'denom' => 'The notes paid out add up to Rs '.number_format($counted, 2).' but the voucher is Rs '.number_format($amount, 2).'.',
+        ]));
+
+        return $data;
     }
 
     /**

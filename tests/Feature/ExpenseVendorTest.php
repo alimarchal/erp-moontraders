@@ -70,9 +70,9 @@ it('takes the party name from the shop and refuses a shop voucher without a shop
     $vendor = ExpenseVendor::factory()->create(['name' => 'Tyre House']);
     $payload = ['payee_type' => 'vendor', 'expense_category_id' => ExpenseCategory::factory()->create()->id, 'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id, 'expense_account_id' => $this->ledger['5221']->id, 'amount' => 900, 'action' => 'draft'];
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $payload)->assertSessionHasErrors('expense_vendor_id');
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $payload + ['payment_method' => 'cash', 'denom' => ['500' => 1, '100' => 4]])->assertSessionHasErrors('expense_vendor_id');
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $payload + ['expense_vendor_id' => $vendor->id, 'payment_type' => 'credit', 'vendor_bill_no' => 'B-77'])->assertRedirect();
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $payload + ['expense_vendor_id' => $vendor->id, 'payment_method' => 'credit', 'vendor_bill_no' => 'B-77'])->assertRedirect();
 
     $voucher = ExpenseVoucher::first();
     expect($voucher->party_name)->toBe('Tyre House')
@@ -84,13 +84,13 @@ it('takes the party name from the shop and refuses a shop voucher without a shop
 it('refuses a voucher for someone else with no name', function () {
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
         'payee_type' => 'other', 'expense_category_id' => ExpenseCategory::factory()->create()->id, 'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id,
-        'expense_account_id' => $this->ledger['5221']->id, 'amount' => 100,
+        'expense_account_id' => $this->ledger['5221']->id, 'amount' => 100, 'payment_method' => 'cash', 'denom' => ['100' => 1],
     ])->assertSessionHasErrors('party_name');
 });
 
 it('needs a category on a voucher, fills the account from it, and keeps a manually chosen account', function () {
     $category = ExpenseCategory::factory()->create(['name' => 'Toner', 'default_expense_account_id' => $this->ledger['5221']->id]);
-    $base = ['payee_type' => 'other', 'party_name' => 'Print Shop', 'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id, 'amount' => 500, 'action' => 'draft'];
+    $base = ['payee_type' => 'other', 'party_name' => 'Print Shop', 'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id, 'amount' => 500, 'action' => 'draft', 'payment_method' => 'cash', 'denom' => ['500' => 1]];
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $base + ['expense_account_id' => $this->ledger['5281']->id])->assertSessionHasErrors('expense_category_id');
 
@@ -107,13 +107,13 @@ it('refuses an inactive category', function () {
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
         'payee_type' => 'other', 'party_name' => 'X', 'expense_category_id' => $category->id, 'expense_account_id' => $this->ledger['5221']->id,
-        'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id, 'amount' => 5,
+        'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id, 'amount' => 5, 'payment_method' => 'cash', 'denom' => ['coins' => 5],
     ])->assertSessionHasErrors('expense_category_id');
 });
 
 it('does not allow a future voucher date but allows today and the past', function () {
     $payload = ['payee_type' => 'other', 'party_name' => 'Landlord', 'expense_category_id' => ExpenseCategory::factory()->create()->id, 'expense_account_id' => $this->ledger['5221']->id,
-        'owner' => 'supplier:'.$this->supplier->id, 'amount' => 90000, 'action' => 'draft'];
+        'owner' => 'supplier:'.$this->supplier->id, 'amount' => 90000, 'action' => 'draft', 'payment_method' => 'cash', 'denom' => ['5000' => 18]];
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $payload + ['voucher_date' => now()->addDay()->toDateString()])->assertSessionHasErrors('voucher_date');
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), $payload + ['voucher_date' => now()->toDateString()])->assertRedirect();
@@ -126,7 +126,7 @@ it('lets rent be booked to a landlord shop on credit and lists the category filt
     $rent = ExpenseCategory::factory()->create(['name' => 'Landlord Rent']);
 
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
-        'payee_type' => 'vendor', 'expense_vendor_id' => $landlord->id, 'payment_type' => 'credit', 'expense_category_id' => $rent->id, 'expense_account_id' => $this->ledger['5221']->id,
+        'payee_type' => 'vendor', 'expense_vendor_id' => $landlord->id, 'payment_method' => 'credit', 'expense_category_id' => $rent->id, 'expense_account_id' => $this->ledger['5221']->id,
         'voucher_date' => now()->toDateString(), 'owner' => 'supplier:'.$this->supplier->id, 'amount' => 80000, 'action' => 'draft',
     ])->assertRedirect();
 

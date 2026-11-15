@@ -23,7 +23,7 @@ final class CashNotes
             $counts[$note] = (int) self::clean($entered[$note] ?? 0);
         }
 
-        return new self($counts, self::clean($entered['coins'] ?? 0));
+        return new self($counts, round(self::clean($entered['coins'] ?? 0), 2));
     }
 
     /**
@@ -38,7 +38,7 @@ final class CashNotes
             $counts[$note] = (int) ($values[$prefix.$note] ?? 0);
         }
 
-        return new self($counts, (float) ($values[$prefix.'coins'] ?? 0));
+        return new self($counts, round((float) ($values[$prefix.'coins'] ?? 0), 2));
     }
 
     public function total(): float
@@ -48,7 +48,7 @@ final class CashNotes
             $total += $note * $count;
         }
 
-        return (float) $total;
+        return round((float) $total, 2);
     }
 
     public function count(int $note): int
@@ -87,7 +87,7 @@ final class CashNotes
 
     public function isEmpty(): bool
     {
-        return $this->coins == 0 && array_sum($this->counts) === 0;
+        return $this->coins == 0 && array_filter($this->counts, fn (int $count): bool => $count !== 0) === [];
     }
 
     private function combine(self $other, int $sign): self
@@ -97,7 +97,7 @@ final class CashNotes
             $counts[$note] = $this->count($note) + $sign * $other->count($note);
         }
 
-        return new self($counts, $this->coins + $sign * $other->coins);
+        return new self($counts, round($this->coins + $sign * $other->coins, 2));
     }
 
     private static function clean(mixed $value): float

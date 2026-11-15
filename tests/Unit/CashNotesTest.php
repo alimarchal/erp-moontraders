@@ -47,3 +47,16 @@ it('adds and subtracts, allowing negative counts', function () {
         ->and($a->plus($b)->count(500))->toBe(4)
         ->and($a->plus($b)->total())->toBe(2014.0);
 });
+
+it('is not empty when opposite counts cancel in the sum', function () {
+    $diff = CashNotes::fromInput(['5000' => 1])->minus(CashNotes::fromInput(['1000' => 1]));
+
+    expect($diff->isEmpty())->toBeFalse();
+});
+
+it('rounds coins and totals to two decimals', function () {
+    $sum = CashNotes::fromInput(['coins' => 0.1])->plus(CashNotes::fromInput(['coins' => 0.2]));
+
+    expect($sum->total())->toBe(0.3)
+        ->and(CashNotes::fromInput(['coins' => '5.555'])->coins())->toBe(5.56);
+});

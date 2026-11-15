@@ -238,7 +238,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 ['Notes and coins handed in (settlements)', $total($totals['cash'])],
                 ['Cheque clearing cash', $total($totals['clearing'])],
                 ['Cash received', $total($cashReceived)],
-                ['Less: expenses paid (cash and advance vouchers)', $total($vouchers->sum('amount'))],
+                ['Less: expenses paid (cash and advance vouchers, net of returned)', $total($vouchers->sum('amount'))],
                 ['Less: vendor payments (cash)', $total($vendorPayments->sum('amount'))],
                 ['Less: salaries paid (cash)', $total($salaries->sum('amount'))],
                 ['Cash in hand', $total($cashInHand)],

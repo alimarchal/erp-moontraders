@@ -169,7 +169,7 @@ it('opens the how-it-works guide for report users only', function () {
     $this->actingAs($this->admin)->get(route('reports.cash-collection-distributor.help'))
         ->assertOk()
         ->assertSee('How the Cash Collection Distributor report works')
-        ->assertSee('Expense vouchers (maker and checker)');
+        ->assertSee('نوٹوں کا حساب');
 
     $this->actingAs(User::factory()->create())->get(route('reports.cash-collection-distributor.help'))->assertForbidden();
 });
@@ -389,4 +389,61 @@ it('falls back to today for a date that is not a date', function () {
         ->assertOk()
         ->assertViewHas('date', $this->today)
         ->assertSee('The date was not valid');
+});
+
+/** The HTML of one numbered table of the sheet, from its caption to its closing tag. */
+function distributorTableHtml(string $html, string $caption): string
+{
+    $start = strpos($html, $caption);
+    expect($start)->not->toBeFalse();
+    $end = strpos($html, '</table>', $start);
+
+    return substr($html, strrpos(substr($html, 0, $start), '<table'), $end - strrpos(substr($html, 0, $start), '<table') + 8);
+}
+
+it('renders no empty filler rows', function () {
+    ($this->settle)($this->nestle, 10000);
+    ($this->voucher)($this->nestle, 1000, ['denom_1000' => 1]);
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->nestle->id, 'date' => $this->today]))
+        ->assertOk()
+        ->getContent();
+
+    $expenses = distributorTableHtml($html, '4 - Expenses');
+
+    expect(substr_count($expenses, '<tr'))->toBe(4)
+        ->and($expenses)->not->toContain('class="blank"')
+        ->and($expenses)->not->toContain('&nbsp;');
+});
+
+it('shows one line instead of a table that is all zero', function () {
+    ($this->settle)($this->nestle, 10000);
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->nestle->id, 'date' => $this->today]))
+        ->assertOk()
+        ->getContent();
+
+    $slips = distributorTableHtml($html, '2 - Bank Slip Details');
+    $expenses = distributorTableHtml($html, '4 - Expenses');
+
+    expect(substr_count($slips, '<tr'))->toBe(2)
+        ->and($slips)->toContain('No bank slips for the selected filters.')
+        ->and($expenses)->toContain('No cash expenses for this day.')
+        ->and(substr_count($expenses, '<tr'))->toBe(2);
+});
+
+it('hides a company whose amounts are all zero', function () {
+    ($this->settle)($this->nestle, 10000);
+    ($this->settle)($this->engro, 0);
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'date' => $this->today]))
+        ->assertOk()
+        ->getContent();
+
+    $collection = distributorTableHtml($html, '1 - Collection by Distribution');
+
+    expect($collection)->toContain('Nestle Pakistan')->not->toContain('Engro Corporation');
 });

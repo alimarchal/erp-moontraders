@@ -136,7 +136,7 @@ it('shows approved vouchers by party on the distributor report, general ones onl
         ->and(collect($all['expenses']['rows'])->pluck(1)->all())->toBe(['Paint Material', 'Ali Tea Stall'])
         ->and($all['expenses']['rows'][0][2])->toBe('Moon Traders (general)')
         ->and($all['expenses']['total']['cells'][0])->toBe('15,000.00')
-        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (cash and advance vouchers)', '15,000.00']);
+        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (cash and advance vouchers, net of returned)', '15,000.00']);
 });
 
 it('lets an admin raise a general expense with no company, but not a company-bound user', function () {

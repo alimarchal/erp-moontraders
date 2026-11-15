@@ -188,7 +188,7 @@ it('keeps credit vouchers out of the cash report until they are paid in cash', f
     $summary = fn () => collect($rows()['summary']['rows'])->mapWithKeys(fn ($row) => [$row[0] => $row[1]]);
 
     expect(collect($rows()['expenses']['rows'])->pluck(1)->all())->toBe(['Tea Stall'])
-        ->and($summary()['Less: expenses paid (cash and advance vouchers)'])->toBe('700.00')
+        ->and($summary()['Less: expenses paid (cash and advance vouchers, net of returned)'])->toBe('700.00')
         ->and($summary()['Less: vendor payments (cash)'])->toBe('0.00');
 
     $this->actingAs($this->maker);

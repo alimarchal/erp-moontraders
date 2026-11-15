@@ -15,6 +15,7 @@
         html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         * { box-sizing: border-box; }
         body { margin: 0; background: #fff; color: #000; font-family: Helvetica, Arial, sans-serif; font-size: 10px; line-height: 1.3; }
+        table.p2 td.c { white-space: normal; }
         .pdf-footer { position: fixed; bottom: -9mm; left: 0; right: 0; font-size: 8px; }
     </style>
     @include('reports.cash-detail._sheet-styles')

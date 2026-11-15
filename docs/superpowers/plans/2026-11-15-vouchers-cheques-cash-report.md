@@ -34,6 +34,11 @@
   - add both to `RoleAndPermissionSeeder` and `PermissionCatalog`
 - **Reversal** needs a reason and the user's password (`Hash::check`), as `GoodsIssueController::reverse` does.
 - **Copy for users:** plain English. Never show raw exception text. Log it, and flash "Posting failed. Please contact the admin." instead.
+- Owner request (fonts and help): every page this plan touches (expense vouchers index, form and show; cheque register; cash collection distributor) uses the same look as /goods-issues:
+  - Styles: `@include('settings.partials.ui-style')`, `<x-apple-skin />` and `<x-register-apple-style />`.
+  - Help: an Urdu help popup through `<x-register-help page="<page>" />`, opened from a ? icon button in the header (copy the goods-issues `afterFilter` slot).
+  - Fonts: the help loads the Google fonts Inter and Noto Nastaliq Urdu through `<x-bank.help-style />`. Any Urdu text on these pages (labels such as اخراجاتی واؤچر) uses `font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif`.
+  - Help topics: add a branch in `resources/views/components/register-help.blade.php` for each page. Put its topics in `resources/views/<area>/partials/help-topics.blade.php`, written in Urdu like the goods-issues topics, and covering the new flows (payment method, notes counted by the approver, reverse, cheque clearing, and the notes in/out/net check).
 - Run `vendor/bin/pint --dirty --format agent` before every commit.
 - Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 

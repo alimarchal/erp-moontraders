@@ -38,7 +38,11 @@
     $debitName = $voucher->isAdvance() ? 'Employee Advances' : $voucher->expenseAccount?->account_name;
     $creditName = $voucher->isCredit() ? 'Expense Payables (the shop is paid later)' : ($voucher->isPaidByBank() ? $voucher->bankAccount?->bank_name.' ('.$voucher->bankAccount?->account_name.')' : 'Cash');
 
-    /** Particulars: the posted journal lines, or what approval will post. Ready for several lines per voucher. */
+    /** The bill lines; a voucher saved before bill lines existed shows its own single line. */
+    $billLines = $voucher->isAdvance() ? collect() : $voucher->postingLines()->each->loadMissing('expenseAccount');
+    $extraLines = max($billLines->count() - 1, 0);
+
+    /** Particulars: the posted journal lines (one debit per bill line), or what approval will post. */
     $journalLines = $voucher->journalEntry?->details ?? collect();
     $particulars = $journalLines->isNotEmpty()
         ? $journalLines->map(fn ($line) => [
@@ -48,14 +52,15 @@
             'debit' => (float) $line->debit,
             'credit' => (float) $line->credit,
         ])
-        : collect([
-            [
-                'code' => $voucher->isAdvance() ? '1131' : $voucher->expenseAccount?->account_code,
-                'name' => $voucher->isAdvance() ? 'Employee Advances' : $voucher->expenseAccount?->account_name,
-                'narration' => $voucher->narration,
-                'debit' => (float) $voucher->amount,
+        : ($voucher->isAdvance()
+            ? collect([['code' => '1131', 'name' => 'Employee Advances', 'narration' => $voucher->narration, 'debit' => (float) $voucher->amount, 'credit' => 0.0]])
+            : $billLines->map(fn ($line) => [
+                'code' => $line->expenseAccount?->account_code,
+                'name' => $line->expenseAccount?->account_name,
+                'narration' => $line->description ?: $voucher->narration,
+                'debit' => (float) $line->amount,
                 'credit' => 0.0,
-            ],
+            ]))->push(
             [
                 'code' => $voucher->isCredit() ? '2113' : ($voucher->isPaidByBank() ? $voucher->bankAccount?->chartOfAccount?->account_code : '1121'),
                 'name' => $voucher->isCredit() ? 'Expense Payables' : ($voucher->isPaidByBank() ? trim($voucher->bankAccount?->bank_name.' · '.$voucher->bankAccount?->account_name, ' ·') : 'Cash'),
@@ -63,7 +68,7 @@
                 'debit' => 0.0,
                 'credit' => (float) $voucher->amount,
             ],
-        ]);
+        );
 
     $canApprove = $status === ExpenseVoucher::STATUS_PENDING && ! $isMaker && $user->can('expense-voucher-approve');
     $canEdit = $voucher->isEditable() && $isMaker && $user->can('expense-voucher-edit');
@@ -224,9 +229,9 @@
                             @if($voucher->cheque_number)<div><dt>Cheque</dt><dd class="ev-mono">No. {{ $voucher->cheque_number }}<span class="ev-sub">{{ $voucher->cheque_date ? 'Dated '.$voucher->cheque_date->format('d M Y') : 'No cheque date' }}</span></dd></div>@endif
                             @if($voucher->transaction_reference)<div><dt>Transaction ref.</dt><dd class="ev-mono">{{ $voucher->transaction_reference }}</dd></div>@endif
                         @endif
-                        <div><dt>Shop bill no.</dt><dd>{{ $voucher->vendor_bill_no ?: '—' }}</dd></div>
+                        <div><dt>Shop bill no.</dt><dd>{{ $voucher->vendor_bill_no ?: '—' }}@if($voucher->vendor_bill_date)<span class="ev-sub">Dated {{ $voucher->vendor_bill_date->format('d M Y') }}</span>@endif</dd></div>
                         <div><dt>Category</dt><dd>{{ $voucher->category?->name ?? '—' }}</dd></div>
-                        <div><dt>{{ $voucher->isAdvance() ? 'Account' : 'Expense account' }}</dt><dd><span class="ev-mono">{{ $voucher->expenseAccount?->account_code }}</span> {{ $voucher->expenseAccount?->account_name }}</dd></div>
+                        <div><dt>{{ $voucher->isAdvance() ? 'Account' : 'Expense account' }}</dt><dd><span class="ev-mono">{{ $voucher->expenseAccount?->account_code }}</span> {{ $voucher->expenseAccount?->account_name }}@if($extraLines)<span class="ev-sub">+{{ $extraLines }} more {{ $extraLines === 1 ? 'line' : 'lines' }}, see Particulars</span>@endif</dd></div>
                         @if($voucher->vehicle)<div><dt>Vehicle</dt><dd>{{ $voucher->vehicle->vehicle_number }}</dd></div>@endif
                         @if($voucher->isAdvance() && $voucher->advance_installment)<div><dt>Monthly instalment</dt><dd>Rs {{ number_format((float) $voucher->advance_installment, 2) }}</dd></div>@endif
                         <div><dt>Submitted</dt><dd>@if($voucher->submitted_at){{ $voucher->submitter?->name ?? $voucher->creator?->name }}<span class="ev-sub">{{ $when($voucher->submitted_at) }}</span>@else Not yet @endif</dd></div>
@@ -239,13 +244,13 @@
                         <p class="ev-hint">@if($voucher->journal_entry_id)Posted as <a href="{{ route('journal-entries.show', $voucher->journal_entry_id) }}">journal entry #{{ $voucher->journal_entry_id }}</a>@else What approval will post. Nothing is posted until a checker approves. @endif</p>
                     </div>
                     <table class="ev-particulars">
-                        <thead><tr><th scope="col" class="ev-p-code">Code</th><th scope="col">Account</th><th scope="col">Narration</th><th scope="col" class="n">Debit (Rs)</th><th scope="col" class="n">Credit (Rs)</th></tr></thead>
+                        <thead><tr><th scope="col" class="ev-p-code">Code</th><th scope="col">Account</th><th scope="col">Description</th><th scope="col" class="n">Debit (Rs)</th><th scope="col" class="n">Credit (Rs)</th></tr></thead>
                         <tbody>
                             @foreach($particulars as $line)
                                 <tr>
                                     <td class="ev-p-code ev-mono" data-label="Code">{{ $line['code'] ?: '—' }}</td>
                                     <td class="ev-p-account" data-label="Account">{{ $line['name'] }}</td>
-                                    <td class="ev-p-narration" data-label="Narration">{{ $line['narration'] ?: '—' }}</td>
+                                    <td class="ev-p-narration" data-label="Description">{{ $line['narration'] ?: '—' }}</td>
                                     <td class="n" data-label="Debit">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td>
                                     <td class="n" data-label="Credit">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td>
                                 </tr>
@@ -402,7 +407,7 @@
                             <dl class="ev-sheet-summary">
                                 <div><dt>Paid to</dt><dd>{{ $voucher->party_name }}</dd></div>
                                 <div><dt>Amount</dt><dd><b>Rs {{ number_format((float) $voucher->amount, 2) }}</b></dd></div>
-                                <div><dt>Debit</dt><dd>{{ $voucher->isAdvance() ? '1131' : $voucher->expenseAccount?->account_code }} {{ $debitName }}</dd></div>
+                                <div><dt>Debit</dt><dd>{{ $voucher->isAdvance() ? '1131' : $voucher->expenseAccount?->account_code }} {{ $debitName }}{{ $extraLines ? ' +'.$extraLines.' more' : '' }}</dd></div>
                                 <div><dt>Credit</dt><dd>{{ $creditName }}</dd></div>
                                 <div><dt>Shop bill no.</dt><dd>{{ $voucher->vendor_bill_no ?: '—' }}</dd></div>
                                 <div><dt>Attachments</dt><dd>{{ $hasAttachments ? $voucher->attachments->count() : 'None' }}</dd></div>

@@ -32,10 +32,12 @@
             'debit' => (float) $line->debit,
             'credit' => (float) $line->credit,
         ])
-        : collect([
-            ['code' => $voucher->expenseAccount?->account_code, 'name' => $voucher->expenseAccount?->account_name, 'narration' => $voucher->narration, 'debit' => $amount, 'credit' => 0.0],
-            ['code' => $paidFromAccount?->account_code, 'name' => $creditLabel, 'narration' => ($voucher->isCredit() ? 'Owed to ' : 'Paid to ').$voucher->party_name, 'debit' => 0.0, 'credit' => $amount],
-        ]);
+        : ($voucher->isAdvance()
+            ? collect([['code' => $voucher->expenseAccount?->account_code, 'name' => $voucher->expenseAccount?->account_name, 'narration' => $voucher->narration, 'debit' => $amount, 'credit' => 0.0]])
+            : $voucher->postingLines()->each->loadMissing('expenseAccount')->map(fn ($line) => [
+                'code' => $line->expenseAccount?->account_code, 'name' => $line->expenseAccount?->account_name,
+                'narration' => $line->description ?: $voucher->narration, 'debit' => (float) $line->amount, 'credit' => 0.0,
+            ]))->push(['code' => $paidFromAccount?->account_code, 'name' => $creditLabel, 'narration' => ($voucher->isCredit() ? 'Owed to ' : 'Paid to ').$voucher->party_name, 'debit' => 0.0, 'credit' => $amount]);
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -156,7 +158,7 @@
                     </tr>
                 @endif
             @endif
-            <tr><td class="l">Shop bill no.</td><td>{{ $voucher->vendor_bill_no ?: '—' }}</td><td class="l">Category</td><td>{{ $voucher->category?->name ?? '—' }}</td></tr>
+            <tr><td class="l">Shop bill no.</td><td>{{ $voucher->vendor_bill_no ?: '—' }}{{ $voucher->vendor_bill_date ? ', dated '.$voucher->vendor_bill_date->format('d-M-Y') : '' }}</td><td class="l">Category</td><td>{{ $voucher->category?->name ?? '—' }}</td></tr>
         </table>
 
         <div class="amount">
@@ -166,7 +168,7 @@
 
         <div class="section">Particulars</div>
         <div class="scroll"><table class="grid" aria-label="Particulars">
-            <thead><tr><th style="width:20mm">Code</th><th>Account</th><th>Narration</th><th class="n">Debit (Rs)</th><th class="n">Credit (Rs)</th></tr></thead>
+            <thead><tr><th style="width:20mm">Code</th><th>Account</th><th>Description</th><th class="n">Debit (Rs)</th><th class="n">Credit (Rs)</th></tr></thead>
             <tbody>
                 @foreach($particulars as $line)
                     <tr><td>{{ $line['code'] }}</td><td>{{ $line['name'] }}</td><td>{{ $line['narration'] ?: '—' }}</td><td class="n">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td><td class="n">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td></tr>

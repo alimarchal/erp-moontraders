@@ -292,7 +292,7 @@
                                             <div class="ak-muted ev-clamp" title="{{ $voucher->supplier?->supplier_name ?? $voucher->company?->company_name }}">{{ $ownerShort($voucher) }}{{ $voucher->category ? ' · '.$voucher->category->name : '' }}</div>
                                         </td>
                                         <td data-label="Account · method">
-                                            <span class="ev-clamp" title="{{ $voucher->expenseAccount?->account_code }} {{ $voucher->expenseAccount?->account_name }}">{{ $voucher->expenseAccount?->account_name }}</span>
+                                            <span class="ev-acc"><span class="ev-clamp" title="{{ $voucher->expenseAccount?->account_code }} {{ $voucher->expenseAccount?->account_name }}">{{ $voucher->expenseAccount?->account_name }}</span>@if($voucher->lines_count > 1)<span class="ev-more" title="{{ $voucher->lines_count }} bill lines">+{{ $voucher->lines_count - 1 }} more</span>@endif</span>
                                             <div class="ak-muted ev-clamp">{{ $methodLabels[$voucher->payment_method] ?? $voucher->payment_method }}{{ $voucher->isAdvance() ? ' · advance' : '' }}{{ $voucher->isCredit() && $voucher->isApproved() ? ' · '.$voucher->payment_status : '' }}</div>
                                         </td>
                                         <td class="ak-num ak-strong" data-label="Amount (Rs)">{{ number_format((float) $voucher->amount, 2) }}</td>

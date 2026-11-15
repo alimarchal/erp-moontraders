@@ -6,6 +6,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Company;
 use App\Models\EmployeeAdvance;
 use App\Models\ExpenseVoucher;
+use App\Models\ExpenseVoucherLine;
 use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementCheque;
@@ -20,7 +21,7 @@ use Throwable;
 
 /**
  * Maker-checker flow of the daily expense vouchers. The maker drafts and submits; a different user
- * approves (which posts Dr expense account / Cr cash to the ledger) or rejects with a reason.
+ * approves (which posts Dr each expense line / Cr cash, bank or payables once to the ledger) or rejects with a reason.
  */
 class ExpenseVoucherService
 {
@@ -43,7 +44,10 @@ class ExpenseVoucherService
             $data['voucher_number'] = $this->nextNumber();
             $data['status'] = ExpenseVoucher::STATUS_DRAFT;
 
-            return ExpenseVoucher::create(Arr::except($data, ['denom']));
+            $voucher = ExpenseVoucher::create(Arr::except($data, ['denom', 'lines']));
+            $this->saveLines($voucher, $data['lines'] ?? null);
+
+            return $voucher;
         });
     }
 
@@ -55,10 +59,61 @@ class ExpenseVoucherService
         $this->ensureEditable($voucher);
 
         return DB::transaction(function () use ($voucher, $data) {
-            $voucher->update(Arr::except($data, ['denom']));
+            $voucher->update(Arr::except($data, ['denom', 'lines']));
+            $this->saveLines($voucher, $data['lines'] ?? null);
 
             return $voucher->fresh();
         });
+    }
+
+    /**
+     * Replaces the voucher's bill lines. The amount, account and category on the voucher are set from the lines
+     * here as well, so they can never drift from what is posted. No lines given leaves the voucher as it is.
+     *
+     * @param  array<int, array{expense_category_id?: int|null, expense_account_id: int, vehicle_id?: int|null, description?: string|null, amount: float|int|string}>|null  $lines
+     */
+    private function saveLines(ExpenseVoucher $voucher, ?array $lines): void
+    {
+        if ($lines === null || $lines === []) {
+            return;
+        }
+
+        $lines = array_values($lines);
+        $now = now();
+
+        $voucher->lines()->delete();
+        $voucher->lines()->insert(array_map(fn (array $line, int $index) => [
+            'expense_voucher_id' => $voucher->id,
+            'line_no' => $index + 1,
+            'expense_category_id' => $line['expense_category_id'] ?? null,
+            'expense_account_id' => (int) $line['expense_account_id'],
+            'vehicle_id' => $line['vehicle_id'] ?? null,
+            'description' => $line['description'] ?? null,
+            'amount' => round((float) $line['amount'], 2),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], $lines, array_keys($lines)));
+
+        $voucher->update([
+            'amount' => self::totalOf($lines),
+            'expense_account_id' => (int) $lines[0]['expense_account_id'],
+            'expense_category_id' => $lines[0]['expense_category_id'] ?? null,
+        ]);
+    }
+
+    /**
+     * The sum of line amounts, added in paisa so that 0.1 + 0.2 is exactly 0.30.
+     *
+     * @param  iterable<array{amount: float|int|string}|ExpenseVoucherLine>  $lines
+     */
+    public static function totalOf(iterable $lines): float
+    {
+        $paisa = 0;
+        foreach ($lines as $line) {
+            $paisa += (int) round((float) ($line instanceof ExpenseVoucherLine ? $line->amount : $line['amount']) * 100);
+        }
+
+        return $paisa / 100;
     }
 
     /**
@@ -84,7 +139,7 @@ class ExpenseVoucherService
      * The checker must not be the user who made the voucher. The voucher row is locked and checked again
      * inside the transaction, so two clicks (or two checkers) can never post it twice.
      *
-     * Debit: Employee Advances (1131) for an advance, otherwise the expense account. Credit, by how it was
+     * Debit: Employee Advances (1131) for an advance, otherwise each bill line's own expense account. Credit, by how it was
      * paid: Cash (1121), the bank's own ledger account for a bank transfer or cheque, or Expense Payables
      * (2113) for credit, paid later by a vendor payment. An advance also opens an advance record for payroll.
      *
@@ -101,10 +156,10 @@ class ExpenseVoucherService
             $this->ensureNotesFor($voucher, $notes);
 
             $creditSide = $this->paidFromAccountId($voucher);
-            $debitSide = $voucher->isAdvance() ? $this->accountId(self::ADVANCES_ACCOUNT, 'Employee Advances (1131)') : (int) $voucher->expense_account_id;
             $costCenterId = (int) ($voucher->company?->cost_center_id ?: 1);
-
             $description = 'Expense voucher '.$voucher->voucher_number.' - '.$voucher->party_name;
+            $total = round((float) $voucher->amount, 2);
+
             $result = $this->post([
                 'entry_date' => $voucher->voucher_date->toDateString(),
                 'reference' => $voucher->voucher_number,
@@ -112,8 +167,8 @@ class ExpenseVoucherService
                 'reference_type' => ExpenseVoucher::class,
                 'reference_id' => $voucher->id,
                 'lines' => [
-                    ['account_id' => $debitSide, 'debit' => (float) $voucher->amount, 'credit' => 0, 'description' => $description, 'cost_center_id' => $costCenterId],
-                    ['account_id' => $creditSide, 'debit' => 0, 'credit' => (float) $voucher->amount, 'description' => $description, 'cost_center_id' => $costCenterId],
+                    ...$this->debitLines($voucher, $description, $costCenterId),
+                    ['account_id' => $creditSide, 'debit' => 0, 'credit' => $total, 'description' => $description, 'cost_center_id' => $costCenterId],
                 ],
                 'auto_post' => true,
             ], $voucher);
@@ -139,6 +194,35 @@ class ExpenseVoucherService
 
             return $voucher->fresh();
         });
+    }
+
+    /**
+     * The debit side: one line to Employee Advances (1131) for an advance; otherwise one line per bill line, to the
+     * line's own expense account with its own description. The lines must add up to the voucher amount.
+     *
+     * @return list<array{account_id: int, debit: float, credit: int, description: string, cost_center_id: int}>
+     */
+    private function debitLines(ExpenseVoucher $voucher, string $description, int $costCenterId): array
+    {
+        $total = round((float) $voucher->amount, 2);
+
+        if ($voucher->isAdvance()) {
+            return [['account_id' => $this->accountId(self::ADVANCES_ACCOUNT, 'Employee Advances (1131)'), 'debit' => $total, 'credit' => 0, 'description' => $description, 'cost_center_id' => $costCenterId]];
+        }
+
+        $lines = $voucher->postingLines();
+
+        if (abs(self::totalOf($lines) - $total) > 0.009) {
+            throw new RuntimeException('The bill lines add up to Rs '.number_format(self::totalOf($lines), 2).' but the voucher is Rs '.number_format($total, 2).'. Reject the voucher so the maker can save it again.');
+        }
+
+        return $lines->map(fn (ExpenseVoucherLine $line) => [
+            'account_id' => (int) $line->expense_account_id,
+            'debit' => round((float) $line->amount, 2),
+            'credit' => 0,
+            'description' => filled($line->description) ? (string) $line->description : $description,
+            'cost_center_id' => $costCenterId,
+        ])->values()->all();
     }
 
     /**

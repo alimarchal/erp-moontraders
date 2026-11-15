@@ -10,11 +10,34 @@
     $employeeOld = old('employee_id', $voucher->employee_id);
     $vendorModel = $vendorOld ? \App\Models\ExpenseVendor::withTrashed()->find($vendorOld) : null;
     $employeeModel = $employeeOld ? \App\Models\Employee::withTrashed()->find($employeeOld) : null;
-    $accountOld = (int) old('expense_account_id', $voucher->payee_type === 'employee' ? null : ($voucher->expense_account_id ?? ($defaultAccountId ?? null)));
     $methodOptions = ['cash' => 'Cash', 'bank_transfer' => 'Bank transfer', 'cheque' => 'Cheque', 'credit' => 'Credit, pay later (shops only)'];
+
+    // Bill lines: what was just sent back with errors, the saved lines, the voucher's own single line (older
+    // vouchers), or one empty line on the usual general account (new lines start on it too).
+    $lineOf = fn ($category, $account, $description, $amount) => ['category' => (string) ($category ?? ''), 'account' => (string) ($account ?? ''), 'description' => (string) ($description ?? ''), 'amount' => (string) ($amount ?? '')];
+    $oldLines = old('lines');
+    if (is_array($oldLines)) {
+        $lineStart = collect($oldLines)->values()->map(fn ($line) => $lineOf($line['expense_category_id'] ?? null, $line['expense_account_id'] ?? null, $line['description'] ?? null, $line['amount'] ?? null))->all();
+    } elseif ($voucher->exists && $voucher->payee_type !== 'employee') {
+        $lineStart = $voucher->lines->isNotEmpty()
+            ? $voucher->lines->map(fn ($line) => $lineOf($line->expense_category_id, $line->expense_account_id, $line->description, $line->amount))->all()
+            : [$lineOf($voucher->expense_category_id, $voucher->expense_account_id, null, $voucher->amount)];
+    } else {
+        $lineStart = [$lineOf(null, $defaultAccountId ?? null, null, null)];
+    }
+    $lineErrors = collect($errors->getMessages())->filter(fn ($messages, $key) => str_starts_with($key, 'lines'))->map(fn ($messages) => $messages[0])->all();
+    $maxLines = \App\Models\ExpenseVoucherLine::MAX_LINES;
+    $lineHeaders = [
+        ['label' => '#', 'align' => 'text-center', 'width' => '36px'],
+        ['label' => 'Category', 'align' => 'text-left', 'width' => '170px'],
+        ['label' => 'Expense account', 'align' => 'text-left', 'width' => '220px'],
+        ['label' => 'Description', 'align' => 'text-left', 'width' => '180px'],
+        ['label' => 'Amount (Rs)', 'align' => 'text-right', 'width' => '120px'],
+        ['label' => '<span class="sr-only">Remove</span>', 'align' => 'text-center', 'width' => '44px'],
+    ];
 @endphp
-<div class="ev-sections" x-data="{ payee: @js($payee), method: @js($paymentMethod), amount: @js((string) old('amount', $voucher->amount)) }"
-    x-effect="if (payee !== 'vendor' && method === 'credit') { method = 'cash'; }">
+<div class="ev-sections" x-data="evVoucherForm({ payee: @js($payee), method: @js($paymentMethod), amount: @js((string) old('amount', $voucher->payee_type === 'employee' ? $voucher->amount : '')), lines: @js($lineStart), errors: @js($lineErrors), max: {{ $maxLines }}, defaultAccount: @js((string) ($defaultAccountId ?? '')) })"
+    x-effect="if (payee !== 'vendor' && method === 'credit') { method = 'cash'; }" @ev-shop-account.window="shopAccount($event.detail)">
 
     {{-- 1. Who is paid --}}
     <section class="uf-card gf-card" aria-labelledby="ev-s-payee">
@@ -42,13 +65,6 @@
                             <button type="button" class="ak-btn ak-btn-ghost ev-add-shop" @click="$dispatch('open-shop-modal')">＋ New shop</button>
                         </div>
                         @error('expense_vendor_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
-                    </div>
-                </template>
-                <template x-if="payee === 'vendor'">
-                    <div class="ak-field">
-                        <label for="vendor_bill_no">Shop bill no. (optional)</label>
-                        <input id="vendor_bill_no" type="text" name="vendor_bill_no" maxlength="80" value="{{ old('vendor_bill_no', $voucher->vendor_bill_no) }}">
-                        @error('vendor_bill_no')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                     </div>
                 </template>
 
@@ -100,12 +116,15 @@
         </div>
     </section>
 
-    {{-- 2. Expense and amount --}}
+    {{-- 2. Bill lines (or the advance amount) --}}
     <section class="uf-card gf-card" aria-labelledby="ev-s-expense">
         <header class="uf-card-head">
             <div>
-                <h2 class="uf-card-title" id="ev-s-expense"><span class="uf-step">2</span> <span x-text="payee === 'employee' ? 'Advance and amount' : 'Expense and amount'">Expense and amount</span></h2>
-                <p class="uf-card-sub" x-show="payee !== 'employee'">The category fills in its usual expense account; you can change it.</p>
+                <h2 class="uf-card-title" id="ev-s-expense"><span class="uf-step">2</span> <span x-text="payee === 'employee' ? 'Advance and amount' : 'Bill lines'">Bill lines</span></h2>
+                <p class="uf-card-sub" x-show="payee !== 'employee'">One line per item on the bill. A category fills in its usual expense account; you can change it.</p>
+            </div>
+            <div class="gf-head-stats" x-show="payee !== 'employee'">
+                <span class="ak-pill" x-text="lines.length + (lines.length === 1 ? ' line' : ' lines')"></span>
             </div>
         </header>
         <div class="uf-body">
@@ -115,26 +134,15 @@
                     <input id="voucher_date" type="date" name="voucher_date" required max="{{ now()->toDateString() }}" value="{{ old('voucher_date', optional($voucher->voucher_date)->format('Y-m-d')) }}">
                     @error('voucher_date')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
-                <div class="ak-field" x-show="payee !== 'employee'">
-                    <label for="expense_category_id">Category (what is it for?)</label>
-                    <select id="expense_category_id" class="ev-select" name="expense_category_id" :disabled="payee === 'employee'" data-placeholder="Toner, grocery, rent, repair…">
-                        <option value=""></option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" data-account="{{ $category->default_expense_account_id }}" @selected((int) old('expense_category_id', $voucher->expense_category_id) === $category->id)>{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('expense_category_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
-                    @can('expense-category-manage')<p class="ak-hint"><a href="{{ route('expense-categories.index') }}" class="ak-primary-link" target="_blank">Manage categories</a></p>@endcan
+                <div class="ak-field" x-show="payee === 'vendor'">
+                    <label for="vendor_bill_no">Shop bill no. (optional)</label>
+                    <input id="vendor_bill_no" type="text" name="vendor_bill_no" maxlength="80" autocomplete="off" :disabled="payee !== 'vendor'" value="{{ old('vendor_bill_no', $voucher->vendor_bill_no) }}">
+                    @error('vendor_bill_no')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
-                <div class="ak-field" x-show="payee !== 'employee'">
-                    <label for="expense_account_id">Expense account</label>
-                    <select id="expense_account_id" class="ev-select" name="expense_account_id" :disabled="payee === 'employee'" data-placeholder="Select account">
-                        <option value=""></option>
-                        @foreach($accounts as $account)
-                            <option value="{{ $account->id }}" @selected($accountOld === $account->id)>{{ $account->account_code }} - {{ $account->account_name }}</option>
-                        @endforeach
-                    </select>
-                    @error('expense_account_id')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
+                <div class="ak-field" x-show="payee === 'vendor'">
+                    <label for="vendor_bill_date">Shop bill date (optional)</label>
+                    <input id="vendor_bill_date" type="date" name="vendor_bill_date" max="{{ now()->toDateString() }}" :disabled="payee !== 'vendor'" value="{{ old('vendor_bill_date', optional($voucher->vendor_bill_date)->format('Y-m-d')) }}">
+                    @error('vendor_bill_date')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
                 <div class="ak-field" x-show="payee === 'vendor'" x-effect="if (payee !== 'vendor' && window.jQuery) { jQuery('#vehicle_id').val(null).trigger('change'); }">
                     <label for="vehicle_id">Vehicle (optional)</label>
@@ -145,13 +153,85 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="ak-field">
+                <div class="ak-field" x-show="payee === 'employee'" x-cloak>
                     <label for="amount">Amount (Rs)</label>
-                    <input id="amount" class="ev-amount-input" type="number" step="0.01" min="0.01" name="amount" required x-model="amount" inputmode="decimal" value="{{ old('amount', $voucher->amount) }}">
+                    <input id="amount" class="ev-amount-input" type="text" inputmode="decimal" autocomplete="off" name="amount" :disabled="payee !== 'employee'" :required="payee === 'employee'" x-model="amount" value="{{ old('amount', $voucher->payee_type === 'employee' ? $voucher->amount : '') }}">
                     @error('amount')<p class="ev-field-error" role="alert">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>
+
+        {{-- One row per bill line; a card per line on a tablet or phone. A disabled fieldset sends nothing for an advance. --}}
+        <fieldset class="ev-lines gf-table" x-show="payee !== 'employee'" :disabled="payee === 'employee'">
+            <legend class="sr-only">Bill lines</legend>
+            <x-form-table :title="null" :headers="$lineHeaders">
+                <tbody>
+                    <template x-for="(line, index) in lines" :key="line.uid">
+                        <tr x-init="$nextTick(() => initLine($el, line))">
+                            <td data-label="#" class="gf-no" x-text="index + 1"></td>
+                            <td data-label="Category">
+                                <div>
+                                    <select class="ev-line-category" :name="`lines[${index}][expense_category_id]`" :aria-label="`Category of line ${index + 1}`" data-placeholder="Toner, repair, tea…">
+                                        <option value=""></option>
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->id }}" data-account="{{ $category->default_expense_account_id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="ev-field-error" role="alert" x-show="err(index, 'expense_category_id')" x-text="err(index, 'expense_category_id')"></p>
+                                </div>
+                            </td>
+                            <td data-label="Expense account">
+                                <div>
+                                    <select class="ev-line-account" :name="`lines[${index}][expense_account_id]`" :aria-label="`Expense account of line ${index + 1}`" data-placeholder="Select account">
+                                        <option value=""></option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" @selected($account->id === (int) ($defaultAccountId ?? 0))>{{ $account->account_code }} - {{ $account->account_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="ev-field-error" role="alert" x-show="err(index, 'expense_account_id')" x-text="err(index, 'expense_account_id')"></p>
+                                </div>
+                            </td>
+                            <td data-label="Description">
+                                <div>
+                                    <input type="text" maxlength="255" autocomplete="off" :name="`lines[${index}][description]`" x-model="line.description" :aria-label="`Description of line ${index + 1}`" placeholder="What was bought">
+                                    <p class="ev-field-error" role="alert" x-show="err(index, 'description')" x-text="err(index, 'description')"></p>
+                                </div>
+                            </td>
+                            <td data-label="Amount (Rs)">
+                                <div>
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="ev-line-amount" :name="`lines[${index}][amount]`" x-model="line.amount" :aria-label="`Amount of line ${index + 1}`" placeholder="0.00" required>
+                                    <p class="ev-field-error" role="alert" x-show="err(index, 'amount')" x-text="err(index, 'amount')"></p>
+                                </div>
+                            </td>
+                            <td data-label="" class="ev-line-remove">
+                                <button type="button" class="ev-remove-line" @click="removeLine(index)" :disabled="lines.length === 1" :aria-label="`Remove line ${index + 1}`" title="Remove line">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="ev-total-label">Bill total</td>
+                        <td class="ev-total" aria-live="polite" x-text="money(total())">0.00</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            <div class="ev-lines-foot">
+                                <button type="button" class="ev-add-line" @click="addLine()" :disabled="lines.length >= max">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                    Add line
+                                </button>
+                                <span class="ak-hint" x-show="lines.length >= max" x-cloak>At most {{ $maxLines }} lines on one voucher.</span>
+                                <p class="ev-field-error" role="alert" x-show="errors.lines" x-text="errors.lines"></p>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </x-form-table>
+        </fieldset>
     </section>
 
     {{-- 3. Payment --}}
@@ -242,7 +322,7 @@
     {{-- Sticky bar: what will be paid on the left, the actions on the right --}}
     <div class="uf-actions gf-actions">
         <div class="gf-totals" aria-live="polite">
-            <span>Amount Rs <b x-text="(Number(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })">0.00</b></span>
+            <span>Amount Rs <b x-text="money(payee === 'employee' ? (Number(amount) || 0) : total())">0.00</b></span>
             <span x-text="{ cash: 'Cash', bank_transfer: 'Bank transfer', cheque: 'Cheque', credit: 'Credit, pay later' }[method]"></span>
         </div>
         <div>

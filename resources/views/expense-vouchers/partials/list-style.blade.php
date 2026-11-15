@@ -45,6 +45,8 @@
     .ev-c-no { width: 44px; } .ev-c-voucher { width: 196px; } .ev-c-amount { width: 116px; } .ev-c-status { width: 160px; } .ev-c-act { width: 124px; }
     .ev-table td { overflow: hidden; }
     .ev-clamp { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ev-acc { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+    .ev-more { flex: none; padding: 1px 7px; border-radius: 980px; background: rgba(0,113,227,.1); color: #0066cc; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
     .ev-num { font-weight: 600; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 22px); display: inline-block; vertical-align: bottom; padding: 4px 0; }
     .ev-people { margin-top: 3px; font-size: 12px; }
     .ev-vline { display: flex; align-items: center; gap: 4px; min-width: 0; white-space: nowrap; }

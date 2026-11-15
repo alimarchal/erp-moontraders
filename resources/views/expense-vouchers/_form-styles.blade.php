@@ -45,6 +45,49 @@
         .ev-inline .select2-container, .ev-add-shop { flex-basis: 100%; }
     }
 
+    /* Bill lines: the goods-issues line table, a card per line below 1024px */
+    .ev-lines { margin: 0; padding: 0; border: 0; min-width: 0; }
+    .ev-lines[disabled] { display: none; }
+    html.apl-on .ev-lines.gf-table td .select2-container { margin-top: 0 !important; }
+    html.apl-on .ev-lines.gf-table td input:not([type=checkbox]):not([type=hidden]) { width: 100%; height: 38px; padding: 0 10px; border: 0 !important; border-radius: 10px !important; background: rgba(118,118,128,.12) !important; font-size: 15px; box-sizing: border-box; }
+    html.apl-on .ev-lines.gf-table td input:focus { outline: none; background: #fff !important; box-shadow: 0 0 0 3px rgba(0,113,227,.22), 0 0 0 1px #0071e3 !important; }
+    html.apl-on .ev-lines.gf-table td .ev-line-amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    html.apl-on .ev-lines.gf-table thead th:nth-child(5) { text-align: right; }
+    html.apl-on .ev-lines.gf-table td.ev-line-remove { text-align: center; }
+    .ev-remove-line { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: #c4161c; cursor: pointer; transition: background-color .15s ease; }
+    .ev-remove-line svg { width: 18px; height: 18px; }
+    .ev-remove-line:hover:not(:disabled) { background: rgba(255,59,48,.12); }
+    .ev-remove-line:disabled { opacity: .3; cursor: not-allowed; }
+    html.apl-on .ev-lines.gf-table tfoot td.ev-total-label { text-align: right; font-weight: 600; color: #1d1d1f; }
+    html.apl-on .ev-lines.gf-table tfoot td.ev-total { text-align: right; font-size: 17px; font-weight: 700; color: #1d1d1f; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ev-lines-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+    .ev-add-line { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px 0 12px; border: 0; border-radius: 980px; background: rgba(0,113,227,.1); color: #0066cc; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color .15s ease, transform .1s ease-out; }
+    .ev-add-line svg { width: 16px; height: 16px; }
+    .ev-add-line:hover:not(:disabled) { background: rgba(0,113,227,.16); }
+    .ev-add-line:active:not(:disabled) { transform: scale(.97); }
+    .ev-add-line:disabled { opacity: .45; cursor: not-allowed; }
+    @media (min-width: 1024px) {
+        html.apl-on .ev-lines.gf-table td.gf-no { width: 36px; }
+        html.apl-on .ev-lines.gf-table td[data-label="Category"] { width: 22%; }
+        html.apl-on .ev-lines.gf-table td[data-label="Expense account"] { width: 30%; }
+        html.apl-on .ev-lines.gf-table td[data-label="Amount (Rs)"] { width: 150px; }
+        html.apl-on .ev-lines.gf-table td.ev-line-remove { width: 48px; }
+        html.apl-on .ev-lines.gf-table tbody tr td { vertical-align: top; }
+        html.apl-on .ev-lines.gf-table td.gf-no, html.apl-on .ev-lines.gf-table td.ev-line-remove { padding-top: 14px !important; }
+    }
+    @media screen and (max-width: 1023px) {
+        html.apl-on .ev-lines.gf-table tfoot tr:first-child { justify-content: flex-end; gap: 12px; padding: 4px 14px; }
+        html.apl-on .ev-lines.gf-table tbody tr { position: relative; }
+        html.apl-on .ev-lines.gf-table td.ev-line-remove { position: absolute; top: 4px; right: 8px; width: auto !important; padding: 0 !important; }
+    }
+    /* Phones: the label sits above its field, so the account name has the full card width */
+    @media screen and (max-width: 640px) {
+        html.apl-on .ev-lines.gf-table tbody tr td:not(.gf-no):not(.ev-line-remove) { grid-template-columns: minmax(0, 1fr); row-gap: 4px; padding: 4px 12px !important; }
+        html.apl-on .ev-lines.gf-table tbody tr td:not(.gf-no):not(.ev-line-remove)::before { grid-row: auto; padding-top: 0; }
+        html.apl-on .ev-lines.gf-table tbody tr td > * { grid-column: 1; }
+        html.apl-on .ev-lines.gf-table tbody tr { padding-bottom: 10px; }
+    }
+
     /* New shop dialog */
     .ev-modal-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
     @media (max-width: 520px) { .ev-modal-grid { grid-template-columns: minmax(0, 1fr); } }

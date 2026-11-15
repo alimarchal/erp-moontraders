@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class ExpenseVoucher extends Model
@@ -83,6 +84,7 @@ class ExpenseVoucher extends Model
         'paid_amount',
         'advance_installment',
         'vendor_bill_no',
+        'vendor_bill_date',
         'party_name',
         'expense_account_id',
         'amount',
@@ -133,6 +135,7 @@ class ExpenseVoucher extends Model
             'checked_at' => 'datetime',
             'printed_at' => 'datetime',
             'cheque_date' => 'date',
+            'vendor_bill_date' => 'date',
             'reversed_at' => 'datetime',
         ];
     }
@@ -209,6 +212,40 @@ class ExpenseVoucher extends Model
     public static function paymentTypeLabels(): array
     {
         return [self::TYPE_CASH => 'Cash', self::TYPE_CREDIT => 'Credit (pay later)', self::TYPE_ADVANCE => 'Advance salary'];
+    }
+
+    /**
+     * The expense lines of the shop bill, in the order they were entered. The voucher amount is their sum, and the
+     * voucher's own account and category are those of the first line.
+     *
+     * @return HasMany<ExpenseVoucherLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(ExpenseVoucherLine::class)->orderBy('line_no');
+    }
+
+    /**
+     * The lines to post: the saved lines, or for a voucher saved without any, one line of its own account and amount.
+     *
+     * @return Collection<int, ExpenseVoucherLine>
+     */
+    public function postingLines(): Collection
+    {
+        $lines = $this->lines()->get();
+
+        if ($lines->isNotEmpty()) {
+            return $lines->toBase();
+        }
+
+        return collect([new ExpenseVoucherLine([
+            'line_no' => 1,
+            'expense_category_id' => $this->expense_category_id,
+            'expense_account_id' => $this->expense_account_id,
+            'vehicle_id' => $this->vehicle_id,
+            'description' => null,
+            'amount' => $this->amount,
+        ])]);
     }
 
     public function expenseVendor(): BelongsTo

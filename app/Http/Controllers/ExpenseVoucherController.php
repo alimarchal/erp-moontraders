@@ -12,6 +12,7 @@ use App\Models\ExpenseCategory;
 use App\Models\ExpenseVendor;
 use App\Models\ExpenseVoucher;
 use App\Models\ExpenseVoucherAttachment;
+use App\Models\ExpenseVoucherLine;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -65,6 +66,15 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         'bank_account_id.exists' => 'Choose an active bank account that is linked to the chart of accounts.',
         'denom.required' => 'Enter the notes paid out.',
         'attachments.max' => 'You can attach at most :max files.',
+        'vendor_bill_date.before_or_equal' => 'The shop bill date cannot be in the future.',
+        'lines.required' => 'Add at least one bill line.',
+        'lines.min' => 'Add at least one bill line.',
+        'lines.max' => 'A voucher can hold at most :max bill lines. Make a second voucher for the rest.',
+        'lines.*.amount.required' => 'Enter the amount.',
+        'lines.*.amount.gt' => 'Amount must be more than zero.',
+        'lines.*.amount.decimal' => 'At most two decimals (paisa).',
+        'lines.*.amount.max' => 'Amount is too large.',
+        'lines.*.expense_category_id.exists' => 'Choose an active category.',
     ];
 
     /** @var array<string, string> */
@@ -85,6 +95,13 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         'vehicle_id' => 'vehicle',
         'party_name' => 'paid to',
         'vendor_bill_no' => 'shop bill no.',
+        'vendor_bill_date' => 'shop bill date',
+        'lines' => 'bill lines',
+        'lines.*.expense_category_id' => 'category',
+        'lines.*.expense_account_id' => 'expense account',
+        'lines.*.vehicle_id' => 'vehicle',
+        'lines.*.description' => 'description',
+        'lines.*.amount' => 'amount',
         'expense_category_id' => 'category',
         'expense_account_id' => 'expense account',
         'advance_installment' => 'monthly instalment',
@@ -142,6 +159,7 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
 
         $query = (clone $scoped)
             ->with(['supplier:id,supplier_name,short_name', 'company:id,company_name,abbr', 'expenseAccount:id,account_code,account_name', 'creator:id,name', 'checker:id,name', 'attachments:id,expense_voucher_id', 'category:id,name'])
+            ->withCount('lines')
             ->when(($filters['status'] ?? 'all') !== 'all', fn ($q) => $q->where('status', $filters['status']));
 
         $totalAmount = (float) (clone $query)->sum('amount');
@@ -542,6 +560,9 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
 
         $method = $request->input('payment_method');
         $byBank = in_array($method, [ExpenseVoucher::METHOD_BANK_TRANSFER, ExpenseVoucher::METHOD_CHEQUE], true);
+        // An advance is always one amount to Employee Advances; any bill lines sent with it are ignored.
+        $isAdvance = $request->input('payee_type') === ExpenseVoucher::PAYEE_EMPLOYEE;
+        $hasLines = ! $isAdvance && $request->has('lines');
 
         $data = $request->validate([
             'voucher_date' => ['required', 'date', 'before_or_equal:today'],
@@ -557,26 +578,32 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             'vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
             'party_name' => ['nullable', 'string', 'max:255'],
             'vendor_bill_no' => ['nullable', 'string', 'max:80'],
+            'vendor_bill_date' => ['nullable', 'date', 'before_or_equal:today'],
             'expense_category_id' => ['nullable', Rule::exists('expense_categories', 'id')->where('is_active', true)],
             'expense_account_id' => ['nullable', new ExpenseAccount],
-            'amount' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999999'],
+            'amount' => [$hasLines ? 'nullable' : 'required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999999'],
             'advance_installment' => ['nullable', 'numeric', 'gt:0', 'lte:amount'],
             'narration' => ['nullable', 'string', 'max:1000'],
-        ] + ExpenseVoucherAttachmentService::manyRules(), self::VALIDATION_MESSAGES, self::VALIDATION_ATTRIBUTES);
+        ] + ($hasLines ? $this->lineRules() : []) + ExpenseVoucherAttachmentService::manyRules(), self::VALIDATION_MESSAGES, self::VALIDATION_ATTRIBUTES);
         unset($data['attachments']);
+        $lines = $hasLines ? array_values($data['lines']) : null;
+        unset($data['lines']);
 
         $data = $this->withPaymentDetails($data);
 
         $payee = $data['payee_type'];
         $data['advance_installment'] = $payee === ExpenseVoucher::PAYEE_EMPLOYEE ? ($data['advance_installment'] ?? null) : null;
         $data['vendor_bill_no'] = $payee === ExpenseVoucher::PAYEE_VENDOR ? ($data['vendor_bill_no'] ?? null) : null;
+        $data['vendor_bill_date'] = $payee === ExpenseVoucher::PAYEE_VENDOR ? ($data['vendor_bill_date'] ?? null) : null;
 
         // A shop is the only payee that can be paid later; an employee always takes an advance.
         throw_if($data['payment_method'] === ExpenseVoucher::METHOD_CREDIT && $payee !== ExpenseVoucher::PAYEE_VENDOR,
             ValidationException::withMessages(['payment_method' => 'Only a shop (vendor) can be paid on credit. Choose cash, bank transfer or cheque.']));
 
         if ($payee === ExpenseVoucher::PAYEE_EMPLOYEE) {
-            return $this->forEmployee($data, $user);
+            $data = $this->forEmployee($data, $user);
+
+            return $data + ['lines' => [['expense_account_id' => $data['expense_account_id'], 'amount' => $data['amount']]]];
         }
 
         $data['payment_type'] = $data['payment_method'] === ExpenseVoucher::METHOD_CREDIT ? ExpenseVoucher::TYPE_CREDIT : ExpenseVoucher::TYPE_CASH;
@@ -591,6 +618,10 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
             $data['employee_id'] = null;
         }
 
+        if ($lines !== null) {
+            return $this->withOwner($this->withLines($data, $lines), $user);
+        }
+
         throw_if(blank($data['expense_category_id'] ?? null), ValidationException::withMessages(['expense_category_id' => 'Choose what this expense is for (category).']));
 
         // The category's usual account fills the account when none was chosen.
@@ -599,7 +630,79 @@ class ExpenseVoucherController extends Controller implements HasMiddleware
         throw_if(blank($data['expense_account_id'] ?? null), ValidationException::withMessages(['expense_account_id' => 'Choose the expense account.']));
         throw_if(! ExpenseAccount::allows($data['expense_account_id']), ValidationException::withMessages(['expense_account_id' => 'The category\'s usual account is not an active expense account (code 52...). Choose the expense account.']));
 
+        // The single-line form (and older callers) becomes a bill of one line.
+        $data['lines'] = [[
+            'expense_category_id' => $data['expense_category_id'],
+            'expense_account_id' => (int) $data['expense_account_id'],
+            'vehicle_id' => $data['vehicle_id'] ?? null,
+            'amount' => $data['amount'],
+        ]];
+
         return $this->withOwner($data, $user);
+    }
+
+    /**
+     * Rules of the bill lines: 1 to 30 lines, each with an amount above zero in rupees and paisa, an active expense
+     * account (filled from the category when left empty) and an optional active category and vehicle.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function lineRules(): array
+    {
+        return [
+            'lines' => ['required', 'array', 'min:1', 'max:'.ExpenseVoucherLine::MAX_LINES],
+            'lines.*' => ['array'],
+            'lines.*.expense_category_id' => ['nullable', 'integer', Rule::exists('expense_categories', 'id')->where('is_active', true)],
+            'lines.*.expense_account_id' => ['nullable', new ExpenseAccount],
+            'lines.*.vehicle_id' => ['nullable', 'integer', 'exists:vehicles,id'],
+            'lines.*.description' => ['nullable', 'string', 'max:255'],
+            'lines.*.amount' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:9999999999999'],
+        ];
+    }
+
+    /**
+     * Turns the validated bill lines into what is saved: each line's account defaults to its category's usual
+     * account, the voucher's vehicle fills lines without one, and the voucher amount is always the server's own sum
+     * of the lines (a total sent by the browser is ignored). The voucher keeps the first line's account and
+     * category for older code and the reports.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>  $lines
+     * @return array<string, mixed>
+     */
+    private function withLines(array $data, array $lines): array
+    {
+        $categories = ExpenseCategory::query()->whereIn('id', array_filter(array_column($lines, 'expense_category_id')))->pluck('default_expense_account_id', 'id');
+        $errors = [];
+
+        foreach ($lines as $index => $line) {
+            $categoryId = filled($line['expense_category_id'] ?? null) ? (int) $line['expense_category_id'] : null;
+            $accountId = filled($line['expense_account_id'] ?? null) ? (int) $line['expense_account_id'] : ($categoryId ? $categories[$categoryId] ?? null : null);
+
+            if (! $accountId) {
+                $errors["lines.{$index}.expense_account_id"] = 'Choose the expense account.';
+            } elseif (! ExpenseAccount::allows($accountId)) {
+                $errors["lines.{$index}.expense_account_id"] = 'The category\'s usual account is not an active expense account (code 52...). Choose the expense account.';
+            }
+
+            $lines[$index] = [
+                'expense_category_id' => $categoryId,
+                'expense_account_id' => $accountId,
+                'vehicle_id' => filled($line['vehicle_id'] ?? null) ? (int) $line['vehicle_id'] : ($data['vehicle_id'] ?? null),
+                'description' => filled($line['description'] ?? null) ? trim((string) $line['description']) : null,
+                'amount' => round((float) $line['amount'], 2),
+            ];
+        }
+
+        throw_if($errors !== [], ValidationException::withMessages($errors));
+
+        return array_merge($data, [
+            'lines' => $lines,
+            'amount' => ExpenseVoucherService::totalOf($lines),
+            'expense_account_id' => $lines[0]['expense_account_id'],
+            'expense_category_id' => $lines[0]['expense_category_id'],
+            'vehicle_id' => collect($lines)->pluck('vehicle_id')->filter()->first(),
+        ]);
     }
 
     /**

@@ -34,6 +34,8 @@
 
     @include('settings.partials.ui-style')
 
+    <x-status-message />
+
     @push('header')
         @include('reports.cash-detail._sheet-styles')
         <style>

@@ -220,8 +220,10 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
 
         $cashReceived = $totals['cash'] + $totals['clearing'];
         $cashInHand = $cashReceived - $expenseTotal;
+        $notesIn = $this->notesIn($settlements, $clearings, $supplierId, $date);
         $tables['denominations'] = $this->denominationTable(
-            $this->notesIn($settlements, $clearings, $supplierId, $date),
+            $notesIn['notes'],
+            $notesIn['group'],
             $voucherCash['notes'],
             $cashReceived,
             $expenseTotal,
@@ -289,13 +291,17 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
 
     /**
      * The notes counted into the cash box on the day: each settlement's count, the notes of each cash clearing
-     * batch of the day, and the notes counted on old cheques cleared one by one (before batches).
+     * batch of the day, and the notes counted on old cheques cleared one by one (before batches). A batch's notes
+     * count only when every cheque in it is inside the filter; when the filter shows only part of a batch, its
+     * notes cannot be split, so the in-scope cheques are returned as one amount ("group") instead.
      *
      * @param  Collection<int, SalesSettlement>  $settlements
      * @param  Collection<int, SalesSettlementCheque>  $clearings  cheques cleared for cash that day, in scope
+     * @return array{notes: CashNotes, group: float}
      */
-    private function notesIn(Collection $settlements, Collection $clearings, ?int $supplierId, string $date): CashNotes
+    private function notesIn(Collection $settlements, Collection $clearings, ?int $supplierId, string $date): array
     {
+        $group = 0.0;
         $notes = CashNotes::fromInput([]);
 
         foreach ($settlements as $settlement) {
@@ -312,9 +318,15 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
                 ->where('cleared_via', 'cash')
                 ->whereDate('cleared_date', $date)
                 ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+                ->withCount('cheques')
                 ->get()
-                ->each(function (ChequeClearing $batch) use (&$notes) {
-                    $notes = $notes->plus(CashNotes::fromColumns($batch));
+                ->each(function (ChequeClearing $batch) use (&$notes, &$group, $clearings) {
+                    $inScope = $clearings->where('cheque_clearing_id', $batch->id);
+                    if ($inScope->count() === $batch->cheques_count) {
+                        $notes = $notes->plus(CashNotes::fromColumns($batch));
+                    } else {
+                        $group += (float) $inScope->sum(fn (SalesSettlementCheque $cheque) => $cheque->clearedAmountOrFull());
+                    }
                 });
         }
 
@@ -322,19 +334,20 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             $notes = $notes->plus(CashNotes::fromColumns($cheque, 'cleared_denom_'));
         }
 
-        return $notes;
+        return ['notes' => $notes, 'group' => round($group, 2)];
     }
 
     /**
      * Notes in, notes out and net per note. Cash received that was not counted note by note and cash paid out
-     * with no notes counted each get a line of their own, so the net total always equals the cash in hand.
+     * with no notes counted each get a line of their own, as do cheques of a batch only partly inside the filter,
+     * so the net total always equals the cash in hand.
      *
      * @return array<string, mixed>
      */
-    private function denominationTable(CashNotes $in, CashNotes $out, float $cashReceived, float $expenseTotal, callable $signed, callable $total): array
+    private function denominationTable(CashNotes $in, float $group, CashNotes $out, float $cashReceived, float $expenseTotal, callable $signed, callable $total): array
     {
         $net = $in->minus($out);
-        $notCountedIn = round($cashReceived - $in->total(), 2);
+        $notCountedIn = round($cashReceived - $in->total() - $group, 2);
         $notCountedOut = round($expenseTotal - $out->total(), 2);
         $count = fn (int $notes) => $notes === 0 ? '-' : $notes;
 
@@ -348,6 +361,7 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             ];
         }
         $rows[] = ['Coins', '-', $signed($in->coins()), '-', $signed($out->coins()), '-', $signed($net->coins())];
+        $rows[] = ['Cheques cleared in a group (notes counted with other salesmen)', '-', $signed($group), '-', '-', '-', $signed($group)];
         $rows[] = ['Cash not counted', '-', $signed($notCountedIn), '-', '-', '-', $signed($notCountedIn)];
         $rows[] = ['Paid out, notes not counted', '-', '-', '-', $signed($notCountedOut), '-', $signed(-$notCountedOut)];
 
@@ -356,9 +370,9 @@ class CashCollectionDistributorController extends Controller implements HasMiddl
             'cols' => [['Denomination', 'c', 16], ['Notes in', 'c', 12], ['In (Rs.)', 'n', 16], ['Notes out', 'c', 12], ['Out (Rs.)', 'n', 16], ['Net notes', 'c', 12], ['Net (Rs.)', 'n', 16]],
             'rows' => $rows,
             'total' => ['label' => 'Total', 'span' => 1, 'cells' => [
-                '', $total($in->total() + $notCountedIn),
+                '', $total($in->total() + $group + $notCountedIn),
                 '', $total($out->total() + $notCountedOut),
-                '', $total($net->total() + $notCountedIn - $notCountedOut),
+                '', $total($net->total() + $group + $notCountedIn - $notCountedOut),
             ]],
             'bold' => [6], 'empty' => '',
         ];

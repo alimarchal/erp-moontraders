@@ -96,7 +96,7 @@ it('feeds the distributor report with the cleared amount on the cleared date', f
         ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'date' => '2026-10-28']))
         ->viewData('tables');
 
-    expect($tables['cash']['rows'][0][3])->toBe('10,000.00');
+    expect($tables['collection']['rows'][0][3])->toBe('10,000.00');
 });
 
 it('stores the notes brought back for a cleared cheque on its clearing batch, not on the cheque', function () {

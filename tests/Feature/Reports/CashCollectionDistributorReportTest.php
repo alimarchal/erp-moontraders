@@ -242,6 +242,30 @@ it('balances notes for one company after a batch clearing', function () {
         ->and(($this->row)($all['summary'], 'Cash in hand')[1])->toBe('40,500.00');
 });
 
+it('counts a batch shared by two salesmen as a group line when only one salesman is shown', function () {
+    $first = ($this->settle)($this->nestle, 10000);
+    $second = ($this->settle)($this->nestle, 5000);
+    $batch = ChequeClearing::factory()->create(['supplier_id' => $this->nestle->id, 'denom_1000' => 3, 'denom_500' => 1]);
+    ($this->cheque)($first, 2000, ['cheque_clearing_id' => $batch->id]);
+    ($this->cheque)($second, 1500, ['cheque_clearing_id' => $batch->id]);
+
+    $tables = $this->actingAs($this->admin)
+        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->nestle->id, 'date' => $this->today, 'employee_ids' => [$first->employee_id]]))
+        ->assertOk()
+        ->viewData('tables');
+
+    expect(($this->row)($tables['denominations'], '1,000')[1])->toBe('-')
+        ->and(($this->row)($tables['denominations'], 'Cheques cleared in a group (notes counted with other salesmen)')[2])->toBe('2,000.00')
+        ->and(($this->row)($tables['denominations'], 'Cash not counted')[2])->toBe('-')
+        ->and($tables['denominations']['total']['cells'][5])->toBe('12,000.00')
+        ->and(($this->row)($tables['summary'], 'Cash in hand')[1])->toBe('12,000.00');
+
+    $whole = ($this->sheet)($this->nestle->id);
+    expect(($this->row)($whole['denominations'], '1,000')[1])->toBe(3)
+        ->and(($this->row)($whole['denominations'], 'Cheques cleared in a group (notes counted with other salesmen)')[2])->toBe('-')
+        ->and($whole['denominations']['total']['cells'][5])->toBe('18,500.00');
+});
+
 it('still balances old per-cheque notes', function () {
     $settlement = ($this->settle)($this->nestle, 10000);
     ($this->cheque)($settlement, 7500, ['cleared_denom_5000' => 1, 'cleared_denom_1000' => 2]);

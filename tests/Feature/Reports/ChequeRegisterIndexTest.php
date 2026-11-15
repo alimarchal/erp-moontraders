@@ -238,3 +238,17 @@ it('names the salesman, customer and deposit bank in the PDF filter line and cap
         ->toContain('Deposit bank: Meezan Deposit')
         ->toContain('Showing the first 1 of 2 cheques; narrow the filters or use Excel.');
 });
+
+it('lists a cheque whose settlement has no company under All companies, matching the tab counts', function () {
+    ($this->cheque)('OWN-CHQ-001');
+    $noCompany = SalesSettlement::factory()->create([
+        'supplier_id' => null, 'employee_id' => Employee::factory()->create(['supplier_id' => null])->id, 'status' => 'posted', 'settlement_date' => '2026-11-01',
+    ]);
+    ($this->cheque)('NO-COMPANY-CHQ', ['sales_settlement_id' => $noCompany->id]);
+
+    $response = $this->actingAs($this->allCompaniesUser)->get(($this->register)(['filter' => ['supplier_id' => 'all']]));
+
+    $response->assertSuccessful()->assertSee('NO-COMPANY-CHQ');
+    expect($response->viewData('cheques')->total())->toBe(2)
+        ->and($response->viewData('stats')['all']['count'])->toBe(2);
+});

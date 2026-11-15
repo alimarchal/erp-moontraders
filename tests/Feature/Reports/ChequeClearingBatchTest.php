@@ -16,6 +16,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Services\AccountingService;
 use App\Services\ChequeClearingService;
+use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -381,4 +382,44 @@ it('records the acting user on the customer ledger rows of a bounce and its reve
     expect($rows)->toHaveCount(2)
         ->and($rows->pluck('created_by')->unique()->all())->toBe([$this->user->id])
         ->and($rows->pluck('posted_by')->unique()->all())->toBe([$this->user->id]);
+});
+
+it('names every other cheque of the batch that went back to pending when one cheque is cleared again or un-cleared', function () {
+    $first = ($this->cheque)(1000);
+    $second = ($this->cheque)(500);
+    $third = ($this->cheque)(250);
+    ($this->bulkClear)([$first, $second, $third], ['denom' => ['1000' => 1, '500' => 1, '100' => 2, '50' => 1]])->assertSessionMissing('error');
+
+    ($this->changeStatus)($first, ['status' => 'cleared', 'cleared_date' => '2026-11-15', 'cleared_via' => 'cash', 'denom' => ['1000' => 1]])
+        ->assertSessionHas('success', "Cheque cleared: the cash brought back is booked into Cash. Its batch was reopened, so these cheques are back to pending: {$second->cheque_number}, {$third->cheque_number}.");
+
+    expect($second->fresh()->status)->toBe('pending')->and($third->fresh()->status)->toBe('pending');
+
+    ($this->bulkClear)([$second, $third], ['denom' => ['500' => 1, '100' => 2, '50' => 1]])->assertSessionMissing('error');
+
+    ($this->changeStatus)($third, ['status' => 'pending'])
+        ->assertSessionHas('success', "Cheque status updated successfully. Its batch was reopened, so these cheques are back to pending: {$second->cheque_number}.");
+});
+
+it('shows a plain message, never the database error, when the clearing journal fails', function () {
+    $cheque = ($this->cheque)(1000);
+    $this->mock(AccountingService::class, fn ($mock) => $mock->shouldReceive('createJournalEntry')
+        ->andReturn(['success' => false, 'data' => null, 'message' => 'SQLSTATE[23505]: Unique violation: duplicate key value']));
+
+    $response = ($this->bulkClear)([$cheque], ['denom' => ['1000' => 1]]);
+
+    $response->assertSessionHas('error', 'Posting failed. Please contact the admin.');
+    expect(json_encode(session()->all()))->not->toContain('SQLSTATE')
+        ->and($cheque->fresh()->status)->toBe('pending');
+});
+
+it('shows a plain message, never the SQL, when the database throws during a status change', function () {
+    $cheque = ($this->cheque)(1000);
+    $this->mock(ChequeClearingService::class, fn ($mock) => $mock->shouldReceive('changeStatus')
+        ->andThrow(new QueryException('pgsql', 'insert into journal_entries values (?)', [1], new Exception('SQLSTATE[23505]: Unique violation'))));
+
+    $response = ($this->changeStatus)($cheque, ['status' => 'bounced']);
+
+    $response->assertSessionHas('error', 'Posting failed. Please contact the admin.');
+    expect(json_encode(session()->all()))->not->toContain('SQLSTATE')->not->toContain('insert into');
 });

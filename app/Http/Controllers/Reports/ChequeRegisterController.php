@@ -15,6 +15,7 @@ use App\Support\CashNotes;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -155,7 +156,8 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         $filtered = fn (): Builder => $this->applyFilters($scoped(), $filters);
 
         $list = $filtered()
-            ->join('suppliers', 'suppliers.id', '=', 'sales_settlements.supplier_id')
+            // A cheque whose settlement has no company still lists, as the status tabs count it.
+            ->leftJoin('suppliers', 'suppliers.id', '=', 'sales_settlements.supplier_id')
             ->leftJoin('employees', 'employees.id', '=', 'sales_settlements.employee_id')
             ->leftJoin('customers', 'customers.id', '=', 'sales_settlement_cheques.customer_id')
             ->leftJoin('bank_accounts as deposit_banks', 'deposit_banks.id', '=', 'sales_settlement_cheques.cleared_bank_account_id')
@@ -273,32 +275,44 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         $isCleared = $validated['status'] === 'cleared';
         $clearedVia = $isCleared ? ($validated['cleared_via'] ?? ChequeClearingPostingService::VIA_CASH) : null;
         $user = $request->user();
+        $reopened = [];
 
-        $outcome = $this->attempt(fn () => $isCleared
-            ? DB::transaction(function () use ($cheque, $clearing, $validated, $clearedVia, $user) {
-                // A cheque already cleared is corrected by un-clearing it (same day only) and clearing it again.
-                if ($cheque->isCleared()) {
-                    $clearing->changeStatus($cheque, 'pending', null, null, 'Corrected: cleared again', $user);
-                }
+        $outcome = $this->attempt(function () use ($isCleared, $cheque, $clearing, $validated, $clearedVia, $user, &$reopened) {
+            $reopened = $isCleared
+                ? DB::transaction(function () use ($cheque, $clearing, $validated, $clearedVia, $user) {
+                    // A cheque already cleared is corrected by un-clearing it (same day only) and clearing it again.
+                    $reopened = $cheque->isCleared()
+                        ? $clearing->changeStatus($cheque, 'pending', null, null, 'Corrected: cleared again', $user)
+                        : [];
 
-                $clearing->clear(collect([$cheque->fresh()]), $validated['cleared_date'], $clearedVia,
-                    isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null,
-                    CashNotes::fromInput((array) ($validated['denom'] ?? [])), $validated['notes'] ?? null, $user);
-            })
-            // A bounce's bank charge is credited to the bank named in the dialog (else the cheque's deposit bank).
-            : $clearing->changeStatus($cheque, $validated['status'], $validated['status_date'] ?? null,
-                isset($validated['bank_charge']) ? (float) $validated['bank_charge'] : null, $validated['notes'] ?? null, $user,
-                isset($validated['bank_account_id']) ? (int) $validated['bank_account_id'] : null));
+                    $clearing->clear(collect([$cheque->fresh()]), $validated['cleared_date'], $clearedVia,
+                        isset($validated['cleared_bank_account_id']) ? (int) $validated['cleared_bank_account_id'] : null,
+                        CashNotes::fromInput((array) ($validated['denom'] ?? [])), $validated['notes'] ?? null, $user);
+
+                    return $reopened;
+                })
+                // A bounce's bank charge is credited to the bank named in the dialog (else the cheque's deposit bank).
+                : $clearing->changeStatus($cheque, $validated['status'], $validated['status_date'] ?? null,
+                    isset($validated['bank_charge']) ? (float) $validated['bank_charge'] : null, $validated['notes'] ?? null, $user,
+                    isset($validated['bank_account_id']) ? (int) $validated['bank_account_id'] : null);
+        });
 
         if ($outcome) {
             return $outcome;
         }
 
-        return redirect()->back()->with('success', match (true) {
+        $message = match (true) {
             ! $isCleared => 'Cheque status updated successfully.',
             $clearedVia === ChequeClearingPostingService::VIA_CASH => 'Cheque cleared: the cash brought back is booked into Cash.',
             default => 'Cheque cleared by bank and booked into the bank account.',
-        });
+        };
+
+        // Changing one cheque of a batch reopens the whole batch, so the user is told which other cheques went back.
+        if ($reopened !== []) {
+            $message .= ' Its batch was reopened, so these cheques are back to pending: '.implode(', ', $reopened).'.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**
@@ -349,6 +363,11 @@ class ChequeRegisterController extends Controller implements HasMiddleware
     {
         try {
             $step();
+        } catch (QueryException $e) {
+            // A database error is a RuntimeException too, but its SQL must never reach the user.
+            report($e);
+
+            return back()->withInput()->with('error', 'Posting failed. Please contact the admin.');
         } catch (RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         } catch (Throwable $e) {

@@ -233,7 +233,8 @@
     /* ---------------- Print (Ctrl+P): a formal table, no cards or controls ---------------- */
     @media print {
         body { background: #fff !important; }
-        nav, header, .ak-kpis, .ak-tabs, .ak-filters, .ak-chips, .ak-dt-toolbar, .ak-pager, .ak-empty .ak-btn,
+        /* the dashboard's period and greeting bar (header.db-top) stays on paper */
+        nav, header:not(.db-top), .ak-kpis, .ak-tabs, .ak-filters, .ak-chips, .ak-dt-toolbar, .ak-pager, .ak-empty .ak-btn,
         .ak-head-actions, [role="alert"], .ak-alert { display: none !important; }
         .ak-page { max-width: none; padding: 0; gap: 0; }
         .ak-card { border: 0; box-shadow: none; border-radius: 0; }

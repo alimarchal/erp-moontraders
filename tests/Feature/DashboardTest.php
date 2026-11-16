@@ -3,6 +3,7 @@
 use App\Enums\DocumentType;
 use App\Livewire\Dashboard;
 use App\Models\AccountingPeriod;
+use App\Models\ClaimRegister;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
@@ -12,10 +13,10 @@ use App\Models\GoodsIssue;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\LedgerRegister;
-use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\InvestmentSummaryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -252,11 +253,8 @@ it('gives super admins the company overview across all suppliers', function () {
     $supplier = Supplier::factory()->create();
     SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 2500, 'supplier_id' => $supplier->id]);
 
-    $low = Product::factory()->create(['reorder_level' => 50, 'is_active' => true]);
-
     Livewire::actingAs($user)
         ->test(Dashboard::class)
-        ->assertSet('lowStock.0.name', $low->product_name)
         ->assertSet('sections.company', true)
         ->assertSet('scope.supplier', 'All suppliers')
         ->assertSet('salesBySupplier.labels', [$supplier->supplier_name])
@@ -284,8 +282,7 @@ it('takes supplier invoices and payments from the supplier ledger register', fun
         ->test(Dashboard::class)
         ->assertSet('kpiCards.supplierInvoicesThisMonth', 400000.0)
         ->assertSet('kpiCards.paymentsThisMonth', 150000.0)
-        ->assertSet('kpiCards.outstandingPayables', 250000.0)
-        ->assertSet('purchasesVsPayments.purchases.5', 400000.0);
+        ->assertSet('kpiCards.outstandingPayables', 250000.0);
 });
 
 it('opens draft settlements with a date range that includes older drafts', function () {
@@ -325,14 +322,13 @@ it('shows market credit company wise and the top creditors', function () {
     $component = Livewire::actingAs($user)->test(Dashboard::class)
         ->assertSet('kpiCards.marketCredit', 450000.0)
         ->assertSet('kpiCards.creditCustomers', 2)
-        ->assertSet('creditBreakdown.by', 'supplier')
-        ->assertSet('creditBreakdown.labels', ['Nestle', 'Engro'])
         ->assertSet('creditAging.values.0', 450000.0)
         ->assertSee('Top credit customers')
         ->assertSee('Credit market analysis')
         ->assertSet('agingCustomers', []);
 
-    expect($component->get('topCreditCustomers.0'))->toMatchArray(['name' => 'Big Store', 'used' => 400000.0, 'suppliers' => 'Nestle', 'last_paid_days' => 0]);
+    expect($component->get('topCreditCustomers.0'))->toMatchArray(['name' => 'Big Store', 'used' => 400000.0, 'suppliers' => 'Nestle', 'last_paid_days' => 0])
+        ->and($component->get('topCreditCustomers.1'))->toMatchArray(['name' => 'Small Shop', 'used' => 50000.0, 'suppliers' => 'Engro']);
 
     // A Nestle user sees only Nestle's credit, split by salesman.
     $nestleUser = User::factory()->create(['supplier_id' => $nestle->id]);
@@ -340,7 +336,8 @@ it('shows market credit company wise and the top creditors', function () {
 
     Livewire::actingAs($nestleUser)->test(Dashboard::class)
         ->assertSet('kpiCards.marketCredit', 400000.0)
-        ->assertCount('creditBySalesman.labels', 1)
+        ->assertCount('topCreditCustomers', 1)
+        ->assertSet('topCreditCustomers.0.name', 'Big Store')
         ->assertDontSee('Credit by company')
         ->assertSet('sections.company', false);
 });
@@ -360,30 +357,22 @@ it('gives the admin role the company view but hides what admin has no permission
         ->assertDontSee('Top creditors');
 });
 
-it('shows the ledger balance per month and a supplier wise ledger table', function () {
+it('keeps figures no dashboard card shows out of the Livewire snapshot', function () {
     $user = createSuperAdminUser();
     Permission::firstOrCreate(['name' => 'report-audit-ledger-register']);
-    $nestle = Supplier::factory()->create(['supplier_name' => 'Nestle']);
-    $engro = Supplier::factory()->create(['supplier_name' => 'Engro']);
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 1000]);
 
-    foreach ([[$nestle, now()->subMonths(8), 0, 1000000], [$nestle, now(), 600000, 300000], [$engro, now(), 200000, 500000]] as [$supplier, $date, $invoice, $online]) {
-        LedgerRegister::create([
-            'supplier_id' => $supplier->id, 'transaction_date' => $date->toDateString(), 'document_type' => DocumentType::cases()[0],
-            'invoice_amount' => $invoice, 'online_amount' => $online, 'opening_balance' => 0, 'expenses_amount' => 0,
-            'za_point_five_percent_amount' => 0, 'claim_adjust_amount' => 0, 'balance' => 0,
+    $data = Livewire::actingAs($user)->test(Dashboard::class)->snapshot['data'];
+
+    expect($data)->toHaveKeys(['kpiCards', 'dailySalesTrend', 'topCreditCustomers', 'agingCustomers', 'investment', 'insights'])
+        ->not->toHaveKeys([
+            'revenueVsCogs', 'purchasesVsPayments', 'journalEntryStatus', 'grnVsGoodsIssueTrend', 'cashVsCreditTrend',
+            'warehouseStockDistribution', 'stockMovementBreakdown', 'recentSettlements', 'lowStock', 'creditBreakdown',
+            'creditBySalesman', 'supplierLedger', 'companyOverview', 'salesByDayOfWeek',
         ]);
-    }
-
-    $component = Livewire::actingAs($user)->test(Dashboard::class)
-        ->assertSet('purchasesVsPayments.balance.0', 1000000.0)   // carried in from before the 6 months
-        ->assertSet('purchasesVsPayments.balance.5', 1000000.0);   // +1,000,000 - 600,000 + 300,000 - 200,000 + 500,000
-
-    expect($component->get('supplierLedger'))->toHaveCount(2)
-        ->and($component->get('supplierLedger.0'))->toMatchArray(['name' => 'Nestle', 'invoices' => 600000.0, 'payments' => 300000.0, 'balance' => 700000.0])
-        ->and($component->get('supplierLedger.1'))->toMatchArray(['name' => 'Engro', 'balance' => 300000.0]);
 });
 
-it('splits a customer owed to two salesmen into one row per salesman ledger', function () {
+it('adds a customer owed to two salesmen into one top creditor but keeps one aging row per salesman ledger', function () {
     $user = createSuperAdminUser();
     $supplier = Supplier::factory()->create();
     $customer = Customer::factory()->create(['customer_name' => 'Baba Bakers']);
@@ -403,11 +392,13 @@ it('splits a customer owed to two salesmen into one row per salesman ledger', fu
     $component = Livewire::actingAs($user)->test(Dashboard::class)
         ->assertSet('kpiCards.creditCustomers', 1)
         ->assertSet('kpiCards.creditOverdueCustomers', 1)
-        ->assertCount('topCreditCustomers', 2)
+        ->assertCount('topCreditCustomers', 1)
+        ->assertSet('topCreditCustomers.0.used', 400000.0)
+        ->assertSet('topCreditCustomers.0.accounts', 2)
         ->assertCount('agingCustomers', 2)
-        ->assertSet('topCreditCustomers.0.employee_id', $salesmen[0]->id)
-        ->assertSet('topCreditCustomers.0.used', 300000.0)
-        ->assertSet('topCreditCustomers.1.employee_id', $salesmen[1]->id);
+        ->assertSet('agingCustomers.0.employee_id', $salesmen[0]->id)
+        ->assertSet('agingCustomers.0.used', 300000.0)
+        ->assertSet('agingCustomers.1.employee_id', $salesmen[1]->id);
 
     $component->assertSee('Baba Bakers');
 });
@@ -481,7 +472,7 @@ it('ages dashboard credit by unpaid credit sales, so fresh credit after a cleare
         ->assertSet('agingCustomers.0.buckets', [253600.0, 0.0, 0.0, 40000.0]);
 });
 
-it('limits the goods receipt vs goods issue chart to the user\'s own issues without view-all', function () {
+it('limits goods issued to the user\'s own issues without view-all', function () {
     createDashboardPermissions();
     $user = User::factory()->create();
     $user->givePermissionTo(['goods-issue-list', 'inventory-view']);
@@ -490,8 +481,7 @@ it('limits the goods receipt vs goods issue chart to the user\'s own issues with
     GoodsIssue::factory()->create(['status' => 'issued', 'total_value' => 700, 'issued_by' => $user->id]);
 
     Livewire::actingAs($user)->test(Dashboard::class)
-        ->assertSet('kpiCards.goodsIssuedThisMonth', 700.0)
-        ->assertSet('grnVsGoodsIssueTrend.issues.5', 700.0);
+        ->assertSet('kpiCards.goodsIssuedThisMonth', 700.0);
 });
 
 it('keeps salesmen who share a name apart in top salesmen', function () {
@@ -544,4 +534,137 @@ it('resolves a custom period and compares it with the preceding window', functio
         ->test(Dashboard::class, ['from' => '2026-09-01', 'to' => '2026-09-10']);
 
     $component->assertSuccessful();
+});
+
+// ── Figures from the dashboard review (issues 192 / 193) ─────────────
+
+it('ranks top credit customers by everything they owe across salesmen and shows the same customer in the strip', function () {
+    $user = createSuperAdminUser();
+    $supplier = Supplier::factory()->create();
+    $account = function (Customer $customer, float $debit) use ($supplier): void {
+        $account = CustomerEmployeeAccount::create([
+            'account_number' => 'ACC-'.fake()->unique()->numerify('######'),
+            'customer_id' => $customer->id,
+            'employee_id' => Employee::factory()->create(['supplier_id' => $supplier->id])->id,
+            'opened_date' => now()->toDateString(),
+        ]);
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account->id, 'transaction_date' => now()->toDateString(),
+            'transaction_type' => 'credit_sale', 'description' => 'credit sale', 'debit' => $debit, 'credit' => 0,
+        ]);
+    };
+    $split = Customer::factory()->create(['customer_name' => 'Split Buyer', 'city' => 'Murree']);
+    $single = Customer::factory()->create(['customer_name' => 'Single Buyer']);
+    $account($split, 300000);
+    $account($split, 350000);
+    $account($single, 500000);
+
+    $component = Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertCount('topCreditCustomers', 2)
+        ->assertSeeInOrder(['Highest credit customer', 'Split Buyer', 'Rs 6.5 Lac']);
+
+    expect($component->get('topCreditCustomers.0'))->toMatchArray(['name' => 'Split Buyer', 'label' => 'Split Buyer (Murree)', 'used' => 650000.0, 'accounts' => 2])
+        ->and($component->get('topCreditCustomers.1'))->toMatchArray(['name' => 'Single Buyer', 'used' => 500000.0, 'accounts' => 1]);
+});
+
+it('keeps the first month of the sales trend on the 31st of a month', function () {
+    $this->travelTo(Carbon\Carbon::parse('2026-03-31 10:00:00'));
+    $user = createSuperAdminUser();
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => '2025-04-15', 'total_sales_amount' => 1000, 'gross_profit' => 100]);
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => '2026-03-02', 'total_sales_amount' => 2000, 'gross_profit' => 200]);
+
+    $trend = Livewire::actingAs($user)->test(Dashboard::class)->get('monthlySalesTrend');
+
+    expect($trend['labels'])->toHaveCount(12)
+        ->and($trend['labels'][0])->toBe('Apr 2025')
+        ->and($trend['sales'][0])->toEqual(1000.0)
+        ->and($trend['labels'][11])->toBe('Mar 2026')
+        ->and($trend['sales'][11])->toEqual(2000.0);
+});
+
+it('swaps reversed dates before keeping the period out of the future', function (string $from, string $to, string $expectedFrom, string $expectedTo) {
+    $this->travelTo(Carbon\Carbon::parse('2026-11-16 10:00:00'));
+    $user = createSuperAdminUser();
+
+    Livewire::withQueryParams(['from' => $from, 'to' => $to])->actingAs($user)->test(Dashboard::class)
+        ->assertSet('period.from', $expectedFrom)
+        ->assertSet('period.to', $expectedTo);
+})->with([
+    'wholly in the future' => ['2027-01-01', '2027-01-05', '2026-11-16', '2026-11-16'],
+    'reversed, ending in the future' => ['2026-11-20', '2026-11-10', '2026-11-10', '2026-11-16'],
+    'reversed, in the past' => ['2026-10-31', '2026-10-01', '2026-10-01', '2026-10-31'],
+]);
+
+it('charts sales over the chosen period, by week when it is longer than two months', function () {
+    $this->travelTo(Carbon\Carbon::parse('2026-11-16 10:00:00'));
+    $user = createSuperAdminUser();
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => '2026-09-02', 'total_sales_amount' => 1000]);
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => '2026-09-04', 'total_sales_amount' => 500]);
+
+    $daily = Livewire::withQueryParams(['from' => '2026-09-01', 'to' => '2026-09-10'])->actingAs($user)->test(Dashboard::class)->get('dailySalesTrend');
+    expect($daily['unit'])->toBe('day')
+        ->and($daily['labels'])->toHaveCount(10)
+        ->and($daily['labels'][0])->toBe('01 Sep')
+        ->and($daily['sales'][1])->toEqual(1000.0);
+
+    // 1 Jul (Wednesday) to 30 Sep: the first week is cut to start on 1 Jul, then Monday to Sunday.
+    $weekly = Livewire::withQueryParams(['from' => '2026-07-01', 'to' => '2026-09-30'])->actingAs($user)->test(Dashboard::class)->get('dailySalesTrend');
+    expect($weekly['unit'])->toBe('week')
+        ->and($weekly['labels'][0])->toBe('01 Jul')
+        ->and($weekly['labels'][1])->toBe('06 Jul')
+        ->and($weekly['sales'][array_search('31 Aug', $weekly['labels'], true)])->toEqual(1500.0);
+});
+
+it('works out recovery against new credit from the same settlement figures as the credit sales tile', function () {
+    $user = createSuperAdminUser();
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 5000, 'credit_sales_amount' => 2000, 'credit_recoveries' => 1500]);
+
+    $insights = collect(Livewire::actingAs($user)->test(Dashboard::class)->get('insights'))->keyBy('title');
+
+    expect($insights['Recovery against new credit']['value'])->toBe('75%');
+});
+
+it('does not show the company-wide draft journal entry count on a supplier user\'s dashboard', function () {
+    createDashboardPermissions();
+    $accountingPeriod = AccountingPeriod::factory()->create();
+    JournalEntry::factory()->create([
+        'status' => 'draft', 'entry_date' => now(),
+        'currency_id' => Currency::factory()->create()->id, 'accounting_period_id' => $accountingPeriod->id,
+    ]);
+    $user = User::factory()->create(['supplier_id' => Supplier::factory()->create()->id]);
+    $user->givePermissionTo('journal-entry-list');
+
+    $component = Livewire::actingAs($user)->test(Dashboard::class);
+
+    expect($component->get('kpiCards'))->not->toHaveKey('draftJournalEntries')
+        ->and($component->get('pendingItems'))->not->toHaveKey('draftJournalEntries');
+});
+
+it('adds up investment for all enabled suppliers in one pass, matching supplier by supplier', function () {
+    $user = createSuperAdminUser();
+    $suppliers = Supplier::factory()->count(2)->create(['disabled' => false]);
+    $disabled = Supplier::factory()->create(['disabled' => true]);
+    foreach ([[$suppliers[0], 400000, 150000], [$suppliers[1], 90000, 300000], [$disabled, 777000, 0]] as [$supplier, $invoice, $online]) {
+        LedgerRegister::create([
+            'supplier_id' => $supplier->id, 'transaction_date' => now()->subMonth()->toDateString(), 'document_type' => DocumentType::cases()[0],
+            'invoice_amount' => $invoice, 'online_amount' => $online, 'opening_balance' => 0, 'expenses_amount' => 0,
+            'za_point_five_percent_amount' => 0, 'claim_adjust_amount' => 0, 'balance' => 0, 'posted_at' => now(),
+        ]);
+    }
+    ClaimRegister::factory()->create(['supplier_id' => $suppliers[1]->id, 'transaction_date' => now()->subMonth()->toDateString(), 'debit' => 25000, 'credit' => 0, 'posted_at' => now()]);
+
+    $investment = Livewire::actingAs($user)->test(Dashboard::class)->get('investment');
+
+    $service = app(InvestmentSummaryService::class);
+    $oneByOne = fn (string $date) => collect(Supplier::where('disabled', false)->pluck('id'))
+        ->map(fn ($id) => $service->mainInvestment($date, (int) $id))
+        ->reduce(fn (array $sum, array $p) => [
+            'stock' => $sum['stock'] + $p['stock'], 'credit' => $sum['credit'] + $p['credit'], 'claims' => $sum['claims'] + $p['claims'],
+            'expiry' => $sum['expiry'] + $p['powder_expiry'] + $p['liquid_expiry'], 'ledger' => $sum['ledger'] + $p['ledger'],
+        ], ['stock' => 0.0, 'credit' => 0.0, 'claims' => 0.0, 'expiry' => 0.0, 'ledger' => 0.0]);
+
+    expect($investment['parts'])->toEqual(array_map(fn ($v) => round($v, 2), $oneByOne($investment['as_of'])))
+        ->and($investment['before'])->toEqual(array_map(fn ($v) => round($v, 2), $oneByOne($investment['before_on'])))
+        ->and($investment['parts']['ledger'])->toEqual(-40000.0)
+        ->and($investment['parts']['claims'])->toEqual(25000.0);
 });

@@ -49,14 +49,15 @@
     .db-kpi-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; opacity: .95; }
     .db-kpi-icon { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,.22); flex: none; }
     .db-kpi-icon svg { width: 15px; height: 15px; }
-    .db-kpi-value { position: relative; z-index: 1; margin-top: 7px; font-size: 24px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    /* Shrinks on phones (two tiles a row) so a long figure is not clipped; ellipsis as a last resort. */
+    .db-kpi-value { position: relative; z-index: 1; margin-top: 7px; font-size: clamp(17px, 5.2vw, 24px); line-height: 1.1; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .db-kpi-value small { margin-right: 3px; font-size: 12px; font-weight: 700; opacity: .85; }
     .db-kpi-hint { position: relative; z-index: 1; margin-top: 5px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 11.5px; line-height: 1.3; opacity: .95; }
     .db-delta { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(255,255,255,.26); }
     .db-spark { position: relative; z-index: 1; height: 26px; margin: 2px -4px -6px; }
 
     /* ---- chart cards ---- */
-    .db-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); }
+    .db-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(310px, 100%), 1fr)); }
     .db-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px 8px; min-width: 0; box-shadow: 0 8px 22px -14px rgba(15,23,42,.4); }
     .db-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
     .db-card h3 { margin: 0; padding-left: 9px; border-left: 4px solid var(--accent, var(--s1)); font-size: 14px; line-height: 1.25; font-weight: 800; color: var(--navy); }
@@ -83,12 +84,22 @@
     .db-filters select, .db-filters input { height: 32px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 12.5px; background: #fff; color: #0f172a; max-width: 100%; }
     .db-filters input { width: 210px; }
     .db-aging-scroll { max-height: 26rem; overflow: auto; border-top: 1px solid #e2e8f0; }
+    /* A real table only from tablet width up; below 768px ui-style turns each row into a card. */
+    @media (min-width: 768px) { .ak-dt.db-aging-table { min-width: 860px; } }
+    .db-aging-table .db-aging-none td { padding: 22px 16px; text-align: center; color: var(--ak-muted); font-size: 13px; }
 
     /* ---- top performers strip ---- */
     .db-strip { display: grid; gap: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; border-radius: 14px; background: linear-gradient(110deg, #0b2a6f, #1e3a8a); color: #fff; box-shadow: 0 14px 28px -16px rgba(11,42,111,.8); }
     @media (min-width: 900px) { .db-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
     .db-strip > div { display: flex; align-items: center; gap: 11px; padding: 12px 16px; border-left: 1px solid rgba(255,255,255,.14); min-width: 0; }
-    .db-strip > div:first-child { border-left: 0; }
+    /* Two a row on phones: no divider before the first of each row, a line between rows. */
+    .db-strip > div:nth-child(2n+1) { border-left: 0; }
+    .db-strip > div:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,.14); }
+    @media (min-width: 900px) {
+        .db-strip > div:nth-child(2n+1) { border-left: 1px solid rgba(255,255,255,.14); }
+        .db-strip > div:nth-child(n+3) { border-top: 0; }
+        .db-strip > div:first-child { border-left: 0; }
+    }
     .db-strip i { flex: none; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--dot); color: #fff; }
     .db-strip i svg { width: 18px; height: 18px; }
     .db-strip small { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #93c5fd; }
@@ -96,7 +107,8 @@
     .db-strip span { display: block; font-size: 12px; color: #dbeafe; font-variant-numeric: tabular-nums; }
 
     /* ---- what the numbers say ---- */
-    .db-insights { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .db-insights { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
+    @media (min-width: 1100px) { .db-insights { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     .db-insight { background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid var(--tone, #4f46e5); border-radius: 12px; padding: 10px 14px; box-shadow: 0 8px 22px -14px rgba(15,23,42,.4); }
     .db-insight b { display: block; font-size: 20px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; color: var(--tone, #4f46e5); font-variant-numeric: tabular-nums; }
     .db-insight h3 { margin: 1px 0 3px; font-size: 12.5px; font-weight: 800; color: var(--ak-text); }

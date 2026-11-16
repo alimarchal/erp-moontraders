@@ -41,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
             return ($user->hasRole('super-admin') || $user->is_super_admin === 'Yes') ? true : null;
         });
 
+        // Only super admins pass (through Gate::before above): page layouts are chosen once for everyone.
+        Gate::define('manage-appearance', fn ($user): bool => false);
+
         Gate::define('view-any-report', function ($user) {
             return $user->getAllPermissions()->contains(fn ($p) => str_starts_with($p->name, 'report-'));
         });

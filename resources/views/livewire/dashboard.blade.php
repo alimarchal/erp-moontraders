@@ -69,6 +69,8 @@
     $hasStock = $sections['inventory'] && ! empty($topProductsByStockValue['labels'] ?? []);
     $methodTotal = array_sum($salesByPaymentMethod['values'] ?? []);
     $multiSupplier = count($salesBySupplier['labels'] ?? []) > 1;
+    $hasDailySales = array_sum($dailySalesTrend['sales'] ?? []) > 0;
+    $dailyByWeek = ($dailySalesTrend['unit'] ?? 'day') === 'week';
 
     // Investment parts, in the order of the Investment Summary report; the supplier ledger is minus when we owe.
     $invParts = [];
@@ -80,6 +82,7 @@
 
     // Top performers strip.
     $topProduct = ($topProductsBySales['labels'] ?? []) ? ['name' => $topProductsBySales['labels'][0], 'value' => $topProductsBySales['values'][0]] : null;
+    // Already one entry per customer (all salesman accounts added), biggest first: same list as the chart.
     $topCreditor = $topCreditCustomers[0] ?? null;
     $topSalesman = ($topSalespersonBySales['labels'] ?? []) ? ['name' => $topSalespersonBySales['labels'][0], 'value' => $topSalespersonBySales['values'][0]] : null;
     $topStock = ($topProductsByStockValue['labels'] ?? []) ? ['name' => $topProductsByStockValue['labels'][0], 'value' => $topProductsByStockValue['values'][0]] : null;
@@ -151,7 +154,7 @@
                         @endforeach
                     </select>
                 </label>
-                @if ($scope['supplier_id'])<a href="{{ route('dashboard') }}" class="ak-scope" style="text-decoration:none">✕ Clear</a>@endif
+                @if ($scope['supplier_id'])<a href="{{ route('dashboard', array_filter(['from' => request()->query('from'), 'to' => request()->query('to')])) }}" class="ak-scope" style="text-decoration:none">✕ Clear</a>@endif
             @else
                 <span class="ak-scope {{ $scope['supplier_id'] ? 'ak-scope-limited' : '' }}" title="Supplier data you can see">Supplier: {{ $scope['supplier'] }}</span>
             @endif
@@ -229,9 +232,9 @@
                     @endif
                 </section>
                 <section class="db-card" style="--accent: var(--s2)" aria-label="{{ $multiSupplier ? 'Sales share by company' : 'Daily sales' }}">
-                    <div class="db-card-head"><div><h3>{{ $multiSupplier ? 'Sales share by company' : 'Sales day by day' }}</h3><p class="db-card-sub">{{ $multiSupplier ? 'which company brings the sales' : $period['label'] }}</p></div></div>
-                    @if ($multiSupplier || ($dailySalesTrend['sales'] ?? []) !== [])
-                        <div id="{{ $multiSupplier ? 'db-supplier' : 'db-daily' }}" class="db-chart" role="img" aria-label="{{ $multiSupplier ? 'Sales share by company' : 'Sales per day' }}"></div>
+                    <div class="db-card-head"><div><h3>{{ $multiSupplier ? 'Sales share by company' : ($dailyByWeek ? 'Sales week by week' : 'Sales day by day') }}</h3><p class="db-card-sub">{{ $multiSupplier ? 'which company brings the sales' : $period['label'] }}</p></div></div>
+                    @if ($multiSupplier || $hasDailySales)
+                        <div id="{{ $multiSupplier ? 'db-supplier' : 'db-daily' }}" class="db-chart" role="img" aria-label="{{ $multiSupplier ? 'Sales share by company' : ($dailyByWeek ? 'Sales per week' : 'Sales per day') }}"></div>
                     @else
                         <div class="db-empty"><b>No sales in this period</b></div>
                     @endif
@@ -275,8 +278,7 @@
 
         {{-- ============================== People and stock ============================== --}}
         @php
-            $creditByCustomer = collect($topCreditCustomers)->groupBy('id')->map(fn ($g) => ['name' => $g->first()['name'].($g->first()['city'] ? ' ('.$g->first()['city'].')' : ''), 'used' => $g->sum('used')])->sortByDesc('used')->take(8)->values();
-            $topCreditChart = ['labels' => $creditByCustomer->pluck('name')->all(), 'values' => $creditByCustomer->pluck('used')->all()];
+            $topCreditChart = ['labels' => array_column($topCreditCustomers, 'label'), 'values' => array_column($topCreditCustomers, 'used')];
         @endphp
         @if ($hasCredit || $sections['sales'] || $hasStock)
             <div class="db-row">
@@ -325,7 +327,7 @@
         {{-- ============================== What the numbers say ============================== --}}
         @if ($insights)
             <section class="db-insights" aria-label="Insights">
-                @foreach (array_slice($insights, 0, 3) as $insight)
+                @foreach ($insights as $insight)
                     <div class="db-insight" style="--tone: {{ $insight['tone'] }}">
                         <b>{{ $insight['value'] }}</b>
                         <h3>{{ $insight['title'] }}</h3>
@@ -336,85 +338,7 @@
         @endif
 
         {{-- ============================== Late credit: aging creditors with filters ============================== --}}
-        @if ($hasCredit && $agingCustomers)
-            <section class="db-card db-aging" id="db-aging-list" aria-label="Late credit, aging creditors" style="--accent: var(--s6); padding: 0; overflow: hidden"
-                x-data="{
-                    aging: 'late', q: '', salesman: '',
-                    inAging(bs) { return this.aging === 'all' ? true : (this.aging === 'late' ? bs.some(b => b >= 2) : bs.includes(this.aging)); },
-                    partOf(parts) { return this.aging === 'all' ? parts.slice(1).reduce((a, b) => a + b, 0) : (this.aging === 'late' ? parts[2] + parts[3] : (parts[this.aging] ?? 0)); },
-                    show(row) { return this.inAging(row.in) && (this.salesman === '' || row.salesmen === this.salesman) && (this.q === '' || row.hay.includes(this.q.toLowerCase())); },
-                    shown: 0,
-                }"
-                @aging-bucket.window="aging = $event.detail; $el.scrollIntoView({ behavior: 'smooth', block: 'start' })">
-                <div class="db-card-head" style="padding: 14px 16px 6px; flex-wrap: wrap; gap: 10px">
-                    <div>
-                        <h3>Late credit: aging creditors</h3>
-                        <p class="db-card-sub">Customers with unpaid credit older than 30 days, biggest first. Payments clear the oldest sales first; "Days" is the age of the oldest unpaid sale.</p>
-                    </div>
-                    <div class="db-filters" aria-label="Filter the list">
-                        <div class="db-aging-chips">
-                            <button type="button" @click="aging = 'late'" :class="aging === 'late' && 'is-on'">60+ days <b>{{ $n($k['creditOverdueAccounts'] ?? 0) }}</b></button>
-                            @foreach ($bucketNames as $i => $label)
-                                <button type="button" @click="aging = {{ $i }}" :class="aging === {{ $i }} && 'is-on'">{{ $label }} <b>{{ $n($creditAging['counts'][$i] ?? 0) }}</b></button>
-                            @endforeach
-                            <button type="button" @click="aging = 'all'" :class="aging === 'all' && 'is-on'">All late</button>
-                        </div>
-                        <select x-model="salesman" aria-label="Salesman">
-                            <option value="">All salesmen</option>
-                            @foreach ($agingSalesmen as $name)<option value="{{ $name }}">{{ $name }}</option>@endforeach
-                        </select>
-                        <input type="search" x-model="q" placeholder="Search customer or city" aria-label="Search customer or city">
-                    </div>
-                </div>
-                <div class="db-aging-scroll">
-                    <table class="ak-dt" style="min-width: 860px">
-                        <thead>
-                            <tr>
-                                <th scope="col">Customer</th>
-                                <th scope="col">{{ $scope['supplier_id'] === null ? 'Company · salesman' : 'Salesman' }}</th>
-                                <th scope="col" class="ak-num">Owes (Rs)</th>
-                                <th scope="col" class="ak-num">In this range</th>
-                                <th scope="col" class="ak-c">Oldest unpaid sale</th>
-                                <th scope="col" class="ak-c">Last paid</th>
-                                <th scope="col" class="ak-c">Days</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($agingCustomers as $cust)
-                                @php
-                                    $row = ['in' => $cust['in'], 'salesmen' => $cust['salesmen'], 'hay' => mb_strtolower($cust['name'].' '.$cust['code'].' '.$cust['city'])];
-                                @endphp
-                                <tr x-show="show({{ \Illuminate\Support\Js::from($row) }})">
-                                    <td data-label="Customer">
-                                        @if ($canCreditors)
-                                            <a href="{{ $customerStatement($cust['id'], $cust['employee_id']) }}" class="ak-primary-link" title="Open {{ $cust['salesmen'] }}'s ledger for this customer">{{ $cust['name'] }}</a>
-                                        @else
-                                            <span class="ak-strong">{{ $cust['name'] }}</span>
-                                        @endif
-                                        <div class="ak-muted">{{ $cust['code'] }}{{ $cust['city'] ? ' · '.$cust['city'] : '' }}@if ($canCreditors) · <a href="{{ $customerStatement($cust['id']) }}" title="All salesmen for this customer">full statement</a>@endif</div>
-                                    </td>
-                                    <td data-label="{{ $scope['supplier_id'] === null ? 'Company · salesman' : 'Salesman' }}">
-                                        @if ($scope['supplier_id'] === null)<div>{{ $cust['suppliers'] ?: '—' }}</div>@endif
-                                        <div class="{{ $scope['supplier_id'] === null ? 'ak-muted' : '' }}">{{ $cust['salesmen'] ?: '—' }}</div>
-                                    </td>
-                                    <td class="ak-num ak-strong" data-label="Owes (Rs)">{{ number_format($cust['used']) }}</td>
-                                    <td class="ak-num" data-label="In this range" x-text="Math.round(partOf({{ \Illuminate\Support\Js::from($cust['buckets']) }})).toLocaleString('en-PK')"></td>
-                                    <td class="ak-c" data-label="Oldest unpaid sale">{{ $cust['oldest_unpaid'] ? \Carbon\Carbon::parse($cust['oldest_unpaid'])->format('d M Y') : '—' }}</td>
-                                    <td class="ak-c" data-label="Last paid">{{ $cust['last_paid_days'] === null ? 'Never' : now()->subDays($cust['last_paid_days'])->format('d M Y') }}</td>
-                                    <td class="ak-c" data-label="Days"><span class="ak-status {{ $cust['bucket'] >= 3 ? 'ak-status-red' : 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $cust['days'] }}</span></td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <p class="ak-muted" style="padding: 8px 16px 10px; margin: 0; font-size: 12px">
-                    Totals: 31-60 days Rs {{ $rs($creditAging['values'][1] ?? 0) }} &middot; 61-90 days Rs {{ $rs($creditAging['values'][2] ?? 0) }} &middot; over 90 days Rs {{ $rs($creditAging['values'][3] ?? 0) }}
-                    @if (count($agingCustomers) >= 300) &middot; showing the 300 biggest @endif
-                    @if ($agingReportUrl) &middot; <a href="{{ $agingReportUrl }}">Aging report →</a>@endif
-                    @if ($creditUrl) &middot; <a href="{{ $creditUrl }}">Creditors ledger →</a>@endif
-                </p>
-            </section>
-        @endif
+        @include('livewire.dashboard.aging-table')
     </div>
 
     @php
@@ -422,7 +346,7 @@
             'method' => $methodTotal > 0 ? $salesByPaymentMethod : null,
             'products' => ($topProductsBySales['labels'] ?? []) !== [] ? $topProductsBySales : null,
             'supplier' => $multiSupplier ? $salesBySupplier : null,
-            'daily' => $dailySalesTrend ?: null,
+            'daily' => $hasDailySales ? $dailySalesTrend : null,
             'monthly' => array_sum($monthlySalesTrend['sales'] ?? []) > 0 ? $monthlySalesTrend : null,
             'invest' => $hasInvestment ? ['labels' => array_column($invParts, 'name'), 'values' => array_column($invParts, 'value'), 'colors' => array_column($invParts, 'color')] : null,
             'aging' => array_sum($creditAging['values'] ?? []) > 0 ? $creditAging : null,
@@ -463,6 +387,8 @@
                     tooltip: { y: { formatter: fmt } },
                     legend: Object.assign({}, base.legend, { position: legendAt, horizontalAlign: 'center', fontSize: '12px', formatter: (name, o) => name + '  ' + short(o.w.globals.series[o.seriesIndex]) }),
                     dataLabels: { enabled: true, formatter: v => v >= 6 ? Math.round(v) + '%' : '', dropShadow: { enabled: false }, style: { fontSize: '11px', fontWeight: 700 } },
+                    // Phones: the legend goes under the donut so it does not squeeze the ring.
+                    responsive: legendAt === 'bottom' ? [] : [{ breakpoint: 480, options: { chart: { height: 300 }, legend: { position: 'bottom', horizontalAlign: 'center' } } }],
                     plotOptions: { pie: { donut: { size: '62%', labels: { show: true, name: { fontSize: '11px', color: ink }, value: { fontSize: '16px', fontWeight: 800, color: '#0f172a', formatter: v => 'Rs ' + short(Number(v)) }, total: { show: true, label: total, color: ink, fontSize: '11px', formatter: w => 'Rs ' + short(w.globals.seriesTotals.reduce((a, b) => a + b, 0)) } } } } },
                 });
                 const columns = (id, labels, values, colors, height = 230, fmt = short, events = {}) => draw(id, {
@@ -485,6 +411,13 @@
                     dataLabels: { enabled: true, formatter: v => short(v), textAnchor: 'start', offsetX: 38, style: { fontSize: '11px', fontWeight: 700, colors: ['#0f172a'] }, dropShadow: { enabled: false } },
                     yaxis: { labels: { style: { colors: '#1e293b', fontSize: '12px' }, maxWidth: 190 } },
                     tooltip: { y: { formatter: rupees }, x: { formatter: (v, o) => labels[o.dataPointIndex] } },
+                    // Phones: narrower names and less right padding so the bars keep most of the width.
+                    responsive: [{ breakpoint: 480, options: {
+                        xaxis: { categories: labels.map(l => cut(l, 16)) },
+                        yaxis: { labels: { style: { colors: '#1e293b', fontSize: '11px' }, maxWidth: 110 } },
+                        grid: { show: false, padding: { left: 2, right: 40, top: 0, bottom: 0 } },
+                        dataLabels: { offsetX: 30 },
+                    } }],
                 });
                 const spark = (id, series) => draw(id, {
                     chart: { type: 'area', height: 26, sparkline: { enabled: true } },

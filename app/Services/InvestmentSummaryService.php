@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\DB;
  */
 class InvestmentSummaryService
 {
-    public function getSalesmanCreditData(string $date, ?int $supplierId, ?string $designation, array $employeeIds)
+    /**
+     * @param  int|array<int, int>|null  $supplierId  one supplier, a list of suppliers (summed), or null for all
+     */
+    public function getSalesmanCreditData(string $date, int|array|null $supplierId, ?string $designation, array $employeeIds)
     {
         $query = Employee::query()
             ->select('employees.*')
@@ -54,9 +57,7 @@ class InvestmentSummaryService
                     ->selectRaw('COALESCE(SUM(ceat.credit), 0)');
             }, 'recovery_amount');
 
-        if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'supplier_id', $supplierId);
 
         if ($designation) {
             $query->where('designation', $designation);
@@ -78,7 +79,7 @@ class InvestmentSummaryService
         });
     }
 
-    public function getPowderExpiry(?int $supplierId, ?string $date = null): float
+    public function getPowderExpiry(int|array|null $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
         $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
@@ -103,14 +104,12 @@ class InvestmentSummaryService
                     });
             });
 
-        if ($supplierId) {
-            $query->where('ss.supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'ss.supplier_id', $supplierId);
 
         return (float) $query->sum('p.amount');
     }
 
-    public function getLiquidExpiry(?int $supplierId, ?string $date = null): float
+    public function getLiquidExpiry(int|array|null $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
         $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
@@ -135,20 +134,16 @@ class InvestmentSummaryService
                     });
             });
 
-        if ($supplierId) {
-            $query->where('ss.supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'ss.supplier_id', $supplierId);
 
         return (float) $query->sum('l.amount');
     }
 
-    public function getClaimAmount(?int $supplierId, ?string $date = null): float
+    public function getClaimAmount(int|array|null $supplierId, ?string $date = null): float
     {
         $query = ClaimRegister::whereNotNull('posted_at');
 
-        if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'supplier_id', $supplierId);
 
         if ($date) {
             $query->where('transaction_date', '<=', $date);
@@ -158,7 +153,7 @@ class InvestmentSummaryService
             ->value('balance');
     }
 
-    public function getStockAmount(?int $supplierId, ?string $date = null): float
+    public function getStockAmount(int|array|null $supplierId, ?string $date = null): float
     {
         $today = now()->format('Y-m-d');
 
@@ -169,9 +164,7 @@ class InvestmentSummaryService
                 ->where('csb.status', 'active')
                 ->whereNull('p.deleted_at');
 
-            if ($supplierId) {
-                $query->where('p.supplier_id', $supplierId);
-            }
+            $this->whereSupplier($query, 'p.supplier_id', $supplierId);
 
             return (float) $query->selectRaw('COALESCE(SUM(csb.total_value), 0) as total')
                 ->value('total');
@@ -188,8 +181,18 @@ class InvestmentSummaryService
             ->whereNull('dis.vehicle_id')
             ->whereNull('p.deleted_at');
 
-        if ($supplierId) {
-            $query->where('p.supplier_id', $supplierId);
+        $this->whereSupplier($query, 'p.supplier_id', $supplierId);
+
+        // Several suppliers at once: each supplier without a snapshot for the date falls back to
+        // the stock ledger on its own, exactly as when they are asked for one by one.
+        if (is_array($supplierId)) {
+            $bySupplier = (clone $query)
+                ->groupBy('p.supplier_id')
+                ->selectRaw('p.supplier_id, COALESCE(SUM(dis.total_value), 0) as total')
+                ->pluck('total', 'supplier_id');
+            $withoutSnapshot = array_values(array_diff(array_map('intval', $supplierId), array_map('intval', $bySupplier->keys()->all())));
+
+            return (float) $bySupplier->sum() + ($withoutSnapshot === [] ? 0.0 : $this->getHistoricalStockFromLedger($withoutSnapshot, $date));
         }
 
         $snapshotCount = (clone $query)->count();
@@ -204,16 +207,14 @@ class InvestmentSummaryService
         return $this->getHistoricalStockFromLedger($supplierId, $date);
     }
 
-    public function getHistoricalStockFromLedger(?int $supplierId, string $date): float
+    public function getHistoricalStockFromLedger(int|array|null $supplierId, string $date): float
     {
         $latestEntryIds = DB::table('stock_ledger_entries as sle')
             ->join('products as p', 'sle.product_id', '=', 'p.id')
             ->whereDate('sle.entry_date', '<=', $date)
             ->whereNull('p.deleted_at');
 
-        if ($supplierId) {
-            $latestEntryIds->where('p.supplier_id', $supplierId);
-        }
+        $this->whereSupplier($latestEntryIds, 'p.supplier_id', $supplierId);
 
         $latestEntryIds->selectRaw('MAX(sle.id) as latest_id')
             ->groupBy('sle.product_id', 'sle.warehouse_id', 'sle.stock_batch_id');
@@ -226,13 +227,11 @@ class InvestmentSummaryService
             ->value('total');
     }
 
-    public function getLedgerAmount(?int $supplierId, ?string $date = null): float
+    public function getLedgerAmount(int|array|null $supplierId, ?string $date = null): float
     {
         $query = LedgerRegister::whereNotNull('posted_at');
 
-        if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'supplier_id', $supplierId);
 
         if ($date) {
             $query->where('transaction_date', '<=', $date);
@@ -248,9 +247,7 @@ class InvestmentSummaryService
         $query = SalesSettlement::with('cashDenominations')
             ->whereDate('settlement_date', $date);
 
-        if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'supplier_id', $supplierId);
 
         return (float) $query->get()->sum(function ($settlement) {
             $cashDenom = $settlement->cashDenominations->first();
@@ -266,9 +263,7 @@ class InvestmentSummaryService
         $query = LedgerRegister::whereNotNull('posted_at')
             ->whereDate('transaction_date', $date);
 
-        if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'supplier_id', $supplierId);
 
         return (float) $query->sum('online_amount');
     }
@@ -372,9 +367,7 @@ class InvestmentSummaryService
         $query = LedgerRegister::whereNotNull('posted_at')
             ->whereBetween('transaction_date', [$startOfMonth, $upToDate]);
 
-        if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'supplier_id', $supplierId);
 
         return (float) $query->sum('online_amount');
     }
@@ -396,9 +389,7 @@ class InvestmentSummaryService
             ->whereDate('ss.settlement_date', $date)
             ->whereNull('ss.deleted_at');
 
-        if ($supplierId) {
-            $query->where('ss.supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'ss.supplier_id', $supplierId);
 
         return (float) $query->sum('bs.amount');
     }
@@ -410,9 +401,7 @@ class InvestmentSummaryService
             ->whereDate('ss.settlement_date', $date)
             ->whereNull('ss.deleted_at');
 
-        if ($supplierId) {
-            $query->where('ss.supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'ss.supplier_id', $supplierId);
 
         $bankTransfersAmount = (float) $query->sum('bt.amount');
 
@@ -439,9 +428,7 @@ class InvestmentSummaryService
             ->whereDate('ss.settlement_date', $date)
             ->whereNull('ss.deleted_at');
 
-        if ($supplierId) {
-            $query->where('ss.supplier_id', $supplierId);
-        }
+        $this->whereSupplier($query, 'ss.supplier_id', $supplierId);
 
         return (float) $query->sum('sc.amount');
     }
@@ -483,9 +470,10 @@ class InvestmentSummaryService
      * What the business has tied up as of a date, one supplier or all: the same parts
      * as the report's "main investment" (expiry, claims, stock, market credit, supplier ledger).
      *
+     * @param  int|array<int, int>|null  $supplierId  one supplier, a list of suppliers (summed, one query per part), or null for all
      * @return array{powder_expiry: float, liquid_expiry: float, claims: float, stock: float, credit: float, ledger: float, total: float}
      */
-    public function mainInvestment(string $date, ?int $supplierId): array
+    public function mainInvestment(string $date, int|array|null $supplierId): array
     {
         $parts = [
             'powder_expiry' => $this->getPowderExpiry($supplierId, $date),
@@ -497,5 +485,20 @@ class InvestmentSummaryService
         ];
 
         return $parts + ['total' => array_sum($parts)];
+    }
+
+    /**
+     * Limit a query to one supplier or a list of suppliers; null leaves it unfiltered. An empty
+     * list matches nothing, like adding up no suppliers.
+     *
+     * @param  int|array<int, int>|null  $supplierId
+     */
+    private function whereSupplier(mixed $query, string $column, int|array|null $supplierId): void
+    {
+        if (is_array($supplierId)) {
+            $query->whereIn($column, $supplierId);
+        } elseif ($supplierId) {
+            $query->where($column, $supplierId);
+        }
     }
 }

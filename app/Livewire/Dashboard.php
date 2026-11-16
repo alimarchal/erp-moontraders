@@ -2,9 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Enums\PageLayout;
+use App\Models\AppSetting;
 use App\Models\CurrentStock;
-use App\Models\Customer;
-use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
@@ -12,11 +12,9 @@ use App\Models\LedgerRegister;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
-use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\Vehicle;
 use App\Services\CustomerCreditAging;
 use App\Services\InvestmentSummaryService;
 use Carbon\Carbon;
@@ -25,6 +23,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 use Livewire\Component;
 
 /**
@@ -38,11 +37,10 @@ use Livewire\Component;
  *    goods issues and GRNs they created, like those lists.
  *  - Sections appear only for modules the user can open.
  *
- * Super admins additionally get a company overview (suppliers, users, fleet).
- *
  * Sales, credit-given/recovered, top lists and ledger figures follow the chosen
  * period (?from=&to=, default: this month so far) and are compared with the
- * period before it. Trends use fixed windows. The result is cached for a couple
+ * period before it; so does the day-by-day sales chart (by week for a long period). The monthly
+ * trend and the weekday pattern use fixed windows. The result is cached for a couple
  * of minutes per user, supplier and period; ?refresh=1 recalculates it.
  */
 class Dashboard extends Component
@@ -57,25 +55,13 @@ class Dashboard extends Component
     public array $salesByPaymentMethod = [];
 
     /** @var array<string, mixed> */
-    public array $revenueVsCogs = [];
-
-    /** @var array<string, mixed> */
     public array $topProductsByStockValue = [];
-
-    /** @var array<string, mixed> */
-    public array $purchasesVsPayments = [];
 
     /** @var array<string, mixed> */
     public array $dailySalesTrend = [];
 
     /** @var array<string, mixed> */
-    public array $journalEntryStatus = [];
-
-    /** @var array<string, mixed> */
     public array $topProductsBySales = [];
-
-    /** @var array<string, mixed> */
-    public array $grnVsGoodsIssueTrend = [];
 
     /** @var array<string, mixed> */
     public array $topSalespersonBySales = [];
@@ -83,17 +69,13 @@ class Dashboard extends Component
     /** @var array<string, mixed> */
     public array $pendingItems = [];
 
-    /** @var array<string, mixed> */
-    public array $cashVsCreditTrend = [];
-
-    /** @var array<string, mixed> */
-    public array $salesByDayOfWeek = [];
-
-    /** @var array<string, mixed> */
-    public array $warehouseStockDistribution = [];
-
-    /** @var array<string, mixed> */
-    public array $stockMovementBreakdown = [];
+    /**
+     * Sales per weekday over the last 90 days. Only the insights use it, so it stays out of the
+     * Livewire snapshot.
+     *
+     * @var array{labels?: array<int, string>, values?: array<int, float>, trips?: array<int, int>}
+     */
+    private array $salesByDayOfWeek = [];
 
     /**
      * The chosen period and the one it is compared with.
@@ -142,30 +124,15 @@ class Dashboard extends Component
      */
     public array $lastMonth = [];
 
-    /** @var array<int, array<string, mixed>> */
-    public array $recentSettlements = [];
-
-    /** @var array<int, array<string, mixed>> */
-    public array $lowStock = [];
-
-    /** @var array<int, array<string, mixed>> */
+    /**
+     * The customers who owe the most, all of their salesman accounts added together.
+     *
+     * @var array<int, array{id: int, name: string, code: string|null, city: string|null, label: string, used: float, accounts: int, suppliers: string, salesmen: string, last_paid_days: int|null}>
+     */
     public array $topCreditCustomers = [];
 
     /** @var array<string, mixed> */
     public array $salesBySupplier = [];
-
-    /**
-     * Outstanding customer credit by supplier (or by salesman for a supplier user).
-     *
-     * @var array{by?: string, labels?: array<int, string>, values?: array<int, float>}
-     */
-    public array $creditBreakdown = [];
-
-    /** @var array{labels?: array<int, string>, values?: array<int, float>} */
-    public array $creditBySalesman = [];
-
-    /** @var array<int, array{id: int, name: string, invoices: float, payments: float, balance: float, last_entry: string}> */
-    public array $supplierLedger = [];
 
     /**
      * Outstanding credit by the age of each unpaid credit sale (see CustomerCreditAging).
@@ -176,9 +143,6 @@ class Dashboard extends Component
 
     /** @var array<int, array<string, mixed>> Accounts with credit older than 30 days (aging drill-down). */
     public array $agingCustomers = [];
-
-    /** @var array<string, mixed> */
-    public array $companyOverview = [];
 
     /**
      * Ready-made links to each module's draft list.
@@ -199,12 +163,9 @@ class Dashboard extends Component
 
     /** Everything the view needs that is worked out by the loaders (and so can be cached). */
     private const STATE = [
-        'kpiCards', 'monthlySalesTrend', 'salesByPaymentMethod', 'revenueVsCogs', 'topProductsByStockValue',
-        'purchasesVsPayments', 'dailySalesTrend', 'journalEntryStatus', 'topProductsBySales', 'grnVsGoodsIssueTrend',
-        'topSalespersonBySales', 'pendingItems', 'cashVsCreditTrend', 'salesByDayOfWeek', 'warehouseStockDistribution',
-        'stockMovementBreakdown', 'lastMonth', 'recentSettlements', 'lowStock', 'topCreditCustomers', 'salesBySupplier',
-        'creditBreakdown', 'creditBySalesman', 'supplierLedger', 'creditAging', 'agingCustomers', 'companyOverview',
-        'draftLinks', 'investment', 'insights', 'refreshedAt',
+        'kpiCards', 'monthlySalesTrend', 'salesByPaymentMethod', 'topProductsByStockValue', 'dailySalesTrend',
+        'topProductsBySales', 'topSalespersonBySales', 'pendingItems', 'lastMonth', 'topCreditCustomers',
+        'salesBySupplier', 'creditAging', 'agingCustomers', 'draftLinks', 'investment', 'insights', 'refreshedAt',
     ];
 
     public function mount(): void
@@ -240,7 +201,7 @@ class Dashboard extends Component
     private function cacheKey(User $user): string
     {
         return implode(':', [
-            'dashboard', $user->id, $this->scope['supplier_id'] ?? 'all', $this->period['from'], $this->period['to'],
+            'dashboard', 'v2', $user->id, $this->scope['supplier_id'] ?? 'all', $this->period['from'], $this->period['to'],
             (int) $this->scope['own_settlements'], (int) $this->scope['own_issues'], (int) $this->scope['own_grns'],
         ]);
     }
@@ -256,13 +217,10 @@ class Dashboard extends Component
 
         if ($this->canSeeSupplierLedger($user)) {
             $this->loadSupplierLedger();
-            $this->loadPurchasesVsPayments();
         }
 
         if ($user->can('view-any-report') || $user->can('accounting-view')) {
             $this->loadMonthlySalesTrend();
-            $this->loadRevenueVsCogs();
-            $this->loadJournalEntryStatus();
         }
 
         if ($user->can('sales-settlement-list') || $user->can('view-any-report')) {
@@ -271,23 +229,11 @@ class Dashboard extends Component
             $this->loadDailySalesTrend();
             $this->loadTopProductsBySales();
             $this->loadTopSalespersonBySales();
-            $this->loadCashVsCreditTrend();
             $this->loadSalesByDayOfWeek();
-        }
-
-        if ($user->can('sales-settlement-list')) {
-            $this->loadRecentSettlements();
         }
 
         if ($user->can('inventory-view') || $user->can('view-any-report')) {
             $this->loadTopProductsByStockValue();
-            $this->loadGrnVsGoodsIssueTrend();
-            $this->loadWarehouseStockDistribution();
-            $this->loadStockMovementBreakdown();
-        }
-
-        if ($user->can('inventory-view')) {
-            $this->loadLowStock();
         }
 
         if ($this->sections['credit']) {
@@ -296,10 +242,6 @@ class Dashboard extends Component
 
         if ($this->scope['supplier_id'] === null && ($user->can('sales-settlement-list') || $user->can('view-any-report'))) {
             $this->loadSalesBySupplier();
-        }
-
-        if ($this->sections['company']) {
-            $this->loadCompanyOverview();
         }
 
         if ($this->sections['investment']) {
@@ -348,11 +290,16 @@ class Dashboard extends Component
         $from ??= $to->copy();
         $to ??= $from->copy();
 
+        // Swap first, then keep both dates out of the future, so a period that lies wholly
+        // ahead (e.g. next January) becomes today rather than "today to next January".
+        if ($from->gt($to)) {
+            [$from, $to] = [$to->copy(), $from->copy()];
+        }
         if ($to->gt($today)) {
             $to = $today->copy();
         }
-        if ($from->gt($to)) {
-            [$from, $to] = [$to->copy(), $from->copy()];
+        if ($from->gt($today)) {
+            $from = $today->copy();
         }
         if ($from->diffInDays($to) > 730) {
             $from = $to->copy()->subDays(730);
@@ -427,9 +374,13 @@ class Dashboard extends Component
         return Carbon::parse($this->period['prev_to'])->endOfDay();
     }
 
-    public function render()
+    /**
+     * Classic is the original board; Option A ("Focus") is the calmer redesign. Both read the
+     * same component data; a super admin picks one on Settings → Appearance.
+     */
+    public function render(): View
     {
-        return view('livewire.dashboard');
+        return view(AppSetting::layoutFor('dashboard') === PageLayout::OptionA ? 'livewire.dashboard-focus' : 'livewire.dashboard');
     }
 
     /**
@@ -578,11 +529,20 @@ class Dashboard extends Component
             $this->kpiCards['issuedToday'] = $this->goodsIssues()->where('status', 'issued')->whereDate('issue_date', Carbon::today())->count();
         }
 
-        if ($user->can('journal-entry-list')) {
+        if ($this->canSeeDraftJournalEntries($user)) {
             $this->kpiCards['draftJournalEntries'] = JournalEntry::query()
                 ->where('status', 'draft')
                 ->count();
         }
+    }
+
+    /**
+     * Journal entries carry no supplier, so their draft count is company-wide: it is shown only
+     * on a dashboard that is not narrowed to one supplier.
+     */
+    private function canSeeDraftJournalEntries(User $user): bool
+    {
+        return $user->can('journal-entry-list') && $this->scope['supplier_id'] === null;
     }
 
     private function loadMonthlySalesTrend(): void
@@ -591,7 +551,8 @@ class Dashboard extends Component
             return;
         }
 
-        $from = Carbon::now()->subMonths(11)->startOfMonth();
+        // startOfMonth() first: subMonths() on the 29th-31st would overflow into the next month.
+        $from = Carbon::now()->startOfMonth()->subMonths(11);
 
         $data = $this->settlements()
             ->where('status', 'posted')
@@ -653,41 +614,6 @@ class Dashboard extends Component
         ];
     }
 
-    private function loadRevenueVsCogs(): void
-    {
-        $data = $this->settlements()
-            ->where('status', 'posted')
-            ->where('settlement_date', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw('EXTRACT(YEAR FROM settlement_date) as year, EXTRACT(MONTH FROM settlement_date) as month')
-            ->selectRaw('SUM(total_sales_amount) as revenue')
-            ->selectRaw('SUM(total_cogs) as cogs')
-            ->selectRaw('SUM(expenses_claimed) as expenses')
-            ->groupByRaw('EXTRACT(YEAR FROM settlement_date), EXTRACT(MONTH FROM settlement_date)')
-            ->get()
-            ->keyBy(fn ($row) => (int) $row->year.'-'.(int) $row->month);
-
-        $labels = [];
-        $revenue = [];
-        $cogs = [];
-        $expenses = [];
-
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->startOfMonth()->subMonths($i);
-            $row = $data[$date->year.'-'.$date->month] ?? null;
-            $labels[] = $date->format('M Y');
-            $revenue[] = round((float) ($row->revenue ?? 0), 2);
-            $cogs[] = round((float) ($row->cogs ?? 0), 2);
-            $expenses[] = round((float) ($row->expenses ?? 0), 2);
-        }
-
-        $this->revenueVsCogs = [
-            'labels' => $labels,
-            'revenue' => $revenue,
-            'cogs' => $cogs,
-            'expenses' => $expenses,
-        ];
-    }
-
     private function loadTopProductsByStockValue(): void
     {
         $data = $this->stock()
@@ -705,84 +631,8 @@ class Dashboard extends Component
         ];
     }
 
-    /**
-     * Supplier invoices (what the supplier bills us) and online payments per
-     * month, from the Supplier Ledger Register -- the same figures as
-     * /reports/supplier-ledger-register.
-     */
-    private function loadPurchasesVsPayments(): void
-    {
-        $rows = $this->ledger()
-            ->where('transaction_date', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw('EXTRACT(YEAR FROM transaction_date) as year, EXTRACT(MONTH FROM transaction_date) as month')
-            ->selectRaw('SUM(invoice_amount) as invoices, SUM(online_amount) as payments')
-            ->selectRaw('SUM('.self::LEDGER_NET.') as net')
-            ->groupByRaw('EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)')
-            ->get()
-            ->keyBy(fn ($row) => (int) $row->year.'-'.(int) $row->month);
-
-        // Running ledger balance at each month end (same formula as the report).
-        $running = (float) $this->ledger()
-            ->where('transaction_date', '<', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw('COALESCE(SUM('.self::LEDGER_NET.'), 0) as net')
-            ->value('net');
-
-        $labels = [];
-        $purchaseValues = [];
-        $paymentValues = [];
-        $balanceValues = [];
-
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->startOfMonth()->subMonths($i);
-            $row = $rows[$date->year.'-'.$date->month] ?? null;
-            $running += (float) ($row->net ?? 0);
-            $labels[] = $date->format('M Y');
-            $purchaseValues[] = round((float) ($row->invoices ?? 0), 2);
-            $paymentValues[] = round((float) ($row->payments ?? 0), 2);
-            $balanceValues[] = round($running, 2);
-        }
-
-        $this->purchasesVsPayments = [
-            'labels' => $labels,
-            'purchases' => $purchaseValues,
-            'payments' => $paymentValues,
-            'balance' => $balanceValues,
-        ];
-
-        $this->loadSupplierLedgerTable();
-    }
-
     /** Ledger balance formula used by the Supplier Ledger Register report. */
     public const LEDGER_NET = 'opening_balance + online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount';
-
-    /**
-     * One row per supplier: this month's invoices / payments and the running balance.
-     */
-    private function loadSupplierLedgerTable(): void
-    {
-        $from = $this->period['from'];
-        $to = $this->period['to'];
-
-        $this->supplierLedger = $this->ledger()
-            ->join('suppliers', 'supplier_ledger_registers.supplier_id', '=', 'suppliers.id')
-            ->select('suppliers.id', 'suppliers.supplier_name')
-            ->selectRaw('COALESCE(SUM(CASE WHEN transaction_date BETWEEN ? AND ? THEN invoice_amount ELSE 0 END), 0) as invoices', [$from, $to])
-            ->selectRaw('COALESCE(SUM(CASE WHEN transaction_date BETWEEN ? AND ? THEN online_amount ELSE 0 END), 0) as payments', [$from, $to])
-            ->selectRaw('COALESCE(SUM('.self::LEDGER_NET.'), 0) as balance')
-            ->selectRaw('MAX(transaction_date) as last_entry')
-            ->groupBy('suppliers.id', 'suppliers.supplier_name')
-            ->orderByRaw('ABS(COALESCE(SUM('.self::LEDGER_NET.'), 0)) DESC')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'name' => $r->supplier_name,
-                'invoices' => round((float) $r->invoices, 2),
-                'payments' => round((float) $r->payments, 2),
-                'balance' => round((float) $r->balance, 2),
-                'last_entry' => $r->last_entry ? Carbon::parse($r->last_entry)->format('d M Y') : '—',
-            ])
-            ->all();
-    }
 
     private function canSeeSupplierLedger(User $user): bool
     {
@@ -810,7 +660,7 @@ class Dashboard extends Component
         $last = $month($this->previousFrom(), $this->previousTo());
 
         $balance = (float) $this->ledger()
-            ->selectRaw('COALESCE(SUM(opening_balance + online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance')
+            ->selectRaw('COALESCE(SUM('.self::LEDGER_NET.'), 0) as balance')
             ->value('balance');
 
         $this->kpiCards['supplierInvoicesThisMonth'] = (float) $now->invoices;
@@ -857,46 +707,43 @@ class Dashboard extends Component
         }
     }
 
+    /** A period longer than this many days is charted by week instead of by day. */
+    public const DAILY_CHART_MAX_DAYS = 62;
+
+    /**
+     * Sales and gross profit over the chosen period: one bar per day, or one per week
+     * (Monday to Sunday, cut to the period) when the period is longer than about two months.
+     */
     private function loadDailySalesTrend(): void
     {
+        $from = $this->periodFrom();
+        $to = $this->periodTo();
+
         $data = $this->settlements()
             ->where('status', 'posted')
-            ->where('settlement_date', '>=', Carbon::now()->subDays(29)->startOfDay())
+            ->whereBetween('settlement_date', [$from, $to])
             ->selectRaw('DATE(settlement_date) as date')
             ->selectRaw('SUM(total_sales_amount) as total_sales, SUM(gross_profit) as total_profit')
             ->groupByRaw('DATE(settlement_date)')
             ->get()
             ->keyBy(fn ($row) => Carbon::parse($row->date)->format('Y-m-d'));
 
-        $labels = [];
-        $sales = [];
-        $profit = [];
+        $byWeek = $this->period['days'] > self::DAILY_CHART_MAX_DAYS;
+        $buckets = [];
 
-        for ($i = 29; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $labels[] = $date->format('d M');
-            $sales[] = round((float) ($data[$date->format('Y-m-d')]->total_sales ?? 0), 2);
-            $profit[] = round((float) ($data[$date->format('Y-m-d')]->total_profit ?? 0), 2);
+        for ($day = $from->copy()->startOfDay(); $day->lte($to); $day->addDay()) {
+            $start = $byWeek ? $day->copy()->startOfWeek(Carbon::MONDAY)->max($from) : $day;
+            $key = $start->format('Y-m-d');
+            $buckets[$key] ??= ['label' => $start->format('d M'), 'sales' => 0.0, 'profit' => 0.0];
+            $buckets[$key]['sales'] += (float) ($data[$day->format('Y-m-d')]->total_sales ?? 0);
+            $buckets[$key]['profit'] += (float) ($data[$day->format('Y-m-d')]->total_profit ?? 0);
         }
 
         $this->dailySalesTrend = [
-            'labels' => $labels,
-            'sales' => $sales,
-            'profit' => $profit,
-        ];
-    }
-
-    private function loadJournalEntryStatus(): void
-    {
-        $data = JournalEntry::query()
-            ->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
-
-        $this->journalEntryStatus = [
-            'labels' => array_map(fn ($s) => ucfirst($s), array_keys($data)),
-            'values' => array_map('intval', array_values($data)),
+            'unit' => $byWeek ? 'week' : 'day',
+            'labels' => array_column($buckets, 'label'),
+            'sales' => array_map(fn (array $b) => round($b['sales'], 2), array_values($buckets)),
+            'profit' => array_map(fn (array $b) => round($b['profit'], 2), array_values($buckets)),
         ];
     }
 
@@ -920,47 +767,6 @@ class Dashboard extends Component
         $this->topProductsBySales = [
             'labels' => $data->pluck('product_name')->toArray(),
             'values' => $data->pluck('total_sales')->map(fn ($v) => round((float) $v, 2))->toArray(),
-        ];
-    }
-
-    private function loadGrnVsGoodsIssueTrend(): void
-    {
-        $from = Carbon::now()->subMonths(5)->startOfMonth();
-
-        $grns = $this->grns()
-            ->where('status', 'posted')
-            ->where('receipt_date', '>=', $from)
-            ->selectRaw('EXTRACT(YEAR FROM receipt_date) as year, EXTRACT(MONTH FROM receipt_date) as month')
-            ->selectRaw('SUM(grand_total) as total')
-            ->groupByRaw('EXTRACT(YEAR FROM receipt_date), EXTRACT(MONTH FROM receipt_date)')
-            ->get()
-            ->keyBy(fn ($row) => (int) $row->year.'-'.(int) $row->month);
-
-        $issues = $this->goodsIssues()
-            ->where('status', 'issued')
-            ->where('issue_date', '>=', $from)
-            ->selectRaw('EXTRACT(YEAR FROM issue_date) as year, EXTRACT(MONTH FROM issue_date) as month')
-            ->selectRaw('SUM(total_value) as total')
-            ->groupByRaw('EXTRACT(YEAR FROM issue_date), EXTRACT(MONTH FROM issue_date)')
-            ->get()
-            ->keyBy(fn ($row) => (int) $row->year.'-'.(int) $row->month);
-
-        $labels = [];
-        $grnValues = [];
-        $issueValues = [];
-
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->startOfMonth()->subMonths($i);
-            $key = $date->year.'-'.$date->month;
-            $labels[] = $date->format('M Y');
-            $grnValues[] = round((float) ($grns[$key]->total ?? 0), 2);
-            $issueValues[] = round((float) ($issues[$key]->total ?? 0), 2);
-        }
-
-        $this->grnVsGoodsIssueTrend = [
-            'labels' => $labels,
-            'grn' => $grnValues,
-            'issues' => $issueValues,
         ];
     }
 
@@ -1004,52 +810,13 @@ class Dashboard extends Component
             $this->pendingItems['draftGoodsIssues'] = $this->goodsIssues()->where('status', 'draft')->count();
         }
 
-        if ($user->can('journal-entry-list')) {
+        if ($this->canSeeDraftJournalEntries($user)) {
             $this->pendingItems['draftJournalEntries'] = JournalEntry::query()->where('status', 'draft')->count();
         }
 
         if ($user->can('ticket-list')) {
             $this->pendingItems['pendingTickets'] = Ticket::query()->visibleTo($user)->where('status', 'pending')->count();
         }
-    }
-
-    private function loadCashVsCreditTrend(): void
-    {
-        $data = $this->settlements()
-            ->where('status', 'posted')
-            ->where('settlement_date', '>=', Carbon::now()->subMonths(5)->startOfMonth())
-            ->selectRaw('EXTRACT(YEAR FROM settlement_date) as year, EXTRACT(MONTH FROM settlement_date) as month')
-            ->selectRaw('SUM(cash_sales_amount) as cash')
-            ->selectRaw('SUM(credit_sales_amount) as credit')
-            ->selectRaw('SUM(cheque_sales_amount) as cheque')
-            ->selectRaw('SUM(bank_transfer_amount) as bank_transfer')
-            ->groupByRaw('EXTRACT(YEAR FROM settlement_date), EXTRACT(MONTH FROM settlement_date)')
-            ->get()
-            ->keyBy(fn ($row) => (int) $row->year.'-'.(int) $row->month);
-
-        $labels = [];
-        $cash = [];
-        $credit = [];
-        $cheque = [];
-        $bank = [];
-
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->startOfMonth()->subMonths($i);
-            $row = $data[$date->year.'-'.$date->month] ?? null;
-            $labels[] = $date->format('M Y');
-            $cash[] = round((float) ($row->cash ?? 0), 2);
-            $credit[] = round((float) ($row->credit ?? 0), 2);
-            $cheque[] = round((float) ($row->cheque ?? 0), 2);
-            $bank[] = round((float) ($row->bank_transfer ?? 0), 2);
-        }
-
-        $this->cashVsCreditTrend = [
-            'labels' => $labels,
-            'cash' => $cash,
-            'credit' => $credit,
-            'cheque' => $cheque,
-            'bank' => $bank,
-        ];
     }
 
     private function loadSalesByDayOfWeek(): void
@@ -1077,102 +844,6 @@ class Dashboard extends Component
         ];
     }
 
-    private function loadWarehouseStockDistribution(): void
-    {
-        $data = $this->stock()
-            ->join('warehouses', 'current_stock.warehouse_id', '=', 'warehouses.id')
-            ->where('current_stock.quantity_on_hand', '>', 0)
-            ->where('warehouses.disabled', false)
-            ->select('warehouses.warehouse_name')
-            ->selectRaw('SUM(current_stock.total_value) as total_value')
-            ->selectRaw('SUM(current_stock.quantity_on_hand) as total_qty')
-            ->selectRaw('COUNT(DISTINCT current_stock.product_id) as product_count')
-            ->groupBy('warehouses.warehouse_name')
-            ->orderByDesc('total_value')
-            ->limit(10)
-            ->get();
-
-        $this->warehouseStockDistribution = [
-            'labels' => $data->pluck('warehouse_name')->toArray(),
-            'values' => $data->pluck('total_value')->map(fn ($v) => round((float) $v, 2))->toArray(),
-            'treemap' => $data->map(fn ($row) => ['x' => $row->warehouse_name, 'y' => round((float) $row->total_value, 2)])->toArray(),
-            'quantities' => $data->pluck('total_qty')->map(fn ($v) => round((float) $v, 0))->toArray(),
-            'products' => $data->pluck('product_count')->map(fn ($v) => (int) $v)->toArray(),
-        ];
-    }
-
-    private function loadStockMovementBreakdown(): void
-    {
-        $data = StockMovement::query()
-            ->join('products', 'stock_movements.product_id', '=', 'products.id')
-            ->when($this->scope['supplier_id'], fn ($q, $id) => $q->where('products.supplier_id', $id))
-            ->where('stock_movements.movement_date', '>=', Carbon::now()->subDays(30)->startOfDay())
-            ->selectRaw('stock_movements.movement_type, SUM(stock_movements.total_value) as total_value')
-            ->groupBy('stock_movements.movement_type')
-            ->get();
-
-        $inward = ['grn' => 0, 'goods_return' => 0, 'return' => 0];
-        $outward = ['goods_issue' => 0, 'sale' => 0, 'damage' => 0, 'shortage' => 0, 'theft' => 0];
-
-        foreach ($data as $row) {
-            $value = abs(round((float) $row->total_value, 2));
-            if (array_key_exists($row->movement_type, $inward)) {
-                $inward[$row->movement_type] = $value;
-            } elseif (array_key_exists($row->movement_type, $outward)) {
-                $outward[$row->movement_type] = $value;
-            }
-        }
-
-        $this->stockMovementBreakdown = [
-            'labels' => ['GRN', 'Returns', 'Goods Issue', 'Sales', 'Damage/Loss'],
-            'inward' => [$inward['grn'], $inward['goods_return'] + $inward['return'], 0, 0, 0],
-            'outward' => [0, 0, $outward['goods_issue'], $outward['sale'], $outward['damage'] + $outward['shortage'] + $outward['theft']],
-        ];
-    }
-
-    private function loadRecentSettlements(): void
-    {
-        $this->recentSettlements = $this->settlements()
-            ->with(['employee:id,name', 'supplier:id,supplier_name'])
-            ->latest('settlement_date')
-            ->latest('id')
-            ->limit(6)
-            ->get(['id', 'settlement_number', 'settlement_date', 'employee_id', 'supplier_id', 'status', 'total_sales_amount'])
-            ->map(fn ($s) => [
-                'id' => $s->id,
-                'number' => $s->settlement_number,
-                'date' => $s->settlement_date ? Carbon::parse($s->settlement_date)->format('d M Y') : '—',
-                'salesman' => $s->employee?->name ?? '—',
-                'supplier' => $s->supplier?->supplier_name,
-                'status' => (string) $s->status,
-                'amount' => round((float) $s->total_sales_amount, 2),
-            ])
-            ->all();
-    }
-
-    private function loadLowStock(): void
-    {
-        $this->lowStock = Product::query()
-            ->where('products.is_active', true)
-            ->where('products.reorder_level', '>', 0)
-            ->when($this->scope['supplier_id'], fn ($q, $id) => $q->where('products.supplier_id', $id))
-            ->leftJoin('current_stock', 'current_stock.product_id', '=', 'products.id')
-            ->select('products.id', 'products.product_name', 'products.product_code', 'products.reorder_level')
-            ->selectRaw('COALESCE(SUM(current_stock.quantity_on_hand), 0) as on_hand')
-            ->groupBy('products.id', 'products.product_name', 'products.product_code', 'products.reorder_level')
-            ->havingRaw('COALESCE(SUM(current_stock.quantity_on_hand), 0) <= products.reorder_level')
-            ->orderByRaw('COALESCE(SUM(current_stock.quantity_on_hand), 0) / products.reorder_level')
-            ->limit(8)
-            ->get()
-            ->map(fn ($p) => [
-                'name' => $p->product_name,
-                'code' => $p->product_code,
-                'on_hand' => round((float) $p->on_hand, 2),
-                'reorder' => round((float) $p->reorder_level, 2),
-            ])
-            ->all();
-    }
-
     /**
      * Market credit = what customers still owe, from the customer-employee
      * account ledger (debit - credit), same source as the Creditors Ledger report.
@@ -1196,13 +867,6 @@ class Dashboard extends Component
     {
         $balance = 'COALESCE(SUM(t.debit), 0) - COALESCE(SUM(t.credit), 0)';
 
-        $month = $this->customerLedger()
-            ->whereBetween('t.transaction_date', [$this->period['from'], $this->period['to']])
-            ->selectRaw("COALESCE(SUM(CASE WHEN t.transaction_type <> 'opening_balance' THEN t.debit ELSE 0 END), 0) as given, COALESCE(SUM(t.credit), 0) as recovered")
-            ->first();
-        $this->kpiCards['creditGivenThisMonth'] = round((float) ($month->given ?? 0), 2);
-        $this->kpiCards['creditRecoveredThisMonth'] = round((float) ($month->recovered ?? 0), 2);
-
         // One row per customer-salesman account, straight from the customer account ledger.
         $accounts = $this->customerLedger()
             ->join('customers as c', 'a.customer_id', '=', 'c.id')
@@ -1221,19 +885,6 @@ class Dashboard extends Component
         $this->kpiCards['creditOwed'] = round((float) $owing->sum('balance'), 2);
 
         $today = Carbon::today();
-        // Grouped by id (names can repeat); ids let each bar open the creditors ledger for it.
-        $top = function (string $idKey, string $nameKey, int $limit) use ($owing): array {
-            $rows = $owing->groupBy($idKey)
-                ->map(fn ($g) => ['id' => $g->first()->{$idKey}, 'label' => $g->first()->{$nameKey} ?: 'Not set', 'value' => round((float) $g->sum('balance'), 2)])
-                ->sortByDesc('value')
-                ->take($limit)
-                ->values();
-
-            return ['labels' => $rows->pluck('label')->all(), 'values' => $rows->pluck('value')->all(), 'ids' => $rows->pluck('id')->all()];
-        };
-        $this->creditBreakdown = ['by' => 'supplier'] + $top('supplier_id', 'supplier', 10);
-        $this->creditBySalesman = $top('employee_id', 'salesman', 10);
-
         // One row per customer-salesman account, so every row opens that salesman's own ledger for the customer.
         // Aged the receivables way: recoveries clear the oldest credit sales first, and what is still
         // owed is aged by the date of each unpaid sale (see CustomerCreditAging).
@@ -1265,7 +916,30 @@ class Dashboard extends Component
         $this->kpiCards['creditOverdueAccounts'] = $overdueRows->count();
 
         $this->kpiCards['creditCustomers'] = $rows->pluck('id')->unique()->count();
-        $this->topCreditCustomers = $rows->sortByDesc('used')->take(8)->values()->all();
+        // Grouped by customer before ranking, so a customer who buys from several salesmen shows
+        // once with everything they owe; the chart and the "highest credit customer" both use it.
+        $this->topCreditCustomers = $rows->groupBy('id')
+            ->map(function ($accounts): array {
+                $first = $accounts->first();
+                $paidDays = $accounts->pluck('last_paid_days')->filter(fn ($days) => $days !== null);
+
+                return [
+                    'id' => $first['id'],
+                    'name' => $first['name'],
+                    'code' => $first['code'],
+                    'city' => $first['city'],
+                    'label' => $first['name'].($first['city'] ? ' ('.$first['city'].')' : ''),
+                    'used' => round((float) $accounts->sum('used'), 2),
+                    'accounts' => $accounts->count(),
+                    'suppliers' => $accounts->pluck('suppliers')->filter()->unique()->implode(', '),
+                    'salesmen' => $accounts->pluck('salesmen')->filter()->unique()->implode(', '),
+                    'last_paid_days' => $paidDays->isEmpty() ? null : (int) $paidDays->min(),
+                ];
+            })
+            ->sortByDesc('used')
+            ->take(8)
+            ->values()
+            ->all();
         // Every account with credit older than 30 days, biggest first, for the aging drill-down list.
         $this->agingCustomers = $rows->filter(fn ($row) => $row['bucket'] > 0)->sortByDesc('used')->take(300)->values()->all();
     }
@@ -1303,19 +977,18 @@ class Dashboard extends Component
             ? [(int) $this->scope['supplier_id']]
             : Supplier::where('disabled', false)->pluck('id')->all();
 
+        // All suppliers in one go: each part is one query across the list (the same sum as
+        // asking supplier by supplier, which took about six queries per supplier and date).
         $sum = function (string $date) use ($service, $supplierIds): array {
-            $totals = ['stock' => 0.0, 'credit' => 0.0, 'claims' => 0.0, 'expiry' => 0.0, 'ledger' => 0.0];
+            $parts = $service->mainInvestment($date, array_map('intval', $supplierIds));
 
-            foreach ($supplierIds as $id) {
-                $parts = $service->mainInvestment($date, (int) $id);
-                $totals['stock'] += $parts['stock'];
-                $totals['credit'] += $parts['credit'];
-                $totals['claims'] += $parts['claims'];
-                $totals['expiry'] += $parts['powder_expiry'] + $parts['liquid_expiry'];
-                $totals['ledger'] += $parts['ledger'];
-            }
-
-            return array_map(fn (float $v) => round($v, 2), $totals);
+            return array_map(fn (float $v) => round($v, 2), [
+                'stock' => (float) $parts['stock'],
+                'credit' => (float) $parts['credit'],
+                'claims' => (float) $parts['claims'],
+                'expiry' => (float) $parts['powder_expiry'] + (float) $parts['liquid_expiry'],
+                'ledger' => (float) $parts['ledger'],
+            ]);
         };
 
         $now = $sum($this->period['to']);
@@ -1353,13 +1026,14 @@ class Dashboard extends Component
 
         $daily = $this->dailySalesTrend['sales'] ?? [];
         $labels = $this->dailySalesTrend['labels'] ?? [];
+        $unit = $this->dailySalesTrend['unit'] ?? 'day';
         $active = array_values(array_filter($daily, fn ($v) => $v > 0));
 
         if (count($active) >= 5) {
             $mean = array_sum($active) / count($active);
             $std = sqrt(array_sum(array_map(fn ($v) => ($v - $mean) ** 2, $active)) / (count($active) - 1));
 
-            if ($this->period['mtd'] && $this->period['to'] === Carbon::today()->toDateString() && isset($k['totalSalesThisMonth'])) {
+            if ($unit === 'day' && $this->period['mtd'] && $this->period['to'] === Carbon::today()->toDateString() && isset($k['totalSalesThisMonth'])) {
                 $now = Carbon::today();
                 $elapsed = $now->day;
                 $pace = $k['totalSalesThisMonth'] / max(1, $elapsed) * $now->daysInMonth;
@@ -1385,9 +1059,9 @@ class Dashboard extends Component
                 $top = $unusual[0];
                 $insights[] = [
                     'tone' => '#b45309',
-                    'value' => count($unusual).' '.Str::plural('day', count($unusual)),
-                    'title' => 'Unusual sales days (last 30)',
-                    'text' => 'More than 2 standard deviations from the '.$rs($mean).' daily average. Furthest: '.$top['label'].' at '.$rs($top['value']).($top['z'] < 0 ? ' (a dip)' : ' (a peak)').'.',
+                    'value' => count($unusual).' '.Str::plural($unit, count($unusual)),
+                    'title' => 'Unusual sales '.Str::plural($unit).' in the period',
+                    'text' => 'More than 2 standard deviations from the '.$rs($mean).' '.($unit === 'week' ? 'weekly' : 'daily').' average. Furthest: '.($unit === 'week' ? 'week of ' : '').$top['label'].' at '.$rs($top['value']).($top['z'] < 0 ? ' (a dip)' : ' (a peak)').'.',
                 ];
             }
         }
@@ -1417,8 +1091,9 @@ class Dashboard extends Component
             ];
         }
 
-        $given = (float) ($k['creditGivenThisMonth'] ?? 0);
-        $recovered = (float) ($k['creditRecoveredThisMonth'] ?? 0);
+        // Same settlement figures as the Credit sales tile, so the two always agree.
+        $given = (float) ($k['creditSalesThisMonth'] ?? 0);
+        $recovered = (float) ($k['recoveriesThisMonth'] ?? 0);
         if ($given > 0) {
             $insights[] = [
                 'tone' => $recovered >= $given ? '#15803d' : '#b91c1c',
@@ -1439,7 +1114,10 @@ class Dashboard extends Component
         }
 
         if (isset($k['totalInventoryValue']) && $this->sections['sales']) {
-            $cogs30 = (float) $this->settlements()
+            // Stock is the supplier's whole stock, so the cost of goods sold is too (every
+            // user's settlements), not only the settlements this user created.
+            $cogs30 = (float) SalesSettlement::query()
+                ->when($this->scope['supplier_id'], fn ($q, $id) => $q->where('supplier_id', $id))
                 ->where('status', 'posted')
                 ->where('settlement_date', '>=', Carbon::today()->subDays(29))
                 ->sum('total_cogs');
@@ -1455,22 +1133,5 @@ class Dashboard extends Component
         }
 
         $this->insights = array_slice($insights, 0, 6);
-    }
-
-    private function loadCompanyOverview(): void
-    {
-        $this->companyOverview = [
-            'users_active' => User::where('is_active', 'Yes')->count(),
-            'users_total' => User::count(),
-            'users_no_access' => User::where('is_active', 'Yes')->where('is_super_admin', '!=', 'Yes')->doesntHave('roles')->doesntHave('permissions')->count(),
-            'suppliers' => Supplier::where('disabled', false)->count(),
-            'vehicles' => Vehicle::where('is_active', true)->count(),
-            'salesmen' => Employee::where('is_active', true)->count(),
-            'customers' => Customer::where('is_active', true)->count(),
-            'drafts_total' => SalesSettlement::where('status', 'draft')->count()
-                + GoodsIssue::where('status', 'draft')->count()
-                + GoodsReceiptNote::where('status', 'draft')->count()
-                + JournalEntry::where('status', 'draft')->count(),
-        ];
     }
 }

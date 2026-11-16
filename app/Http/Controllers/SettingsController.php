@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PageLayout;
+use App\Models\AppSetting;
 use App\Models\Product;
+use App\Support\Menus\SettingsMenu;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
@@ -17,7 +20,7 @@ class SettingsController extends Controller implements HasMiddleware
     }
 
     /**
-     * Display the settings index page.
+     * Display the settings index page in the layout a super admin chose on Settings → Appearance.
      */
     public function index(): View
     {
@@ -31,6 +34,10 @@ class SettingsController extends Controller implements HasMiddleware
             ->when($isScopedUser, fn ($q) => $q->where('supplier_id', (int) $user->supplier_id))
             ->count();
 
-        return view('settings.index', compact('productCount'));
+        return match (AppSetting::layoutFor('settings')) {
+            PageLayout::Classic => view('settings.index', compact('productCount')),
+            PageLayout::OptionA => view('settings.layouts.option-a', ['groups' => (new SettingsMenu($productCount))->groupsFor($user)]),
+            PageLayout::OptionB => view('settings.layouts.option-b', ['groups' => (new SettingsMenu($productCount))->groupsFor($user)]),
+        };
     }
 }

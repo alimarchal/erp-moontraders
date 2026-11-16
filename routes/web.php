@@ -12,6 +12,7 @@
 
 use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\AccountTypeController;
+use App\Http\Controllers\AppearanceController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankApprovalController;
 use App\Http\Controllers\BankChequeController;
@@ -796,6 +797,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     */
     Route::prefix('settings')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
+        Route::get('appearance', [AppearanceController::class, 'edit'])->name('settings.appearance.edit');
+        Route::put('appearance', [AppearanceController::class, 'update'])->name('settings.appearance.update');
 
         /* Accounting Configuration */
         Route::resource('account-types', AccountTypeController::class);

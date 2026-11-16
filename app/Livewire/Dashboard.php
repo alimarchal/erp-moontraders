@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Enums\PageLayout;
+use App\Models\AppSetting;
 use App\Models\CurrentStock;
 use App\Models\GoodsIssue;
 use App\Models\GoodsReceiptNote;
@@ -21,6 +23,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 use Livewire\Component;
 
 /**
@@ -371,9 +374,13 @@ class Dashboard extends Component
         return Carbon::parse($this->period['prev_to'])->endOfDay();
     }
 
-    public function render()
+    /**
+     * Classic is the original board; Option A ("Focus") is the calmer redesign. Both read the
+     * same component data; a super admin picks one on Settings → Appearance.
+     */
+    public function render(): View
     {
-        return view('livewire.dashboard');
+        return view(AppSetting::layoutFor('dashboard') === PageLayout::OptionA ? 'livewire.dashboard-focus' : 'livewire.dashboard');
     }
 
     /**

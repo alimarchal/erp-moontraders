@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\DocumentType;
+use App\Enums\PageLayout;
 use App\Livewire\Dashboard;
 use App\Models\AccountingPeriod;
+use App\Models\AppSetting;
 use App\Models\ClaimRegister;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -667,4 +669,46 @@ it('adds up investment for all enabled suppliers in one pass, matching supplier 
         ->and($investment['before'])->toEqual(array_map(fn ($v) => round($v, 2), $oneByOne($investment['before_on'])))
         ->and($investment['parts']['ledger'])->toEqual(-40000.0)
         ->and($investment['parts']['claims'])->toEqual(25000.0);
+});
+
+// ── Layouts ─────────────────────────────────────────────────────────
+
+it('renders the focus layout when option A is chosen for the dashboard', function () {
+    $user = createSuperAdminUser();
+    SalesSettlement::factory()->create([
+        'status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 5000,
+        'cash_sales_amount' => 3000, 'credit_sales_amount' => 2000, 'gross_profit' => 1500,
+    ]);
+    SalesSettlement::factory()->create(['status' => 'draft']);
+    AppSetting::put('layout.dashboard', PageLayout::OptionA->value);
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertViewIs('livewire.dashboard-focus')
+        ->assertSeeHtml('data-dashboard-layout="focus"')
+        ->assertSeeHtml('id="fx-chart-sales"')
+        ->assertSee(['Total sales', 'Gross profit', 'Needs attention', 'Draft Settlements', 'Leaders', 'Sales mix', 'This month', 'Custom'])
+        ->assertDontSee('Pending Actions');
+});
+
+it('keeps the classic layout when classic is chosen for the dashboard', function () {
+    $user = createSuperAdminUser();
+    AppSetting::put('layout.dashboard', PageLayout::Classic->value);
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertViewIs('livewire.dashboard')
+        ->assertDontSeeHtml('data-dashboard-layout="focus"')
+        ->assertSee('Sales breakdown');
+});
+
+it('hides the sales cards in the focus layout from users without sales permissions', function () {
+    createDashboardPermissions();
+    $user = User::factory()->create();
+    $user->givePermissionTo(['goods-receipt-note-list', 'inventory-view']);
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 5000]);
+    AppSetting::put('layout.dashboard', PageLayout::OptionA->value);
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertSeeHtml('data-dashboard-layout="focus"')
+        ->assertDontSeeHtml('id="fx-chart-sales"')
+        ->assertDontSee(['Total sales', 'Gross profit', 'Sales mix', 'Salesmen']);
 });

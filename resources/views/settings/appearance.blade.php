@@ -73,7 +73,7 @@
                                         @if ($preview && file_exists(public_path($preview)))
                                             <img src="{{ asset($preview) }}" alt="{{ $label }} preview" class="h-full w-full object-cover object-top" loading="lazy">
                                         @else
-                                            <span class="flex h-full w-full items-center justify-center text-xs text-gray-400">{{ $value === 'classic' ? 'Current layout' : 'Preview' }}</span>
+                                            <span class="flex h-full w-full items-center justify-center text-xs text-gray-400">{{ $value === 'classic' ? 'Current layout' : 'Save to try it on the page' }}</span>
                                         @endif
                                     </span>
                                     <span class="flex items-start gap-2 p-3">

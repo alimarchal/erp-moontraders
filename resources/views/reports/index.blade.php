@@ -24,6 +24,7 @@
 
                 <style>
                     .reports-group > a:not([hidden]) ~ a:not([hidden]) { border-top: 1px solid #f3f4f6; }
+                    [data-settings-item][hidden] { display: none !important; }
                 </style>
 
                 {{-- Search --}}
@@ -158,7 +159,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-amr-dispose-register', 'report-audit-cheque-register', 'report-audit-claim-register', 'report-audit-investment-summary', 'report-audit-ledger-register', 'report-audit-supplier-ledger'])
+                @canany(['report-audit-amr-dispose-register', 'report-bank-audit-log', 'report-bank-entries', 'report-bank-live-gap', 'report-bank-reconciliation-statement', 'report-bank-summary', 'report-bank-unlinked-scans', 'report-audit-cheque-register', 'report-audit-claim-register', 'report-audit-investment-summary', 'report-audit-ledger-register', 'report-audit-supplier-ledger'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier &amp; Registers</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -200,6 +201,18 @@
                                     </x-slot>
                                 </x-settings-row>
                             @endcan
+                            @canany(['report-bank-audit-log', 'report-bank-entries', 'report-bank-live-gap', 'report-bank-reconciliation-statement', 'report-bank-summary', 'report-bank-unlinked-scans'])
+                                <x-settings-row data-settings-item data-search="bank register reports bank book entries summary reconciliation statement live gap unlinked scans audit log supplier and registers" x-bind:hidden="! matches($el)" href="{{ route('reports.bank.index') }}" label="Bank Register Reports"
+                                    description="Bank entries, summary, reconciliation and gaps" icon-bg="bg-sky-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcanany
                             @can('report-audit-claim-register')
                                 <x-settings-row data-settings-item data-search="claim register supplier claims and recovery tracking supplier and registers supplier ledgers, cheques, claims and investment" x-bind:hidden="! matches($el)" href="{{ route('reports.claim-register.index') }}" label="Claim Register"
                                     description="Supplier claims and recovery tracking" icon-bg="bg-orange-500">
@@ -731,7 +744,7 @@
                                 </x-settings-row>
                             @endcan
                             @can('payroll-adjustment-manage')
-                                <x-settings-row data-settings-item data-search="incentives adjustments bonus commission incentive overtime payroll recurring employee extra pay" x-bind:hidden="! matches($el)" href="{{ route('payroll.index', ['tab' => 'adjustments']) }}" label="Incentives &amp; Adjustments" description="Extra pay or cuts for chosen employees, one time or every month" icon-bg="bg-emerald-600">
+                                <x-settings-row data-settings-item data-search="incentives adjustments bonus commission incentive overtime payroll recurring employee extra pay" x-bind:hidden="! matches($el)" href="{{ route('payroll.index', ['tab' => 'adjustments']) }}" label="Incentives & Adjustments" description="Extra pay or cuts for chosen employees, one time or every month" icon-bg="bg-emerald-600">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" /></svg>
                                     </x-slot>

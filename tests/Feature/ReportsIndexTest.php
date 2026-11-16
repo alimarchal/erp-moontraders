@@ -88,3 +88,26 @@ it('does not double-escape ampersands in report labels', function () {
         ->assertSee('Schemes &amp; Discounts', false)
         ->assertDontSee('&amp;amp;', false);
 });
+
+it('links the bank register reports for a user with a bank report permission', function () {
+    $this->actingAs(reportsUserWith(['report-bank-summary']))
+        ->get(route('reports.index'))
+        ->assertSuccessful()
+        ->assertSee(route('reports.bank.index'), false)
+        ->assertSee('Bank Register Reports');
+});
+
+it('hides the bank register reports link without a bank report permission', function () {
+    $this->actingAs(reportsUserWith(['report-financial-general-ledger']))
+        ->get(route('reports.index'))
+        ->assertDontSee(route('reports.bank.index'), false);
+});
+
+it('escapes the incentives label only once and hides rows the search does not match', function () {
+    $this->actingAs(reportsUserWith(['payroll-adjustment-manage']))
+        ->get(route('reports.index'))
+        ->assertSuccessful()
+        ->assertSee('Incentives &amp; Adjustments', false)
+        ->assertDontSee('&amp;amp;', false)
+        ->assertSee('[data-settings-item][hidden] { display: none !important; }', false);
+});

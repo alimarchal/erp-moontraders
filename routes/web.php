@@ -562,6 +562,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('expense-vouchers/{expense_voucher}/submit', [ExpenseVoucherController::class, 'submit'])->name('expense-vouchers.submit');
     Route::post('expense-vouchers/{expense_voucher}/approve', [ExpenseVoucherController::class, 'approve'])->name('expense-vouchers.approve');
     Route::post('expense-vouchers/{expense_voucher}/reject', [ExpenseVoucherController::class, 'reject'])->name('expense-vouchers.reject');
+    Route::post('expense-vouchers/{expense_voucher}/reverse', [ExpenseVoucherController::class, 'reverse'])->name('expense-vouchers.reverse');
     Route::get('expense-vouchers/{expense_voucher}/print', [ExpenseVoucherController::class, 'print'])->name('expense-vouchers.print');
 
     // Shops (daily-expense parties), month-end payments to them, and payroll with advance recovery.

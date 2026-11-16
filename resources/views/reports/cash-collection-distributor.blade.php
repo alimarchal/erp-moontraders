@@ -1,38 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('reports.index') }}">Reports</a><span aria-hidden="true">›</span>
-                    <span>Cash Collection Distributor</span>
-                </nav>
-                <h1 class="ak-title" style="margin:6px 0 0">Cash Collection Distributor</h1>
-            </div>
-            <div class="ak-head-actions no-print">
-                <button type="button" id="toggle" class="ak-btn ak-btn-outline" title="Show or hide the filters" aria-label="Filters">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                </button>
-                @if($hasQuery)
-                    <button type="button" class="ak-btn ak-btn-outline" data-print-url="{{ route('reports.cash-collection-distributor.index', request()->query() + ['layout' => 'print']) }}" onclick="ccdPrintSheet(this)" title="Print the report sheet (A4)" aria-label="Print">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83c-.24.03-.48.06-.72.1m.72-.1a42.4 42.4 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.17c.24.03.48.06.72.1m-.72-.1L17.66 18m0 0 .23 2.5a1.13 1.13 0 0 1-1.12 1.24H7.23a1.13 1.13 0 0 1-1.12-1.24L6.34 18m11.32 0h1.09A2.25 2.25 0 0 0 21 15.75V9.46c0-1.08-.77-2.01-1.84-2.18a48 48 0 0 0-1.41-.2M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.46c0-1.08.77-2.01 1.84-2.18.47-.07.94-.14 1.41-.2m0 0a48.6 48.6 0 0 1 11.5 0m-11.5 0V3.38c0-.62.5-1.13 1.13-1.13h9.24c.63 0 1.13.5 1.13 1.13v3.7M18 10.5h.01" /></svg>
-                    </button>
-                    <a href="{{ route('reports.cash-collection-distributor.export.pdf', request()->query()) }}" class="ak-btn ak-btn-outline" title="Download PDF" aria-label="Download PDF">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+        <x-page-header title="Cash Collection Distributor" :showSearch="true" :showRefresh="true" backRoute="reports.index">
+            <x-slot name="afterFilter">
+                {{-- Help sits next to Filters, like the goods issues list --}}
+                <a href="{{ route('reports.cash-collection-distributor.help') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" aria-label="Help in Urdu" title="How this report works, in Urdu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+                </a>
+            </x-slot>
+            <x-slot name="actions">
+                @if ($hasQuery)
+                    <a href="{{ route('reports.cash-collection-distributor.export.pdf', request()->query()) }}" aria-label="Download PDF" title="Download PDF (A4)"
+                        class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
                     </a>
                 @endif
-                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh" aria-label="Refresh">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.02 9.35h4.99M2.99 19.64v-4.99m0 0h4.99m-4.99 0 3.18 3.18a8.25 8.25 0 0 0 13.8-3.7M4.03 9.87a8.25 8.25 0 0 1 13.8-3.7l3.18 3.18m0-4.99v4.99" /></svg>
-                </a>
-                <a href="{{ route('reports.cash-collection-distributor.help') }}" class="ak-btn ak-btn-outline" title="How this report works" aria-label="How this report works">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>
-                </a>
-                <a href="{{ route('reports.index') }}" class="ak-btn ak-btn-outline" title="Back to Reports" aria-label="Back to Reports">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
-                </a>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
+    <x-register-apple-style />
+    <x-apple-fields-style />
+
+    <x-status-message />
 
     @push('header')
         @include('reports.cash-detail._sheet-styles')
@@ -54,12 +45,24 @@
             .ccd-screen table.p2 tr.cap th { font-size: 16px; padding: 4px 2px 3px; }
             .ccd-screen table.p2 tr.cap th small { font-size: 13px; }
             .ccd-screen table.p2 .calc { font-size: 11px; }
+            .ccd-screen table.p2 td.c { white-space: normal; }
             .ccd-screen .p2-note { font-size: 13px; padding: 6px 10px; }
             /* The printed-by line and signature boxes belong to the print and PDF sheets only. */
             .ccd-screen .p2-foot, .ccd-screen .p2-sign { display: none; }
             @media (max-width: 767px) { .ccd-screen { font-size: 12px; } .ccd-screen table.p2 { font-size: 12px; } }
         </style>
         <style>
+            .gl-filter-row { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; }
+            @media (min-width: 900px) { .gl-filter-row { grid-template-columns: 170px minmax(200px, 1.4fr) minmax(150px, 1fr) minmax(220px, 2fr) auto; } }
+            .gl-filter-row .ak-field input, .gl-filter-row .ak-field select:not([multiple]) { height: 38px; box-sizing: border-box; }
+            .gl-filter-row .ak-filter-buttons { display: flex; gap: 8px; padding-top: 0; }
+            .ak-filters .select2-container { width: 100% !important; display: block; }
+            .ak-filters .select2-container .select2-selection--single { height: 38px; padding: 0 30px 0 12px; display: flex; align-items: center; border: 1px solid var(--ak-border); border-radius: 8px; box-shadow: none; font-size: 14px; }
+            .ak-filters .select2-container .select2-selection__arrow { top: 50% !important; transform: translateY(-50%); height: 24px !important; }
+            html.apl-on .rg-gi-filters { border: 0 !important; border-radius: 20px !important; box-shadow: 0 0 0 1px rgba(0,0,0,.035), 0 2px 6px rgba(0,0,0,.04), 0 10px 28px -6px rgba(0,0,0,.08) !important; }
+            html.apl-on .rg-gi-filters .ak-field label { font-size: 13px; font-weight: 500; color: #6e6e73; text-transform: none; letter-spacing: 0; }
+            html.apl-on .rg-gi-filters .ak-btn { height: 38px; border-radius: 980px !important; text-transform: none; }
+            html.apl-on .rg-gi-filters .ak-btn-primary { background: #0071e3 !important; border-color: #0071e3 !important; }
             .report-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -173,57 +176,52 @@
         </style>
     @endpush
 
-    <x-filter-section :action="route('reports.cash-collection-distributor.index')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-4">
-            {{-- Date --}}
-            <div>
-                <x-label for="date" value="{{ __('Date') }}" />
-                <x-input id="date" class="block mt-1 w-full" type="date" name="date" :value="$date" required />
-            </div>
-            
-            {{-- Company Filter --}}
-            <div>
-                <x-label for="supplier_id" value="{{ __('Company') }}" />
-                <select id="supplier_id" name="supplier_id" required class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">Select company</option>
-                    @if($canChooseCompany)
-                        <option value="all" {{ $allCompanies ? 'selected' : '' }}>All Companies</option>
-                    @endif
-                    @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" {{ $supplierId == $supplier->id ? 'selected' : '' }}>
-                            {{ $supplier->supplier_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            
-            {{-- Designation Filter --}}
-            <div>
-                 <x-label for="designation" value="{{ __('Designation') }}" />
-                 <select id="designation" name="designation" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Designations</option>
-                    @foreach($designations as $desig)
-                        <option value="{{ $desig }}" {{ $designation == $desig ? 'selected' : '' }}>
-                            {{ $desig }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            
-            {{-- Multi-Select Salesman --}}
-            <div>
-                <x-label for="employee_ids" value="Salesman (Multi-Select)" class="pb-1" />
-                <select id="employee_ids" name="employee_ids[]" multiple
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    @foreach($allEmployees as $employee)
-                        <option value="{{ $employee->id }}" {{ in_array($employee->id, $employeeIds) ? 'selected' : '' }}>
-                            {{ $employee->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </x-filter-section>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
+        <section id="ccd-filter-panel" class="ak-card rg-gi-filters" aria-label="Filters" x-data="{ open: {{ $hasQuery ? 'false' : 'true' }} }" @gl-toggle-filters.window="open = ! open" x-show="open" x-cloak x-transition style="{{ $hasQuery ? 'display:none' : '' }}">
+            <form method="GET" action="{{ route('reports.cash-collection-distributor.index') }}" class="ak-filters" x-data="{ busy: false }" @submit="busy = true">
+                <div class="gl-filter-row">
+                    <div class="ak-field">
+                        <label for="date">Date</label>
+                        <input id="date" type="date" name="date" value="{{ $date }}" required>
+                    </div>
+                    <div class="ak-field">
+                        <label for="supplier_id">Company</label>
+                        <select id="supplier_id" name="supplier_id" required class="gl-select">
+                            <option value="">Select company</option>
+                            @if ($canChooseCompany)
+                                <option value="all" @selected($allCompanies)>All Companies</option>
+                            @endif
+                            @foreach ($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}" @selected($supplierId == $supplier->id)>{{ $supplier->supplier_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="designation">Designation</label>
+                        <select id="designation" name="designation" class="gl-select">
+                            <option value="">All Designations</option>
+                            @foreach ($designations as $desig)
+                                <option value="{{ $desig }}" @selected($designation == $desig)>{{ $desig }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="employee_ids">Salesmen</label>
+                        <select id="employee_ids" name="employee_ids[]" multiple class="gl-select">
+                            @foreach ($allEmployees as $employee)
+                                <option value="{{ $employee->id }}" @selected(in_array($employee->id, $employeeIds))>{{ $employee->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-filter-buttons">
+                        <button type="submit" class="ak-btn ak-btn-primary" :disabled="busy">
+                            <span x-show="!busy">Apply</span><span x-show="busy" x-cloak>Loading…</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
 
     @unless($hasQuery)
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4 no-print">
@@ -263,6 +261,21 @@
                 frame.src = button.dataset.printUrl;
                 document.body.appendChild(frame);
             }
+
+            // The header Print button prints the A4 sheet too, not the screen page.
+            document.addEventListener('DOMContentLoaded', () => {
+                const printButton = document.querySelector('header button[aria-label="Print"], button[aria-label="Print"]');
+                @if ($hasQuery)
+                if (printButton) {
+                    printButton.dataset.printUrl = @js(route('reports.cash-collection-distributor.index', request()->query() + ['layout' => 'print']));
+                    printButton.removeAttribute('onclick');
+                    printButton.onclick = () => ccdPrintSheet(printButton);
+                }
+                @else
+                printButton?.remove();
+                @endif
+                document.getElementById('toggle')?.addEventListener('click', (event) => { event.preventDefault(); window.dispatchEvent(new CustomEvent('gl-toggle-filters')); });
+            });
 
             // Ctrl+P / Cmd+P prints the same sheet as the Print button instead of the screen page.
             document.addEventListener('keydown', (event) => {

@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\AccountType;
 use App\Models\BankAccount;
+use App\Models\ChartOfAccount;
+use App\Models\ChequeClearing;
 use App\Models\Employee;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryDetail;
@@ -22,7 +25,7 @@ beforeEach(function () {
     $supplier = Supplier::factory()->create();
     $this->user->update(['supplier_id' => $supplier->id]);
     $employee = Employee::factory()->create(['supplier_id' => $supplier->id, 'designation' => 'Salesman']);
-    $settlement = SalesSettlement::factory()->create(['employee_id' => $employee->id, 'supplier_id' => $supplier->id, 'status' => 'posted']);
+    $settlement = SalesSettlement::factory()->create(['employee_id' => $employee->id, 'supplier_id' => $supplier->id, 'status' => 'posted', 'settlement_date' => '2026-10-20']);
     $this->cheque = SalesSettlementCheque::create([
         'sales_settlement_id' => $settlement->id, 'cheque_number' => 'CH-1', 'amount' => 10000, 'bank_name' => 'HBL', 'status' => 'pending',
     ]);
@@ -51,12 +54,12 @@ it('always clears the full cheque amount and requires a date when clearing', fun
         ->assertSessionHasNoErrors();
 
     expect((float) $this->cheque->fresh()->cleared_amount)->toBe(10000.0)
-        ->and($this->cheque->histories()->first()->notes)->toBe('[Cash brought back] bank charges');
+        ->and($this->cheque->histories()->first()->notes)->toBe('[Cash brought back · batch #'.$this->cheque->fresh()->cheque_clearing_id.'] bank charges');
 });
 
 it('clears the cleared date and amount when a cheque goes back, but keeps the history', function () {
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['1000' => 10]]);
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'bounced', 'notes' => 'returned by bank']);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => now()->toDateString(), 'denom' => ['1000' => 10]]);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'pending', 'notes' => 'returned by salesman']);
 
     $this->cheque->refresh();
     expect($this->cheque->cleared_date)->toBeNull()
@@ -67,10 +70,17 @@ it('clears the cleared date and amount when a cheque goes back, but keeps the hi
 it('returns the status history as json for users who can view the register', function () {
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]]);
 
+    $cheque = $this->cheque->fresh();
+
     $this->actingAs($this->user)->getJson(route('reports.cheque-register.history', $this->cheque))
         ->assertOk()
         ->assertJsonPath('cheque_number', 'CH-1')
-        ->assertJsonPath('entries.0.to', 'Cleared');
+        ->assertJsonPath('entries.0.to', 'Cleared')
+        ->assertJsonPath('entries.0.via', 'cash')
+        ->assertJsonPath('entries.0.batch', $cheque->cheque_clearing_id)
+        ->assertJsonPath('entries.0.journal_entry.id', $cheque->clearing_journal_entry_id)
+        ->assertJsonPath('entries.0.batch_notes.notes', ['5000' => 2])
+        ->assertJsonPath('entries.0.batch_notes.total', '10,000.00');
 
     $this->actingAs(User::factory()->create())->getJson(route('reports.cheque-register.history', $this->cheque))->assertForbidden();
 });
@@ -86,27 +96,20 @@ it('feeds the distributor report with the cleared amount on the cleared date', f
         ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'date' => '2026-10-28']))
         ->viewData('tables');
 
-    expect($tables['cash']['rows'][0][3])->toBe('10,000.00');
+    expect($tables['collection']['rows'][0][3])->toBe('10,000.00');
 });
 
-it('counts the notes brought back for a cleared cheque in the cash denominations of the distributor report', function () {
-    Permission::findOrCreate('report-audit-cash-collection-distributor');
-    Permission::findOrCreate('report-audit-cash-collection-distributor-all-companies');
-    $this->user->givePermissionTo(['report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies']);
-
+it('stores the notes brought back for a cleared cheque on its clearing batch, not on the cheque', function () {
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), [
         'status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 1, '1000' => 4, '500' => 2],
     ])->assertSessionHasNoErrors();
 
     $cheque = $this->cheque->fresh();
-    expect($cheque->cleared_denom_5000)->toBe(1)->and($cheque->cleared_denom_1000)->toBe(4)->and($cheque->cleared_denom_100)->toBeNull();
+    $batch = ChequeClearing::find($cheque->cheque_clearing_id);
 
-    $rows = collect($this->actingAs($this->user)
-        ->get(route('reports.cash-collection-distributor.index', ['supplier_id' => 'all', 'date' => '2026-10-28']))
-        ->viewData('tables')['denominations']['rows']);
-
-    expect($rows->firstWhere(1, '5,000')[2])->toBe(1)->and($rows->firstWhere(1, '1,000')[2])->toBe(4)
-        ->and($rows->firstWhere(1, 'Cheque clearing (notes not counted)')[3])->toBe('-');
+    expect($cheque->cleared_denom_5000)->toBeNull()->and($cheque->cleared_denom_1000)->toBeNull()
+        ->and($batch->denom_5000)->toBe(1)->and($batch->denom_1000)->toBe(4)->and($batch->denom_500)->toBe(2)
+        ->and((float) $batch->total_amount)->toBe(10000.0);
 });
 
 it('refuses notes that do not add up to the cleared amount, and drops them when the cheque goes back', function () {
@@ -117,10 +120,12 @@ it('refuses notes that do not add up to the cleared amount, and drops them when 
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28'])->assertSessionHas('error');
     expect($this->cheque->fresh()->status)->toBe('pending');
 
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => '2026-10-28', 'denom' => ['5000' => 2]])->assertSessionHasNoErrors();
-    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'bounced']);
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => now()->toDateString(), 'denom' => ['5000' => 2]])->assertSessionHasNoErrors();
+    expect(ChequeClearing::count())->toBe(1);
 
-    expect($this->cheque->fresh()->cleared_denom_5000)->toBeNull();
+    $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'pending'])->assertSessionHasNoErrors();
+
+    expect($this->cheque->fresh()->cheque_clearing_id)->toBeNull()->and(ChequeClearing::count())->toBe(0);
 });
 
 it('lets a cleared cheque be corrected on the day it was cleared but not on a later day', function () {
@@ -128,11 +133,12 @@ it('lets a cleared cheque be corrected on the day it was cleared but not on a la
 
     $clear(['5000' => 2])->assertSessionHasNoErrors();
     $clear(['1000' => 10])->assertSessionHasNoErrors();
-    expect($this->cheque->fresh()->cleared_denom_5000)->toBeNull()->and($this->cheque->fresh()->cleared_denom_1000)->toBe(10);
+    $batch = fn () => ChequeClearing::find($this->cheque->fresh()->cheque_clearing_id);
+    expect($batch()->denom_5000)->toBe(0)->and($batch()->denom_1000)->toBe(10)->and(ChequeClearing::count())->toBe(1);
 
-    $this->cheque->update(['cleared_date' => now()->subDay()->toDateString()]);
+    $this->cheque->update(['cleared_date' => now()->subDay()->toDateString(), 'status_updated_at' => now()->subDay()]);
     $clear(['5000' => 2])->assertSessionHas('error');
-    expect($this->cheque->fresh()->cleared_denom_1000)->toBe(10);
+    expect($batch()->denom_1000)->toBe(10);
 });
 
 /**
@@ -180,7 +186,11 @@ it('books a cheque the bank cleared into that bank, without notes and outside th
     expect(collect($tables['summary']['rows'])->firstWhere(0, 'Cheque clearing cash')[1])->toBe('0.00');
 });
 
-it('takes the booking back when a cleared cheque bounces, so Cheques in Hand holds it again', function () {
+it('un-clears a cleared cheque before it bounces, so Cash is untouched and the bounce leaves Cheques in Hand once', function () {
+    ChartOfAccount::firstOrCreate(['account_code' => '1112'], [
+        'account_type_id' => AccountType::where('type_name', 'Assets')->value('id'), 'currency_id' => $this->ledger['1121']->currency_id,
+        'account_name' => 'Debtors', 'normal_balance' => 'debit', 'is_active' => true,
+    ]);
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'cleared', 'cleared_date' => now()->toDateString(), 'denom' => ['5000' => 2]]);
     $this->actingAs($this->user)->post(route('reports.cheque-register.update-status', $this->cheque), ['status' => 'bounced'])->assertSessionHasNoErrors();
 
@@ -188,8 +198,10 @@ it('takes the booking back when a cleared cheque bounces, so Cheques in Hand hol
     $inHand = chequeLedger('1122');
 
     expect($this->cheque->fresh()->clearing_journal_entry_id)->toBeNull()
+        ->and($this->cheque->fresh()->bounce_journal_entry_id)->not->toBeNull()
         ->and($cash['debit'] - $cash['credit'])->toBe(0.0)
-        ->and($inHand['debit'] - $inHand['credit'])->toBe(0.0);
+        ->and($inHand['debit'] - $inHand['credit'])->toBe(-10000.0)
+        ->and(chequeLedger('1112'))->toBe(['debit' => 10000.0, 'credit' => 0.0]);
 });
 
 it('refuses to clear a cheque of a settlement that is not posted, and changes nothing', function () {
@@ -201,7 +213,7 @@ it('refuses to clear a cheque of a settlement that is not posted, and changes no
     expect($this->cheque->fresh()->status)->toBe('pending')->and(JournalEntry::count())->toBe(0);
 });
 
-it('clears selected pending cheques together and shares the counted notes over them', function () {
+it('clears selected pending cheques together as one batch holding the counted notes', function () {
     $second = SalesSettlementCheque::create([
         'sales_settlement_id' => $this->cheque->sales_settlement_id, 'cheque_number' => 'CH-2', 'amount' => 2500, 'bank_name' => 'MCB', 'status' => 'pending',
     ]);
@@ -217,9 +229,12 @@ it('clears selected pending cheques together and shares the counted notes over t
     $first = $this->cheque->fresh();
     $second->refresh();
 
+    $batch = ChequeClearing::sole();
+
     expect($first->status)->toBe('cleared')->and($second->status)->toBe('cleared')
-        ->and($first->cleared_denom_5000)->toBe(2)
-        ->and($second->cleared_denom_1000)->toBe(2)->and($second->cleared_denom_500)->toBe(1)
+        ->and($first->cheque_clearing_id)->toBe($batch->id)->and($second->cheque_clearing_id)->toBe($batch->id)
+        ->and([$batch->denom_5000, $batch->denom_1000, $batch->denom_500])->toBe([2, 2, 1])
+        ->and($first->cleared_denom_5000)->toBeNull()->and($second->cleared_denom_1000)->toBeNull()
         ->and(chequeLedger('1121'))->toBe(['debit' => 12500.0, 'credit' => 0.0]);
 
     $this->actingAs($this->user)->post(route('reports.cheque-register.bulk-clear'), [

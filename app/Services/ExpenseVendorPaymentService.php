@@ -79,6 +79,10 @@ class ExpenseVendorPaymentService
         $this->ensurePendingFor($payment, $checker);
 
         return DB::transaction(function () use ($payment, $checker) {
+            // Locked and checked again, so two clicks (or two checkers) cannot post the payment twice.
+            $payment = ExpenseVendorPayment::query()->whereKey($payment->getKey())->lockForUpdate()->firstOrFail();
+            $this->ensurePendingFor($payment, $checker);
+
             $payment->load('allocations.voucher');
             $vouchers = ExpenseVoucher::query()->whereIn('id', $payment->allocations->pluck('expense_voucher_id'))->lockForUpdate()->get()->keyBy('id');
 

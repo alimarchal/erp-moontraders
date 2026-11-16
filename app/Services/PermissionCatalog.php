@@ -51,7 +51,7 @@ class PermissionCatalog
         'Receivables & Core Reports' => [
             'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-sales-credit-sales',
             'report-audit-cash-detail', 'report-audit-cash-detail-all-companies', 'report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies', 'report-audit-investment-summary', 'report-audit-claim-register',
-            'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-amr-dispose-register',
+            'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-cheque-register-all-companies', 'report-audit-amr-dispose-register',
         ],
         'Audit & Product Reports' => [
             'report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense',
@@ -164,6 +164,7 @@ class PermissionCatalog
         'report-audit-claim-register' => 'Claim Register',
         'report-audit-ledger-register' => 'Supplier Ledger Register',
         'report-audit-cheque-register' => 'Cheque Register',
+        'report-audit-cheque-register-all-companies' => 'Cheque Register - All Companies',
         'report-audit-amr-dispose-register' => 'AMR Dispose Register',
         'report-sales-fmr-amr-comparison' => 'FMR vs AMR Comparison',
         'report-audit-sku-fmr-amr' => 'SKU-wise FMR vs AMR',

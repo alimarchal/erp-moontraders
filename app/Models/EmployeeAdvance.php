@@ -21,6 +21,8 @@ class EmployeeAdvance extends Model
 
     public const STATUS_RECOVERED = 'recovered';
 
+    public const STATUS_CANCELLED = 'cancelled';
+
     protected $fillable = [
         'employee_id', 'expense_voucher_id', 'supplier_id', 'company_id', 'advance_date', 'amount', 'installment_amount',
         'recovered_amount', 'status', 'notes',

@@ -24,19 +24,21 @@
     </table>
 
     <div class="p2-gap"></div>
-    @include('reports.cash-collection-distributor._grid', ['left' => $tables['cash'], 'right' => $tables['denominations']])
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['collection'], 'collapse' => true, 'hideZeroRows' => true])
     <div class="p2-gap"></div>
-    @include('reports.cash-collection-distributor._grid', ['left' => $tables['bank'], 'right' => $tables['cheques']])
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['slips'], 'collapse' => true])
     <div class="p2-gap"></div>
-    @include('reports.cash-collection-distributor._grid', ['left' => $tables['slips']])
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['denominations'], 'collapse' => true, 'emptyText' => 'No cash counted for this day.',
+        'hideZeroLabels' => ['Coins', 'Group clearing (other salesmen)', 'Cash not counted', 'Paid out, no note count'],
+        'rowTitles' => ['Group clearing (other salesmen)' => 'Cheques cleared in a group; the notes were counted with other salesmen', 'Cash not counted' => 'Cash received that no note count covers (negative: notes counted above the cash received)', 'Paid out, no note count' => 'Cash paid out whose notes were not counted by the approver']])
     <div class="p2-gap"></div>
-    @include('reports.cash-collection-distributor._grid', ['left' => $tables['expenses'], 'right' => $tables['summary']])
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['expenses'], 'collapse' => true])
+    <div class="p2-gap"></div>
+    @include('reports.cash-collection-distributor._grid', ['left' => $tables['summary']])
     @isset($tables['salesmen'])
         <div class="p2-gap"></div>
-        @include('reports.cash-collection-distributor._grid', ['left' => $tables['salesmen']])
+        @include('reports.cash-collection-distributor._grid', ['left' => $tables['salesmen'], 'collapse' => true, 'hideZeroRows' => true])
     @endisset
-
-    <div class="p2-note">Cash is the denomination count where one was entered, otherwise the cash collected on the settlement. Cheque clearing is the cash a salesman brings back on the day a cheque is cleared; it is not part of a settlement and is counted with the notes. Total Collection = cash + bank slips + bank transfers + cheques of the day's settlements. Grand total = cash received (including cheque clearing) + bank slips + bank transfers + cheques; only cash that really went out comes out of the cash received: cash and advance-salary vouchers, cash payments to shops, and cash salaries. A credit voucher is not deducted until it is paid.</div>
 
     <p class="p2-foot">Printed {{ now()->format('d-M-Y h:i A') }} by {{ auth()->user()->name ?? '' }}</p>
 

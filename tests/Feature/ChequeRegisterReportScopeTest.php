@@ -58,7 +58,7 @@ test('cheque register is scoped to the authenticated users supplier', function (
         'status' => 'pending',
     ]);
 
-    $response = $this->get(route('reports.cheque-register.index'));
+    $response = $this->get(route('reports.cheque-register.index', ['filter' => ['supplier_id' => $ownSupplier->id]]));
 
     $response->assertSuccessful();
     $response->assertSee('OWN-CHQ-001');

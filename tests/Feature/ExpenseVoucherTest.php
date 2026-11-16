@@ -43,6 +43,8 @@ beforeEach(function () {
         'party_name' => 'Ali Tea Stall',
         'expense_account_id' => $this->expense->id,
         'amount' => 1500,
+        'payment_method' => 'cash',
+        'denom' => ['1000' => 1, '500' => 1],
         'narration' => 'Office tea',
     ];
 });
@@ -80,7 +82,7 @@ it('lets a different user approve, which posts the ledger entry', function () {
         })->andReturn(['success' => true, 'data' => $entry]);
     });
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
 
     $voucher->refresh();
     expect($voucher->status)->toBe('approved')
@@ -92,7 +94,7 @@ it('does not let the maker check their own voucher', function () {
     $this->actingAs($this->maker); // the voucher is stamped with the signed-in user as its maker
     $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'submitted_by' => $this->maker->id]);
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertSessionHas('error');
 
     expect($voucher->fresh()->status)->toBe('pending');
 });
@@ -114,7 +116,7 @@ it('prints only approved vouchers', function () {
     $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertForbidden();
 
     $voucher->update(['status' => 'approved', 'checked_by' => $this->checker->id, 'checked_at' => now()]);
-    $this->actingAs($this->checker)->get(route('expense-vouchers.print', $voucher))->assertOk()->assertSee('Ali Tea Stall', false)->assertSee('80mm', false);
+    $this->actingAs($this->checker)->get(route('expense-vouchers.print', ['expense_voucher' => $voucher, 'format' => 'slip']))->assertOk()->assertSee('Ali Tea Stall', false)->assertSee('80mm', false);
 });
 
 it('shows approved vouchers by party on the distributor report, general ones only under All Companies', function () {
@@ -132,9 +134,9 @@ it('shows approved vouchers by party on the distributor report, general ones onl
 
     expect(collect($one['expenses']['rows'])->pluck(1)->all())->toBe(['Ali Tea Stall'])
         ->and(collect($all['expenses']['rows'])->pluck(1)->all())->toBe(['Paint Material', 'Ali Tea Stall'])
-        ->and($all['expenses']['rows'][0][2])->toBe('Moon Traders')
+        ->and($all['expenses']['rows'][0][2])->toBe('Moon Traders (general)')
         ->and($all['expenses']['total']['cells'][0])->toBe('15,000.00')
-        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (cash and advance vouchers)', '15,000.00']);
+        ->and($all['summary']['rows'][3])->toBe(['Less: expenses paid (cash and advance vouchers, net of returned)', '15,000.00']);
 });
 
 it('lets an admin raise a general expense with no company, but not a company-bound user', function () {
@@ -155,10 +157,10 @@ it('lists vouchers with filters and opens the guide', function () {
     $admin = User::factory()->create(['is_super_admin' => 'Yes']);
     $parties = fn ($response) => $response->viewData('vouchers')->getCollection()->pluck('party_name')->sort()->values()->all();
 
-    expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall', 'Other Co Party'])
+    expect($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Ali Tea Stall', 'Other Co Party'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['owner' => 'supplier:'.$this->supplier->id]]))))->toBe(['Ali Tea Stall'])
         ->and($parties($this->actingAs($admin)->get(route('expense-vouchers.index', ['filter' => ['party_name' => 'other co', 'amount_min' => 500]]))))->toBe(['Other Co Party'])
-        ->and($parties($this->actingAs($this->maker->givePermissionTo('expense-voucher-view-company'))->get(route('expense-vouchers.index'))))->toBe(['Ali Tea Stall']);
+        ->and($parties($this->actingAs($this->maker->givePermissionTo('expense-voucher-view-company'))->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))))->toBe(['Ali Tea Stall']);
 
     $this->actingAs($admin)->get(route('expense-vouchers.help'))->assertOk()->assertSee('اخراجاتی واؤچر کیسے کام کرتا ہے')->assertSee('What each step writes to the database');
 });
@@ -182,10 +184,10 @@ it('submits a new voucher for approval in one step and resubmits an edited one',
     expect($voucher->status)->toBe('pending')->and($voucher->submitted_by)->toBe($this->maker->id);
 
     $voucher->update(['status' => 'rejected', 'checked_by' => $this->checker->id, 'rejection_reason' => 'No receipt']);
-    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800] + $this->payload)->assertRedirect();
+    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), ['action' => 'submit', 'amount' => 1800, 'denom' => ['1000' => 1, '500' => 1, '100' => 3]] + $this->payload)->assertRedirect();
 
     $voucher->refresh();
-    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBeNull()->and($voucher->checked_by)->toBeNull()->and($voucher->checked_at)->toBeNull();
+    expect($voucher->status)->toBe('pending')->and((float) $voucher->amount)->toBe(1800.0)->and($voucher->rejection_reason)->toBe('No receipt')->and($voucher->checked_by)->toBeNull()->and($voucher->checked_at)->toBeNull();
 });
 
 it('lets anyone who works with vouchers open the guide, and a clearable company means a general expense', function () {
@@ -271,13 +273,13 @@ it('blocks only the user who made the voucher from checking it, even when someon
     });
 
     $this->actingAs($this->maker);
-    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id]);
+    $voucher = ExpenseVoucher::factory()->pending()->create(['supplier_id' => $this->supplier->id, 'expense_account_id' => $this->expense->id, 'amount' => 1500]);
     $voucher->forceFill(['submitted_by' => $this->checker->id])->saveQuietly();
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    $this->actingAs($this->maker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertSessionHas('error');
     expect($voucher->fresh()->status)->toBe('pending');
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['1000' => 1, '500' => 1]])->assertRedirect();
     expect($voucher->fresh()->status)->toBe('approved');
 });
 
@@ -292,4 +294,18 @@ it('stores voucher attachments on Amazon S3 when VOUCHER_ATTACHMENTS_DISK is s3'
     $file = ExpenseVoucher::first()->attachments->first();
     Storage::disk('s3')->assertExists($file->file_path);
     $this->actingAs($this->maker)->get(route('expense-vouchers.attachment', [ExpenseVoucher::first(), $file]))->assertOk();
+});
+
+it('drops the newly uploaded files when an update fails unexpectedly', function () {
+    Storage::fake(ExpenseVoucherAttachmentService::disk());
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['action' => 'draft', 'voucher_date' => '2026-10-28'] + $this->payload)->assertRedirect();
+    $voucher = ExpenseVoucher::first();
+    $this->partialMock(ExpenseVoucherService::class, fn ($mock) => $mock->shouldReceive('update')->andThrow(new LogicException('unexpected')));
+
+    $this->actingAs($this->maker)->put(route('expense-vouchers.update', $voucher), [
+        'action' => 'draft', 'voucher_date' => '2026-10-28', 'attachments' => [UploadedFile::fake()->image('bill.jpg')],
+    ] + $this->payload)->assertServerError();
+
+    expect(Storage::disk(ExpenseVoucherAttachmentService::disk())->allFiles())->toBe([])
+        ->and($voucher->fresh()->attachments)->toHaveCount(0);
 });

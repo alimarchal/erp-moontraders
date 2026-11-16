@@ -10,7 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class ExpenseVoucher extends Model
@@ -24,6 +26,16 @@ class ExpenseVoucher extends Model
     public const STATUS_APPROVED = 'approved';
 
     public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_REVERSED = 'reversed';
+
+    public const METHOD_CASH = 'cash';
+
+    public const METHOD_BANK_TRANSFER = 'bank_transfer';
+
+    public const METHOD_CHEQUE = 'cheque';
+
+    public const METHOD_CREDIT = 'credit';
 
     public const TYPE_CASH = 'cash';
 
@@ -58,10 +70,21 @@ class ExpenseVoucher extends Model
         'expense_category_id',
         'payee_type',
         'payment_type',
+        'payment_method',
+        'bank_account_id',
+        'cheque_number',
+        'cheque_date',
+        'transaction_reference',
+        'paid_from_account_id',
+        'reversed_at',
+        'reversed_by',
+        'reversal_reason',
+        'reversal_journal_entry_id',
         'payment_status',
         'paid_amount',
         'advance_installment',
         'vendor_bill_no',
+        'vendor_bill_date',
         'party_name',
         'expense_account_id',
         'amount',
@@ -84,6 +107,7 @@ class ExpenseVoucher extends Model
     {
         static::creating(function (ExpenseVoucher $voucher) {
             $voucher->uuid ??= (string) Str::uuid();
+            $voucher->payment_method ??= $voucher->payment_type === self::TYPE_CREDIT ? self::METHOD_CREDIT : self::METHOD_CASH;
         });
     }
 
@@ -110,6 +134,9 @@ class ExpenseVoucher extends Model
             'submitted_at' => 'datetime',
             'checked_at' => 'datetime',
             'printed_at' => 'datetime',
+            'cheque_date' => 'date',
+            'vendor_bill_date' => 'date',
+            'reversed_at' => 'datetime',
         ];
     }
 
@@ -123,6 +150,7 @@ class ExpenseVoucher extends Model
             self::STATUS_PENDING => 'Pending approval',
             self::STATUS_APPROVED => 'Approved',
             self::STATUS_REJECTED => 'Rejected',
+            self::STATUS_REVERSED => 'Reversed',
         ];
     }
 
@@ -184,6 +212,40 @@ class ExpenseVoucher extends Model
     public static function paymentTypeLabels(): array
     {
         return [self::TYPE_CASH => 'Cash', self::TYPE_CREDIT => 'Credit (pay later)', self::TYPE_ADVANCE => 'Advance salary'];
+    }
+
+    /**
+     * The expense lines of the shop bill, in the order they were entered. The voucher amount is their sum, and the
+     * voucher's own account and category are those of the first line.
+     *
+     * @return HasMany<ExpenseVoucherLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(ExpenseVoucherLine::class)->orderBy('line_no');
+    }
+
+    /**
+     * The lines to post: the saved lines, or for a voucher saved without any, one line of its own account and amount.
+     *
+     * @return Collection<int, ExpenseVoucherLine>
+     */
+    public function postingLines(): Collection
+    {
+        $lines = $this->lines()->with('expenseAccount')->get();
+
+        if ($lines->isNotEmpty()) {
+            return $lines->toBase();
+        }
+
+        return collect([new ExpenseVoucherLine([
+            'line_no' => 1,
+            'expense_category_id' => $this->expense_category_id,
+            'expense_account_id' => $this->expense_account_id,
+            'vehicle_id' => $this->vehicle_id,
+            'description' => null,
+            'amount' => $this->amount,
+        ])->setRelation('expenseAccount', $this->expenseAccount)]);
     }
 
     public function expenseVendor(): BelongsTo
@@ -258,5 +320,46 @@ class ExpenseVoucher extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    /** @return array<string, string> */
+    public static function paymentMethodLabels(): array
+    {
+        return [
+            self::METHOD_CASH => 'Cash',
+            self::METHOD_BANK_TRANSFER => 'Bank transfer',
+            self::METHOD_CHEQUE => 'Cheque',
+            self::METHOD_CREDIT => 'Credit (pay later)',
+        ];
+    }
+
+    public function isPaidByBank(): bool
+    {
+        return in_array($this->payment_method, [self::METHOD_BANK_TRANSFER, self::METHOD_CHEQUE], true);
+    }
+
+    public function isReversed(): bool
+    {
+        return $this->status === self::STATUS_REVERSED;
+    }
+
+    /**
+     * The notes handed out when the voucher was paid in cash.
+     *
+     * @return MorphOne<CashPayoutDenomination, $this>
+     */
+    public function cashPayout(): MorphOne
+    {
+        return $this->morphOne(CashPayoutDenomination::class, 'payable');
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
+    }
+
+    public function reverser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reversed_by');
     }
 }

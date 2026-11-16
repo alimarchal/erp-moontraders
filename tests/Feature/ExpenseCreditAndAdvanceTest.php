@@ -46,7 +46,7 @@ beforeEach(function () {
 it('books a credit voucher to Expense Payables and leaves cash alone', function () {
     $voucher = ($this->makeVoucher)();
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1])->assertRedirect();
 
     $voucher->refresh();
     expect($voucher->status)->toBe('approved')
@@ -61,7 +61,7 @@ it('books a credit voucher to Expense Payables and leaves cash alone', function 
 it('books a cash voucher against cash and marks it paid', function () {
     $voucher = ($this->makeVoucher)(['payment_type' => 'cash']);
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['5000' => 2]])->assertRedirect();
 
     expect($voucher->fresh()->payment_status)->toBe('paid')
         ->and(($this->balanceOf)('1121'))->toBe(-10000.0)
@@ -72,7 +72,7 @@ it('pays credit vouchers in parts through a checked vendor payment', function ()
     $first = ($this->makeVoucher)(['amount' => 10000]);
     $second = ($this->makeVoucher)(['amount' => 4000]);
     foreach ([$first, $second] as $voucher) {
-        $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+        $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1]);
     }
 
     $this->actingAs($this->maker)->post(route('expense-vendor-payments.store'), [
@@ -97,7 +97,7 @@ it('pays credit vouchers in parts through a checked vendor payment', function ()
 
 it('refuses to pay more than a voucher owes, a voucher of another shop, or two companies at once', function () {
     $voucher = ($this->makeVoucher)(['amount' => 5000]);
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1]);
     $service = app(ExpenseVendorPaymentService::class);
     $data = ['payment_date' => now()->toDateString(), 'expense_vendor_id' => $this->vendor->id, 'method' => 'cash'];
 
@@ -113,7 +113,7 @@ it('refuses to pay more than a voucher owes, a voucher of another shop, or two c
 
 it('does not let two pending payments clear the same voucher twice', function () {
     $voucher = ($this->makeVoucher)(['amount' => 5000]);
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1]);
     $service = app(ExpenseVendorPaymentService::class);
     $data = ['payment_date' => now()->toDateString(), 'expense_vendor_id' => $this->vendor->id, 'method' => 'cash'];
 
@@ -130,7 +130,7 @@ it('does not let two pending payments clear the same voucher twice', function ()
 it('pays a shop from a bank account and leaves cash alone', function () {
     $bank = BankAccount::factory()->create(['chart_of_account_id' => $this->ledger['1171']->id]);
     $voucher = ($this->makeVoucher)(['amount' => 2000]);
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1]);
 
     $this->actingAs($this->maker);
     $payment = app(ExpenseVendorPaymentService::class)->create(['payment_date' => now()->toDateString(), 'expense_vendor_id' => $this->vendor->id, 'method' => 'bank', 'bank_account_id' => $bank->id], [$voucher->id => 2000], $this->maker);
@@ -143,12 +143,13 @@ it('opens an advance for the employee when an advance voucher is approved', func
     $employee = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => true]);
     $this->actingAs($this->maker)->post(route('expense-vouchers.store'), [
         'payee_type' => 'employee', 'employee_id' => $employee->id, 'voucher_date' => now()->toDateString(), 'amount' => 6000, 'advance_installment' => 2000, 'narration' => 'Medical',
+        'payment_method' => 'cash',
     ])->assertRedirect();
 
     $voucher = ExpenseVoucher::first();
     expect($voucher->payment_type)->toBe('advance')->and($voucher->supplier_id)->toBe($this->supplier->id)->and($voucher->party_name)->toBe($employee->name);
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertRedirect();
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['5000' => 1, '1000' => 1]])->assertRedirect();
 
     $advance = EmployeeAdvance::first();
     expect($advance->employee_id)->toBe($employee->id)
@@ -163,7 +164,7 @@ it('opens an advance for the employee when an advance voucher is approved', func
 it('does not let a company user give an advance to another company\'s employee', function () {
     $stranger = Employee::factory()->create(['supplier_id' => Supplier::factory()->create()->id, 'is_active' => true]);
 
-    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payee_type' => 'employee', 'employee_id' => $stranger->id, 'voucher_date' => now()->toDateString(), 'amount' => 100])->assertForbidden();
+    $this->actingAs($this->maker)->post(route('expense-vouchers.store'), ['payee_type' => 'employee', 'employee_id' => $stranger->id, 'voucher_date' => now()->toDateString(), 'amount' => 100, 'payment_method' => 'cash', 'denom' => ['100' => 1]])->assertForbidden();
 });
 
 it('searches only the maker\'s own company employees for an advance', function () {
@@ -180,14 +181,14 @@ it('keeps credit vouchers out of the cash report until they are paid in cash', f
     $cash = ($this->makeVoucher)(['payment_type' => 'cash', 'amount' => 700, 'party_name' => 'Tea Stall', 'expense_vendor_id' => null, 'payee_type' => 'other']);
     $credit = ($this->makeVoucher)(['amount' => 10000]);
     foreach ([$cash, $credit] as $voucher) {
-        $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher));
+        $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['500' => 1, '100' => 2]]);
     }
 
     $rows = fn () => $this->actingAs($this->checker)->get(route('reports.cash-collection-distributor.index', ['supplier_id' => $this->supplier->id, 'date' => $today]))->viewData('tables');
     $summary = fn () => collect($rows()['summary']['rows'])->mapWithKeys(fn ($row) => [$row[0] => $row[1]]);
 
     expect(collect($rows()['expenses']['rows'])->pluck(1)->all())->toBe(['Tea Stall'])
-        ->and($summary()['Less: expenses paid (cash and advance vouchers)'])->toBe('700.00')
+        ->and($summary()['Less: expenses paid (cash and advance vouchers, net of returned)'])->toBe('700.00')
         ->and($summary()['Less: vendor payments (cash)'])->toBe('0.00');
 
     $this->actingAs($this->maker);
@@ -206,7 +207,7 @@ it('shows a user only their own vouchers unless they hold the company or all per
     $this->actingAs(User::factory()->create(['supplier_id' => Supplier::factory()->create()->id]));
     $elsewhere = ExpenseVoucher::factory()->create(['party_name' => 'Elsewhere', 'expense_account_id' => $this->ledger['5221']->id]);
 
-    $parties = fn (User $user) => $this->actingAs($user)->get(route('expense-vouchers.index'))->viewData('vouchers')->pluck('party_name')->sort()->values()->all();
+    $parties = fn (User $user) => $this->actingAs($user)->get(route('expense-vouchers.index', ['filter' => ['status' => 'all']]))->viewData('vouchers')->pluck('party_name')->sort()->values()->all();
 
     expect($parties($this->maker))->toBe(['Mine'])
         ->and($parties($colleague))->toBe(['Theirs'])
@@ -223,7 +224,7 @@ it('rolls the whole approval back when posting fails, so no voucher is half done
     $voucher = ($this->makeVoucher)(['payment_type' => 'advance', 'payee_type' => 'employee', 'employee_id' => Employee::factory()->create(['supplier_id' => $this->supplier->id])->id, 'expense_vendor_id' => null]);
     $this->ledger['1131']->delete();
 
-    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher))->assertSessionHas('error');
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1, 'denom' => ['5000' => 2]])->assertSessionHas('error');
 
     expect($voucher->fresh()->status)->toBe('pending')->and(EmployeeAdvance::count())->toBe(0);
 });
@@ -238,4 +239,20 @@ it('lets the service count a voucher visible only to its creator, the company, o
 
 it('uses the maker-checker service constants for its accounts', function () {
     expect(ExpenseVoucherService::PAYABLES_ACCOUNT)->toBe('2113')->and(ExpenseVoucherService::ADVANCES_ACCOUNT)->toBe('1131');
+});
+
+it('posts a vendor payment only once when it is approved twice', function () {
+    $voucher = ($this->makeVoucher)(['amount' => 3000]);
+    $this->actingAs($this->checker)->post(route('expense-vouchers.approve', $voucher), ['approve_without_attachment' => 1]);
+    $service = app(ExpenseVendorPaymentService::class);
+
+    $this->actingAs($this->maker);
+    $payment = $service->create(['payment_date' => now()->toDateString(), 'expense_vendor_id' => $this->vendor->id, 'method' => 'cash'], [$voucher->id => 1000], $this->maker);
+    $secondClick = ExpenseVendorPayment::find($payment->id); // a second request that loaded the payment while it was still pending
+
+    $service->approve($payment, $this->checker);
+
+    expect(fn () => $service->approve($secondClick, $this->checker))->toThrow(RuntimeException::class, 'Only a payment waiting for approval')
+        ->and((float) $voucher->fresh()->paid_amount)->toBe(1000.0)
+        ->and(($this->balanceOf)('1121'))->toBe(-1000.0);
 });

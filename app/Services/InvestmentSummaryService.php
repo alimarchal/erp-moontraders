@@ -470,9 +470,6 @@ class InvestmentSummaryService
      * What the business has tied up as of a date, one supplier or all: the same parts
      * as the report's "main investment" (expiry, claims, stock, market credit, supplier ledger).
      *
-     * @return array{powder_expiry: float, liquid_expiry: float, claims: float, stock: float, credit: float, ledger: float, total: float}
-     */
-    /**
      * @param  int|array<int, int>|null  $supplierId  one supplier, a list of suppliers (summed, one query per part), or null for all
      * @return array{powder_expiry: float, liquid_expiry: float, claims: float, stock: float, credit: float, ledger: float, total: float}
      */

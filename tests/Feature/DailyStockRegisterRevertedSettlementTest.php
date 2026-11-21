@@ -70,3 +70,19 @@ it('counts the sales of a settlement reverted and posted again only once', funct
     expect((float) $onTheRevertDay->adjustment)->toBe(0.0)
         ->and((float) $onTheRevertDay->in_hand)->toBe(51.0);
 });
+
+it('shows no products until a supplier is picked, then only that supplier\'s products', function () {
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    Product::factory()->create(['supplier_id' => $otherSupplier->id, 'is_active' => true]);
+
+    $this->get(route('reports.daily-stock-register.index', ['date' => '2026-08-19']))
+        ->assertSuccessful()
+        ->assertViewHas('needsSupplier', true)
+        ->assertViewHas('reportData', fn ($rows) => $rows->isEmpty())
+        ->assertSee('Select a supplier in Filters to see its stock register.');
+
+    $this->get(route('reports.daily-stock-register.index', ['date' => '2026-08-19', 'supplier_id' => $this->supplier->id]))
+        ->assertSuccessful()
+        ->assertViewHas('needsSupplier', false)
+        ->assertViewHas('reportData', fn ($rows) => $rows->pluck('id')->all() === [$this->product->id]);
+});

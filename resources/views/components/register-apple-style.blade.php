@@ -2,6 +2,21 @@
      KPI cards, a hairline table under a frosted sticky header, glyph buttons that answer on press, and frosted sheets.
      Screen only: the printed register keeps its black grid. Needs x-apple-skin (html.apl-on and the --apl tokens). --}}
 @once
+@push('header')
+{{-- Header rules of this look go into <head> so the page header is drawn in its final shape from the first frame --}}
+<style>
+    @media screen {
+        /* header create button: words, not shouting capitals */
+        header.bg-white a.bg-blue-950 { text-transform: none !important; letter-spacing: -.01em !important; font-size: 14px !important; font-weight: 500 !important; gap: 4px; }
+        header.bg-white a.bg-blue-950 svg.size-6 { width: 18px; height: 18px; }
+    }
+    @media screen and (max-width: 640px) {
+        html.apl-on header.bg-white .flex.justify-between { flex-wrap: wrap; gap: 10px; }
+        html.apl-on header.bg-white .space-x-2 { flex-wrap: wrap; gap: 6px; }
+        html.apl-on header.bg-white .space-x-2 > * { margin: 0 !important; }
+    }
+</style>
+@endpush
 <style>
     @media screen {
         html.apl-on body { background: var(--apl-bg, #f5f5f7); }
@@ -299,17 +314,11 @@
             html.apl-on .rg-card .flex.items-center.gap-3 { flex-wrap: wrap; gap: 6px; }
             html.apl-on .rg-form-body, html.apl-on .rg-form-head { padding-left: 16px; padding-right: 16px; }
             html.apl-on .rg-paper { min-width: 560px; }
-            html.apl-on header.bg-white .flex.justify-between { flex-wrap: wrap; gap: 10px; }
-            html.apl-on header.bg-white .space-x-2 { flex-wrap: wrap; gap: 6px; }
-            html.apl-on header.bg-white .space-x-2 > * { margin: 0 !important; }
             html.apl-on .rg-match { flex-direction: column; align-items: flex-start !important; }
             html.apl-on .rg-empty { padding: 40px 18px 34px; }
             html.apl-on .rg-menu { right: auto; left: 0; }
         }
 
-        /* header create button: words, not shouting capitals */
-        header.bg-white a.bg-blue-950 { text-transform: none !important; letter-spacing: -.01em !important; font-size: 14px !important; font-weight: 500 !important; gap: 4px; }
-        header.bg-white a.bg-blue-950 svg.size-6 { width: 18px; height: 18px; }
         /* required fields */
         html.apl-on .rg-card label.rg-required::after { content: ' *'; color: #ff3b30; }
 

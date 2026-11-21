@@ -3,8 +3,7 @@
 @props(['menuButton' => false])
 @include('settings.partials.ui-style')
 {{-- Apple-style skin of every Bank Register screen: the class on <html> switches it on (see x-bank.apple-style). --}}
-<script>document.documentElement.classList.add('apl-on');</script>
-<x-bank.apple-style />
+<x-apple-skin />
 <x-bank.help-style />
 <style>
     .bank-printonly { display: none; }

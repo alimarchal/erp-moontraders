@@ -1,34 +1,34 @@
-# Graph Report - moontraders  (2026-11-13)
+# Graph Report - moontraders  (2026-11-21)
 
 ## Corpus Check
-- 1674 files · ~1,491,398 words
+- 1831 files · ~1,905,080 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 8162 nodes · 19637 edges · 1036 communities (292 shown, 282 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 453 edges (avg confidence: 0.84)
+- 9545 nodes · 22192 edges · 1132 communities (370 shown, 276 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 653 edges (avg confidence: 0.84)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ce1b64d7`
+- Built from commit: `1267c9ee`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - User
-- Supplier
+- Illuminate\Support\Facades\DB
 - Illuminate\Database\Eloquent\Relations\BelongsTo
 - GoodsReceiptNote
 - Illuminate\Database\Eloquent\Model
-- Customer
-- Currency
+- Illuminate\Database\Eloquent\Relations\HasMany
+- ChartOfAccount
 - SalesSettlement
 - moment.min.js
 - jquery-3.7.1.min.js
-- GoodsReceiptNotePolicy
+- Expo Animation Recipes
 - UpdateCurrencyRequest
-- Illuminate\Database\Migrations\Migration
-- Illuminate\Database\Seeder
+- Spatie\Permission\PermissionRegistrar
+- Illuminate\Database\Console\Seeds\WithoutModelEvents
 - ExpenseVoucher
 - EmployeeController
 - Illuminate\Foundation\Http\FormRequest
@@ -40,10 +40,11 @@
 - PayrollService
 - StoreProfitCategoryDetailRequest
 - Illuminate\Support\Facades\Schema
-- Maatwebsite\Excel\Concerns\WithMapping
+- Expo Animation Recipes
+- Illuminate\Database\Eloquent\Builder
 - Company
-- Illuminate\Http\Request
-- StoreInvestmentOpeningBalanceRequest
+- .response
+- Choreographing Motion
 - GrnCostDriftService
 - TicketService
 - Permission
@@ -51,7 +52,7 @@
 - CustomerController
 - b
 - jquery-3.5.1.js
-- CostCenter
+- StoreCostCenterRequest
 - Ticket
 - CustomerEmployeeAccountTransaction
 - Cloud CLI
@@ -64,34 +65,34 @@
 - ExpenseDetail
 - Illuminate\Notifications\Messages\MailMessage
 - Maatwebsite\Excel\Concerns\WithHeadings
-- JournalEntryDetailController
+- JournalEntryDetail
 - TaxCode
 - TaxTransaction
 - Laravel Boost Guidelines
-- NotifyPendingSettlements.php
+- Choreographing Motion
 - CompanyTarget
 - InventoryLedgerEntry
-- AttachmentController
+- Attachment
 - ProductController
 - ProductRecall
 - GoodsReceiptNoteController
 - Laravel Boost Guidelines
-- CustomerEmployeeAccount
+- Animation Recipes
 - WarehouseType
 - RebuildDailyInventorySnapshots
 - GoodsIssueController
 - SalesSettlementController
 - LedgerRegister
-- CategoryController
+- Category
 - StoreJournalEntryRequest
 - BankStatementEntry
 - VerifyInventoryConsistency
-- LedgerService
+- Animation Recipes
 - RevenueCategory
-- GoodsReceiptNoteItemsImport
-- Illuminate\Http\RedirectResponse
-- ChartOfAccount
-- BankEntryAuditLog
+- CustomerImport
+- Illuminate\Http\Request
+- BankAccountController
+- .log
 - SupplierLedgerReportController.php
 - StockAdjustment
 - SalesSettlementCheque
@@ -104,42 +105,42 @@
 - AmrDisposeRegisterController
 - BankReconciliation
 - GoodsIssueStockCheck
-- JournalEntry
+- .back
 - CreditorsLedgerController
-- .log
+- Worst-Case Catalog
 - Apple Design
 - Laravel Fortify Development
 - Livewire Development
-- SupplierController
+- StoreSupplierRequest
 - StoreVehicleRequest
 - Laravel Fortify Development
 - Livewire Development
-- Illuminate\Support\Str
+- Livewire\Livewire
 - 2025_10_28_000017_create_double_entry_triggers_and_procedures.php
 - Laravel Fortify Development
 - Livewire Development
 - PDFGenerator
 - domManip
-- Illuminate\Database\Eloquent\Builder
-- SyncDatabaseObjects
+- ExpenseVendorPayment
+- Illuminate\Console\Command
 - BankReportService
-- BankEntryCategory
+- BankEntryCategoryController
 - TicketRequest
-- CustomerImport
+- Illuminate\Validation\Rule
 - MigrationHelpers
-- AppServiceProvider.php
+- Illuminate\Support\ServiceProvider
 - Nestlé Pakistan Supplier
 - StockValuationService
-- CompanyTargetService
+- CompanyTargetSummaryController.php
 - GeneralLedgerExport
 - FileStorageHelper
-- ExpenseDetailReportController
+- UpdateExpenseDetailRequest
 - Symfony\Component\HttpFoundation\Response
-- ExpenseCategory
-- ProfitCategoryDetail
-- CustomerAccountStatementController
-- StockAdjustmentController
-- BankCheque
+- ExpenseVoucherController
+- ProfitCategory
+- Worst-Case Catalog
+- Illuminate\Database\Seeder
+- BankEntryCategory
 - require
 - Laravel Backup
 - UomController
@@ -147,11 +148,11 @@
 - Laravel Backup
 - Laravel Backup
 - done
-- GoodsIssueExport
-- JournalEntryDetail
-- RevenueDetail
-- SvgChart
-- Category
+- Maatwebsite\Excel\Concerns\FromQuery
+- AppSetting
+- Animation Standards Reference
+- .count
+- TicketTest.php
 - Do Things the Laravel Way
 - Detection Checklist
 - Process
@@ -160,10 +161,10 @@
 - Security Best Practices
 - Tailwind CSS Development
 - TicketType
-- PromotionalCampaign
+- Animation Standards Reference
 - Illuminate\Support\Collection
-- Spatie\Permission\Models\Role
-- BankRegisterAccounts
+- BankRegisterPermissions
+- BankRegisterException
 - Detection Checklist
 - Process
 - Architecture Best Practices
@@ -180,21 +181,21 @@
 - Security Best Practices
 - Tailwind CSS Development
 - matcherFromTokens
-- UpdateAccountTypeRequest
+- AccountTypeController
 - Illuminate\Contracts\Validation\ValidationRule
 - SettlementBankRegisterSync
 - ExpenseVendor
-- Attachment
+- CashNotes
 - SalesmanLedger
-- TicketSubmitted
-- BankReportExport
+- TicketItem
+- Animation Audit Playbook
 - Pest
 - Advanced Query Best Practices
 - Events and Notifications Best Practices
 - Migration Best Practices
 - Queue and Job Best Practices
-- LedgerRegisterFactory
-- BankEntryRule
+- DocumentType
+- BankEntryRuleController
 - BankChequeController
 - Advanced Query Best Practices
 - Events and Notifications Best Practices
@@ -207,9 +208,9 @@
 - Caching Best Practices
 - Database performance best practices
 - Eloquent Best Practices
-- FortifyServiceProvider.php
+- CreateNewUser.php
 - VehicleController
-- BankReceiptScanController.php
+- web.php
 - Karpathy Guidelines
 - Caching Best Practices
 - Database performance best practices
@@ -223,8 +224,8 @@
 - Error Handling Best Practices
 - Task Scheduling Best Practices
 - Endpoint Tests
-- Illuminate\Validation\Rule
-- BankPartyAlias
+- SalaryComponent
+- BankPartyAliasController
 - Goods Issue: remove a line, or part of it, before settlement
 - DailyInventorySnapshot
 - Blade and View Best Practices
@@ -246,13 +247,13 @@
 - Fakes, Mocks, and Determinism
 - Test Suite Performance
 - Reviewing Tests
-- Illuminate\Console\Command
+- CorrectGoodsIssueDate
 - StoreChartOfAccountRequest
 - StockAvailabilityReportController
 - GoodsIssueReversalService
 - Karpathy Guidelines
-- UserFactory
-- .index
+- UserFactory.php
+- Animation Audit Playbook
 - RepostSupplierInvoices
 - UpdateTaxRateRequest
 - Collection Best Practices
@@ -284,17 +285,17 @@
 - Test Suite Performance
 - Reviewing Tests
 - Naming and Structure
-- ProductWiseSalesExport
+- PayrollExcelService
 - LedgerRegisterController
 - BankReceiptScan
-- SalesSettlementPolicy
+- Write Swift
 - StoreProductRequest
 - ExpenseVendorPaymentService
 - InvoiceSummaryReportController
-- StoreOpeningStockRequest
-- UpdateCustomerRequest
-- AccountingPeriodPolicy
-- AccountTypePolicy
+- Write Swift
+- Apple Design
+- The Fixes
+- The Fixes
 - Moon Traders Application
 - Naming and Structure
 - ClaimRegisterFactory
@@ -305,27 +306,27 @@
 - Naming and Structure
 - Factories and Test Data
 - Testing Best Practices
-- RepairJournalRounding.php
-- StoreAccountingPeriodRequest
+- RepairJournalRounding
+- Prototyping Variants
 - UpdateAccountingPeriodRequest
 - BankStatementEntryFactory
 - Development Workflows
 - getWidthOrHeight
-- ClaimRegisterPolicy
+- BankStatementImport
 - WarehouseController
-- CompanyPolicy
+- ExpenseVoucherAttachmentService
 - PostGoodsReceiptNoteRequest
-- Maatwebsite\Excel\Concerns\ShouldAutoSize
-- CurrencyPolicy
-- CustomerPolicy
-- EmployeePolicy
+- PayrollSheetExport
+- CashCollectionDistributorController
+- Prototyping Variants
+- Glossary
 - UpdateVehicleRequest
 - UpdateCompanyRequest
-- LedgerRegisterPolicy
+- .createChildRecords
 - UpdateProductRequest
 - Laravel 12
 - AttachmentFactory.php
-- UomPolicy
+- TaxRate
 - Audits Icon
 - Branches
 - Factories and Test Data
@@ -335,8 +336,8 @@
 - sanctum.php
 - CurrencyFactory
 - ExpenseDetailFactory.php
-- StoreTaxCodeRequest
-- StoreTaxTransactionRequest
+- Glossary
+- Sales Settlement Overhaul: Design
 - herd
 - Livewire 3
 - Key Conventions
@@ -349,27 +350,28 @@
 - suppliers/edit.blade.php
 - tickets/create.blade.php
 - tickets/edit.blade.php
-- VehiclePolicy
-- UpdateProductTaxMappingRequest
+- Animation Performance
+- .update
 - ProductFactory.php
-- web.php
+- Animation Performance
 - Review Focus
-- BankSearchAndReportsTest.php
-- StoreWarehouseTypeRequest
+- Finding Animation Opportunities
+- Workflow
 - CurrentStockController
-- ImportGoodsReceiptNoteRequest
-- .index
-- ImportProductRequest
+- ProfitCategoryDetail
+- Illuminate\View\View
+- Finding Animation Opportunities
 - StoreTaxRateRequest
-- StoreCompanyTargetRequest
-- StoreAccountTypeRequest
+- Workflow
+- Removing Animations
+- Removing Animations
 - Deposit Action
 - logout-other-browser-sessions-form.blade.php
 - delete-user-form.blade.php
 - GoodsReceiptNoteItemFactory
 - 2026_10_02_153534_add_reverses_transaction_id_to_customer_employee_account_transactions_table.php
-- 2026_10_18_100000_create_company_targets_module.php
-- UpdateBankAccountRequest
+- Gesture-Driven UI
+- InventoryGlAdjustmentService
 - daterangepicker.min.js
 - expectSync
 - customers/create.blade.php
@@ -389,38 +391,54 @@
 - confirms-password.blade.php
 - Illuminate\Database\Schema\Blueprint
 - AuditsAccountingChanges.php
-- FmrAmrComparisonController
+- EmployeeSalaryController
 - WarehouseTypeFactory
-- UserPolicy
+- UserController
 - 2026_10_20_100015_add_register_ledger_to_bank_accounts.php
 - HelpFlows
-- Illuminate\View\Component
-- StoreEmployeeSalaryRequest
-- ProductExport
-- ReportPdf
-- UpdateChartOfAccountRequest
+- BankEntryClassifier
+- Gesture-Driven UI
+- Illuminate\Database\Migrations\Migration
+- Role
+- Review Focus
+- Expense vouchers, cheque register and cash collection report: design
+- Working With Sonner
+- Working With Sonner
 - StoreSaleRequest
 - InvestmentSummaryController
 - 2026_11_08_110000_add_expense_module_indexes.php
+- UpdateWarehouseRequest
+- Spatie\Activitylog\LogOptions
+- FortifyServiceProvider.php
 - expense-vendors/create.blade.php
 - expense-vendors/edit.blade.php
-- adjustments.blade.php
-- payroll/index.blade.php
-- salaries/edit.blade.php
+- The list
+- StoreEmployeeRequest
+- The list
 - StoreUomRequest
-- salaries/index.blade.php
+- Laravel\Fortify\Features
+- ChequeClearing
+- SalesSettlementChequeHistory
 - payroll/show.blade.php
 - slip.blade.php
 - UpdateLedgerRegisterRequest
+- Review Focus
 - slips-print.blade.php
-- SupplierInvoicePostingTest.php
+- CashAndChequeScenarioMatrixTest.php
+- Design Engineering
+- CostCenterController
 - General
-- StoreProductTaxMappingRequest
+- CurrencyController
 - StoreSchemeReceivedRequest
 - .update
-- SalesSettlementItemFactory.php
-- SupplierLedgerReportController
-- VanStockBatchReportController.php
+- EmployeeAdvance
+- Design Engineering
+- Component Building Principles
+- Component Building Principles
+- DailySalesReportController
+- SupplierController
+- SalesSettlementSale
+- User.php
 - Pest 4
 - PHP
 - Tailwind CSS
@@ -446,7 +464,7 @@
 - users/edit.blade.php
 - uoms/create.blade.php
 - uoms/edit.blade.php
-- UpdateTaxTransactionRequest
+- AmountInWords
 - deleteProfilePhoto
 - employees.edit
 - createCache
@@ -530,24 +548,31 @@
 - warehouses/edit.blade.php
 - mcp-mysql.sh
 - mcp-postgres.sh
+- The Animation Decision Framework
 - Blade Component: cheque-payment-modal
 - append-items.blade.php
+- cheque-register/index.blade.php
 - daily-sales/product-wise.blade.php
-- UpdateWarehouseTypeRequest
+- clip-path for Animation
+- sales-settlements/create.blade.php
+- sales-settlements/edit.blade.php
 - tickets/form.blade.php
 - warehouses/index.blade.php
 - BankReceiptScanRequest
 - RemoveGoodsIssueItemRequest
 - on
-- StoreBankStatementEntryRequest
+- Performance Rules
+- Gesture and Drag Interactions
+- BankStatementEntryController.php
 - StoreCompanyRequest
-- StoreCustomerRequest
-- CustomerCodeGenerator.php
+- StoreClaimRegisterRequest
+- UpdateUserProfileInformation.php
+- DeleteUser
 - expense-vendor-payments/create.blade.php
 - expense-vendor-payments/index.blade.php
 - expense-vendors/index.blade.php
-- components.blade.php
-- payroll/create.blade.php
+- ProductPriceChangeLogController
+- StoreSalesSettlementRequest
 - index.md
 - bank-statement-entries.partials.detail
 - bank-statement-entries.partials.summary
@@ -571,48 +596,95 @@
 - pdf/product-wise.blade.php
 - ExpenseVoucherFactory.php
 - AccountingPeriodSeeder
-- Illuminate\Support\Facades\Artisan
-- AccountBalancesController
+- console.php
+- UpdateSalesSettlementRequest
 - .index
 - StoreDeliveryNoteRequest
-- StoreStockReceiptRequest
+- EmployeeSalaryComponent
 - UpdateExpenseRequest
 - UpdateInvestmentOpeningBalanceRequest
 - UpdateSaleRequest
-- UpdateStockReceiptItemRequest
-- CartonConversionService
+- The Animation Decision Framework
+- clip-path for Animation
 - 2026_11_11_112037_remove_bank_register_memo_ledger.php
 - CustomerSeeder
 - BankChequeFactory.php
-- BankReconciliationFactory.php
+- Performance Rules
 - CustomerFactory.php
-- EmployeeFactory
+- Gesture and Drag Interactions
+- ChartOfAccountSeeder
+- Payroll hub — design (approved 2026-11-13, layout A)
+- CSS Transform Mastery
+- The Sonner Principles (Building Loved Components)
+- Spring Animations
+- StoreWarehouseRequest
+- StoreCurrencyRequest
+- ExpenseVoucherReversalService
+- CSS Transform Mastery
+- The Sonner Principles (Building Loved Components)
 - claim-registers.partials.form-fields
-- Spatie\Activitylog\Models\Activity
+- Spring Animations
+- register-help.blade.php
+- hub.blade.php
+- Core Philosophy
+- Debugging Animations
+- .update
+- StoreCategoryRequest
+- StoreStockReceiptItemRequest
+- UpdateCategoryRequest
+- UpdateRevenueDetailRequest
+- UpdateStockReceiptRequest
+- UpdateVehicleExpenseRequest
+- Core Philosophy
+- Debugging Animations
+- 2026_11_15_144229_add_cheque_bounce_to_customer_employee_account_transaction_types.php
+- OpeningCustomerBalanceSeeder.php
+- dashboard-focus.blade.php
+- AccountingPeriodFactory
+- BankAccountFactory.php
+- CashPayoutDenominationFactory.php
+- CategoryFactory.php
+- ExpenseVendorFactory.php
+- GoodsIssueItemFactory.php
+- InvoiceSummaryFactory.php
+- JournalEntryFactory
+- RevenueCategoryFactory.php
+- TaxCodeFactory.php
+- TaxTransactionFactory.php
+- UomFactory.php
+- VehicleFactory
+- WarehouseFactory
+- EmployeeSeeder
+- .run
+- sheet.blade.php
+- reports/layouts/option-a.blade.php
+- reports/layouts/option-b.blade.php
+- SettingsPageTest.php
+- salaries.blade.php
 
 ## God Nodes (most connected - your core abstractions)
-1. `User` - 633 edges
-2. `Supplier` - 363 edges
-3. `Product` - 253 edges
-4. `Employee` - 248 edges
-5. `SalesSettlement` - 230 edges
-6. `ChartOfAccount` - 204 edges
-7. `GoodsIssue` - 183 edges
-8. `Warehouse` - 181 edges
-9. `Controller` - 166 edges
-10. `BankStatementEntry` - 152 edges
+1. `User` - 684 edges
+2. `Supplier` - 382 edges
+3. `Employee` - 276 edges
+4. `Product` - 267 edges
+5. `SalesSettlement` - 246 edges
+6. `ChartOfAccount` - 216 edges
+7. `Warehouse` - 192 edges
+8. `GoodsIssue` - 191 edges
+9. `Controller` - 169 edges
+10. `Vehicle` - 154 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `statementEntry()` --calls--> `BankStatementEntry`  [EXTRACTED]
+  tests/Feature/BankRegister/BankClassificationTest.php → app/Models/BankStatementEntry.php
 - `classifiedEntry()` --references_constant--> `BankStatementEntry`  [EXTRACTED]
   tests/Feature/BankRegister/BankMakerCheckerTest.php → app/Models/BankStatementEntry.php
+- `stockLedgerBalance()` --calls--> `ChartOfAccount`  [EXTRACTED]
+  tests/Feature/Accounting/StockLedgerStaysInStepTest.php → app/Models/ChartOfAccount.php
 - `moveLineToLegacyAccount()` --calls--> `ChartOfAccount`  [EXTRACTED]
   tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/ChartOfAccount.php
 - `ensureLedgerPostingAccounts()` --calls--> `ChartOfAccount`  [EXTRACTED]
   tests/Feature/GoodsReceiptNoteAccountingTest.php → app/Models/ChartOfAccount.php
-- `dropJournalEntry()` --references--> `GoodsReceiptNote`  [EXTRACTED]
-  tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/GoodsReceiptNote.php
-- `postPurchaseGrn()` --calls--> `GoodsReceiptNote`  [EXTRACTED]
-  tests/Feature/Accounting/SupplierInvoicePostingTest.php → app/Models/GoodsReceiptNote.php
 
 ## Import Cycles
 - None detected.
@@ -622,39 +694,35 @@
 - **Opening Balance Seeding Subsystem** — database_seeders_data_ledger_registers_supplier_ledger, database_seeders_data_transactions_customer_transaction, database_seeders_data_ledger_registers_ob_document_type, database_seeders_data_transactions_opening_balance_type [INFERRED 0.85]
 - **Customer Accounts Receivable Subsystem** — database_seeders_data_customers_customer, database_seeders_data_accounts_customer_employee_account, database_seeders_data_transactions_customer_transaction, database_seeders_data_employee_list_employee [INFERRED 0.88]
 
-## Communities (1036 total, 282 thin omitted)
+## Communities (1132 total, 276 thin omitted)
 
 ### Community 0 - "User"
 Cohesion: 0.02
-Nodes (15): User, ChartOfAccountPolicy, GoodsIssuePolicy, JournalEntryPolicy, ProductPolicy, SupplierPolicy, WarehousePolicy, Illuminate\Support\Facades\Route (+7 more)
+Nodes (40): CreditSalesReportController, QueryBuilder, SupplierLedgerReportController, Customer, Employee, Supplier, User, CustomerPolicy (+32 more)
 
-### Community 1 - "Supplier"
+### Community 1 - "Illuminate\Support\Facades\DB"
 Cohesion: 0.04
-Nodes (41): BankRegisterHelpController, Controller, CreditSalesReportController, AdvanceTaxReportController, AdvanceTaxSalesRegisterController, CustomSettlementReportController, DailyStockRegisterController, PercentageExpenseReportController (+33 more)
+Nodes (39): Controller, OpeningStockController, AccountBalancesController, AdvanceTaxReportController, AdvanceTaxSalesRegisterController, BalanceSheetController, CustomSettlementReportController, DailyStockRegisterController (+31 more)
 
 ### Community 2 - "Illuminate\Database\Eloquent\Relations\BelongsTo"
 Cohesion: 0.02
-Nodes (11): EmployeeAdvanceRecovery, EmployeeSalaryComponent, ExpenseVendorPaymentAllocation, GoodsIssueItemRemoval, ProductRecallItem, SalesSettlementChequeHistory, SalesSettlementExcessAmount, StockAdjustmentItem (+3 more)
+Nodes (11): CompanyTargetLine, EmployeeAdvanceRecovery, ExpenseVendorPaymentAllocation, ExpenseVoucherLine, GoodsIssueItemRemoval, ProductRecallItem, SalesSettlementAmrLiquid, SalesSettlementExcessAmount (+3 more)
 
 ### Community 3 - "GoodsReceiptNote"
 Cohesion: 0.04
-Nodes (35): BatchTransferController, OpeningStockController, StoreBatchTransferRequest, CurrentStock, CurrentStockByBatch, GoodsReceiptNote, StockBatch, StockMovement (+27 more)
+Nodes (16): BatchTransferController, GoodsReceiptNote, GoodsReceiptNotePolicy, BatchTransferService, CartonConversionService, InventoryService, GoodsReceiptNoteFactory, DomainException (+8 more)
 
 ### Community 4 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.03
-Nodes (17): AccountBalance, BalanceSheetAccount, EmployeeAdvance, IncomeStatementAccount, SalesSettlementAdvanceTax, SalesSettlementAdvanceTaxIncome, SalesSettlementItemBatch, SalesSettlementSale (+9 more)
-
-### Community 5 - "Customer"
-Cohesion: 0.08
-Nodes (3): StoreManualOpeningCustomerBalanceRequest, Customer, Illuminate\Database\Eloquent\Relations\HasManyThrough
-
-### Community 6 - "Currency"
 Cohesion: 0.04
-Nodes (26): AccountingPeriodController, AccountTypeController, CurrencyController, AccountingPeriod, AccountType, Currency, SalesSettlementExpense, ChartOfAccountFactory (+18 more)
+Nodes (16): AccountBalance, BalanceSheetAccount, CashPayoutDenomination, IncomeStatementAccount, InvoiceSummary, SalesSettlementAdvanceTax, SalesSettlementAdvanceTaxIncome, SalesSettlementCashDenomination (+8 more)
+
+### Community 6 - "ChartOfAccount"
+Cohesion: 0.02
+Nodes (53): ClearStockReceivedNotBilled, AccountingPeriodController, ChartOfAccountController, AccountingPeriod, AccountType, BankAccount, ChartOfAccount, CostCenter (+45 more)
 
 ### Community 7 - "SalesSettlement"
 Cohesion: 0.05
-Nodes (8): SalesSettlement, SalesSettlementRevertService, up(), makeRoundingScenario(), postRoundingJournal(), validateRoundingSettlement(), makePostedSettlement(), settlementLeavingOutJuice()
+Nodes (16): SalesSettlementReportController, SalesSettlement, SalesSettlementPolicy, SalesSettlementRevertService, SalesSettlementBankTransferFactory, up(), Illuminate\Console\Scheduling\Event, Illuminate\Console\Scheduling\Schedule (+8 more)
 
 ### Community 8 - "moment.min.js"
 Cohesion: 0.04
@@ -664,61 +732,77 @@ Nodes (57): de(), aa(), ab(), ba(), bb(), ca(), cd(), da() (+49 more)
 Cohesion: 0.07
 Nodes (50): O(), ve(), Ae(), B(), Be(), c(), $e(), ee() (+42 more)
 
-### Community 13 - "Illuminate\Database\Seeder"
-Cohesion: 0.04
-Nodes (27): AccountTypeSeeder, AttachmentSeeder, ChartOfAccountSeeder, ClaimRegisterSeeder, CostCenterSeeder, CurrencySeeder, DatabaseSeeder, EmployeeSeeder (+19 more)
+### Community 10 - "Expo Animation Recipes"
+Cohesion: 0.06
+Nodes (33): Bottom sheet you can drag to dismiss, Collapsing header on scroll, Expo Animation Recipes, Firing something once at a threshold, Keyboard-synced UI, List entrances, Press feedback, Screen transitions (Expo Router) (+25 more)
+
+### Community 12 - "Spatie\Permission\PermissionRegistrar"
+Cohesion: 0.03
+Nodes (3): seedPermissions(), up(), Spatie\Permission\PermissionRegistrar
+
+### Community 13 - "Illuminate\Database\Console\Seeds\WithoutModelEvents"
+Cohesion: 0.10
+Nodes (10): AccountTypeSeeder, CostCenterSeeder, CurrencySeeder, DatabaseSeeder, JournalEntryDetailSeeder, JournalEntrySeeder, TaxCodeSeeder, TaxRateSeeder (+2 more)
 
 ### Community 14 - "ExpenseVoucher"
-Cohesion: 0.05
-Nodes (5): ExpenseVoucherController, ExpenseVoucher, ExpenseVoucherAttachment, ExpenseVoucherAttachmentService, ExpenseVoucherService
+Cohesion: 0.06
+Nodes (3): ExpenseVoucher, ExpenseVoucherService, Illuminate\Database\Eloquent\Relations\MorphOne
 
 ### Community 16 - "Illuminate\Foundation\Http\FormRequest"
 Cohesion: 0.04
-Nodes (15): BankBulkClassifyRequest, BankStatementEntryRequest, BankStatementImportRequest, StoreBankAccountRequest, StoreExpenseRequest, StorePaymentRequest, StoreRevenueDetailRequest, StoreStockReceiptItemRequest (+7 more)
+Nodes (16): BankStatementImportRequest, ImportGoodsReceiptNoteRequest, StoreEmployeeSalaryRequest, StoreExpenseRequest, StoreOpeningStockRequest, StorePaymentRequest, StoreSaleItemRequest, StoreWarehouseTypeRequest (+8 more)
 
 ### Community 17 - "Product"
-Cohesion: 0.04
-Nodes (48): GoodsIssueReportController, VanStockLedgerController, Employee, GoodsIssue, GoodsIssueItem, GoodsReceiptNoteItem, Product, SalesSettlementAmrLiquid (+40 more)
+Cohesion: 0.03
+Nodes (78): CurrentStock, CurrentStockByBatch, GoodsIssue, GoodsIssueItem, GoodsReceiptNoteItem, Product, SalesSettlementItem, SalesSettlementItemBatch (+70 more)
 
 ### Community 18 - "Illuminate\Database\Eloquent\Factories\Factory"
-Cohesion: 0.03
-Nodes (27): AccountingPeriodFactory, AccountTypeFactory, BankAccountFactory, BankEntryCategoryFactory, BankPartyAliasFactory, BankReceiptScanFactory, CategoryFactory, CompanyFactory (+19 more)
+Cohesion: 0.05
+Nodes (18): AccountTypeFactory, BankEntryCategoryFactory, BankPartyAliasFactory, BankReceiptScanFactory, BankReconciliationFactory, ChequeClearingFactory, CompanyFactory, CompanyTargetFactory (+10 more)
 
 ### Community 19 - "jquery-3.6.0.min.js"
 Cohesion: 0.08
 Nodes (30): A(), at(), b(), be(), ce(), e(), Ee(), fe() (+22 more)
 
 ### Community 20 - "Dashboard"
-Cohesion: 0.13
+Cohesion: 0.16
 Nodes (3): Dashboard, Carbon, Livewire\Component
 
 ### Community 21 - "ClaimRegister"
 Cohesion: 0.06
-Nodes (5): ClaimRegisterController, ProductRecallController, ClaimRegisterReportController, ClaimRegister, ClaimRegisterService
+Nodes (5): ClaimRegisterController, ClaimRegisterReportController, ClaimRegister, ClaimRegisterPolicy, ClaimRegisterService
 
 ### Community 22 - "PayrollService"
 Cohesion: 0.08
-Nodes (5): PayrollAdjustmentController, PayrollAdjustment, PayrollSlip, PayrollSlipLine, PayrollService
+Nodes (6): PayrollAdjustment, PayrollSlip, PayrollSlipLine, PayrollService, PayrollSheetService, Carbon\CarbonInterface
 
-### Community 26 - "Maatwebsite\Excel\Concerns\WithMapping"
-Cohesion: 0.09
-Nodes (7): BankEntriesExport, CustomerExport, EmployeeExport, OpeningCustomerBalanceExport, VehicleExport, Maatwebsite\Excel\Concerns\FromQuery, Maatwebsite\Excel\Concerns\WithMapping
+### Community 25 - "Expo Animation Recipes"
+Cohesion: 0.06
+Nodes (33): Bottom sheet you can drag to dismiss, Collapsing header on scroll, Expo Animation Recipes, Firing something once at a threshold, Keyboard-synced UI, List entrances, Press feedback, Screen transitions (Expo Router) (+25 more)
 
-### Community 28 - "Illuminate\Http\Request"
+### Community 26 - "Illuminate\Database\Eloquent\Builder"
+Cohesion: 0.06
+Nodes (12): BankEntriesExport, CustomerExport, EmployeeExport, OpeningCustomerBalanceExport, ProductExport, VehicleExport, BankStatementSearch, NetProfitSort (+4 more)
+
+### Community 27 - "Company"
+Cohesion: 0.08
+Nodes (3): CompanyController, Company, CompanyPolicy
+
+### Community 28 - ".response"
 Cohesion: 0.10
-Nodes (6): CustomerEmployeeAccountController, BankApprovalController, DailySalesReportController, TransactionController, Illuminate\Http\JsonResponse, Illuminate\Http\Request
+Nodes (5): CustomerEmployeeAccountController, PayrollAdjustmentController, TransactionController, LedgerService, Illuminate\Http\JsonResponse
+
+### Community 29 - "Choreographing Motion"
+Cohesion: 0.06
+Nodes (32): Carry: steer a shared layout animation through its parent, Choreography Recipes, Direction-aware steps, Imperative orchestration (`useAnimate`), Overlap: CSS stagger with an index variable, Overlap: Motion variants with a non-uniform stagger, Sequence: morph between two rich states with a crossfade, Sequence: one draw after another (+24 more)
 
 ### Community 30 - "GrnCostDriftService"
-Cohesion: 0.13
-Nodes (5): RecostBatchMovements, RepairGrnCostDrift, VerifyGrnCosts, BatchRecostService, GrnCostDriftService
-
-### Community 31 - "TicketService"
-Cohesion: 0.12
-Nodes (3): TicketStatus, TicketItem, TicketService
+Cohesion: 0.11
+Nodes (4): RecostBatchMovements, BatchRecostService, GrnCostDriftService, LedgerDriftException
 
 ### Community 32 - "Permission"
-Cohesion: 0.04
-Nodes (22): PermissionController, RoleController, UserController, LogOptions, Permission, LogOptions, LogOptions, Role (+14 more)
+Cohesion: 0.16
+Nodes (3): PermissionController, Permission, grnReversalPermission()
 
 ### Community 33 - "package.json"
 Cohesion: 0.06
@@ -732,13 +816,9 @@ Nodes (44): Te(), ac(), b(), bc(), cc(), d(), db(), e() (+36 more)
 Cohesion: 0.06
 Nodes (10): computeStyleTests(), dataAttr(), finalPropName(), getData(), NOTE: This can be skipped if there are no unmatched elements (i.e.,…, TODO: Now that all calls to _data and _removeData have been replaced, TODO: identify versions, TODO: identify versions (+2 more)
 
-### Community 37 - "CostCenter"
-Cohesion: 0.09
-Nodes (5): CostCenterController, StoreCostCenterRequest, UpdateCostCenterRequest, CostCenter, CostCenterPolicy
-
 ### Community 39 - "CustomerEmployeeAccountTransaction"
-Cohesion: 0.10
-Nodes (3): OpeningCustomerBalanceController, OpeningCustomerBalanceReportController, CustomerEmployeeAccountTransaction
+Cohesion: 0.05
+Nodes (8): OpeningCustomerBalanceController, CustomerAccountStatementController, OpeningCustomerBalanceReportController, StoreManualOpeningCustomerBalanceRequest, CustomerEmployeeAccount, CustomerEmployeeAccountTransaction, createReportTransaction(), createStatementTransaction()
 
 ### Community 40 - "Cloud CLI"
 Cohesion: 0.06
@@ -768,109 +848,125 @@ Nodes (28): APIs & Eloquent Resources, Application Structure & Architecture, Art
 Cohesion: 0.24
 Nodes (24): b(), g(), c(), d(), c(), e(), f(), g() (+16 more)
 
-### Community 48 - "Illuminate\Notifications\Messages\MailMessage"
+### Community 47 - "ExpenseDetail"
 Cohesion: 0.09
-Nodes (12): GrnCostDriftDetected, MailMessage, InventoryConsistencyMismatch, MailMessage, PendingSettlementsNotice, MailMessage, MailMessage, SnapshotRebuildSkippedProducts (+4 more)
+Nodes (3): ExpenseDetailReportController, ExpenseDetail, ExpenseDetailService
+
+### Community 48 - "Illuminate\Notifications\Messages\MailMessage"
+Cohesion: 0.08
+Nodes (13): VerifyGrnCosts, GrnCostDriftDetected, MailMessage, InventoryConsistencyMismatch, MailMessage, PendingSettlementsNotice, MailMessage, MailMessage (+5 more)
 
 ### Community 49 - "Maatwebsite\Excel\Concerns\WithHeadings"
-Cohesion: 0.14
-Nodes (6): CustomerImportTemplateExport, GoodsReceiptNoteTemplateExport, OpeningStockTemplateExport, ProductImportTemplateExport, Maatwebsite\Excel\Concerns\FromArray, Maatwebsite\Excel\Concerns\WithHeadings
+Cohesion: 0.07
+Nodes (13): BankReportExport, CustomerImportTemplateExport, EmployeeSalariesExport, GoodsReceiptNoteTemplateExport, OpeningStockTemplateExport, PayrollRunExport, PayrollRunsExport, ProductImportTemplateExport (+5 more)
 
-### Community 50 - "JournalEntryDetailController"
-Cohesion: 0.13
-Nodes (3): JournalEntryDetailController, StoreJournalEntryDetailRequest, UpdateJournalEntryDetailRequest
+### Community 50 - "JournalEntryDetail"
+Cohesion: 0.09
+Nodes (7): JournalEntryDetailController, StoreJournalEntryDetailRequest, UpdateJournalEntryDetailRequest, JournalEntryDetail, JournalEntryDetailPolicy, batchLedgerNet(), chequeLedger()
 
 ### Community 51 - "TaxCode"
-Cohesion: 0.06
-Nodes (7): TaxCodeController, TaxRateController, TaxCode, TaxRate, TaxCodePolicy, TaxRatePolicy, Illuminate\Foundation\Http\Middleware\PreventRequestForgery
+Cohesion: 0.09
+Nodes (4): TaxCodeController, StoreTaxCodeRequest, TaxCode, TaxCodePolicy
 
 ### Community 52 - "TaxTransaction"
-Cohesion: 0.14
-Nodes (3): TaxTransactionController, TaxTransaction, TaxTransactionPolicy
+Cohesion: 0.12
+Nodes (4): TaxTransactionController, UpdateTaxTransactionRequest, TaxTransaction, TaxTransactionPolicy
 
 ### Community 53 - "Laravel Boost Guidelines"
 Cohesion: 0.07
 Nodes (27): APIs & Eloquent Resources, Application Structure & Architecture, Artisan, Conventions, Do Things the Laravel Way, Documentation Files, Foundational Context, Frontend Bundling (+19 more)
 
-### Community 54 - "NotifyPendingSettlements.php"
-Cohesion: 0.24
-Nodes (4): NotifyPendingSettlements, SchedulerHeartbeat, Illuminate\Console\Attributes\Description, Illuminate\Console\Attributes\Signature
+### Community 54 - "Choreographing Motion"
+Cohesion: 0.06
+Nodes (32): Carry: steer a shared layout animation through its parent, Choreography Recipes, Direction-aware steps, Imperative orchestration (`useAnimate`), Overlap: CSS stagger with an index variable, Overlap: Motion variants with a non-uniform stagger, Sequence: morph between two rich states with a crossfade, Sequence: one draw after another (+24 more)
 
-### Community 57 - "AttachmentController"
+### Community 55 - "CompanyTarget"
 Cohesion: 0.13
-Nodes (3): AttachmentController, StoreAttachmentRequest, UpdateAttachmentRequest
+Nodes (3): CompanyTargetController, StoreCompanyTargetRequest, CompanyTarget
+
+### Community 57 - "Attachment"
+Cohesion: 0.07
+Nodes (6): AttachmentController, BankAttachmentRequest, StoreAttachmentRequest, UpdateAttachmentRequest, Attachment, AttachmentPolicy
 
 ### Community 58 - "ProductController"
 Cohesion: 0.11
 Nodes (3): QueryBuilder, ProductController, ProductImport
 
+### Community 59 - "ProductRecall"
+Cohesion: 0.09
+Nodes (5): ProductRecallController, Collection, ProductRecall, ProductRecallService, Illuminate\Database\Eloquent\Collection
+
+### Community 60 - "GoodsReceiptNoteController"
+Cohesion: 0.11
+Nodes (3): GoodsReceiptNoteController, PromotionalCampaignController, PromotionalCampaign
+
 ### Community 61 - "Laravel Boost Guidelines"
 Cohesion: 0.08
 Nodes (25): Application Structure & Architecture, Artisan, Available Search Syntax, Comments, Conventions, Documentation Files, Enums, Foundational Context (+17 more)
 
-### Community 62 - "CustomerEmployeeAccount"
-Cohesion: 0.15
-Nodes (4): CustomerEmployeeAccount, createReportTransaction(), createStatementAccount(), createStatementTransaction()
+### Community 62 - "Animation Recipes"
+Cohesion: 0.06
+Nodes (31): Accordion / collapse, Animation Recipes, Button press, Drag to dismiss, Drawer / sheet, Dropdown, popover, menu, select, Hold to confirm, Masking a crossfade that won't settle (+23 more)
 
 ### Community 63 - "WarehouseType"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (4): WarehouseTypeController, WarehouseType, WarehouseTypePolicy, WarehouseTypeSeeder
 
-### Community 65 - "GoodsIssueController"
-Cohesion: 0.13
-Nodes (3): GoodsIssueController, AppendGoodsIssueItemsRequest, FormOnce
-
 ### Community 66 - "SalesSettlementController"
-Cohesion: 0.09
-Nodes (3): SalesSettlementController, StoreSalesSettlementRequest, UpdateSalesSettlementRequest
+Cohesion: 0.13
+Nodes (3): SalesSettlementController, FormOnce, Illuminate\Support\Facades\Cache
 
 ### Community 67 - "LedgerRegister"
 Cohesion: 0.13
-Nodes (3): Collection, LedgerRegister, LedgerRegisterService
-
-### Community 68 - "CategoryController"
-Cohesion: 0.13
-Nodes (3): CategoryController, StoreCategoryRequest, UpdateCategoryRequest
+Nodes (3): LedgerRegister, LedgerRegisterPolicy, postSupplierInvoice()
 
 ### Community 70 - "BankStatementEntry"
-Cohesion: 0.05
-Nodes (8): BankStatementEntryController, BankStatementEntry, BankEntryClassifier, self, Illuminate\Database\Eloquent\Relations\MorphMany, statementEntry(), postedBankLine(), postRegisterEntry()
+Cohesion: 0.06
+Nodes (5): BankEntryApproval, BankStatementEntry, Illuminate\Database\Eloquent\Relations\MorphMany, postedBankLine(), postRegisterEntry()
+
+### Community 72 - "Animation Recipes"
+Cohesion: 0.06
+Nodes (31): Accordion / collapse, Animation Recipes, Button press, Drag to dismiss, Drawer / sheet, Dropdown, popover, menu, select, Hold to confirm, Masking a crossfade that won't settle (+23 more)
 
 ### Community 73 - "RevenueCategory"
-Cohesion: 0.10
-Nodes (6): CategoryRevenueController, StoreRevenueCategoryRequest, UpdateRevenueCategoryRequest, RevenueCategory, RevenueDetailFactory, createRevenueCategoryFixture()
+Cohesion: 0.07
+Nodes (8): CategoryRevenueController, RevenueDetailReportController, StoreRevenueCategoryRequest, UpdateRevenueCategoryRequest, RevenueCategory, RevenueDetail, RevenueDetailFactory, createRevenueCategoryFixture()
 
-### Community 74 - "GoodsReceiptNoteItemsImport"
+### Community 74 - "CustomerImport"
+Cohesion: 0.08
+Nodes (8): CustomerImport, GoodsReceiptNoteItemsImport, OpeningStockImport, Maatwebsite\Excel\Concerns\ToArray, Maatwebsite\Excel\Concerns\ToCollection, Maatwebsite\Excel\Concerns\WithHeadingRow, Maatwebsite\Excel\Concerns\WithValidation, PhpOffice\PhpSpreadsheet\Shared\Date
+
+### Community 75 - "Illuminate\Http\Request"
+Cohesion: 0.14
+Nodes (3): PayrollRunController, PayrollRun, Illuminate\Http\Request
+
+### Community 76 - "BankAccountController"
 Cohesion: 0.12
-Nodes (7): GoodsReceiptNoteItemsImport, OpeningStockImport, Maatwebsite\Excel\Concerns\ToArray, Maatwebsite\Excel\Concerns\ToCollection, Maatwebsite\Excel\Concerns\WithHeadingRow, Maatwebsite\Excel\Concerns\WithValidation, PhpOffice\PhpSpreadsheet\Shared\Date
+Nodes (3): BankAccountController, StoreBankAccountRequest, UpdateBankAccountRequest
 
-### Community 75 - "Illuminate\Http\RedirectResponse"
-Cohesion: 0.12
-Nodes (3): PayrollRunController, PayrollRun, Illuminate\Http\RedirectResponse
-
-### Community 76 - "ChartOfAccount"
-Cohesion: 0.06
-Nodes (16): BankAccountController, ChartOfAccountController, BankAccount, ChartOfAccount, SalesSettlementPercentageExpense, clearingBalance(), post(), up() (+8 more)
-
-### Community 77 - "BankEntryAuditLog"
-Cohesion: 0.11
-Nodes (8): BankEntryApproval, BankEntryAuditLog, self, BankApprovalRules, BankEntryApprovalService, BankEntryAttachmentService, BankEntryPostingService, BankRegisterException
+### Community 77 - ".log"
+Cohesion: 0.16
+Nodes (3): BankEntryAuditLog, self, RevenueDetailService
 
 ### Community 78 - "SupplierLedgerReportController.php"
 Cohesion: 0.13
 Nodes (19): Blade Component: page-header, DB Table: customer_employee_account_transactions, DB Table: customer_employee_accounts, Migration: Add AMR Dispose Register Permission, Migration: Add Supplier Ledger Permission, Employee Model, Supplier Model, Pattern: Three-Level Drilldown Report (Supplier→Salesman→Customer) (+11 more)
 
+### Community 79 - "StockAdjustment"
+Cohesion: 0.09
+Nodes (3): StockAdjustmentController, StockAdjustment, StockAdjustmentService
+
 ### Community 80 - "SalesSettlementCheque"
-Cohesion: 0.12
-Nodes (3): ChequeRegisterController, SalesSettlementCheque, ChequeClearingPostingService
+Cohesion: 0.11
+Nodes (3): SalesSettlementCheque, ChequeClearingPostingService, ChequeClearingService
 
 ### Community 81 - "AccountingService"
-Cohesion: 0.07
-Nodes (7): ClearStockReceivedNotBilled, PeriodClosingService, AccountingService, BankStatementParser, Carbon, DocumentNumberService, StockReceivedNotBilledService
+Cohesion: 0.14
+Nodes (3): PeriodClosingService, AccountingService, DateTimeInterface
 
 ### Community 83 - "Illuminate\Http\UploadedFile"
-Cohesion: 0.05
-Nodes (27): BankStatementImportController, BankStatementImport, BankStatementImportService, SettlementAttachmentService, Illuminate\Http\UploadedFile, Illuminate\Support\Facades\Storage, League\Flysystem\Local\LocalFilesystemAdapter, PhpOffice\PhpSpreadsheet\Spreadsheet (+19 more)
+Cohesion: 0.06
+Nodes (22): AttachmentImageOptimizer, UploadedFile, BankEntryAttachmentService, SettlementAttachmentService, Illuminate\Http\UploadedFile, customerCsv(), UploadedFile, runCustomerImport() (+14 more)
 
 ### Community 84 - "apexcharts.js"
 Cohesion: 0.33
@@ -881,28 +977,28 @@ Cohesion: 0.10
 Nodes (19): Alternative MySQL MCP Servers, Available Scripts, Claude Code Configuration, Configuration, Current Database (from .env), Database Connection Failed, MCP Database Server Setup, MySQL/MariaDB Server (+11 more)
 
 ### Community 86 - "ProductTaxMapping"
-Cohesion: 0.15
-Nodes (3): ProductTaxMappingController, ProductTaxMapping, ProductTaxMappingPolicy
+Cohesion: 0.12
+Nodes (4): ProductTaxMappingController, StoreProductTaxMappingRequest, ProductTaxMapping, ProductTaxMappingPolicy
 
 ### Community 88 - "BankReconciliation"
 Cohesion: 0.11
 Nodes (5): BankReconciliationController, BankReconciliationRequest, BankReconciliation, BankReconciliationItem, BankReconciliationService
 
 ### Community 89 - "GoodsIssueStockCheck"
-Cohesion: 0.15
+Cohesion: 0.17
 Nodes (4): StoreGoodsIssueRequest, UpdateGoodsIssueRequest, GoodsIssueStockCheck, Illuminate\Contracts\Validation\Validator
 
-### Community 90 - "JournalEntry"
-Cohesion: 0.13
-Nodes (6): JournalEntryController, UpdateJournalEntryRequest, JournalEntry, InventoryGlAdjustmentService, createDashboardPermissions(), createSuperAdminUser()
+### Community 90 - ".back"
+Cohesion: 0.06
+Nodes (7): AppearanceController, BankApprovalController, ExpenseCategoryController, ExpenseDetailController, JournalEntryController, UpdateJournalEntryRequest, Illuminate\Http\RedirectResponse
 
 ### Community 91 - "CreditorsLedgerController"
-Cohesion: 0.20
-Nodes (3): CreditorsLedgerController, CustomerCreditAging, LengthAwarePaginator
+Cohesion: 0.19
+Nodes (4): CreditorsLedgerController, CustomerCreditAging, Illuminate\Database\Query\Builder, LengthAwarePaginator
 
-### Community 92 - ".log"
-Cohesion: 0.14
-Nodes (3): DistributionService, ExpenseDetailService, Illuminate\Support\Facades\App
+### Community 92 - "Worst-Case Catalog"
+Cohesion: 0.06
+Nodes (29): Collections, Emails, URLs, identifiers, Environment, Images and media, Labels, titles, and copy from data, Numbers and money, People and names, States (+21 more)
 
 ### Community 93 - "Apple Design"
 Cohesion: 0.09
@@ -916,10 +1012,6 @@ Nodes (16): Available Features, Best Practices, Custom Authentication Logic, Doc
 Cohesion: 0.12
 Nodes (16): Alpine integration, Basic usage, Best practices, Common pitfalls, Component structure, Creating components, Documentation, Fundamental concepts (+8 more)
 
-### Community 96 - "SupplierController"
-Cohesion: 0.15
-Nodes (3): SupplierController, StoreSupplierRequest, UpdateSupplierRequest
-
 ### Community 98 - "Laravel Fortify Development"
 Cohesion: 0.12
 Nodes (16): Available Features, Best Practices, Custom Authentication Logic, Documentation, Email Verification Setup, Key Endpoints, Laravel Fortify Development, Passkeys Setup (+8 more)
@@ -928,9 +1020,9 @@ Nodes (16): Available Features, Best Practices, Custom Authentication Logic, Doc
 Cohesion: 0.12
 Nodes (16): Alpine integration, Basic usage, Best practices, Common pitfalls, Component structure, Creating components, Documentation, Fundamental concepts (+8 more)
 
-### Community 100 - "Illuminate\Support\Str"
-Cohesion: 0.07
-Nodes (12): App\Models\Team, ProfitCategoryFactory, RevenueCategoryFactory, Illuminate\Support\Str, Laravel\Jetstream\Features, Laravel\Jetstream\Http\Livewire\ApiTokenManager, Laravel\Jetstream\Http\Livewire\DeleteUserForm, Laravel\Jetstream\Http\Livewire\LogoutOtherBrowserSessionsForm (+4 more)
+### Community 100 - "Livewire\Livewire"
+Cohesion: 0.15
+Nodes (8): Laravel\Jetstream\Features, Laravel\Jetstream\Http\Livewire\ApiTokenManager, Laravel\Jetstream\Http\Livewire\DeleteUserForm, Laravel\Jetstream\Http\Livewire\LogoutOtherBrowserSessionsForm, Laravel\Jetstream\Http\Livewire\UpdatePasswordForm, Laravel\Jetstream\Http\Livewire\UpdateProfileInformationForm, Laravel\Jetstream\Http\Middleware\AuthenticateSession, Livewire\Livewire
 
 ### Community 101 - "2025_10_28_000017_create_double_entry_triggers_and_procedures.php"
 Cohesion: 0.22
@@ -948,53 +1040,69 @@ Nodes (16): Alpine integration, Basic usage, Best practices, Common pitfalls, Co
 Cohesion: 0.23
 Nodes (12): buildFragment(), buildParams(), cloneCopyEvent(), disableScript(), DOMEval(), domManip(), getAll(), isArrayLike() (+4 more)
 
-### Community 106 - "Illuminate\Database\Eloquent\Builder"
-Cohesion: 0.07
-Nodes (6): ExpenseVendorPayment, InvoiceSummary, NetProfitSort, Illuminate\Database\Eloquent\Builder, Illuminate\Database\Eloquent\Concerns\HasUuids, Spatie\QueryBuilder\Sorts\Sort
+### Community 107 - "Illuminate\Console\Command"
+Cohesion: 0.09
+Nodes (10): CheckJournalBalance, PruneSettlementAttachmentStaging, SchedulerHeartbeat, SnapshotInventory, BackfillRevaluationValues, RepairGrnCostDrift, SyncDatabaseObjects, Illuminate\Console\Attributes\Description (+2 more)
 
-### Community 109 - "BankEntryCategory"
-Cohesion: 0.12
-Nodes (5): BankEntryCategoryController, QueryBuilder, BankEntryCategoryRequest, BankEntryCategory, BankEntryRuleFactory
+### Community 108 - "BankReportService"
+Cohesion: 0.26
+Nodes (3): BankReportController, BankReportService, Symfony\Component\HttpFoundation\BinaryFileResponse
+
+### Community 109 - "BankEntryCategoryController"
+Cohesion: 0.20
+Nodes (3): BankEntryCategoryController, QueryBuilder, BankEntryCategoryRequest
+
+### Community 111 - "Illuminate\Validation\Rule"
+Cohesion: 0.04
+Nodes (9): ImportCustomerRequest, ImportProductRequest, StoreExpenseDetailRequest, StoreRevenueDetailRequest, UpdateChartOfAccountRequest, UpdateCustomerRequest, UpdateProfitCategoryDetailRequest, Illuminate\Support\Str (+1 more)
 
 ### Community 112 - "MigrationHelpers"
-Cohesion: 0.15
-Nodes (11): MigrationHelpers, down(), up(), down(), up(), down(), up(), down() (+3 more)
+Cohesion: 0.12
+Nodes (15): MigrationHelpers, down(), up(), down(), up(), down(), up(), down() (+7 more)
 
-### Community 113 - "AppServiceProvider.php"
-Cohesion: 0.06
-Nodes (20): DeleteUser, AppServiceProvider, FortifyServiceProvider, JetstreamServiceProvider, UserTrackingServiceProvider, Google\Client, Google\Service\Drive, Illuminate\Auth\Events\Verified (+12 more)
+### Community 113 - "Illuminate\Support\ServiceProvider"
+Cohesion: 0.17
+Nodes (5): AppServiceProvider, FortifyServiceProvider, JetstreamServiceProvider, UserTrackingServiceProvider, Illuminate\Support\ServiceProvider
 
 ### Community 114 - "Nestlé Pakistan Supplier"
 Cohesion: 0.16
 Nodes (16): Customer Employee Account, Customer Channel Type (General Store, Pharmacy, Wholesale), Customer Record, Employee Record, Nestlé Pakistan Supplier, Journal Entry Reference in Ledger, Opening Balance Document Type (OB), Supplier Ledger Register (+8 more)
 
 ### Community 115 - "StockValuationService"
-Cohesion: 0.21
+Cohesion: 0.26
 Nodes (3): GoodsIssueLineRemovalService, StockValuationService, remover()
 
-### Community 116 - "CompanyTargetService"
-Cohesion: 0.20
-Nodes (3): CompanyTargetSummaryController, CompanyTargetLine, CompanyTargetService
+### Community 116 - "CompanyTargetSummaryController.php"
+Cohesion: 0.18
+Nodes (4): ReportPdf, CompanyTargetSummaryController, CompanyTargetService, Barryvdh\DomPDF\PDF
 
 ### Community 117 - "GeneralLedgerExport"
 Cohesion: 0.19
 Nodes (4): GeneralLedgerExport, GeneralLedgerController, QueryBuilder, GeneralLedgerEntry
 
-### Community 119 - "ExpenseDetailReportController"
-Cohesion: 0.12
-Nodes (3): ExpenseDetailReportController, StoreExpenseDetailRequest, UpdateExpenseDetailRequest
-
 ### Community 120 - "Symfony\Component\HttpFoundation\Response"
-Cohesion: 0.08
-Nodes (14): AdvanceTaxCustomerSummaryController, CheckUserStatus, SetDatabaseAuditContext, PhpLimits, Closure, Illuminate\Foundation\Application, Illuminate\Foundation\Configuration\Exceptions, Illuminate\Foundation\Configuration\Middleware (+6 more)
+Cohesion: 0.09
+Nodes (12): CheckUserStatus, SetDatabaseAuditContext, PhpLimits, Closure, Illuminate\Foundation\Application, Illuminate\Foundation\Configuration\Exceptions, Illuminate\Foundation\Configuration\Middleware, Illuminate\Http\Exceptions\PostTooLargeException (+4 more)
 
-### Community 122 - "ProfitCategoryDetail"
-Cohesion: 0.05
-Nodes (11): ProfitCategoryController, ProfitAfterCategoryReportController, StoreProfitCategoryRequest, UpdateProfitCategoryDetailRequest, UpdateProfitCategoryRequest, ProfitCategory, ProfitCategoryDetail, ProfitCategoryDetailService (+3 more)
+### Community 121 - "ExpenseVoucherController"
+Cohesion: 0.11
+Nodes (3): ExpenseVoucherController, ExpenseCategory, ExpenseAccount
 
-### Community 125 - "BankCheque"
-Cohesion: 0.10
-Nodes (3): BankCheque, StockLedgerEntry, Illuminate\Database\Eloquent\Relations\MorphTo
+### Community 122 - "ProfitCategory"
+Cohesion: 0.09
+Nodes (8): ProfitCategoryController, StoreProfitCategoryRequest, UpdateProfitCategoryRequest, ProfitCategory, ProfitCategoryDetailFactory, ProfitCategoryFactory, createProfitCategoryFixture(), createProfitAfterCategoryFixture()
+
+### Community 123 - "Worst-Case Catalog"
+Cohesion: 0.06
+Nodes (29): Collections, Emails, URLs, identifiers, Environment, Images and media, Labels, titles, and copy from data, Numbers and money, People and names, States (+21 more)
+
+### Community 124 - "Illuminate\Database\Seeder"
+Cohesion: 0.09
+Nodes (11): AttachmentSeeder, CategorySeeder, ClaimRegisterSeeder, CompanySeeder, ExpenseDetailSeeder, InvoiceSummarySeeder, LedgerRegisterSeeder, ProductTaxMappingSeeder (+3 more)
+
+### Community 125 - "BankEntryCategory"
+Cohesion: 0.06
+Nodes (8): BankCheque, BankEntryCategory, BankEntryRule, BankPartyAlias, StockLedgerEntry, BankEntryRuleFactory, Illuminate\Database\Eloquent\Relations\MorphTo, statementEntry()
 
 ### Community 126 - "require"
 Cohesion: 0.13
@@ -1016,21 +1124,25 @@ Nodes (13): Common Pitfalls, Configuration, Custom Cleanup Strategy, Custom Heal
 Cohesion: 0.15
 Nodes (14): adoptValue(), ajaxConvert(), ajaxHandleResponses(), Animation(), camelCase(), createFxNow(), createTween(), defaultPrefilter() (+6 more)
 
-### Community 133 - "GoodsIssueExport"
-Cohesion: 0.24
-Nodes (5): GoodsIssueExport, Maatwebsite\Excel\Concerns\WithCustomValueBinder, PhpOffice\PhpSpreadsheet\Cell\Cell, PhpOffice\PhpSpreadsheet\Cell\DataType, PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder
+### Community 133 - "Maatwebsite\Excel\Concerns\FromQuery"
+Cohesion: 0.14
+Nodes (8): ChequeRegisterExport, GoodsIssueExport, SalesSettlementExport, Maatwebsite\Excel\Concerns\FromQuery, Maatwebsite\Excel\Concerns\WithCustomValueBinder, PhpOffice\PhpSpreadsheet\Cell\Cell, PhpOffice\PhpSpreadsheet\Cell\DataType, PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder
 
-### Community 134 - "JournalEntryDetail"
-Cohesion: 0.16
-Nodes (5): JournalEntryDetail, JournalEntryDetailPolicy, bookedElsewhere(), classifiedEntry(), chequeLedger()
+### Community 134 - "AppSetting"
+Cohesion: 0.09
+Nodes (8): PageLayout, ReportsController, SettingsController, AppSetting, Menu, ReportsMenu, SettingsMenu, menuLayoutUser()
 
-### Community 135 - "RevenueDetail"
-Cohesion: 0.16
-Nodes (3): RevenueDetailReportController, RevenueDetail, RevenueDetailService
+### Community 135 - "Animation Standards Reference"
+Cohesion: 0.07
+Nodes (26): Aggressive Escalation Triggers, Guidelines, Initial Response, Operating Posture, Part 1 — Findings table (REQUIRED), Part 2 — Verdict (REQUIRED), Remedial Preference Hierarchy, Required Output Format (+18 more)
 
-### Community 137 - "Category"
-Cohesion: 0.06
-Nodes (18): ProductPriceChangeLogController, SkuRatesController, Category, ProductPriceChangeLog, ProductPricingService, CategorySeeder, Illuminate\Database\Query\Builder, Illuminate\Support\Facades\Cache (+10 more)
+### Community 136 - ".count"
+Cohesion: 0.08
+Nodes (3): SvgChart, AdvanceTaxCustomerSummaryController, AuditTrailTest
+
+### Community 137 - "TicketTest.php"
+Cohesion: 0.20
+Nodes (4): ProductPriceChangeLog, ProductPricingService, makeBatch(), warehouseDefaults()
 
 ### Community 138 - "Do Things the Laravel Way"
 Cohesion: 0.18
@@ -1061,20 +1173,24 @@ Cohesion: 0.17
 Nodes (11): Basic usage, Common patterns, Common pitfalls, Dark mode, Documentation, Flexbox layout, Grid layout, Spacing (+3 more)
 
 ### Community 145 - "TicketType"
-Cohesion: 0.10
-Nodes (5): DocumentType, TicketType, StoreClaimRegisterRequest, StoreLedgerRegisterRequest, TicketEntryForms
+Cohesion: 0.18
+Nodes (3): TicketType, TicketEntryForms, Illuminate\Validation\ValidationException
+
+### Community 146 - "Animation Standards Reference"
+Cohesion: 0.07
+Nodes (26): Aggressive Escalation Triggers, Guidelines, Initial Response, Operating Posture, Part 1 — Findings table (REQUIRED), Part 2 — Verdict (REQUIRED), Remedial Preference Hierarchy, Required Output Format (+18 more)
 
 ### Community 147 - "Illuminate\Support\Collection"
 Cohesion: 0.13
-Nodes (4): CashCollectionDistributorController, MemoLedgerRemoval, Illuminate\Support\Collection, Throwable
+Nodes (4): NotifyPendingSettlements, FmrAmrComparisonController, MemoLedgerRemoval, Illuminate\Support\Collection
 
-### Community 148 - "Spatie\Permission\Models\Role"
-Cohesion: 0.09
-Nodes (10): RolePolicy, BankRegisterPermissions, down(), up(), RoleAndPermissionSeeder, UserSeeder, Illuminate\Console\Scheduling\Event, Spatie\Permission\DefaultTeamResolver (+2 more)
+### Community 148 - "BankRegisterPermissions"
+Cohesion: 0.32
+Nodes (3): BankRegisterPermissions, down(), up()
 
-### Community 149 - "BankRegisterAccounts"
-Cohesion: 0.22
-Nodes (3): BankReceiptNumberGenerator, BankRegisterAccounts, Carbon\CarbonInterface
+### Community 149 - "BankRegisterException"
+Cohesion: 0.14
+Nodes (6): BankEntryPostingService, BankReceiptNumberGenerator, BankRegisterAccounts, BankRegisterException, bookedElsewhere(), classifiedEntry()
 
 ### Community 150 - "Detection Checklist"
 Cohesion: 0.17
@@ -1109,8 +1225,8 @@ Cohesion: 0.17
 Nodes (11): Spatie\Backup\Notifications\Notifiable, Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification, Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification, Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification, Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification, Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification, Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification, Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy (+3 more)
 
 ### Community 158 - "Moontrader ERP - AI Coding Agent Instructions"
-Cohesion: 0.17
-Nodes (11): Architecture, Common Pitfalls, Core Accounting Engine, Database Audit Trail, Database Specifics, External Dependencies, Front-End Stack, Moontrader ERP - AI Coding Agent Instructions (+3 more)
+Cohesion: 0.15
+Nodes (12): Architecture, Common Pitfalls, Core Accounting Engine, Database Audit Trail, Database Specifics, External Dependencies, Front-End Stack, Moontrader ERP - AI Coding Agent Instructions (+4 more)
 
 ### Community 159 - "Detection Checklist"
 Cohesion: 0.17
@@ -1140,17 +1256,29 @@ Nodes (11): Basic usage, Common patterns, Common pitfalls, Dark mode, Documentat
 Cohesion: 0.23
 Nodes (12): addCombinator(), condense(), createPositionalPseudo(), elementMatcher(), markFunction(), matcherFromGroupMatchers(), matcherFromTokens(), multipleContexts() (+4 more)
 
+### Community 166 - "AccountTypeController"
+Cohesion: 0.11
+Nodes (3): AccountTypeController, StoreAccountTypeRequest, UpdateAccountTypeRequest
+
 ### Community 167 - "Illuminate\Contracts\Validation\ValidationRule"
 Cohesion: 0.04
-Nodes (11): StoreCurrencyRequest, StoreEmployeeRequest, StoreSaleItemRequest, UpdateEmployeeRequest, UpdateEmployeeSalaryRequest, UpdatePaymentRequest, UpdateSaleItemRequest, UpdateTaxCodeRequest (+3 more)
+Nodes (9): StoreAccountingPeriodRequest, StoreBatchTransferRequest, StoreInvestmentOpeningBalanceRequest, StoreStockReceiptRequest, StoreTaxTransactionRequest, StoreVehicleExpenseRequest, UpdateEmployeeSalaryRequest, UpdateUomRequest (+1 more)
 
 ### Community 169 - "ExpenseVendor"
-Cohesion: 0.09
-Nodes (5): ExpenseVendorController, ExpenseVendorPaymentController, ExpenseVendor, LedgerDriftException, RuntimeException
+Cohesion: 0.11
+Nodes (3): ExpenseVendorController, ExpenseVendorPaymentController, ExpenseVendor
 
-### Community 173 - "BankReportExport"
-Cohesion: 0.18
-Nodes (3): BankReportExport, PayrollRunExport, Maatwebsite\Excel\Concerns\WithTitle
+### Community 170 - "CashNotes"
+Cohesion: 0.13
+Nodes (3): ChequeRegisterController, CashNotes, self
+
+### Community 172 - "TicketItem"
+Cohesion: 0.15
+Nodes (4): TicketItem, MailMessage, TicketSubmitted, CustomerCodeGenerator
+
+### Community 173 - "Animation Audit Playbook"
+Cohesion: 0.08
+Nodes (22): 1. Purpose & frequency, 2. Easing & duration, 3. Physicality & origin, 4. Interruptibility, 5. Performance, 6. Accessibility, 7. Cohesion & tokens, 8. Missed opportunities (+14 more)
 
 ### Community 174 - "Pest"
 Cohesion: 0.29
@@ -1172,9 +1300,9 @@ Nodes (9): Define foreign-key constraints deliberately, Design indexes for real 
 Cohesion: 0.20
 Nodes (9): Back off transient failures, Batch jobs for group coordination, Configure time-based retry limits deliberately, Handle terminal failure when needed, Keep reservation time longer than execution time, Queue and job best practices, Rate limit external calls, Use Horizon for Redis queue operations (+1 more)
 
-### Community 180 - "BankEntryRule"
-Cohesion: 0.16
-Nodes (3): BankEntryRuleController, BankEntryRuleRequest, BankEntryRule
+### Community 179 - "DocumentType"
+Cohesion: 0.24
+Nodes (3): DocumentType, LedgerRegisterFactory, static
 
 ### Community 183 - "Advanced Query Best Practices"
 Cohesion: 0.20
@@ -1220,13 +1348,13 @@ Nodes (8): Add indexes for measured query patterns, Count relationships without 
 Cohesion: 0.22
 Nodes (8): Apply global scopes sparingly, Cast date and time attributes, Define attribute casts, Define precise relationship types, Eloquent best practices, Keep application queries model-aware, Use local scopes for reusable queries, Use `whereBelongsTo()` for relationship queries
 
-### Community 194 - "FortifyServiceProvider.php"
-Cohesion: 0.09
-Nodes (17): CreateNewUser, PasswordValidationRules, ResetUserPassword, UpdateUserPassword, UpdateUserProfileInformation, Illuminate\Cache\RateLimiting\Limit, Illuminate\Contracts\Auth\MustVerifyEmail, Illuminate\Contracts\Validation\Rule (+9 more)
+### Community 194 - "CreateNewUser.php"
+Cohesion: 0.13
+Nodes (10): CreateNewUser, PasswordValidationRules, ResetUserPassword, UpdateUserPassword, Illuminate\Contracts\Validation\Rule, Illuminate\Support\Facades\Validator, Illuminate\Validation\Rules\Password, Laravel\Fortify\Contracts\CreatesNewUsers (+2 more)
 
-### Community 196 - "BankReceiptScanController.php"
-Cohesion: 0.15
-Nodes (4): BankEntryAttachmentController, BankReceiptScanController, BankAttachmentRequest, Symfony\Component\HttpFoundation\StreamedResponse
+### Community 196 - "web.php"
+Cohesion: 0.06
+Nodes (11): BankEntryAttachmentController, BankReceiptScanController, PayrollImportController, CashDetailController, SchemeReceivedReportController, ShopListController, SkuFmrAmrController, SkuRatesController (+3 more)
 
 ### Community 197 - "Karpathy Guidelines"
 Cohesion: 0.33
@@ -1280,20 +1408,16 @@ Nodes (7): Bound work inside the task, Group shared configuration, Prevent unwan
 Cohesion: 0.25
 Nodes (7): Endpoint coverage, Endpoint tests, How to write the test, Tenant isolation, Test authorization at the policy level, Testing validation, Which layer owns which case
 
-### Community 210 - "Illuminate\Validation\Rule"
+### Community 210 - "SalaryComponent"
 Cohesion: 0.13
-Nodes (5): EmployeeSalaryController, SalaryComponentController, EmployeeSalary, SalaryComponent, Illuminate\Validation\Rule
-
-### Community 211 - "BankPartyAlias"
-Cohesion: 0.17
-Nodes (3): BankPartyAliasController, BankPartyAliasRequest, BankPartyAlias
+Nodes (3): PayrollHubController, SalaryComponentController, SalaryComponent
 
 ### Community 212 - "Goods Issue: remove a line, or part of it, before settlement"
 Cohesion: 0.15
 Nodes (12): Code that must change with it (otherwise the books drift), Decisions taken with the owner, Errors, Goods Issue: remove a line, or part of it, before settlement, Interface, Out of scope, Purpose, Tables (+4 more)
 
 ### Community 213 - "DailyInventorySnapshot"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (3): DailyInventorySnapshot, self, recordSnapshot()
 
 ### Community 214 - "Blade and View Best Practices"
@@ -1372,13 +1496,17 @@ Nodes (6): Common errors, Global fakes, How to find a slow test, How to run the 
 Cohesion: 0.29
 Nodes (6): Assertions, Coverage, Data and determinism, Names and structure, Reviewing tests, Test value
 
-### Community 233 - "Illuminate\Console\Command"
-Cohesion: 0.14
-Nodes (6): CheckJournalBalance, ReconcileStockGl, SnapshotInventory, BackfillRevaluationValues, CorrectGoodsIssueDate, Illuminate\Console\Command
-
 ### Community 237 - "Karpathy Guidelines"
 Cohesion: 0.33
 Nodes (5): 1. Think Before Coding, 2. Simplicity First, 3. Surgical Changes, 4. Goal-Driven Execution, Karpathy Guidelines
+
+### Community 238 - "UserFactory.php"
+Cohesion: 0.38
+Nodes (3): App\Models\Team, static, UserFactory
+
+### Community 239 - "Animation Audit Playbook"
+Cohesion: 0.08
+Nodes (22): 1. Purpose & frequency, 2. Easing & duration, 3. Physicality & origin, 4. Interruptibility, 5. Performance, 6. Accessibility, 7. Cohesion & tokens, 8. Missed opportunities (+14 more)
 
 ### Community 242 - "Collection Best Practices"
 Cohesion: 0.29
@@ -1488,17 +1616,33 @@ Nodes (6): Assertions, Coverage, Data and determinism, Names and structure, Revi
 Cohesion: 0.33
 Nodes (5): File layout, Grouping, Naming and structure, Naming tests, Test function
 
-### Community 271 - "ProductWiseSalesExport"
-Cohesion: 0.36
-Nodes (3): ProductWiseSalesExport, Maatwebsite\Excel\Concerns\WithStyles, PhpOffice\PhpSpreadsheet\Worksheet\Worksheet
+### Community 271 - "PayrollExcelService"
+Cohesion: 0.12
+Nodes (11): PayrollImportException, ProductWiseSalesExport, PayrollExcelService, Carbon, Maatwebsite\Excel\Concerns\WithStyles, PhpOffice\PhpSpreadsheet\Cell\DataValidation, PhpOffice\PhpSpreadsheet\Spreadsheet, PhpOffice\PhpSpreadsheet\Style\Fill (+3 more)
 
-### Community 273 - "BankReceiptScan"
-Cohesion: 0.16
-Nodes (4): BankReceiptScan, AttachmentImageOptimizer, UploadedFile, BankReceiptScanService
+### Community 274 - "Write Swift"
+Cohesion: 0.09
+Nodes (22): 10. ARC and object lifetime, 11. Testing — Swift Testing by default, 12. Macros, 13. Logging and debugging, 14. Unsafe code and interop, 15. Modern syntax you should be using, 16. Migrating an existing codebase to Swift 6, 1. Model data with value types (+14 more)
 
 ### Community 277 - "InvoiceSummaryReportController"
 Cohesion: 0.13
 Nodes (3): InvoiceSummaryReportController, StoreInvoiceSummaryRequest, UpdateInvoiceSummaryRequest
+
+### Community 278 - "Write Swift"
+Cohesion: 0.09
+Nodes (22): 10. ARC and object lifetime, 11. Testing — Swift Testing by default, 12. Macros, 13. Logging and debugging, 14. Unsafe code and interop, 15. Modern syntax you should be using, 16. Migrating an existing codebase to Swift 6, 1. Model data with value types (+14 more)
+
+### Community 279 - "Apple Design"
+Cohesion: 0.09
+Nodes (21): 10. Gesture design details (the "feel" checklist), 11. Frame-level smoothness, 12. Materials & depth — translucency conveys hierarchy, 13. Multimodal feedback — motion + sound + haptics, 14. Reduced motion & accessibility, 15. Typography — optical sizing, tracking, leading, 16. Design foundations — the eight principles, 17. Process (+13 more)
+
+### Community 280 - "The Fixes"
+Cohesion: 0.09
+Nodes (21): 10. Status bar color doesn't match, 11. Right in Chrome, wrong on phone, 1. Hover state stuck after tap, 2. Gray/blue flash on tap, 3. Layout has the wrong height, 4. Page zooms into the input, 5. Tap feels laggy, 6. Pull-to-refresh hijacks scroll (+13 more)
+
+### Community 281 - "The Fixes"
+Cohesion: 0.09
+Nodes (21): 10. Status bar color doesn't match, 11. Right in Chrome, wrong on phone, 1. Hover state stuck after tap, 2. Gray/blue flash on tap, 3. Layout has the wrong height, 4. Page zooms into the input, 5. Tap feels laggy, 6. Pull-to-refresh hijacks scroll (+13 more)
 
 ### Community 282 - "Moon Traders Application"
 Cohesion: 0.40
@@ -1524,6 +1668,10 @@ Nodes (4): Datasets, Each test makes its own data, Factories and test data, Reco
 Cohesion: 0.40
 Nodes (5): Consistency first, How to apply, Rule index, Testing best practices, What to test
 
+### Community 294 - "Prototyping Variants"
+Cohesion: 0.10
+Nodes (19): Behavior contract, Markup, Reference wiring, Rules, Styles, The Picker, Hard Rules, Initial Response (+11 more)
+
 ### Community 297 - "Development Workflows"
 Cohesion: 0.40
 Nodes (5): Creating Journal Entries, Database Migrations, Development Workflows, Running the Application, Testing
@@ -1532,17 +1680,33 @@ Nodes (5): Creating Journal Entries, Database Migrations, Development Workflows,
 Cohesion: 0.40
 Nodes (5): boxModelAdjustment(), curCSS(), getWidthOrHeight(), manipulationTarget(), nodeName()
 
-### Community 300 - "WarehouseController"
-Cohesion: 0.13
-Nodes (3): WarehouseController, StoreWarehouseRequest, UpdateWarehouseRequest
+### Community 299 - "BankStatementImport"
+Cohesion: 0.15
+Nodes (5): BankStatementImportController, BankStatementImport, BankStatementImportService, UploadedFile, statementFile()
 
-### Community 303 - "Maatwebsite\Excel\Concerns\ShouldAutoSize"
-Cohesion: 0.21
-Nodes (6): CompanyTargetSummaryExport, PayrollRunsExport, Illuminate\Contracts\View\View, Maatwebsite\Excel\Concerns\FromCollection, Maatwebsite\Excel\Concerns\FromView, Maatwebsite\Excel\Concerns\ShouldAutoSize
+### Community 303 - "PayrollSheetExport"
+Cohesion: 0.31
+Nodes (4): CompanyTargetSummaryExport, PayrollSheetExport, Illuminate\Contracts\View\View, Maatwebsite\Excel\Concerns\FromView
+
+### Community 305 - "Prototyping Variants"
+Cohesion: 0.10
+Nodes (19): Behavior contract, Markup, Reference wiring, Rules, Styles, The Picker, Hard Rules, Initial Response (+11 more)
+
+### Community 306 - "Glossary"
+Cohesion: 0.11
+Nodes (18): Animation Vocabulary, Easing — how speed changes over an animation, Entrances & Exits — how elements appear and disappear, Examples, Feedback & Interaction — responding to the user's actions, Glossary, Initial Response, Instructions (+10 more)
+
+### Community 309 - ".createChildRecords"
+Cohesion: 0.17
+Nodes (3): SalesSettlementPercentageExpense, BankStatementParser, Carbon
 
 ### Community 311 - "Laravel 12"
 Cohesion: 0.50
 Nodes (4): Database, Laravel 12, Laravel 12 Structure, Models
+
+### Community 313 - "TaxRate"
+Cohesion: 0.17
+Nodes (3): TaxRateController, TaxRate, TaxRatePolicy
 
 ### Community 314 - "Audits Icon"
 Cohesion: 0.80
@@ -1572,6 +1736,14 @@ Nodes (4): Monolog\Handler\NullHandler, Monolog\Handler\StreamHandler, Monolog\H
 Cohesion: 0.40
 Nodes (4): Illuminate\Cookie\Middleware\EncryptCookies, Illuminate\Foundation\Http\Middleware\ValidateCsrfToken, Laravel\Sanctum\Http\Middleware\AuthenticateSession, Laravel\Sanctum\Sanctum
 
+### Community 323 - "Glossary"
+Cohesion: 0.11
+Nodes (18): Animation Vocabulary, Easing — how speed changes over an animation, Entrances & Exits — how elements appear and disappear, Examples, Feedback & Interaction — responding to the user's actions, Glossary, Initial Response, Instructions (+10 more)
+
+### Community 324 - "Sales Settlement Overhaul: Design"
+Cohesion: 0.11
+Nodes (18): 1. Safety, 2. Lighter uploads, 3. Create and edit, 4. List and show, 5. Help (my call), 6. PDF, 7. Verification, Anti-goals (a failure even if it looks good) (+10 more)
+
 ### Community 325 - "herd"
 Cohesion: 0.50
 Nodes (4): SITE_PATH, php, herd, laravel-boost
@@ -1593,16 +1765,16 @@ Cohesion: 0.40
 Nodes (5): Consistency first, How to apply, Rule index, Testing best practices, What to test
 
 ### Community 330 - "expense-vouchers/create.blade.php"
-Cohesion: 0.40
-Nodes (4): expense-vouchers._form, expense-vouchers._form-scripts, expense-vouchers._form-styles, settings.partials.ui-style
+Cohesion: 0.33
+Nodes (5): expense-vouchers._form, expense-vouchers._form-scripts, expense-vouchers._form-styles, goods-issues.partials.form-style, settings.partials.ui-style
 
 ### Community 331 - "expense-vouchers/edit.blade.php"
-Cohesion: 0.40
-Nodes (4): expense-vouchers._form, expense-vouchers._form-scripts, expense-vouchers._form-styles, settings.partials.ui-style
+Cohesion: 0.33
+Nodes (5): expense-vouchers._form, expense-vouchers._form-scripts, expense-vouchers._form-styles, goods-issues.partials.form-style, settings.partials.ui-style
 
 ### Community 332 - "sales-settlements/show.blade.php"
 Cohesion: 0.33
-Nodes (5): settings.partials.ui-style, sales-settlements.partials.bank-slips, sales-settlements.partials.collection-details, sales-settlements.partials.expense-details, sales-settlements.partials.help-modal
+Nodes (5): sales-settlements.partials.help-modal, settings.partials.ui-style, sales-settlements.partials.bank-slips, sales-settlements.partials.collection-details, sales-settlements.partials.expense-details
 
 ### Community 333 - "suppliers/create.blade.php"
 Cohesion: 0.40
@@ -1620,13 +1792,49 @@ Nodes (4): settings.partials.ui-style, tickets.form, tickets.partials.flash, tic
 Cohesion: 0.40
 Nodes (4): settings.partials.ui-style, tickets.form, tickets.partials.flash, tickets.partials.style
 
-### Community 340 - "web.php"
-Cohesion: 0.13
-Nodes (5): BalanceSheetController, CashDetailController, IncomeStatementController, ShopListController, TrialBalanceController
+### Community 337 - "Animation Performance"
+Cohesion: 0.11
+Nodes (17): Animation Performance, Hard Rules, Initial Response, Operating Posture, Phase 1: Find what animates, Phase 2: Diagnose, Phase 3: Report, React: Don't Animate Through State (+9 more)
+
+### Community 340 - "Animation Performance"
+Cohesion: 0.11
+Nodes (17): Animation Performance, Hard Rules, Initial Response, Operating Posture, Phase 1: Find what animates, Phase 2: Diagnose, Phase 3: Report, React: Don't Animate Through State (+9 more)
 
 ### Community 341 - "Review Focus"
 Cohesion: 0.22
 Nodes (8): Global Constraints, Goods Issue Line Removal Implementation Plan, Review Focus, Task 1: Permission, audit table, model, journal reference, Task 2: `GoodsIssueLineRemovalService` (the bookkeeping), Task 3: Readers use net batches; settlement leaves out empty lines, Task 4: End-to-end books after removal (reverse and settle), Task 5: HTTP action, page, sheet, help
+
+### Community 342 - "Finding Animation Opportunities"
+Cohesion: 0.12
+Nodes (16): 1. Frequency — how often will a user see this?, 2. Purpose — why does this animate?, 3. Speed — can it stay inside budget?, 4. Function — does motion help or hinder here?, Finding Animation Opportunities, Hard Rules, Initial Response, Operating Posture (+8 more)
+
+### Community 343 - "Workflow"
+Cohesion: 0.12
+Nodes (16): Conflicts, Hard Rules, Invocation Variants, Learning Taste, Make it a check, Needs your answer, Phase 1: Collect corrections, Phase 2: Filter (+8 more)
+
+### Community 345 - "ProfitCategoryDetail"
+Cohesion: 0.16
+Nodes (3): ProfitAfterCategoryReportController, ProfitCategoryDetail, ProfitCategoryDetailService
+
+### Community 346 - "Illuminate\View\View"
+Cohesion: 0.12
+Nodes (8): BankRegisterHelpController, Carbon, SummaryRoiReportController, SettingsController, AppLayout, GuestLayout, Illuminate\View\Component, Illuminate\View\View
+
+### Community 347 - "Finding Animation Opportunities"
+Cohesion: 0.12
+Nodes (16): 1. Frequency — how often will a user see this?, 2. Purpose — why does this animate?, 3. Speed — can it stay inside budget?, 4. Function — does motion help or hinder here?, Finding Animation Opportunities, Hard Rules, Initial Response, Operating Posture (+8 more)
+
+### Community 349 - "Workflow"
+Cohesion: 0.12
+Nodes (16): Conflicts, Hard Rules, Invocation Variants, Learning Taste, Make it a check, Needs your answer, Phase 1: Collect corrections, Phase 2: Filter (+8 more)
+
+### Community 351 - "Removing Animations"
+Cohesion: 0.12
+Nodes (15): Cleanup, Hard Rules, Initial Response, Operating Posture, Part 1 — Removed and reduced, Part 2 — Kept (REQUIRED), Part 3 — Cleanup and verdict, Reducing (+7 more)
+
+### Community 352 - "Removing Animations"
+Cohesion: 0.12
+Nodes (15): Cleanup, Hard Rules, Initial Response, Operating Posture, Part 1 — Removed and reduced, Part 2 — Kept (REQUIRED), Part 3 — Cleanup and verdict, Reducing (+7 more)
 
 ### Community 353 - "Deposit Action"
 Cohesion: 0.83
@@ -1639,6 +1847,10 @@ Nodes (3): confirmLogout, logoutOtherBrowserSessions, $toggle(
 ### Community 355 - "delete-user-form.blade.php"
 Cohesion: 0.50
 Nodes (3): confirmUserDeletion, deleteUser, $toggle(
+
+### Community 358 - "Gesture-Driven UI"
+Cohesion: 0.13
+Nodes (14): First decision: build it, or use a solution that exists?, Gesture-Driven UI, Hold gestures are asymmetric, Interruptibility is non-negotiable, Linked values, Motion drag props, Reduced motion, Release phase rules (+6 more)
 
 ### Community 361 - "expectSync"
 Cohesion: 0.50
@@ -1700,13 +1912,45 @@ Nodes (4): allowRegisterReportGroup(), down(), replaceReportGroupCheck(), up()
 Cohesion: 0.33
 Nodes (3): HelpFlows, HtmlString, Illuminate\Support\HtmlString
 
-### Community 387 - "Illuminate\View\Component"
-Cohesion: 0.38
-Nodes (3): AppLayout, GuestLayout, Illuminate\View\Component
+### Community 388 - "Gesture-Driven UI"
+Cohesion: 0.13
+Nodes (14): First decision: build it, or use a solution that exists?, Gesture-Driven UI, Hold gestures are asymmetric, Interruptibility is non-negotiable, Linked values, Motion drag props, Reduced motion, Release phase rules (+6 more)
+
+### Community 390 - "Role"
+Cohesion: 0.22
+Nodes (4): RoleController, Role, RecallPermissionsSeeder, UserSeeder
+
+### Community 391 - "Review Focus"
+Cohesion: 0.14
+Nodes (13): Global Constraints, Review Focus, Task 10: Final check, review and PR, Task 1: Schema, models and permissions, Task 2: CashNotes value object and the `<x-cash-notes>` component, Task 3: Voucher posting by method, cash notes, locking, account rule, Task 4: Voucher reversal, Task 5: Voucher screens (form, show, print, messages) (+5 more)
+
+### Community 392 - "Expense vouchers, cheque register and cash collection report: design"
+Cohesion: 0.14
+Nodes (13): Approaches considered, Cash Collection Distributor, Cheque register, Compact cash-notes entry (owner request), Data model, Decisions made by the owner, Expense voucher screens, Expense vouchers, cheque register and cash collection report: design (+5 more)
+
+### Community 393 - "Working With Sonner"
+Cohesion: 0.15
+Nodes (11): Functions, Sonner API Reference, `toast()` options, `<Toaster />`, Initial Response, Picking the right call, Recipes, Setup (+3 more)
+
+### Community 394 - "Working With Sonner"
+Cohesion: 0.15
+Nodes (11): Functions, Sonner API Reference, `toast()` options, `<Toaster />`, Initial Response, Picking the right call, Recipes, Setup (+3 more)
 
 ### Community 398 - "2026_11_08_110000_add_expense_module_indexes.php"
 Cohesion: 0.83
 Nodes (3): down(), up(), wanted()
+
+### Community 399 - "UpdateWarehouseRequest"
+Cohesion: 0.18
+Nodes (3): UpdateWarehouseRequest, SettlementCreditLimit, Illuminate\Validation\Validator
+
+### Community 400 - "Spatie\Activitylog\LogOptions"
+Cohesion: 0.18
+Nodes (6): LogOptions, LogOptions, LogOptions, LogOptions, Spatie\Activitylog\LogOptions, Spatie\Activitylog\Traits\LogsActivity
+
+### Community 402 - "FortifyServiceProvider.php"
+Cohesion: 0.18
+Nodes (10): Google\Client, Google\Service\Drive, Illuminate\Cache\RateLimiting\Limit, Illuminate\Filesystem\FilesystemAdapter, Illuminate\Support\Facades\Gate, Illuminate\Support\Facades\RateLimiter, Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable, Laravel\Fortify\Fortify (+2 more)
 
 ### Community 406 - "expense-vendors/create.blade.php"
 Cohesion: 0.50
@@ -1716,37 +1960,53 @@ Nodes (3): expense-vendors._form, expense-vouchers._form-styles, settings.partia
 Cohesion: 0.50
 Nodes (3): expense-vendors._form, expense-vouchers._form-styles, settings.partials.ui-style
 
-### Community 408 - "adjustments.blade.php"
-Cohesion: 0.50
-Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+### Community 408 - "The list"
+Cohesion: 0.18
+Nodes (10): Charts, Common mismatches to catch, How to use this, Initial Response, Interaction & performance, Motion & visuals, Picking The Right Library, State & styling (+2 more)
 
-### Community 409 - "payroll/index.blade.php"
-Cohesion: 0.50
-Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+### Community 410 - "The list"
+Cohesion: 0.18
+Nodes (10): Charts, Common mismatches to catch, How to use this, Initial Response, Interaction & performance, Motion & visuals, Picking The Right Library, State & styling (+2 more)
 
-### Community 410 - "salaries/edit.blade.php"
-Cohesion: 0.50
-Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
-
-### Community 415 - "salaries/index.blade.php"
-Cohesion: 0.50
-Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
-
-### Community 417 - "payroll/show.blade.php"
-Cohesion: 0.50
-Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
+### Community 414 - "Laravel\Fortify\Features"
+Cohesion: 0.18
+Nodes (6): Illuminate\Auth\Events\Verified, Illuminate\Auth\Notifications\ResetPassword, Illuminate\Support\Facades\Event, Illuminate\Support\Facades\URL, Laravel\Fortify\Features, Laravel\Jetstream\Http\Livewire\TwoFactorAuthenticationForm
 
 ### Community 418 - "slip.blade.php"
 Cohesion: 0.50
 Nodes (3): payroll._slip, payroll._slip-styles, settings.partials.ui-style
 
+### Community 421 - "Review Focus"
+Cohesion: 0.20
+Nodes (9): Global Constraints, Review Focus, Sales Settlement Overhaul Implementation Plan, Task 1: Server-side double-submit safety, Task 2: Client-side button locks and tokens, Task 3: Lighter attachments, Task 4: Create and edit Apple redesign with section help, Task 5: List, show and PDF polish (+1 more)
+
 ### Community 425 - "slips-print.blade.php"
 Cohesion: 0.50
 Nodes (3): payroll._slip, payroll._slip-styles, settings.partials.ui-style
 
-### Community 431 - "SupplierInvoicePostingTest.php"
-Cohesion: 0.33
-Nodes (4): dropJournalEntry(), moveLineToLegacyAccount(), postPurchaseGrn(), postSupplierInvoice()
+### Community 426 - "CashAndChequeScenarioMatrixTest.php"
+Cohesion: 0.36
+Nodes (9): matrixAssertChequesInHand(), matrixAssertJournals(), matrixAssertSheet(), matrixBalances(), matrixCashInHand(), matrixLines(), matrixMoney(), matrixNet() (+1 more)
+
+### Community 428 - "Design Engineering"
+Cohesion: 0.22
+Nodes (8): Accessibility, Design Engineering, Initial Response, prefers-reduced-motion, Review Checklist, Review Format (Required), Stagger Animations, Touch device hover states
+
+### Community 438 - "Design Engineering"
+Cohesion: 0.22
+Nodes (8): Accessibility, Design Engineering, Initial Response, prefers-reduced-motion, Review Checklist, Review Format (Required), Stagger Animations, Touch device hover states
+
+### Community 440 - "Component Building Principles"
+Cohesion: 0.25
+Nodes (8): Animate enter states with @starting-style, Buttons must feel responsive, Component Building Principles, Make popovers origin-aware, Never animate from scale(0), Tooltips: skip delay on subsequent hovers, Use blur to mask imperfect transitions, Use CSS transitions over keyframes for interruptible UI
+
+### Community 443 - "Component Building Principles"
+Cohesion: 0.25
+Nodes (8): Animate enter states with @starting-style, Buttons must feel responsive, Component Building Principles, Make popovers origin-aware, Never animate from scale(0), Tooltips: skip delay on subsequent hovers, Use blur to mask imperfect transitions, Use CSS transitions over keyframes for interruptible UI
+
+### Community 453 - "User.php"
+Cohesion: 0.29
+Nodes (6): Illuminate\Foundation\Auth\User, Illuminate\Notifications\Notifiable, Laravel\Fortify\TwoFactorAuthenticatable, Laravel\Jetstream\HasProfilePhoto, Laravel\Sanctum\HasApiTokens, Spatie\Permission\Traits\HasRoles
 
 ### Community 454 - "Pest 4"
 Cohesion: 0.67
@@ -1759,6 +2019,10 @@ Nodes (3): Constructors, PHP, Type Declarations
 ### Community 456 - "Tailwind CSS"
 Cohesion: 0.67
 Nodes (3): Dark Mode, Spacing, Tailwind CSS
+
+### Community 458 - "livewire/dashboard.blade.php"
+Cohesion: 0.50
+Nodes (3): livewire.dashboard.tile, livewire.dashboard.aging-table, livewire.dashboard.style
 
 ### Community 459 - "Account Holder (User with Location Pin)"
 Cohesion: 1.00
@@ -1784,33 +2048,153 @@ Nodes (3): Dispatch Module, Reports Module, Stationary Module
 Cohesion: 1.00
 Nodes (3): Identity(), resolve(), Thrower()
 
+### Community 513 - "expense-vouchers/index.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers.partials.header-menu, expense-vouchers.partials.list-style, settings.partials.ui-style
+
+### Community 565 - "The Animation Decision Framework"
+Cohesion: 0.33
+Nodes (6): 1. Should this animate at all?, 2. What is the purpose?, 3. What easing should it use?, 4. How fast should it be?, Perceived performance, The Animation Decision Framework
+
+### Community 775 - "cheque-register/index.blade.php"
+Cohesion: 0.40
+Nodes (4): reports.cheque-register.partials.history-modal, reports.cheque-register.partials.status-modal, reports.cheque-register.partials.style, settings.partials.ui-style
+
 ### Community 791 - "daily-sales/product-wise.blade.php"
 Cohesion: 0.50
 Nodes (3): expense-vouchers._form-styles, settings.partials.select2-init, settings.partials.ui-style
 
-### Community 977 - "Illuminate\Support\Facades\Artisan"
+### Community 804 - "clip-path for Animation"
+Cohesion: 0.33
+Nodes (6): clip-path for Animation, Comparison sliders, Hold-to-delete pattern, Image reveals on scroll, Tabs with perfect color transitions, The inset shape
+
+### Community 833 - "sales-settlements/create.blade.php"
+Cohesion: 0.33
+Nodes (5): goods-issues.partials.form-style, sales-settlements.partials.form-style, sales-settlements.partials.help-modal, sales-settlements.partials.submit-lock, settings.partials.ui-style
+
+### Community 834 - "sales-settlements/edit.blade.php"
+Cohesion: 0.33
+Nodes (5): goods-issues.partials.form-style, sales-settlements.partials.form-style, sales-settlements.partials.help-modal, sales-settlements.partials.submit-lock, settings.partials.ui-style
+
+### Community 893 - "Performance Rules"
+Cohesion: 0.33
+Nodes (6): CSS animations beat JS under load, CSS variables are inheritable, Motion hardware acceleration caveat, Only animate transform and opacity, Performance Rules, Use WAAPI for programmatic CSS animations
+
+### Community 895 - "Gesture and Drag Interactions"
+Cohesion: 0.33
+Nodes (6): Damping at boundaries, Friction instead of hard stops, Gesture and Drag Interactions, Momentum-based dismissal, Multi-touch protection, Pointer capture for drag
+
+### Community 896 - "BankStatementEntryController.php"
+Cohesion: 0.10
+Nodes (6): BankStatementEntryController, BankBulkClassifyRequest, BankStatementEntryRequest, StoreBankStatementEntryRequest, BankApprovalRules, BankEntryApprovalService
+
+### Community 900 - "StoreClaimRegisterRequest"
+Cohesion: 0.16
+Nodes (3): StoreClaimRegisterRequest, StoreCustomerRequest, StoreLedgerRegisterRequest
+
+### Community 903 - "UpdateUserProfileInformation.php"
+Cohesion: 0.47
+Nodes (3): UpdateUserProfileInformation, Illuminate\Contracts\Auth\MustVerifyEmail, Laravel\Fortify\Contracts\UpdatesUserProfileInformation
+
+### Community 905 - "DeleteUser"
+Cohesion: 0.47
+Nodes (3): DeleteUser, Laravel\Jetstream\Contracts\DeletesUsers, Laravel\Jetstream\Jetstream
+
+### Community 985 - "The Animation Decision Framework"
+Cohesion: 0.33
+Nodes (6): 1. Should this animate at all?, 2. What is the purpose?, 3. What easing should it use?, 4. How fast should it be?, Perceived performance, The Animation Decision Framework
+
+### Community 986 - "clip-path for Animation"
+Cohesion: 0.33
+Nodes (6): clip-path for Animation, Comparison sliders, Hold-to-delete pattern, Image reveals on scroll, Tabs with perfect color transitions, The inset shape
+
+### Community 990 - "Performance Rules"
+Cohesion: 0.33
+Nodes (6): CSS animations beat JS under load, CSS variables are inheritable, Motion hardware acceleration caveat, Only animate transform and opacity, Performance Rules, Use WAAPI for programmatic CSS animations
+
+### Community 992 - "Gesture and Drag Interactions"
+Cohesion: 0.33
+Nodes (6): Damping at boundaries, Friction instead of hard stops, Gesture and Drag Interactions, Momentum-based dismissal, Multi-touch protection, Pointer capture for drag
+
+### Community 999 - "Payroll hub — design (approved 2026-11-13, layout A)"
+Cohesion: 0.33
+Nodes (5): Approaches considered, Decisions (owner), Payroll hub — design (approved 2026-11-13, layout A), Schema, Why
+
+### Community 1002 - "CSS Transform Mastery"
 Cohesion: 0.40
-Nodes (3): Illuminate\Foundation\Inspiring, Illuminate\Support\Facades\Artisan, Illuminate\Support\Facades\Schedule
+Nodes (5): 3D transforms for depth, CSS Transform Mastery, scale() scales children too, transform-origin, translateY with percentages
+
+### Community 1007 - "The Sonner Principles (Building Loved Components)"
+Cohesion: 0.40
+Nodes (5): Asymmetric enter/exit timing, Cohesion matters, Review your work the next day, The opacity + height combination, The Sonner Principles (Building Loved Components)
+
+### Community 1008 - "Spring Animations"
+Cohesion: 0.40
+Nodes (5): Interruptibility advantage, Spring Animations, Spring-based mouse interactions, Spring configuration, When to use springs
+
+### Community 1019 - "CSS Transform Mastery"
+Cohesion: 0.40
+Nodes (5): 3D transforms for depth, CSS Transform Mastery, scale() scales children too, transform-origin, translateY with percentages
+
+### Community 1022 - "The Sonner Principles (Building Loved Components)"
+Cohesion: 0.40
+Nodes (5): Asymmetric enter/exit timing, Cohesion matters, Review your work the next day, The opacity + height combination, The Sonner Principles (Building Loved Components)
+
+### Community 1024 - "Spring Animations"
+Cohesion: 0.40
+Nodes (5): Interruptibility advantage, Spring Animations, Spring-based mouse interactions, Spring configuration, When to use springs
+
+### Community 1029 - "register-help.blade.php"
+Cohesion: 0.50
+Nodes (3): expense-vouchers.partials.help-topics, payroll.help._topics, reports.cheque-register.partials.help-topics
+
+### Community 1036 - "hub.blade.php"
+Cohesion: 0.40
+Nodes (4): payroll.hub._, payroll.hub._import, payroll.hub._styles, settings.partials.ui-style
+
+### Community 1037 - "Core Philosophy"
+Cohesion: 0.50
+Nodes (4): Beauty is leverage, Core Philosophy, Taste is trained, not innate, Unseen details compound
+
+### Community 1038 - "Debugging Animations"
+Cohesion: 0.50
+Nodes (4): Debugging Animations, Frame-by-frame inspection, Slow motion testing, Test on real devices
+
+### Community 1046 - "Core Philosophy"
+Cohesion: 0.50
+Nodes (4): Beauty is leverage, Core Philosophy, Taste is trained, not innate, Unseen details compound
+
+### Community 1047 - "Debugging Animations"
+Cohesion: 0.50
+Nodes (4): Debugging Animations, Frame-by-frame inspection, Slow motion testing, Test on real devices
+
+### Community 1048 - "2026_11_15_144229_add_cheque_bounce_to_customer_employee_account_transaction_types.php"
+Cohesion: 0.83
+Nodes (3): down(), setTypes(), up()
+
+### Community 1050 - "dashboard-focus.blade.php"
+Cohesion: 0.50
+Nodes (3): livewire.dashboard.focus-style, livewire.dashboard.aging-table, livewire.dashboard.style
 
 ## Knowledge Gaps
-- **1317 isolated node(s):** `SITE_PATH`, `$schema`, `name`, `type`, `description` (+1312 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 3178 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **282 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2119 isolated node(s):** `SITE_PATH`, `$schema`, `name`, `type`, `description` (+2114 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4098 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **276 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `User` connect `User` to `UserPolicy`, `Supplier`, `GoodsReceiptNote`, `Illuminate\Database\Eloquent\Model`, `Customer`, `JournalEntryDetail`, `Currency`, `SalesSettlement`, `Category`, `GoodsReceiptNotePolicy`, `ExpenseVoucher`, `EmployeeController`, `Product`, `SalesSettlementPolicy`, `BankReceiptScan`, `Dashboard`, `Spatie\Permission\Models\Role`, `ExpenseVendorPaymentService`, `PayrollService`, `AccountingPeriodPolicy`, `AccountTypePolicy`, `TicketType`, `Illuminate\Database\Eloquent\Factories\Factory`, `TicketService`, `Permission`, `CustomerController`, `CostCenter`, `Ticket`, `ExpenseVendor`, `Attachment`, `ClaimRegisterPolicy`, `StockLedgerStaysInStepTest.php`, `CompanyPolicy`, `SalesSettlementBankSlip`, `SupplierInvoicePostingTest.php`, `CurrencyPolicy`, `CustomerPolicy`, `EmployeePolicy`, `TaxCode`, `TaxTransaction`, `LedgerRegisterPolicy`, `NotifyPendingSettlements.php`, `UomPolicy`, `CustomerEmployeeAccount`, `WarehouseType`, `FortifyServiceProvider.php`, `ExpenseDetailFactory.php`, `BankStatementEntry`, `RevenueCategory`, `GoodsReceiptNoteItemsImport`, `ChartOfAccount`, `BankEntryAuditLog`, `VehiclePolicy`, `AccountingService`, `Illuminate\Http\UploadedFile`, `web.php`, `ProductTaxMapping`, `BankReconciliation`, `JournalEntry`, `.log`, `TicketSubmitted`, `Illuminate\Support\Str`, `Illuminate\Database\Eloquent\Builder`, `CustomerImport`, `AppServiceProvider.php`, `Symfony\Component\HttpFoundation\Response`, `ProfitCategoryDetail`?**
-  _High betweenness centrality (0.061) - this node is a cross-community bridge._
-- **Why does `Supplier` connect `Supplier` to `User`, `InvestmentOpeningBalance`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `GoodsReceiptNote`, `Illuminate\Database\Eloquent\Model`, `Currency`, `CustomerCodeGenerator.php`, `JournalEntryDetail`, `Category`, `InvestmentSummaryController`, `Illuminate\Database\Seeder`, `ExpenseVoucher`, `EmployeeController`, `LedgerRegisterController`, `Product`, `TicketType`, `Illuminate\Support\Collection`, `Dashboard`, `ClaimRegister`, `PayrollService`, `InvoiceSummaryReportController`, `Illuminate\Database\Eloquent\Factories\Factory`, `Illuminate\Http\Request`, `ClaimRegisterFactory`, `TicketService`, `Permission`, `Ticket`, `CustomerEmployeeAccountTransaction`, `StockLedgerStaysInStepTest.php`, `TicketSubmitted`, `SupplierInvoicePostingTest.php`, `Maatwebsite\Excel\Concerns\WithHeadings`, `LedgerRegisterFactory`, `BankEntryRule`, `BankChequeController`, `CompanyTarget`, `SupplierLedgerReportController`, `ProductController`, `GoodsReceiptNoteController`, `CustomerEmployeeAccount`, `SalesSettlementController`, `VehicleController`, `ExpenseDetailFactory.php`, `BankStatementEntry`, `RevenueCategory`, `GoodsReceiptNoteItemsImport`, `Illuminate\Http\RedirectResponse`, `ChartOfAccount`, `BankEntryAuditLog`, `SupplierLedgerReportController.php`, `ExpenseVoucherFactory.php`, `SalesSettlementCheque`, `BankPartyAlias`, `web.php`, `.index`, `BankSearchAndReportsTest.php`, `AmrDisposeRegisterController`, `CurrentStockController`, `Illuminate\Http\UploadedFile`, `.index`, `CreditorsLedgerController`, `JournalEntry`, `StoreCompanyTargetRequest`, `SupplierController`, `Illuminate\Support\Str`, `StockAvailabilityReportController`, `BankReportService`, `.index`, `CompanyTargetService`, `Symfony\Component\HttpFoundation\Response`, `ProfitCategoryDetail`, `CustomerAccountStatementController`, `StockAdjustmentController`, `BankCheque`, `FmrAmrComparisonController`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
-- **Why does `Product` connect `Product` to `User`, `Supplier`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `GoodsReceiptNote`, `Illuminate\Database\Eloquent\Model`, `Currency`, `ProductExport`, `SalesSettlement`, `Category`, `Illuminate\Database\Seeder`, `TicketType`, `StoreProductRequest`, `Dashboard`, `ClaimRegister`, `Illuminate\Http\Request`, `TicketService`, `StockBatchFactory`, `StockLedgerStaysInStepTest.php`, `TicketSubmitted`, `SupplierInvoicePostingTest.php`, `Maatwebsite\Excel\Concerns\WithHeadings`, `TaxCode`, `UpdateProductRequest`, `ProductController`, `GoodsReceiptNoteController`, `VanStockBatchReportController.php`, `GoodsIssueController`, `SalesSettlementController`, `GoodsReceiptNoteItemsImport`, `ChartOfAccount`, `.index`, `ProductFactory.php`, `Illuminate\Http\UploadedFile`, `ProductTaxMapping`, `CurrentStockController`, `.index`, `CartonConversionService`, `JournalEntry`, `TicketRequest`, `StockAdjustmentController`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `User` connect `User` to `BankStatementEntryController.php`, `Illuminate\Support\Facades\DB`, `UserController`, `GoodsReceiptNote`, `Illuminate\Database\Eloquent\Model`, `ChartOfAccount`, `UpdateUserProfileInformation.php`, `SalesSettlement`, `DeleteUser`, `AppSetting`, `Role`, `.count`, `ProductPriceChangeLogController`, `ExpenseVoucher`, `EmployeeController`, `Spatie\Activitylog\LogOptions`, `Product`, `TicketType`, `Illuminate\Support\Collection`, `Dashboard`, `ClaimRegister`, `FortifyServiceProvider.php`, `BankRegisterException`, `BankReceiptScan`, `ExpenseVendorPaymentService`, `Illuminate\Database\Eloquent\Builder`, `Company`, `PayrollService`, `Laravel\Fortify\Features`, `TicketService`, `ChequeClearing`, `CustomerController`, `Ticket`, `CashAndChequeScenarioMatrixTest.php`, `BankStatementImport`, `JournalEntryDetail`, `TaxCode`, `TaxTransaction`, `TicketTest.php`, `Attachment`, `TaxRate`, `GoodsReceiptNoteController`, `WarehouseType`, `CreateNewUser.php`, `LedgerRegister`, `web.php`, `User.php`, `BankStatementEntry`, `ExpenseDetailFactory.php`, `SettingsPageTest.php`, `RevenueCategory`, `CustomerImport`, `.log`, `SalesSettlementCheque`, `SalaryComponent`, `Illuminate\Http\UploadedFile`, `PayrollExcelService`, `ProductTaxMapping`, `BankReconciliation`, `Illuminate\Database\Eloquent\Factories\Factory`, `Livewire\Livewire`, `ProfitCategory`, `ExpenseVendorPayment`, `Illuminate\Console\Command`, `UserFactory.php`, `Illuminate\Support\ServiceProvider`, `Symfony\Component\HttpFoundation\Response`, `ExpenseVoucherController`, `ExpenseVoucherReversalService`, `EmployeeSalaryController`?**
+  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+- **Why does `Supplier` connect `User` to `BankStatementEntryController.php`, `Illuminate\Support\Facades\DB`, `InvestmentOpeningBalance`, `GoodsReceiptNote`, `UserController`, `Illuminate\Database\Eloquent\Model`, `ChartOfAccount`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `.count`, `Illuminate\Database\Eloquent\Relations\HasMany`, `BankEntryClassifier`, `TicketTest.php`, `InvestmentSummaryController`, `ProductPriceChangeLogController`, `EmployeeController`, `LedgerRegisterController`, `Product`, `TicketType`, `Illuminate\Support\Collection`, `Dashboard`, `ClaimRegister`, `PayrollService`, `InvoiceSummaryReportController`, `Illuminate\Database\Eloquent\Factories\Factory`, `Illuminate\Database\Eloquent\Builder`, `.response`, `ClaimRegisterFactory`, `ProductRecallFactory`, `TicketService`, `InvoiceSummaryFactory.php`, `RevenueCategoryFactory.php`, `Ticket`, `CustomerEmployeeAccountTransaction`, `CashNotes`, `CashAndChequeScenarioMatrixTest.php`, `TicketItem`, `CashCollectionDistributorController`, `Maatwebsite\Excel\Concerns\WithHeadings`, `DocumentType`, `BankEntryRuleController`, `BankChequeController`, `.createChildRecords`, `CompanyTarget`, `ProductController`, `ProductRecall`, `GoodsReceiptNoteController`, `SupplierController`, `.run`, `SalesSettlementController`, `VehicleController`, `web.php`, `ExpenseDetailFactory.php`, `RevenueCategory`, `CustomerImport`, `Illuminate\Http\Request`, `SupplierLedgerReportController.php`, `StockAdjustment`, `ExpenseVoucherFactory.php`, `SalaryComponent`, `BankPartyAliasController`, `.index`, `Illuminate\Http\UploadedFile`, `AmrDisposeRegisterController`, `CurrentStockController`, `ProfitCategoryDetail`, `Illuminate\View\View`, `CreditorsLedgerController`, `StoreSupplierRequest`, `StockAvailabilityReportController`, `BankReportService`, `Illuminate\Validation\Rule`, `CompanyTargetSummaryController.php`, `ExpenseVoucherController`, `ProfitCategory`, `Illuminate\Database\Seeder`, `EmployeeSalaryController`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+- **Why does `Product` connect `Product` to `User`, `Illuminate\Support\Facades\DB`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `GoodsReceiptNote`, `Illuminate\Database\Eloquent\Model`, `ChartOfAccount`, `AppSetting`, `SalesSettlement`, `TicketTest.php`, `ProductPriceChangeLogController`, `TicketType`, `StoreProductRequest`, `Dashboard`, `Illuminate\Database\Eloquent\Builder`, `.response`, `TicketService`, `StockBatchFactory`, `Ticket`, `TicketItem`, `Maatwebsite\Excel\Concerns\WithHeadings`, `UpdateProductRequest`, `ProductController`, `ProductRecall`, `GoodsReceiptNoteController`, `GoodsIssueController`, `SalesSettlementController`, `web.php`, `CustomerImport`, `StockAdjustment`, `.index`, `ProductFactory.php`, `Illuminate\Http\UploadedFile`, `ProductTaxMapping`, `CurrentStockController`, `Illuminate\View\View`, `TicketRequest`, `Illuminate\Database\Seeder`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **What connects `SITE_PATH`, `$schema`, `name` to the rest of the system?**
-  _1317 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2119 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `User` be split into smaller, more focused modules?**
-  _Cohesion score 0.02432950191570881 - nodes in this community are weakly interconnected._
-- **Should `Supplier` be split into smaller, more focused modules?**
-  _Cohesion score 0.04047056174715749 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.01617945352583224 - nodes in this community are weakly interconnected._
+- **Should `Illuminate\Support\Facades\DB` be split into smaller, more focused modules?**
+  _Cohesion score 0.040361559224154166 - nodes in this community are weakly interconnected._
 - **Should `Illuminate\Database\Eloquent\Relations\BelongsTo` be split into smaller, more focused modules?**
-  _Cohesion score 0.01802100608070757 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.01578813343519226 - nodes in this community are weakly interconnected._

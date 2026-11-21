@@ -159,7 +159,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-amr-dispose-register', 'report-bank-audit-log', 'report-bank-entries', 'report-bank-live-gap', 'report-bank-reconciliation-statement', 'report-bank-summary', 'report-bank-unlinked-scans', 'report-audit-cheque-register', 'report-audit-claim-register', 'report-audit-investment-summary', 'report-audit-ledger-register', 'report-audit-supplier-ledger'])
+                @canany(['report-audit-amr-dispose-register', 'report-bank-audit-log', 'report-bank-entries', 'report-bank-live-gap', 'report-bank-reconciliation-statement', 'report-bank-summary', 'report-bank-unlinked-scans', 'report-audit-cheque-register', 'report-audit-claim-register', 'report-audit-investment-summary', 'report-audit-daily-business-summary', 'report-audit-ledger-register', 'report-audit-supplier-ledger'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier &amp; Registers</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -234,6 +234,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-daily-business-summary')
+                                <x-settings-row data-settings-item data-search="daily business summary management report sales cash credit discount scheme tts category salesman supplier and registers supplier ledgers, cheques, claims and investment" x-bind:hidden="! matches($el)" href="{{ route('reports.daily-business-summary.index') }}"
+                                    label="Daily Business Summary" description="Sales, cash, credit, discounts and TTS for a day"
+                                    icon-bg="bg-sky-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12a2.25 2.25 0 002.25-2.25V3M3.75 3h16.5M3.75 3H2.25m18 0h1.5M8.25 21l3.75-4.5L15.75 21M9 9.75h6M9 12.75h3" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

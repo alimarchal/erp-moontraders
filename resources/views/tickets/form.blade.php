@@ -25,7 +25,7 @@
     if ($type === TicketType::StockAdjustment) {
         $existingRows = collect($adj['items'] ?? [])->map(fn ($line) => [
             'product_id' => $line['product_id'], 'stock_batch_id' => $line['stock_batch_id'], 'system_quantity' => $line['system_quantity'] ?? '',
-            'actual_quantity' => $line['actual_quantity'], 'unit_cost' => $line['unit_cost'], 'selling_price' => $line['selling_price'] ?? '', 'selling_scope' => $line['selling_scope'] ?? 'batch', 'uom_id' => $line['uom_id'],
+            'actual_quantity' => $line['actual_quantity'], 'selling_price' => $line['selling_price'] ?? '', 'selling_scope' => $line['selling_scope'] ?? 'batch', 'uom_id' => $line['uom_id'],
         ])->all();
     }
     $entry = old('data', $isEdit && $type->isSimpleEntry() ? ($ticket->items->first()->payload ?? []) : []);
@@ -40,7 +40,7 @@
             uid: ++uid, product_id: '', batch_scope: 'all', batch_ids: [], batches: [], loading: false,
             unit_sell_price: '', cost_price: '', expiry_price: '', reorder_level: '',
             new_is_active: '1', remarks: '',
-            stock_batch_id: '', system_quantity: '', actual_quantity: '', unit_cost: '', selling_price: '', selling_scope: 'batch', uom_id: '',
+            stock_batch_id: '', system_quantity: '', actual_quantity: '', selling_price: '', selling_scope: 'batch', uom_id: '',
         });
         const fields = [['unit_sell_price', 'Selling price'], ['cost_price', 'Cost price'], ['expiry_price', 'Expiry price'], ['reorder_level', 'Reorder level']];
 
@@ -69,7 +69,7 @@
             setAdj(key, value) {
                 this.adj[key] = value;
                 if (key === 'supplier_id') { this.rows = [Object.assign(blank(), {})]; }
-                if (key === 'warehouse_id') { this.rows.forEach((row) => { row.stock_batch_id = ''; row.system_quantity = ''; row.unit_cost = ''; row.selling_price = ''; this.loadAdjBatches(row); }); }
+                if (key === 'warehouse_id') { this.rows.forEach((row) => { row.stock_batch_id = ''; row.system_quantity = ''; row.selling_price = ''; this.loadAdjBatches(row); }); }
             },
             async loadAdjBatches(row) {
                 row.batches = [];
@@ -85,7 +85,7 @@
             },
             pickAdjProduct(row, id) {
                 this.pick(row, id);
-                row.stock_batch_id = ''; row.system_quantity = ''; row.actual_quantity = ''; row.unit_cost = ''; row.selling_price = '';
+                row.stock_batch_id = ''; row.system_quantity = ''; row.actual_quantity = ''; row.selling_price = '';
                 const p = this.product(row); row.uom_id = p ? p.uom_id : '';
                 this.loadAdjBatches(row);
             },
@@ -93,34 +93,23 @@
                 const batch = row.batches.find((b) => String(b.id) === String(id));
                 row.stock_batch_id = id;
                 row.system_quantity = batch ? Number(batch.quantity) : '';
-                row.unit_cost = batch ? Number(batch.unit_cost) : '';
-                row.batch_cost = row.unit_cost;
+                row.batch_cost = batch ? Number(batch.unit_cost) : '';
                 row.selling_price = batch && batch.selling_price !== null ? Number(batch.selling_price) : '';
                 row.batch_selling = row.selling_price;
-                // Counted quantity starts at the system quantity, so changing only the unit cost needs no quantity.
+                // Counted quantity starts at the system quantity, so changing only the selling cost needs no quantity.
                 row.actual_quantity = batch ? Number(batch.quantity) : '';
             },
-            costChanged(row) { return row.unit_cost !== '' && row.batch_cost !== undefined && row.batch_cost !== '' && Math.abs(parseFloat(row.unit_cost) - parseFloat(row.batch_cost)) > 0.01; },
             sellingChanged(row) { return row.selling_price !== '' && row.batch_selling !== undefined && row.batch_selling !== '' && Math.abs(parseFloat(row.selling_price) - parseFloat(row.batch_selling)) > 0.004; },
-            costChangedLines() { return this.type === 'stock_adjustment' ? this.rows.filter((r) => r.stock_batch_id && this.costChanged(r)) : []; },
-            costConfirmed: false, confirmOpen: false, confirmTick: false, confirmPassword: '',
             guardSubmit(event) {
                 if (this.submitting) { event.preventDefault(); return; }
-                if (this.costChangedLines().length && !this.costConfirmed) { event.preventDefault(); this.confirmOpen = true; this.$nextTick(() => this.$refs.costPassword && this.$refs.costPassword.focus()); return; }
                 this.submitting = true;
             },
-            confirmCost() {
-                if (!this.confirmTick || this.confirmPassword === '') { return; }
-                this.costConfirmed = true; this.confirmOpen = false;
-                this.$nextTick(() => this.$el.requestSubmit());
-            },
-            costOnly(row) { return this.adjDiff(row) === 0 && this.costChanged(row); },
+            costOnly(row) { return this.adjDiff(row) === 0 && this.sellingChanged(row); },
             adjDiff(row) { return row.actual_quantity === '' || row.system_quantity === '' ? null : parseFloat(row.actual_quantity) - parseFloat(row.system_quantity); },
             adjValue(row) {
                 const d = this.adjDiff(row);
-                if (d === null || row.unit_cost === '') { return null; }
-                const revaluation = this.costChanged(row) ? parseFloat(row.system_quantity) * (parseFloat(row.unit_cost) - parseFloat(row.batch_cost)) : 0;
-                return d * parseFloat(row.unit_cost) + revaluation;
+                if (d === null || row.batch_cost === undefined || row.batch_cost === '') { return null; }
+                return d * parseFloat(row.batch_cost);
             },
             adjTotal() { return this.rows.reduce((sum, row) => sum + (this.adjValue(row) || 0), 0); },
             product(row) { return this.products.find((p) => String(p.id) === String(row.product_id)); },
@@ -181,7 +170,7 @@
         skuName: @js($sku['product_name'] ?? ''),
         adj: @js(['supplier_id' => (string) ($adj['supplier_id'] ?? ($suppliers->count() === 1 ? $suppliers->first()->id : '')), 'warehouse_id' => (string) ($adj['warehouse_id'] ?? '')]),
         adjBatchUrl: @js(route('tickets.adjustment-batches', ['product' => '__P__', 'warehouse' => '__W__'])),
-    })" id="ticket-form" @submit="guardSubmit($event)" @pageshow.window="submitting = false; costConfirmed = false">
+    })" id="ticket-form" @submit="guardSubmit($event)" @pageshow.window="submitting = false">
     @csrf
     @if ($httpMethod !== 'POST')
         @method($httpMethod)
@@ -363,7 +352,7 @@
             <header class="uf-card-head">
                 <div>
                     <h2 class="uf-card-title" id="tk-lines"><span class="uf-step">3</span> Lines</h2>
-                    <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. To change only the selling cost or the unit cost, leave the counted quantity as it is and type the new value. Changing the unit cost asks for your password.</p>
+                    <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. To change only the selling cost, leave the counted quantity as it is and type the new selling cost. The value uses the batch's own unit cost.</p>
                 </div>
                 <span class="ak-pill" x-text="productCount() + ' line(s) · value ' + signed(adjTotal())"></span>
             </header>
@@ -372,7 +361,7 @@
                     <thead><tr>
                         <th style="width:36px">#</th><th style="min-width:210px">Product</th><th style="min-width:190px">Batch</th>
                         <th style="min-width:105px">System qty</th><th style="min-width:115px">Counted qty</th><th style="min-width:100px">Difference</th>
-                        <th style="min-width:170px">Selling cost</th><th style="min-width:170px">Unit cost</th><th style="min-width:130px">Value</th><th style="width:40px"></th>
+                        <th style="min-width:170px">Selling cost</th><th style="min-width:130px">Value</th><th style="width:40px"></th>
                     </tr></thead>
                     <template x-for="(row, index) in rows" :key="row.uid">
                         <tbody>
@@ -398,11 +387,10 @@
                                 </td>
                                 <td class="tk-cell"><input type="number" step="0.001" readonly tabindex="-1" :name="`items[${index}][system_quantity]`" :value="row.system_quantity" style="background:#f8fafc"></td>
                                 <td class="tk-cell"><input type="number" step="0.001" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][actual_quantity]`" x-model="row.actual_quantity" placeholder="count"></td>
-                                <td><span x-show="adjDiff(row) !== null" class="tk-delta" :class="adjDiff(row) > 0 ? 'tk-delta-up' : (adjDiff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(adjDiff(row))"></span> <small x-show="costOnly(row)" class="ak-muted">cost only</small></td>
+                                <td><span x-show="adjDiff(row) !== null" class="tk-delta" :class="adjDiff(row) > 0 ? 'tk-delta-up' : (adjDiff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(adjDiff(row))"></span> <small x-show="costOnly(row)" class="ak-muted">selling cost only</small></td>
                                 <td class="tk-cell">
                                     <input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][selling_price]`" x-model="row.selling_price" title="Selling cost of this batch (changing it updates the batch selling price)" :style="sellingChanged(row) ? 'background:#fffbeb;border-color:#f59e0b' : ''">
                                 </td>
-                                <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost" title="Purchase cost of this batch (changing it needs your password)" :style="costChanged(row) ? 'background:#fef2f2;border-color:#dc2626' : ''"></td>
                                 <td><span x-show="adjValue(row) !== null" class="ak-strong" x-text="signed(adjValue(row))"></span></td>
                                 <td><button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></td>
                             </tr>
@@ -531,36 +519,7 @@
             </button>
         </div>
     </div>
-
-    <input type="hidden" name="confirm_cost_change" :value="costConfirmed || confirmTick ? 1 : 0">
-    <input type="hidden" name="password" :value="confirmPassword">
-    <div x-show="confirmOpen" x-cloak class="tk-cost-overlay" @keydown.escape.window="confirmOpen = false">
-        <div role="dialog" aria-modal="true" aria-labelledby="tk-cost-title" dir="rtl" lang="ur" style="background:#fff; border-radius:12px; max-width:560px; width:100%; max-height:90vh; overflow:auto; padding:22px 24px; font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq','Noto Naskh Arabic',serif; line-height:2.1; text-align:right; box-shadow:0 20px 50px rgba(0,0,0,.3)">
-            <h3 id="tk-cost-title" style="margin:0 0 8px; font-size:20px; color:#b91c1c">یونٹ کاسٹ تبدیل کرنے کی تصدیق</h3>
-            <p style="margin:0 0 10px; font-size:15px; color:#334155">آپ نے درج ذیل بیچ کی یونٹ کاسٹ (خریداری لاگت) بدلی ہے۔ منظوری پر پورے موجودہ اسٹاک کی قدر نئی لاگت پر منتقل ہو جائے گی اور جرنل انٹری بنے گی۔ یہ عمل آڈٹ میں درج ہوتا ہے، اس لیے تصدیق ضروری ہے۔</p>
-            <div style="border:1px solid #fecaca; background:#fef2f2; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:14px">
-                <template x-for="row in costChangedLines()" :key="row.uid">
-                    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; border-bottom:1px dashed #fecaca">
-                        <span x-text="(product(row) ? (product(row).label || product(row).product_name) : '') + ' — ' + ((row.batches.find((b) => String(b.id) === String(row.stock_batch_id)) || {}).batch_code || '')"></span>
-                        <span dir="ltr" style="font-family:ui-monospace,monospace" x-text="fmt(row.batch_cost) + '  →  ' + fmt(row.unit_cost)"></span>
-                    </div>
-                </template>
-            </div>
-            <label style="display:flex; gap:10px; align-items:flex-start; font-size:15px; margin-bottom:12px; cursor:pointer">
-                <input type="checkbox" x-model="confirmTick" style="margin-top:12px; width:18px; height:18px">
-                <span>میں نے یونٹ کاسٹ جان بوجھ کر بدلی ہے اور مجھے معلوم ہے کہ اس سے اسٹاک کی ویلیو بدلے گی۔</span>
-            </label>
-            <label for="tk-cost-password" style="display:block; font-size:15px; margin-bottom:2px">اپنا پاس ورڈ لکھیں</label>
-            <input id="tk-cost-password" x-ref="costPassword" type="password" autocomplete="current-password" dir="ltr" x-model="confirmPassword" @keydown.enter.prevent="confirmCost()" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:15px">
-            <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-start">
-                <button type="button" class="ak-btn ak-btn-primary" :disabled="!confirmTick || confirmPassword === ''" @click="confirmCost()" style="font-family:inherit">تصدیق کریں اور جمع کریں</button>
-                <button type="button" class="ak-btn ak-btn-outline" @click="confirmOpen = false" style="font-family:inherit">واپس جائیں</button>
-            </div>
-        </div>
-    </div>
 </form>
-
-<style>.tk-cost-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; padding: 16px; }</style>
 
 @push('scripts')
     @include('tickets.partials.code-check')

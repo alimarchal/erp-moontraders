@@ -440,21 +440,12 @@ class TicketService
     }
 
     /**
-     * The unit cost the batch is carried at in the warehouse, which a line's unit cost is compared with.
+     * The unit cost the batch is carried at in the warehouse, which every ticket line is valued at.
      */
     public static function batchCost(int $stockBatchId, int $warehouseId): float
     {
         return (float) DB::table('current_stock_by_batch')
             ->where('stock_batch_id', $stockBatchId)->where('warehouse_id', $warehouseId)->value('unit_cost');
-    }
-
-    /**
-     * Same tolerance as the Stock Adjustments screen: a whole paisa, because the form loads the
-     * batch master's 2-decimal cost while stock carries the receipt's six.
-     */
-    public static function costChanged(int $stockBatchId, int $warehouseId, float $unitCost): bool
-    {
-        return abs($unitCost - self::batchCost($stockBatchId, $warehouseId)) > 0.01;
     }
 
     /**
@@ -483,14 +474,9 @@ class TicketService
 
             $line['system_quantity'] = $onHand;
             $line['adjustment_quantity'] = (float) $line['actual_quantity'] - $onHand;
-            $line['adjustment_value'] = $line['adjustment_quantity'] * (float) $line['unit_cost'];
-            $line['revaluation_value'] = round($onHand * ((float) $line['unit_cost'] - self::batchCost((int) $line['stock_batch_id'], $warehouseId)), 2);
-
-            if (! self::costChanged((int) $line['stock_batch_id'], $warehouseId, (float) $line['unit_cost'])) {
-                $line['revaluation_value'] = 0.0;
-            }
-
-            $line['old_unit_cost'] = self::batchCost((int) $line['stock_batch_id'], $warehouseId);
+            // Tickets never change a batch's purchase cost: every line is valued at the cost the batch already carries.
+            $line['unit_cost'] = self::batchCost((int) $line['stock_batch_id'], $warehouseId);
+            $line['adjustment_value'] = $line['adjustment_quantity'] * $line['unit_cost'];
             $line['old_selling_price'] = (float) DB::table('stock_batches')->where('id', $line['stock_batch_id'])->value('selling_price');
             $line['selling_changed'] = self::sellingPriceChanged((int) $line['stock_batch_id'], $line['selling_price'] ?? null);
 
@@ -524,8 +510,8 @@ class TicketService
         }
 
         $lines = $allLines
-            ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005 && $line['revaluation_value'] == 0.0)
-            ->map(fn (array $line) => Arr::except($line, ['revaluation_value', 'selling_price', 'selling_scope', 'old_selling_price', 'old_unit_cost', 'selling_changed']))
+            ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005)
+            ->map(fn (array $line) => Arr::except($line, ['selling_price', 'selling_scope', 'old_selling_price', 'selling_changed']))
             ->values();
 
         if ($lines->isEmpty() && $allLines->contains('selling_changed', true)) {
@@ -535,7 +521,7 @@ class TicketService
         }
 
         if ($lines->isEmpty()) {
-            throw ValidationException::withMessages(['ticket' => 'Stock has moved since the count: the counted quantities and unit costs now match the system, so there is nothing left to adjust.']);
+            throw ValidationException::withMessages(['ticket' => 'Stock has moved since the count: the counted quantities now match the system, so there is nothing left to adjust.']);
         }
 
         $created = $service->createAdjustment(Arr::except($payload, 'items') + ['items' => $lines->all()]);

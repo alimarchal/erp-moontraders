@@ -73,6 +73,15 @@
                                 <x-label for="supplier_invoice_number" value="Supplier Invoice Number" />
                                 <x-input id="supplier_invoice_number" name="supplier_invoice_number" type="text"
                                     class="mt-1 block w-full" :value="old('supplier_invoice_number', $grn->supplier_invoice_number)" />
+                                @error('confirm_unusual_factor')
+                                    <div class="md:col-span-full rounded-md border border-amber-300 bg-amber-50 p-3">
+                                        <p class="text-sm text-amber-800">{{ $message }}</p>
+                                        <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                                            <input type="checkbox" name="confirm_unusual_factor" value="1" class="rounded border-gray-300">
+                                            The conversion factor is right
+                                        </label>
+                                    </div>
+                                @enderror
                                 @error('supplier_invoice_number')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700">

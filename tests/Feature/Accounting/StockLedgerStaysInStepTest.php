@@ -6,7 +6,7 @@ use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\GoodsReceiptNote;
-use App\Models\JournalEntry;
+use App\Models\GrnCorrection;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Uom;
@@ -102,6 +102,8 @@ function vanStockValue(): float
 function correctConversionFactor(object $test, float $factor)
 {
     return $test->post(route('goods-receipt-notes.update-special', $test->grn), [
+        'reason' => 'Carton factor entered wrong',
+        'password' => 'password',
         'items' => [['id' => $test->item->id, 'product_id' => $test->product->id, 'uom_conversion_factor' => $factor]],
     ]);
 }
@@ -123,7 +125,7 @@ it('keeps the ledger equal to the stock when a GRN is corrected after stock was 
         ->and(stockLedgerBalance('1155'))->toBe(vanStockValue())
         ->and(vanStockValue())->toBe(round(40 * 83.33, 2));
 
-    $adjustment = JournalEntry::where('reference', 'like', "RECOST-{$this->grn->grn_number}-%")->sole();
+    $adjustment = GrnCorrection::sole()->journalEntry;
     expect((float) $adjustment->details->sum('debit'))->toBe((float) $adjustment->details->sum('credit'));
 
     $this->artisan('accounting:reconcile-stock-gl', ['--tolerance' => 1])->assertSuccessful();

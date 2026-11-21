@@ -39,6 +39,36 @@ class InventoryLedgerService
     }
 
     /**
+     * Record the quantity a GRN Correction adds to (positive) or takes off (negative) a GRN's receipt. It is part of
+     * the purchase, so it carries the GRN like the purchase row does.
+     */
+    public function recordPurchaseCorrection(
+        int $productId,
+        int $warehouseId,
+        float $quantity,
+        float $unitCost,
+        int $grnId,
+        string $date,
+        string $notes,
+        int $batchId
+    ): InventoryLedgerEntry {
+        return $this->createEntry([
+            'date' => $date,
+            'transaction_type' => InventoryLedgerEntry::TYPE_PURCHASE,
+            'product_id' => $productId,
+            'stock_batch_id' => $batchId,
+            'warehouse_id' => $warehouseId,
+            'vehicle_id' => null,
+            'employee_id' => null,
+            'goods_receipt_note_id' => $grnId,
+            'debit_qty' => max($quantity, 0),
+            'credit_qty' => max(-$quantity, 0),
+            'unit_cost' => $unitCost,
+            'notes' => $notes,
+        ]);
+    }
+
+    /**
      * Record a goods issue (transfer from warehouse to vehicle)
      * Creates TWO entries: credit from warehouse, debit to vehicle (double-entry)
      */

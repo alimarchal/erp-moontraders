@@ -89,6 +89,14 @@ class GoodsReceiptNote extends Model
     }
 
     /**
+     * Corrections posted against this GRN after it was posted, newest first.
+     */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(GrnCorrection::class)->latest('corrected_at')->latest('id');
+    }
+
+    /**
      * The draft or posted Ledger Register invoice row raised when this GRN was posted.
      */
     public function ledgerEntry(): HasOne

@@ -8,10 +8,11 @@
 
 @php
     $isClaims = $page === 'claims';
-    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
+    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers', 'grn-correction'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
     $helpTitle = match ($page) {
         'claims' => 'Claim Register',
         'goods-issues' => 'Goods Issues',
+        'grn-correction' => 'GRN Correction',
         'payroll' => 'Payroll',
         'expense-vouchers' => 'Expense Vouchers',
         'cheque-register' => 'Cheque Register',
@@ -21,6 +22,7 @@
         'payroll' => 'How salaries work, in Urdu',
         'expense-vouchers' => 'How vouchers work, in Urdu',
         'cheque-register' => 'How cheques are cleared, in Urdu',
+        'grn-correction' => 'How a posted GRN is corrected, in Urdu',
         default => 'How this register works, in Urdu',
     };
 @endphp
@@ -264,6 +266,50 @@
                                 <p>اوپر کے بٹن: <span class="en">Excel</span> فلٹر شدہ فہرست؛ ڈاؤن لوڈ سے <bdi class="lt" dir="ltr">A4 PDF</bdi> عام طور پر <span class="en">Portrait</span> یا <span class="en">Landscape</span>؛ پرنٹ کے بٹن سے براؤزر میں دونوں رخ۔</p>
                             </section>
                             <section data-topic="flow"><x-help-flow flow="goods-issues" /></section>
+                        @elseif ($page === 'grn-correction')
+                            <section data-topic="what">
+                                <h2>جی آر این کریکشن کیا ہے؟</h2>
+                                <p>پوسٹ شدہ <span class="en">GRN</span> کی کسی لائن میں <b>کنورژن فیکٹر</b> غلط لگ گیا ہو (مثلاً ایک کارٹن میں 12 کی جگہ 1 لکھا گیا)، تو اسے یہاں درست کیا جاتا ہے، چاہے کچھ مال ایشو یا سیل بھی ہو چکا ہو۔ پرانا ریکارڈ مٹایا نہیں جاتا: فرق کی الگ اینٹری بنتی ہے اور پرانے اور نئے اعداد، وجہ اور آپ کا نام محفوظ ہو جاتے ہیں۔</p>
+                            </section>
+                            <section data-topic="when">
+                                <h2>کب کریکشن، کب ریورس؟</h2>
+                                <table>
+                                    <tr><th>صورت</th><th>کیا کریں</th></tr>
+                                    <tr><td>کوئی مال ایشو نہیں ہوا</td><td><span class="en">Reverse GRN</span> کر کے دوبارہ درست بنائیں، یا کریکشن۔</td></tr>
+                                    <tr><td>مال ایشو یا سیل ہو چکا، صرف فیکٹر غلط</td><td><span class="en">GRN Correction</span>۔</td></tr>
+                                    <tr><td>غلط پروڈکٹ، بیچ ابھی استعمال نہیں ہوا</td><td>کریکشن میں پروڈکٹ بدل دیں۔</td></tr>
+                                    <tr><td>غلط پروڈکٹ، بیچ سے مال نکل چکا</td><td>کریکشن نہیں ہو سکتی؛ سٹاک ایڈجسٹمنٹ یا بیچ ٹرانسفر۔</td></tr>
+                                    <tr><td>انوائس کی رقم غلط</td><td>یہ کریکشن رقم نہیں بدلتی؛ <span class="en">GRN</span> ریورس کریں۔</td></tr>
+                                </table>
+                            </section>
+                            <section data-topic="how">
+                                <h2>کیسے کریں</h2>
+                                <ol>
+                                    <li>جس لائن کا فیکٹر غلط ہے اس میں <span class="en">New Factor</span> لکھیں۔ <span class="en">New Qty</span> اور <span class="en">New Unit Cost</span> خود بدل جاتے ہیں۔</li>
+                                    <li>ضرورت ہو تو پروڈکٹ بدلیں (صرف جب اس بیچ سے کچھ نہ نکلا ہو)۔</li>
+                                    <li>نیچے وجہ لکھیں (کم از کم 10 حروف) اور اپنا پاس ورڈ ڈالیں۔</li>
+                                    <li><span class="en">Post Correction</span> دبائیں۔ جن لائنوں میں کچھ نہیں بدلا وہ ویسی ہی رہتی ہیں۔</li>
+                                </ol>
+                            </section>
+                            <section data-topic="effect">
+                                <h2>پیچھے کیا ہوتا ہے</h2>
+                                <ul>
+                                    <li><b>رقم وہی:</b> لائن کی کل لاگت (انوائس) نہیں بدلتی؛ یونٹ لاگت = کل لاگت ÷ نئی مقدار۔ سپلائر کا کھاتہ نہیں بدلتا۔</li>
+                                    <li><b>مقدار کا فرق:</b> ایک الگ سٹاک اینٹری <span class="en">GRN</span> کی تاریخ پر بنتی ہے، تاکہ اس دن سے سٹاک درست دکھے۔</li>
+                                    <li><b>جو مال نکل چکا:</b> ایشو، سیل اور واپسی نئی لاگت پر آ جاتے ہیں، اور لاگت کا فرق آج کی تاریخ کے ایک جرنل <bdi dir="ltr" class="lt">MT-GRNC-…</bdi> میں جاتا ہے (<span class="en">Stock in Hand</span>، <span class="en">Van Stock</span>، <span class="en">COGS</span>)۔</li>
+                                    <li><b>ریکارڈ:</b> <span class="en">GRN</span> کے صفحے پر <span class="en">Corrections</span> میں ہر کریکشن کا نمبر، تاریخ، نام، وجہ اور پرانا/نیا فیکٹر نظر آتا ہے۔</li>
+                                </ul>
+                            </section>
+                            <section data-topic="limits">
+                                <h2>کب نہیں ہوتی</h2>
+                                <ul>
+                                    <li>نئی مقدار اس سے کم ہو جو پہلے ہی نکل چکی ہے۔</li>
+                                    <li>بیچ کا کچھ حصہ بیچ ٹرانسفر سے دوسری پروڈکٹ میں جا چکا ہو۔</li>
+                                    <li>لائن کی کل لاگت اور مقدار × یونٹ لاگت آپس میں نہ ملتے ہوں۔</li>
+                                    <li>صرف سپر ایڈمن کریکشن کر سکتا ہے۔</li>
+                                </ul>
+                            </section>
+                            <section data-topic="flow"><x-help-flow flow="grn-correction" /></section>
                         @else
                             <section data-topic="what">
                                 <h2>سپلائر لیجر رجسٹر کیا ہے؟</h2>

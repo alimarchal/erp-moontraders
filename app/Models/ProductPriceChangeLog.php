@@ -18,6 +18,8 @@ class ProductPriceChangeLog extends Model
         'impacted_batch_ids',
         'impacted_batch_count',
         'changed_at',
+        'source',
+        'source_reference',
     ];
 
     protected $casts = [

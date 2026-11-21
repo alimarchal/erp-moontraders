@@ -37,12 +37,14 @@ class ProductPriceChangeLogController extends Controller implements HasMiddlewar
     public const SOURCES = [
         'ticket' => 'Price ticket',
         'stock_adjustment' => 'Stock adjustment',
-        'product_edit' => 'Product edit / import',
+        'product_edit' => 'Product edit',
+        'import' => 'Excel import',
     ];
 
     /**
-     * A price log row is matched to the ticket or stock adjustment that wrote it when they were
-     * approved / posted within this many minutes of each other (the log has no source column).
+     * Rows logged since the source column was added carry their own source. Older rows are matched to
+     * the ticket or stock adjustment that wrote them when they were approved / posted within this many
+     * minutes of each other; anything else counts as a product edit.
      */
     private const SOURCE_WINDOW_MINUTES = 2;
 
@@ -168,12 +170,20 @@ class ProductPriceChangeLogController extends Controller implements HasMiddlewar
                 });
             }),
             AllowedFilter::callback('source', function (Builder $query, $value) {
-                match ($this->filterText($value)) {
-                    'stock_adjustment' => $query->where(fn (Builder $q) => $this->whereFromStockAdjustment($q)),
-                    'ticket' => $query->whereNot(fn (Builder $q) => $this->whereFromStockAdjustment($q))->whereExists($this->priceTicketQuery()),
-                    'product_edit' => $query->whereNot(fn (Builder $q) => $this->whereFromStockAdjustment($q))->whereNotExists($this->priceTicketQuery()),
-                    default => null,
-                };
+                $source = $this->filterText($value);
+
+                if (! array_key_exists($source, self::SOURCES)) {
+                    return;
+                }
+
+                $query->where(fn (Builder $q) => $q
+                    ->where('product_price_change_logs.source', $source)
+                    ->orWhere(fn (Builder $legacy) => $legacy->whereNull('product_price_change_logs.source')->where(fn (Builder $inferred) => match ($source) {
+                        'stock_adjustment' => $this->whereFromStockAdjustment($inferred),
+                        'ticket' => $inferred->whereNot(fn (Builder $x) => $this->whereFromStockAdjustment($x))->whereExists($this->priceTicketQuery()),
+                        'product_edit' => $inferred->whereNot(fn (Builder $x) => $this->whereFromStockAdjustment($x))->whereNotExists($this->priceTicketQuery()),
+                        default => $inferred->whereRaw('1 = 0'),
+                    })));
             }),
             AllowedFilter::callback('search', function (Builder $query, $value) {
                 $term = '%'.mb_strtolower(trim($this->filterText($value))).'%';

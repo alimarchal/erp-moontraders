@@ -116,7 +116,7 @@ test('product price change log renders the list with tabs and totals', function 
         ->assertSee('Cooking Oil 1L')
         ->assertSee('Selling Price')
         ->assertSee('Cost Price')
-        ->assertSee('Product edit / import');
+        ->assertSee('Product edit');
     expect($response->viewData('stats'))->toMatchArray([
         'total' => 2,
         'increases' => 1,
@@ -228,4 +228,19 @@ test('product price change log keeps the chosen rows per page', function () {
     expect($this->get(route('reports.product-price-change-log.index'))->viewData('logs')->perPage())->toBe(20)
         ->and($this->get(route('reports.product-price-change-log.index', ['per_page' => 50]))->viewData('logs')->count())->toBe(25)
         ->and($this->get(route('reports.product-price-change-log.index', ['per_page' => 7]))->viewData('logs')->perPage())->toBe(20);
+});
+
+test('product price change log uses the source recorded on the row before any timing guess', function () {
+    makeAdmin($this->user);
+    $imported = Product::factory()->create(['product_name' => 'Imported']);
+    $ticketed = Product::factory()->create(['product_name' => 'Recorded Ticket']);
+
+    priceLog($imported, ['changed_at' => now(), 'source' => 'import']);
+    priceLog($ticketed, ['changed_at' => now(), 'source' => 'ticket', 'source_reference' => 'TKT-000777']);
+
+    expect(listedProducts(['source' => 'import']))->toBe(['Imported'])
+        ->and(listedProducts(['source' => 'ticket']))->toBe(['Recorded Ticket'])
+        ->and(listedProducts(['source' => 'product_edit']))->toBe([]);
+
+    $this->get(route('reports.product-price-change-log.index'))->assertSee('TKT-000777')->assertSee('Excel import');
 });

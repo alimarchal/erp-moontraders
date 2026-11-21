@@ -98,3 +98,15 @@ it('logs each selected batch\'s own old selling price', function () {
         ->and($log->impacted_batch_ids)->toBe([$batch->id])
         ->and((float) $batch->fresh()->selling_price)->toBe(125.0);
 });
+
+it('records the ticket as the source of the price changes it approves', function () {
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'price_update', 'title' => 'src', 'items' => [['product_id' => $this->product->id, 'batch_scope' => 'all', 'cost_price' => '85']],
+    ])->assertSessionHasNoErrors();
+    $ticket = Ticket::firstOrFail();
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertSessionHasNoErrors();
+
+    $log = ProductPriceChangeLog::sole();
+
+    expect($log->source)->toBe('ticket')->and($log->source_reference)->toBe($ticket->ticket_number);
+});

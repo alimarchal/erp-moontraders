@@ -339,7 +339,7 @@ class TicketService
             $product->update([$field => $new]);
 
             if ($field !== 'reorder_level') {
-                $this->pricing->logChange($product, $field, $old, $new, $admin->id);
+                $this->pricing->logChange($product, $field, $old, $new, $admin->id, null, 'ticket', $item->ticket?->ticket_number);
             }
         }
     }
@@ -387,7 +387,7 @@ class TicketService
             $product->update(['unit_sell_price' => $new]);
             $batchIds = $this->pricing->cascadeSellingPrice($product, $new);
 
-            $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds);
+            $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds, 'ticket', $item->ticket?->ticket_number);
 
             return;
         }
@@ -406,7 +406,7 @@ class TicketService
 
         foreach ($batchesByOldPrice as $oldBatchPrice => $batches) {
             $batchIds = $this->pricing->cascadeSellingPrice($product, $new, $batches->pluck('id')->values());
-            $this->pricing->logChange($product, 'selling_price', $oldBatchPrice, $new, $admin->id, $batchIds);
+            $this->pricing->logChange($product, 'selling_price', $oldBatchPrice, $new, $admin->id, $batchIds, 'ticket', $item->ticket?->ticket_number);
         }
     }
 
@@ -596,7 +596,9 @@ class TicketService
                 (int) $line['stock_batch_id'],
                 $line['selling_price'],
                 $line['selling_scope'] ?? 'batch',
-                auth()->id()
+                auth()->id(),
+                'stock_adjustment',
+                $item->ticket?->ticket_number
             );
         }
 

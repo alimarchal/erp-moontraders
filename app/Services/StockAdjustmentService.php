@@ -85,7 +85,7 @@ class StockAdjustmentService
                 }
 
                 $this->guardAgainstRemovingMoreThanOnHand($adjustment, $item);
-                $this->applySellingCost($item);
+                $this->applySellingCost($item, $adjustment);
                 $revaluationValue += $this->processAdjustmentItem($adjustment, $item);
             }
 
@@ -120,7 +120,7 @@ class StockAdjustmentService
      * A line that carries a selling cost changes what the batch (or every batch of the product) is sold at.
      * Nothing is stocked or valued differently, so no ledger or journal row is written for it.
      */
-    protected function applySellingCost($item): void
+    protected function applySellingCost($item, ?StockAdjustment $adjustment = null): void
     {
         if ($item->selling_price === null) {
             return;
@@ -137,7 +137,9 @@ class StockAdjustmentService
             (int) $item->stock_batch_id,
             $item->selling_price,
             $item->selling_scope ?? 'batch',
-            auth()->id()
+            auth()->id(),
+            'stock_adjustment',
+            $adjustment?->adjustment_number
         );
     }
 

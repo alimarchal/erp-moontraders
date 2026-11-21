@@ -312,10 +312,12 @@
                                         $diff = (float) $log->new_price - (float) $log->old_price;
                                         $percent = (float) $log->old_price > 0 ? $diff / (float) $log->old_price * 100 : null;
                                         $isAdjustment = $log->price_type === 'selling_price' && ($log->adjustment_number || $log->adjustment_ticket_number);
+                                        $sourceTones = ['ticket' => 'pl-tag-blue', 'stock_adjustment' => 'pl-tag-amber', 'product_edit' => 'pl-tag-grey', 'import' => 'pl-tag-grey'];
                                         [$sourceLabel, $sourceRef, $sourceTone] = match (true) {
+                                            $log->source !== null => [$sourceOptions[$log->source] ?? $log->source, $log->source_reference, $sourceTones[$log->source] ?? 'pl-tag-grey'],
                                             $isAdjustment => ['Stock adjustment', $log->adjustment_number ?? $log->adjustment_ticket_number, 'pl-tag-amber'],
                                             (bool) $log->price_ticket_number => ['Price ticket', $log->price_ticket_number, 'pl-tag-blue'],
-                                            default => ['Product edit / import', null, 'pl-tag-grey'],
+                                            default => ['Product edit', null, 'pl-tag-grey'],
                                         };
                                         $batchCodes = $log->impacted_batch_codes ?? [];
                                     @endphp

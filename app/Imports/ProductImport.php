@@ -303,15 +303,15 @@ class ProductImport implements ToCollection, WithHeadingRow
 
         if (isset($changes['unit_sell_price'])) {
             $impacted = $pricing->cascadeSellingPrice($product, $product->unit_sell_price);
-            $pricing->logChange($product, 'selling_price', $oldPrices['selling_price'], $product->unit_sell_price, $this->userId, $impacted);
+            $pricing->logChange($product, 'selling_price', $oldPrices['selling_price'], $product->unit_sell_price, $this->userId, $impacted, 'import');
         }
 
         if (isset($changes['expiry_price'])) {
-            $pricing->logChange($product, 'expiry_price', $oldPrices['expiry_price'], $product->expiry_price, $this->userId);
+            $pricing->logChange($product, 'expiry_price', $oldPrices['expiry_price'], $product->expiry_price, $this->userId, null, 'import');
         }
 
         if (isset($changes['cost_price'])) {
-            $pricing->logChange($product, 'cost_price', $oldPrices['cost_price'], $product->cost_price, $this->userId);
+            $pricing->logChange($product, 'cost_price', $oldPrices['cost_price'], $product->cost_price, $this->userId, null, 'import');
         }
     }
 

@@ -6,16 +6,21 @@ use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\ProductPriceChangeLog;
 use App\Models\StockAdjustment;
+use App\Models\StockAdjustmentItem;
 use App\Models\StockBatch;
 use App\Models\Supplier;
 use App\Models\Uom;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\StockAdjustmentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class StockAdjustmentController extends Controller implements HasMiddleware
 {
@@ -30,36 +35,57 @@ class StockAdjustmentController extends Controller implements HasMiddleware
         ];
     }
 
-    /** Rows-per-page choices on the list. */
-    public const PER_PAGE = [25, 50, 100, 200, 'all'];
+    /** Rows-per-page choices on the list (as on Goods Issues). */
+    public const PER_PAGE = [20, 50, 100, 500];
 
-    private const SORTS = ['adjustment_date', 'adjustment_number', 'created_at'];
-
+    /**
+     * The list, in the Goods Issues layout: status tabs, a filter panel (search, dates, supplier, type,
+     * warehouse, product / SKU, batch, created and posted by), totals, rows per page and an A4 PDF.
+     */
     public function index(Request $request)
     {
-        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
-        $sort = (string) $request->input('sort', '-adjustment_date');
-        $sort = in_array(ltrim($sort, '-'), self::SORTS, true) ? $sort : '-adjustment_date';
-        $perPage = (string) $request->input('per_page', '25');
-        $perPage = in_array($perPage, array_map('strval', self::PER_PAGE), true) ? $perPage : '25';
         $userSupplierId = $this->getUserSupplierScope();
+        $perPage = (string) $request->input('per_page', '20');
+        $perPage = in_array($perPage, array_map('strval', self::PER_PAGE), true) ? $perPage : '20';
 
-        $scoped = fn () => StockAdjustment::query()
-            ->when($userSupplierId !== null, fn ($query) => $query->whereHas('items.product', fn ($product) => $product->where('supplier_id', $userSupplierId)))
-            ->when($filters['search'] ?? null, function ($query, $value) {
+        /** Adjustments this user may see: a supplier user only those holding its products. */
+        $visible = fn () => StockAdjustment::query()
+            ->when($userSupplierId !== null, fn ($query) => $query->whereHas('items.product', fn ($product) => $product->where('supplier_id', $userSupplierId)));
+
+        $allowedFilters = [
+            AllowedFilter::partial('adjustment_number'),
+            AllowedFilter::callback('search', function ($query, $value) {
                 $term = '%'.mb_strtolower(trim((string) $value)).'%';
-                $query->where(fn ($q) => $q->whereRaw('LOWER(adjustment_number) LIKE ?', [$term])->orWhereRaw('LOWER(reason) LIKE ?', [$term]));
-            })
-            ->when($filters['warehouse_id'] ?? null, fn ($query, $value) => $query->where('warehouse_id', $value))
-            ->when($filters['adjustment_type'] ?? null, fn ($query, $value) => $query->where('adjustment_type', $value))
-            ->when($filters['date_from'] ?? null, fn ($query, $value) => $query->whereDate('adjustment_date', '>=', $value))
-            ->when($filters['date_to'] ?? null, fn ($query, $value) => $query->whereDate('adjustment_date', '<=', $value));
+                $query->where(fn ($q) => $q
+                    ->whereRaw('LOWER(stock_adjustments.adjustment_number) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(stock_adjustments.reason) LIKE ?', [$term]));
+            }),
+            AllowedFilter::callback('status', function ($query, $value) {
+                if ($value !== 'all') {
+                    $query->where('stock_adjustments.status', $value);
+                }
+            }),
+            AllowedFilter::exact('adjustment_type'),
+            AllowedFilter::exact('warehouse_id'),
+            AllowedFilter::callback('supplier_id', fn ($query, $value) => $query->whereHas('items.product', fn ($product) => $product->where('supplier_id', $value))),
+            AllowedFilter::callback('product_id', fn ($query, $value) => $query->whereHas('items', fn ($item) => $item->where('product_id', $value))),
+            AllowedFilter::callback('product', function ($query, $value) {
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $query->whereHas('items.product', fn ($product) => $product->where(fn ($q) => $q
+                    ->whereRaw('LOWER(product_name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(product_code) LIKE ?', [$term])));
+            }),
+            AllowedFilter::callback('batch', function ($query, $value) {
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $query->whereHas('items.stockBatch', fn ($batch) => $batch->whereRaw('LOWER(batch_code) LIKE ?', [$term]));
+            }),
+            AllowedFilter::scope('date_from', 'adjustmentDateFrom'),
+            AllowedFilter::scope('date_to', 'adjustmentDateTo'),
+            AllowedFilter::exact('created_by'),
+            AllowedFilter::exact('posted_by'),
+        ];
 
-        $statusCounts = $scoped()->reorder()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
-
-        $query = $scoped()
-            ->when($filters['status'] ?? null, fn ($q, $value) => $q->where('status', $value))
-            ->with(['warehouse', 'createdBy', 'postedBy'])
+        $adjustments = QueryBuilder::for($visible()->with(['warehouse', 'createdBy', 'postedBy'])
             ->withCount('items')
             ->withSum('items', 'adjustment_quantity')
             ->withSum('items', 'adjustment_value')
@@ -67,19 +93,57 @@ class StockAdjustmentController extends Controller implements HasMiddleware
                 ->selectRaw('COALESCE(SUM(total_value), 0)')
                 ->whereColumn('stock_adjustment_id', 'stock_adjustments.id')
                 ->where('debit_qty', 0)->where('credit_qty', 0),
-            ])
-            ->orderBy(ltrim($sort, '-'), str_starts_with($sort, '-') ? 'desc' : 'asc')
-            ->orderByDesc('id');
+            ]))
+            ->allowedFilters($allowedFilters)
+            ->allowedSorts(['adjustment_date', 'adjustment_number', 'created_at'])
+            ->defaultSort('-adjustment_date', '-id');
 
-        $adjustments = $query->paginate($perPage === 'all' ? max(1, (int) $statusCounts->sum()) : (int) $perPage)->withQueryString();
+        // The filtered list as an A4 PDF, portrait unless landscape was asked for (like Goods Issues).
+        if ($request->query('format') === 'pdf') {
+            $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+            return Pdf::loadView('stock-adjustments.pdf', [
+                'adjustments' => $adjustments->getEloquentBuilder()->clone()->get(),
+                'dateFrom' => $request->input('filter.date_from'),
+                'dateTo' => $request->input('filter.date_to'),
+                'orientation' => $orientation,
+            ])->setPaper('a4', $orientation)->download('stock-adjustments-'.now()->format('Y-m-d').'.pdf');
+        }
+
+        // Row preview: the lines of each adjustment, their supplier and batch.
+        $adjustments->with(['items' => fn ($query) => $query->orderBy('id'), 'items.product:id,product_name,product_code,supplier_id', 'items.product.supplier:id,supplier_name', 'items.stockBatch:id,batch_code']);
+
+        $adjustments = $adjustments->paginate((int) $perPage)->withQueryString();
+
+        // Tab counts use every filter except status, so each tab shows what it would hold.
+        $statsRequest = new Request(['filter' => Arr::except((array) $request->input('filter', []), ['status'])]);
+        $statusCounts = QueryBuilder::for($visible(), $statsRequest)->allowedFilters($allowedFilters)->getEloquentBuilder()
+            ->reorder()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+
+        // Totals over every page of the filtered list: quantity change and value (lines plus cost revaluations).
+        $filteredIds = QueryBuilder::for($visible())->allowedFilters($allowedFilters)->getEloquentBuilder()->reorder()->select('stock_adjustments.id');
+        $totals = [
+            'quantity' => (float) StockAdjustmentItem::query()->whereIn('stock_adjustment_id', $filteredIds)->sum('adjustment_quantity'),
+            'value' => (float) StockAdjustmentItem::query()->whereIn('stock_adjustment_id', $filteredIds)->sum('adjustment_value')
+                + (float) InventoryLedgerEntry::query()->whereIn('stock_adjustment_id', $filteredIds)->where('debit_qty', 0)->where('credit_qty', 0)->sum('total_value'),
+        ];
+
+        $people = User::query()
+            ->where(fn ($query) => $query
+                ->whereIn('id', $visible()->select('created_by')->whereNotNull('created_by'))
+                ->orWhereIn('id', $visible()->select('posted_by')->whereNotNull('posted_by')))
+            ->orderBy('name')->get(['id', 'name']);
 
         return view('stock-adjustments.index', [
             'adjustments' => $adjustments,
-            'filters' => $filters,
-            'sort' => $sort,
             'perPage' => $perPage,
             'statusCounts' => $statusCounts,
+            'totals' => $totals,
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'suppliers' => Supplier::query()
+                ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
+                ->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'people' => $people,
         ]);
     }
 
@@ -168,7 +232,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
     public function show(StockAdjustment $stockAdjustment)
     {
         $this->authorizeAdjustmentAccess($stockAdjustment);
-        $stockAdjustment->load(['warehouse', 'items.product', 'items.stockBatch', 'items.uom', 'journalEntry', 'createdBy', 'postedBy']);
+        $stockAdjustment->load(['warehouse', 'items.product.supplier:id,supplier_name', 'items.stockBatch', 'items.uom', 'journalEntry', 'createdBy', 'postedBy']);
 
         // A posted line whose unit cost changed has a zero-quantity inventory ledger row carrying the
         // revaluation, so the cost the batch was carried at before is: new cost - revaluation / quantity.

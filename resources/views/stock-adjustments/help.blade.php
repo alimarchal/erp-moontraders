@@ -20,7 +20,9 @@
     </x-slot>
 
     @include('settings.partials.ui-style')
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Noto+Nastaliq+Urdu:wght@400..700&display=swap" rel="stylesheet">
     <style>
         .gh-wrap { display: flex; flex-direction: column; gap: 20px; }
         .gh-card p, .gh-card li { font-size: 14px; line-height: 1.55; color: var(--ak-text); }
@@ -34,19 +36,19 @@
         .gh-tip { margin-top: 10px; padding: 9px 12px; border-left: 3px solid var(--ak-green); background: var(--ak-green-bg); border-radius: 6px; font-size: 13px; }
         .gh-scroll { overflow-x: auto; }
         .gh-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--ak-slate-bg); padding: 1px 5px; border-radius: 4px; }
-        .gh-rtl { direction: rtl; text-align: right; font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; }
-        .gh-rtl .gh-card p, .gh-rtl .gh-card li { font-size: 17px; line-height: 2; }
-        .gh-rtl .gh-card ul, .gh-rtl .gh-card ol { padding-right: 26px; padding-left: 0; }
+        .gh-rtl { direction: rtl; text-align: right; font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', Tahoma, serif; }
+        .gh-rtl .gh-card p, .gh-rtl .gh-card li, .gh-card .gh-rtl p, .gh-card .gh-rtl li { font-size: 16px; line-height: 2.5; }
+        .gh-rtl .gh-card ul, .gh-rtl .gh-card ol, .gh-card .gh-rtl ul, .gh-card .gh-rtl ol { padding-right: 26px; padding-left: 0; }
         .gh-rtl .uf-card-title { font-size: 19px; font-weight: 700; }
-        .gh-rtl .gh-table { font-size: 15.5px; line-height: 1.9; }
+        .gh-rtl .gh-table { font-size: 15.5px; line-height: 2.3; }
         .gh-rtl .gh-table th, .gh-rtl .gh-table td { text-align: right; }
-        .gh-rtl .gh-note, .gh-rtl .gh-tip { border-left: 0; font-size: 16px; line-height: 1.9; }
+        .gh-rtl .gh-note, .gh-rtl .gh-tip { border-left: 0; font-size: 16px; line-height: 2.4; }
         .gh-rtl .gh-note { border-right: 3px solid var(--ak-amber); } .gh-rtl .gh-tip { border-right: 3px solid var(--ak-green); }
-        .gh-rtl .gh-code, .gh-rtl bdi { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+        .gh-rtl .gh-code, .gh-rtl bdi { direction: ltr; unicode-bidi: isolate; display: inline-block; font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif; }
         .sa-bihead { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
         .sa-cols { display: grid; grid-template-columns: 1fr; gap: 28px; }
         @media (min-width: 1100px) { .sa-cols { grid-template-columns: 1fr 1fr; gap: 0; } .sa-en { padding-right: 24px; border-right: 1px solid var(--ak-border); } .sa-ur-col { padding-left: 24px; } }
-        .sa-ur-title { font-family: 'Noto Naskh Arabic', 'Geeza Pro', serif; font-weight: 700; color: var(--ak-navy); margin-inline-start: 12px; font-size: 22px; }
+        .sa-ur-title { font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif; line-height: 2.2; font-weight: 700; color: var(--ak-navy); margin-inline-start: 12px; font-size: 22px; }
         .fc-box { fill: #fff; stroke: #172554; stroke-width: 1.4; } .fc-box-green { fill: #dcfce7; stroke: #15803d; stroke-width: 1.4; }
         .fc-box-amber { fill: #fef3c7; stroke: #b45309; stroke-width: 1.4; } .fc-box-red { fill: #fee2e2; stroke: #b91c1c; stroke-width: 1.4; }
         .fc-text { font-size: 12.5px; fill: #0f172a; font-family: ui-sans-serif, system-ui, sans-serif; } .fc-bold { font-weight: 700; }

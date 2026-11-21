@@ -83,7 +83,7 @@ class ProductPricingService
      * (which also sets the product's own selling price for new receipts), and log it.
      * Used by the stock adjustment posting, whichever screen the adjustment came from.
      */
-    public function applyBatchSellingCost(Product $product, int $stockBatchId, float|string $newPrice, string $scope, ?int $userId): void
+    public function applyBatchSellingCost(Product $product, int $stockBatchId, float|string $newPrice, string $scope, ?int $userId, ?string $source = null, ?string $sourceReference = null): void
     {
         $oldPrice = DB::table('stock_batches')->where('id', $stockBatchId)->value('selling_price');
 
@@ -95,13 +95,15 @@ class ProductPricingService
             $this->cascadeSellingPrice($product, $newPrice, $batchIds);
         }
 
-        $this->logChange($product, 'selling_price', $oldPrice, $newPrice, $userId, $batchIds);
+        $this->logChange($product, 'selling_price', $oldPrice, $newPrice, $userId, $batchIds, $source, $sourceReference);
     }
 
     /**
      * @param  Collection<int, int>|null  $impactedBatchIds
+     * @param  string|null  $source  one of ProductPriceChangeLog::SOURCES
+     * @param  string|null  $sourceReference  the ticket or adjustment number behind the change
      */
-    public function logChange(Product $product, string $priceType, mixed $oldPrice, mixed $newPrice, ?int $userId, ?Collection $impactedBatchIds = null): void
+    public function logChange(Product $product, string $priceType, mixed $oldPrice, mixed $newPrice, ?int $userId, ?Collection $impactedBatchIds = null, ?string $source = null, ?string $sourceReference = null): void
     {
         ProductPriceChangeLog::create([
             'product_id' => $product->id,
@@ -113,6 +115,8 @@ class ProductPricingService
             'impacted_batch_count' => $impactedBatchIds?->count() ?? 0,
             // Written by the application, not left to the database's own clock, so it always agrees with posted_at.
             'changed_at' => now(),
+            'source' => $source,
+            'source_reference' => $sourceReference,
         ]);
     }
 }

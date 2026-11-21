@@ -354,6 +354,7 @@ class ProductController extends Controller implements HasMiddleware
                     'new_price' => $newPrice,
                     'impacted_batch_ids' => $impactedBatchIds->all(),
                     'impacted_batch_count' => $impactedBatchIds->count(),
+                    'source' => 'product_edit',
                 ]);
             }
 
@@ -366,6 +367,7 @@ class ProductController extends Controller implements HasMiddleware
                     'new_price' => $product->expiry_price,
                     'impacted_batch_ids' => null,
                     'impacted_batch_count' => 0,
+                    'source' => 'product_edit',
                 ]);
             }
 
@@ -378,6 +380,7 @@ class ProductController extends Controller implements HasMiddleware
                     'new_price' => $product->cost_price,
                     'impacted_batch_ids' => null,
                     'impacted_batch_count' => 0,
+                    'source' => 'product_edit',
                 ]);
             }
 

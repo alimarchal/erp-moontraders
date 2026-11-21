@@ -1,4 +1,3 @@
-
 [mcp_servers.herd]
 command = "php"
 args = ["/Applications/Herd.app/Contents/Resources/herd-mcp.phar"]

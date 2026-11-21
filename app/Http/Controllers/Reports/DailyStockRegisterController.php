@@ -44,6 +44,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             ->where(function ($query) use ($date) {
                 $query->where('is_active', true)
                     ->orWhereIn('id', InventoryLedgerEntry::query()
+                        ->withoutRevertedSettlementPostings()
                         ->select('product_id')
                         ->whereDate('date', '<=', $date)
                         ->groupBy('product_id')
@@ -62,8 +63,12 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         $products = $productsQuery->orderBy('product_name')->get();
         $productIds = $products->pluck('id')->toArray();
 
+        // Every query below leaves out settlement postings a revert took back (and their reversals), so a
+        // settlement reverted and posted again counts its sales once.
+
         // 1. Warehouse Opening (Before Date)
         $whOpening = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereNotNull('warehouse_id')
             ->whereDate('date', '<', $date)
@@ -74,6 +79,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         // 2. Warehouse Purchase (On Date) - GRN
         // "Purchase" column strictly for GRN.
         $whPurchase = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereNotNull('warehouse_id')
             ->whereDate('date', $date)
@@ -84,6 +90,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 3. Warehouse Returns (Inflow from Van)
         $whReturns = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereNotNull('warehouse_id')
             ->whereDate('date', $date)
@@ -94,6 +101,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 3. Van Brought Forward (Before Date)
         $vanBf = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereNotNull('vehicle_id')
             ->whereDate('date', '<', $date)
@@ -103,6 +111,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 4. Van Issue (Transfer In from WH)
         $vanIssue = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', $date)
             ->where('transaction_type', 'transfer_in')
@@ -113,6 +122,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 5. Sales (Global)
         $sales = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', $date)
             ->where('transaction_type', 'sale')
@@ -122,6 +132,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 6. Returns (Global - usually Van to WH)
         $returns = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', $date)
             ->where('transaction_type', 'return')
@@ -131,6 +142,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
         // 7. Shortage (Global)
         $shortage = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', $date)
             ->where('transaction_type', 'shortage')
@@ -141,6 +153,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         // 7b. Stock Adjustments (On Date): count differences and cost revaluations posted that day.
         // They change the stock, so the day's closing In Hand includes them (as the end-of-day snapshot does).
         $adjustments = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', $date)
             ->where('transaction_type', 'adjustment')
@@ -153,6 +166,7 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         // A cost revaluation moves no quantity, so its ledger row carries the value it moved
         // the batch by in total_value; without it the register drifts from the stock value.
         $inHandValues = InventoryLedgerEntry::query()
+            ->withoutRevertedSettlementPostings()
             ->whereIn('product_id', $productIds)
             ->whereDate('date', '<=', $date)
             ->select('product_id', DB::raw("SUM(CASE

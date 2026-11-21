@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\UserTracking;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -202,6 +203,28 @@ class InventoryLedgerEntry extends Model
     public function scopeOutward($query)
     {
         return $query->where('credit_qty', '>', 0);
+    }
+
+    /**
+     * Leave out the stock postings of a sales settlement that a revert took back, together with that
+     * revert's reversal rows: every row of the settlement up to and including its latest reversal.
+     *
+     * Each revert nets the settlement's standing rows to zero, so the rows left out add up to nothing
+     * per product, location, batch and cost and no balance moves. What changes is the daily picture: a
+     * settlement reverted and posted again shows its sales once instead of twice, with no stray
+     * adjustment on the day of the revert.
+     */
+    public function scopeWithoutRevertedSettlementPostings(Builder $query): Builder
+    {
+        $table = $query->getModel()->getTable();
+
+        return $query->whereNot(fn ($reverted) => $reverted
+            ->whereNotNull("{$table}.sales_settlement_id")
+            ->whereExists(fn ($reversal) => $reversal
+                ->from('inventory_ledger_entries as reversal')
+                ->whereColumn('reversal.sales_settlement_id', "{$table}.sales_settlement_id")
+                ->where('reversal.transaction_type', self::TYPE_ADJUSTMENT)
+                ->whereColumn('reversal.id', '>=', "{$table}.id")));
     }
 
     // ==================== STATIC HELPER METHODS ====================

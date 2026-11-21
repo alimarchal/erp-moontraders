@@ -17,8 +17,10 @@ use App\Models\Ticket;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\TicketService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -231,33 +233,65 @@ it('needs the post permission and the admin password to approve, and changes not
         ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('quantity_on_hand'))->toBe(100.0);
 });
 
-it('re-reads live stock on approval and rolls everything back when the adjustment cannot be posted', function () {
+it('refuses to approve a count taken against stock that has since moved, and posts once the ticket is recounted', function () {
     $stock = adjustableStock($this);
     $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'x'] + adjustmentPayload($this, $stock, 90));
     $ticket = Ticket::firstOrFail();
 
-    // Someone sold 20 meanwhile: the system now holds 80, so counting 90 would be an increase of 10, not a loss.
+    // Someone sold 20 meanwhile: the count of 90 was taken against 100, so it no longer says what the batch holds.
     CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['quantity_on_hand' => 80, 'total_value' => 4000]);
     StockValuationLayer::where('stock_batch_id', $stock['batch']->id)->update(['quantity_remaining' => 80, 'value_remaining' => 4000]);
 
-    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertRedirect();
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'password'])
+        ->assertSessionHasErrors(['ticket' => "Batch {$stock['batch']->batch_code} was counted against 100 but the system now holds 80. Edit the ticket to recount it before approving."]);
 
-    $adjustment = StockAdjustment::with('items')->firstOrFail();
-    expect((float) $adjustment->items->first()->system_quantity)->toBe(80.0)
-        ->and((float) $adjustment->items->first()->adjustment_quantity)->toBe(10.0)
-        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('quantity_on_hand'))->toBe(90.0);
+    expect($ticket->fresh()->status)->toBe(TicketStatus::Pending)
+        ->and(StockAdjustment::count())->toBe(0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('quantity_on_hand'))->toBe(80.0);
 
-    // A second ticket that can no longer be posted (stock is gone) stays pending and leaves no draft behind.
+    // Editing re-reads the system quantity, so the recount of 75 is now a loss of 5 and posts.
+    $this->actingAs($this->companyUser)->put(route('tickets.update', $ticket), ['type' => 'stock_adjustment', 'title' => 'x'] + adjustmentPayload($this, $stock, 75))->assertSessionHasNoErrors();
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertSessionHasNoErrors();
+
+    $posted = StockAdjustment::with('items')->firstOrFail()->items->first();
+    $line = $ticket->fresh()->items->first()->payload['items'][0];
+
+    expect((float) $posted->system_quantity)->toBe(80.0)
+        ->and((float) $posted->adjustment_quantity)->toBe(-5.0)
+        ->and((float) $line['system_quantity'])->toBe(80.0)
+        ->and((float) $line['adjustment_quantity'])->toBe(-5.0)
+        ->and((float) $line['adjustment_value'])->toBe((float) $posted->adjustment_value)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('quantity_on_hand'))->toBe(75.0);
+});
+
+it('rejects a stock adjustment ticket for a batch that is already on another waiting ticket', function () {
+    $stock = adjustableStock($this);
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'first'] + adjustmentPayload($this, $stock, 90))->assertSessionHasNoErrors();
+    $first = Ticket::firstOrFail();
+
+    $this->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'second'] + adjustmentPayload($this, $stock, 119))
+        ->assertSessionHasErrors(['items.0.stock_batch_id' => "Batch {$stock['batch']->batch_code} is already on ticket #{$first->id}, which is waiting for approval. Edit that ticket instead."]);
+
+    // The waiting ticket itself can still be edited.
+    $this->put(route('tickets.update', $first), ['type' => 'stock_adjustment', 'title' => 'first'] + adjustmentPayload($this, $stock, 95))->assertSessionHasNoErrors();
+
+    expect(Ticket::count())->toBe(1);
+
+    // Once it is decided, the batch can be counted again.
+    $this->actingAs($this->admin)->post(route('tickets.approve', $first), ['password' => 'password'])->assertSessionHasNoErrors();
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'third'] + adjustmentPayload($this, $stock, 90))->assertSessionHasNoErrors();
+});
+
+it('leaves a ticket pending with no draft behind when its batch has run out', function () {
     $gone = adjustableStock($this);
     $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'gone'] + adjustmentPayload($this, $gone, 0));
     $goneTicket = Ticket::firstWhere('title', 'gone');
     CurrentStockByBatch::where('stock_batch_id', $gone['batch']->id)->update(['quantity_on_hand' => 0, 'total_value' => 0]);
 
-    $adjustmentsBefore = StockAdjustment::count();
     $this->actingAs($this->admin)->post(route('tickets.approve', $goneTicket), ['password' => 'password'])->assertSessionHasErrors('ticket');
 
     expect($goneTicket->fresh()->status)->toBe(TicketStatus::Pending)
-        ->and(StockAdjustment::count())->toBe($adjustmentsBefore);
+        ->and(StockAdjustment::count())->toBe(0);
 });
 
 it('shows the password step and links the posted adjustment on the ticket page', function () {
@@ -403,4 +437,38 @@ it('shows the selling cost and unit cost on the posted stock adjustment page', f
 
     $this->actingAs($this->admin)->get(route('stock-adjustments.show', StockAdjustment::first()))
         ->assertOk()->assertSee('Selling cost')->assertSee('Unit cost')->assertSee('80.00')->assertSee('95.00');
+});
+
+it('never sets back a selling cost that changed after a quantity-only ticket was raised', function () {
+    $stock = adjustableStock($this);
+    $stock['batch']->update(['selling_price' => 80]);
+    CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['selling_price' => 80]);
+
+    // The form pre-fills the batch's current selling cost on every line.
+    $payload = ['type' => 'stock_adjustment', 'title' => 'count'] + adjustmentPayload($this, $stock, 90);
+    $payload['items'][0]['selling_price'] = 80;
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)->assertSessionHasNoErrors();
+
+    // The batch's price is raised to 95 before the count is approved.
+    $stock['batch']->update(['selling_price' => 95]);
+    CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['selling_price' => 95]);
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstOrFail()), ['password' => 'password'])->assertSessionHasNoErrors();
+
+    expect((float) $stock['batch']->fresh()->selling_price)->toBe(95.0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('selling_price'))->toBe(95.0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('quantity_on_hand'))->toBe(90.0);
+});
+
+it('refuses to edit or delete a ticket that was approved in the meantime', function () {
+    $stock = adjustableStock($this);
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'x'] + adjustmentPayload($this, $stock, 90));
+    $stale = Ticket::firstOrFail();
+    app(TicketService::class)->approve($stale, $this->admin);
+
+    $service = app(TicketService::class);
+    expect(fn () => $service->update($stale, $this->companyUser, ['title' => 'y'] + adjustmentPayload($this, $stock, 80)))->toThrow(ValidationException::class)
+        ->and(fn () => $service->delete($stale))->toThrow(ValidationException::class)
+        ->and($stale->fresh()->title)->toBe('x')
+        ->and($stale->fresh()->items->first()->payload['items'][0]['actual_quantity'])->toEqual(90);
 });

@@ -77,6 +77,9 @@ class TicketService
     public function update(Ticket $ticket, User $user, array $data): Ticket
     {
         return DB::transaction(function () use ($ticket, $user, $data) {
+            $ticket = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            $this->guardPending($ticket);
+
             $ticket->update([
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
@@ -89,6 +92,21 @@ class TicketService
             $this->record($ticket, $user, 'updated', TicketStatus::Pending, TicketStatus::Pending);
 
             return $ticket;
+        });
+    }
+
+    /**
+     * Delete a waiting ticket. Locked and re-checked, so an approval that commits first keeps its trail.
+     *
+     * @throws ValidationException when the ticket is no longer pending
+     */
+    public function delete(Ticket $ticket): void
+    {
+        DB::transaction(function () use ($ticket) {
+            $ticket = Ticket::query()->lockForUpdate()->findOrFail($ticket->id);
+            $this->guardPending($ticket);
+
+            $ticket->delete();
         });
     }
 
@@ -449,6 +467,24 @@ class TicketService
     }
 
     /**
+     * The waiting stock adjustment ticket that already counts this batch, if any. Two waiting
+     * counts of one batch cannot both be right, and approving the older one last would undo the newer.
+     */
+    public static function pendingTicketForBatch(int $stockBatchId, ?int $ignoreTicketId = null): ?int
+    {
+        return Ticket::query()
+            ->where('type', TicketType::StockAdjustment)
+            ->where('status', TicketStatus::Pending)
+            ->when($ignoreTicketId, fn ($query) => $query->whereKeyNot($ignoreTicketId))
+            ->with('items')
+            ->orderBy('id')
+            ->get()
+            ->first(fn (Ticket $ticket) => $ticket->items->contains(
+                fn (TicketItem $item) => collect($item->payload['items'] ?? [])->contains(fn (array $line) => (int) $line['stock_batch_id'] === $stockBatchId)
+            ))?->id;
+    }
+
+    /**
      * Whether a line's selling cost differs from the batch's current selling price (blank = leave unchanged).
      */
     public static function sellingPriceChanged(int $stockBatchId, mixed $sellingPrice): bool
@@ -496,7 +532,13 @@ class TicketService
         $payload = $item->payload;
         $service = app(StockAdjustmentService::class);
 
-        $allLines = $this->adjustmentLines((int) $payload['warehouse_id'], $payload['items']);
+        $this->guardCountStillCurrent((int) $payload['warehouse_id'], $payload['items']);
+
+        // A selling cost is applied only where the ticket asked for a change when it was raised. The form
+        // pre-fills every line with the price of that moment, so comparing that figure with a price changed
+        // since would otherwise set the batch back to the old price.
+        $allLines = $this->adjustmentLines((int) $payload['warehouse_id'], $payload['items'])
+            ->map(fn (array $line, int $index) => ['selling_changed' => $line['selling_changed'] && ($payload['items'][$index]['selling_changed'] ?? false)] + $line);
 
         // Selling cost changes go to the batch, its current-stock rows and live GRN lines, with a price log.
         foreach ($allLines->where('selling_changed', true) as $line) {
@@ -537,9 +579,49 @@ class TicketService
             throw ValidationException::withMessages(['ticket' => $posted['message']]);
         }
 
-        $item->update(['payload' => $payload + ['stock_adjustment_id' => $adjustment->id, 'stock_adjustment_number' => $adjustment->adjustment_number]]);
+        // The ticket keeps the figures that were posted, so its page always agrees with the adjustment.
+        $item->update(['payload' => ['items' => $allLines->all(), 'stock_adjustment_id' => $adjustment->id, 'stock_adjustment_number' => $adjustment->adjustment_number] + $payload]);
 
         return $adjustment->adjustment_number;
+    }
+
+    /**
+     * A count only says what a batch holds against the stock it was counted against. If the batch
+     * has moved since (a sale, a receipt, another adjustment), posting "counted − now" would post a
+     * difference nobody saw, so the ticket has to be recounted first. The batch rows stay locked
+     * until the approval commits, so nothing moves them in between.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     *
+     * @throws ValidationException when any line's batch no longer holds what it was counted against
+     */
+    private function guardCountStillCurrent(int $warehouseId, array $lines): void
+    {
+        $moved = collect($lines)->map(function (array $line) use ($warehouseId) {
+            $onHand = (float) DB::table('current_stock_by_batch')
+                ->where('stock_batch_id', $line['stock_batch_id'])->where('warehouse_id', $warehouseId)
+                ->lockForUpdate()->get(['quantity_on_hand'])->sum('quantity_on_hand');
+
+            if (abs($onHand - (float) $line['system_quantity']) < 0.0005) {
+                return null;
+            }
+
+            return sprintf(
+                'Batch %s was counted against %s but the system now holds %s.',
+                DB::table('stock_batches')->where('id', $line['stock_batch_id'])->value('batch_code'),
+                self::quantityLabel((float) $line['system_quantity']),
+                self::quantityLabel($onHand)
+            );
+        })->filter();
+
+        if ($moved->isNotEmpty()) {
+            throw ValidationException::withMessages(['ticket' => $moved->implode(' ').' Edit the ticket to recount '.($moved->count() > 1 ? 'them' : 'it').' before approving.']);
+        }
+    }
+
+    private static function quantityLabel(float $quantity): string
+    {
+        return rtrim(rtrim(number_format($quantity, 3, '.', ''), '0'), '.');
     }
 
     private function applyNewSku(TicketItem $item): void

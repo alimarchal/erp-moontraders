@@ -190,7 +190,7 @@ class TicketController extends Controller implements HasMiddleware
         $this->authorizeEditable($request, $ticket);
 
         $number = $ticket->ticket_number;
-        $ticket->delete();
+        $this->tickets->delete($ticket);
 
         return redirect()->route('tickets.index')->with('success', "Ticket {$number} deleted.");
     }

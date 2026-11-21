@@ -311,6 +311,7 @@ class TicketRequest extends FormRequest
     private function validateAdjustmentRows(Validator $validator): void
     {
         $warehouseId = (int) $this->input('warehouse_id');
+        $ticket = $this->route('ticket') instanceof Ticket ? $this->route('ticket') : null;
         $seen = [];
 
         foreach ($this->input('items', []) as $index => $row) {
@@ -326,6 +327,12 @@ class TicketRequest extends FormRequest
                 $validator->errors()->add("items.$index.stock_batch_id", 'The same batch is listed twice.');
             }
             $seen[$batch->id] = true;
+
+            if ($otherTicketId = TicketService::pendingTicketForBatch($batch->id, $ticket?->id)) {
+                $validator->errors()->add("items.$index.stock_batch_id", "Batch {$batch->batch_code} is already on ticket #{$otherTicketId}, which is waiting for approval. Edit that ticket instead.");
+
+                continue;
+            }
 
             $onHand = (float) DB::table('current_stock_by_batch')->where('stock_batch_id', $batch->id)->where('warehouse_id', $warehouseId)->sum('quantity_on_hand');
 

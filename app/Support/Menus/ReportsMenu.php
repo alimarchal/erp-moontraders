@@ -76,6 +76,7 @@ class ReportsMenu extends Menu
                     ['label' => 'Custom settlement', 'description' => 'Custom settlement entries', 'url' => route('reports.custom-settlement.index'), 'permission' => 'report-audit-custom-settlement'],
                     ['label' => 'Claim register', 'description' => 'Claims and recovery', 'url' => route('reports.claim-register.index'), 'permission' => 'report-audit-claim-register'],
                     ['label' => 'Investment summary', 'description' => 'Daily investment position', 'url' => route('reports.investment-summary.index'), 'permission' => 'report-audit-investment-summary'],
+                    ['label' => 'Daily business summary', 'description' => 'Sales, cash, credit, discounts and TTS for a day', 'url' => route('reports.daily-business-summary.index'), 'permission' => 'report-audit-daily-business-summary', 'keywords' => 'management daily summary'],
                     ['label' => 'SKU & pricing', 'description' => 'Product codes and price list', 'url' => route('reports.sku-rates.index'), 'permission' => 'report-sales-sku-rates', 'keywords' => 'rates'],
                     ['label' => 'Product price change log', 'description' => 'Price changes and affected batches', 'url' => route('reports.product-price-change-log.index'), 'permission' => 'report-audit-product-price-change-log', 'keywords' => 'audit'],
                 ],

@@ -50,7 +50,7 @@ class PermissionCatalog
         ],
         'Receivables & Core Reports' => [
             'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-sales-credit-sales',
-            'report-audit-cash-detail', 'report-audit-cash-detail-all-companies', 'report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies', 'report-audit-investment-summary', 'report-audit-claim-register',
+            'report-audit-cash-detail', 'report-audit-cash-detail-all-companies', 'report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies', 'report-audit-investment-summary', 'report-audit-daily-business-summary', 'report-audit-daily-business-summary-all-companies', 'report-audit-claim-register',
             'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-cheque-register-all-companies', 'report-audit-amr-dispose-register',
         ],
         'Audit & Product Reports' => [
@@ -159,6 +159,8 @@ class PermissionCatalog
         'report-audit-cash-collection-distributor' => 'Cash Collection Distributor',
         'report-audit-cash-collection-distributor-all-companies' => 'Cash Collection Distributor - All Companies',
         'report-audit-investment-summary' => 'Investment Summary',
+        'report-audit-daily-business-summary' => 'Daily Business Summary',
+        'report-audit-daily-business-summary-all-companies' => 'Daily Business Summary - All Companies',
         'report-audit-company-target-summary' => 'Company Target Summary',
         'report-audit-advance-tax-customer-summary' => 'Advance Tax Customer Summary',
         'report-audit-claim-register' => 'Claim Register',

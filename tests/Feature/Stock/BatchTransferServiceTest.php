@@ -14,9 +14,9 @@ use App\Services\BatchTransferService;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Daily snapshots and the inventory ledger are rebuilt from the per-product ledgers, so a batch
- * moved to another product must take its ledger rows with it — otherwise the stock keeps being
- * reported under the old product while current stock shows it under the new one.
+ * Daily snapshots and the inventory ledger are rebuilt from the per-product ledgers, so stock moved to
+ * another product must leave the old product's ledger and arrive on the new one's, without rewriting
+ * the product of anything already posted.
  */
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -137,28 +137,48 @@ function currentStockQuantity(int $productId): float
     return (float) CurrentStockByBatch::where('product_id', $productId)->sum('quantity_on_hand');
 }
 
-it('moves the whole ledger of a fully transferred batch to the new product', function () {
+it('moves a whole batch as of today without changing the product on what was already posted', function () {
     $result = app(BatchTransferService::class)->transfer($this->batch->id, $this->newProduct->id, 60, 'Received under the wrong product');
+
+    $newBatch = StockBatch::where('batch_code', $this->batch->batch_code.'-PT1')->sole();
 
     expect($result['success'])->toBeTrue()
-        ->and(warehouseLedgerQuantity($this->newProduct->id))->toBe(currentStockQuantity($this->newProduct->id))
-        ->and(warehouseLedgerQuantity($this->newProduct->id))->toBe(60.0)
+        ->and($result['data']['type'])->toBe('full')
+        ->and($result['data']['new_batch_code'])->toBe($newBatch->batch_code)
+        ->and($newBatch->product_id)->toBe($this->newProduct->id)
+        ->and((float) $newBatch->unit_cost)->toBe(100.0)
+        ->and($this->batch->fresh()->product_id)->toBe($this->oldProduct->id)
+        ->and(StockMovement::where('stock_batch_id', $this->batch->id)->whereIn('movement_type', ['grn', 'transfer', 'sale'])->pluck('product_id')->unique()->all())->toBe([$this->oldProduct->id])
         ->and(warehouseLedgerQuantity($this->oldProduct->id))->toBe(0.0)
-        ->and(DB::table('stock_ledger_entries')->where('product_id', $this->oldProduct->id)->exists())->toBeFalse()
-        ->and(DB::table('inventory_ledger_entries')->where('product_id', $this->oldProduct->id)->exists())->toBeFalse()
-        ->and((float) DB::table('stock_ledger_entries')->where('product_id', $this->newProduct->id)->orderByDesc('id')->value('quantity_balance'))->toBe(60.0)
-        ->and((float) DB::table('inventory_ledger_entries')->where('product_id', $this->newProduct->id)->orderByDesc('id')->value('running_balance'))->toBe(60.0);
+        ->and(warehouseLedgerQuantity($this->oldProduct->id))->toBe(currentStockQuantity($this->oldProduct->id))
+        ->and(warehouseLedgerQuantity($this->newProduct->id))->toBe(60.0)
+        ->and(warehouseLedgerQuantity($this->newProduct->id))->toBe(currentStockQuantity($this->newProduct->id))
+        ->and(StockMovement::where('stock_batch_id', $newBatch->id)->sole()->movement_date->toDateString())->toBe(now()->toDateString());
 });
 
-it('refuses a full transfer while part of the batch is still on a van', function () {
-    batchMovement('transfer', -10, '2026-05-03', $this->vehicle->id);
+it('moves a whole batch while part of it is still on a van, leaving the van stock on the old product', function () {
+    $issue = batchMovement('transfer', -10, '2026-05-03', $this->vehicle->id);
+    DB::table('current_stock_by_batch')->where('stock_batch_id', $this->batch->id)->update(['quantity_on_hand' => 50]);
+    StockValuationLayer::where('stock_batch_id', $this->batch->id)->update(['quantity_remaining' => 50]);
 
-    $result = app(BatchTransferService::class)->transfer($this->batch->id, $this->newProduct->id, 60, 'Received under the wrong product');
+    $result = app(BatchTransferService::class)->transfer($this->batch->id, $this->newProduct->id, 50, 'Received under the wrong product');
 
-    expect($result['success'])->toBeFalse()
-        ->and($result['message'])->toContain('van')
-        ->and($this->batch->fresh()->product_id)->toBe($this->oldProduct->id)
-        ->and(StockMovement::where('product_id', $this->newProduct->id)->exists())->toBeFalse();
+    expect($result['success'])->toBeTrue()
+        ->and($issue->fresh()->product_id)->toBe($this->oldProduct->id)
+        ->and(currentStockQuantity($this->newProduct->id))->toBe(50.0)
+        ->and(currentStockQuantity($this->oldProduct->id))->toBe(0.0);
+});
+
+it('names each batch transferred out of the same batch with its own number', function () {
+    $service = app(BatchTransferService::class);
+
+    $service->transfer($this->batch->id, $this->newProduct->id, 10, 'First part');
+    $service->transfer($this->batch->id, $this->newProduct->id, 10, 'Second part');
+    $firstMoved = StockBatch::where('batch_code', $this->batch->batch_code.'-PT1')->sole();
+    $service->transfer($firstMoved->id, $this->oldProduct->id, 10, 'First part back');
+
+    expect(StockBatch::where('batch_code', 'like', $this->batch->batch_code.'-PT%')->orderBy('id')->pluck('batch_code')->all())
+        ->toBe([$this->batch->batch_code.'-PT1', $this->batch->batch_code.'-PT2', $this->batch->batch_code.'-PT3']);
 });
 
 it('records a partial transfer as stock leaving the old product and arriving on the new one', function () {

@@ -109,8 +109,9 @@
                         <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-900 mb-6">
                             <p class="font-semibold mb-1">What does Batch Transfer do?</p>
                             <ul class="list-disc list-inside space-y-1 text-purple-800">
-                                <li><strong>Full transfer</strong> &mdash; moves entire remaining quantity to another product. Updates stock_batches, stock_valuation_layers, current_stock_by_batch, current_stock, stock_movements, both stock ledgers and draft GI items automatically. Not allowed while part of the batch is still on a van &mdash; settle those goods issues first.</li>
-                                <li><strong>Partial transfer</strong> &mdash; moves a specific quantity. A new cloned batch is created for the target product and today's ledger shows the quantity leaving the source product and arriving on the target. Draft GI items are NOT auto-updated.</li>
+                                <li>The quantity (all of it, or part) <strong>leaves the source product and arrives on the target as of today</strong>: a new batch is created for the target at the same cost, expiry and supplier.</li>
+                                <li>Nothing already posted changes: the GRN, goods issues and settlements keep their product, so past reports stay the same. Stock still on a van stays with the source product.</li>
+                                <li>Draft goods issues are not changed; check any that were meant for this stock.</li>
                                 <li>All changes run in a single DB transaction.</li>
                             </ul>
                         </div>
@@ -216,8 +217,8 @@
                                             <template x-if="selectedBatch && quantity > 0">
                                                 <p class="text-xs mt-1.5 font-semibold"
                                                     :class="isFullTransfer ? 'text-blue-700' : 'text-amber-700'">
-                                                    <span x-show="isFullTransfer">&#x2713; Full Transfer &mdash; batch reassigned in-place. Draft GI items will be auto-updated.</span>
-                                                    <span x-show="!isFullTransfer">&#x26A0; Partial Transfer &mdash; new cloned batch created for target product.</span>
+                                                    <span x-show="isFullTransfer">&#x2713; Whole batch &mdash; all of it moves to a new batch of the target product.</span>
+                                                    <span x-show="!isFullTransfer">Part of the batch &mdash; this quantity moves to a new batch of the target product.</span>
                                                 </p>
                                             </template>
                                         </div>
@@ -237,8 +238,7 @@
                                         <input type="checkbox" id="confirm_transfer" x-model="confirmed"
                                             class="mt-0.5 rounded border-gray-300 text-red-600 focus:ring-red-500">
                                         <label for="confirm_transfer" class="text-sm text-red-800">
-                                            I understand this will permanently update stock_batches, stock_valuation_layers, current_stock_by_batch, current_stock
-                                            (and draft GI items for full transfers). This action cannot be undone automatically.
+                                            I understand this moves the stock to the target product as of today. To undo it, transfer it back.
                                         </label>
                                     </div>
 

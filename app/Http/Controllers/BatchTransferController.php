@@ -92,9 +92,6 @@ class BatchTransferController extends Controller implements HasMiddleware
         $data = $result['data'];
         $type = $data['type'] === 'full' ? 'Full batch transfer' : 'Partial transfer';
         $qty = number_format($data['quantity_transferred'], 2);
-        $giNote = $data['draft_gi_items_updated'] > 0
-            ? " ({$data['draft_gi_items_updated']} draft GI item(s) updated)"
-            : '';
 
         $warehouseId = (int) $request->input('warehouse_id');
         $targetProductId = (int) $request->input('target_product_id');
@@ -104,6 +101,6 @@ class BatchTransferController extends Controller implements HasMiddleware
                 'product_id' => $targetProductId,
                 'warehouse_id' => $warehouseId,
             ])
-            ->with('success', "{$type} of {$qty} units completed successfully.{$giNote}");
+            ->with('success', "{$type} of {$qty} units completed: {$data['source_batch_code']} → new batch {$data['new_batch_code']}.");
     }
 }

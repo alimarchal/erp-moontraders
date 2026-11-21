@@ -80,3 +80,11 @@ it('lays the list out like Goods Issues with the shared header, row numbers and 
 
     expect($response->viewData('itemsTotal'))->toBe(2);
 });
+
+it('opens the Urdu help in a window on the list, like Goods Issues', function () {
+    $this->actingAs($this->admin)->get(route('tickets.index'))
+        ->assertOk()
+        ->assertSee('Help: Tickets')
+        ->assertSee("\$dispatch('rg-help'", false)
+        ->assertSee('data-topic="adjustment"', false);
+});

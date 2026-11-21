@@ -12,6 +12,7 @@
     $filters = array_filter((array) request('filter', []), fn ($v) => $v !== null && $v !== '');
     $sort = (string) request('sort', '-created_at');
     $tab = ($filters['status'] ?? '') === 'all' ? '' : ($filters['status'] ?? '');
+    $helpTopic = 'status';
     $today = now()->toDateString();
     $dateFrom = $filters['date_from'] ?? '';
     $dateTo = $filters['date_to'] ?? '';
@@ -72,10 +73,10 @@
         <x-page-header title="Tickets" :createRoute="route('tickets.create')" createLabel="New ticket"
             createPermission="ticket-create" :showSearch="true" :showRefresh="true" backRoute="dashboard">
             <x-slot name="afterFilter">
-                {{-- The Urdu user manual opens in its own tab, printable --}}
-                <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="{{ $headerButton }}" aria-label="Help in Urdu" title="User manual, in Urdu">
+                {{-- Help sits next to Filters and opens on the tab being looked at, like Goods Issues --}}
+                <button type="button" class="{{ $headerButton }}" x-data @click="$dispatch('rg-help', { topic: @js($helpTopic) })" aria-haspopup="dialog" aria-label="Help in Urdu" title="How tickets work, in Urdu">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
-                </a>
+                </button>
             </x-slot>
             <x-slot name="actions">
                 @can('report-audit-product-price-change-log')
@@ -87,6 +88,8 @@
             </x-slot>
         </x-page-header>
     </x-slot>
+
+    <x-register-help page="tickets" />
 
     @include('settings.partials.ui-style')
     @include('tickets.partials.style')

@@ -8,10 +8,11 @@
 
 @php
     $isClaims = $page === 'claims';
-    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers', 'grn-correction'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
+    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers', 'grn-correction', 'tickets'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
     $helpTitle = match ($page) {
         'claims' => 'Claim Register',
         'goods-issues' => 'Goods Issues',
+        'tickets' => 'Tickets',
         'grn-correction' => 'GRN Correction',
         'payroll' => 'Payroll',
         'expense-vouchers' => 'Expense Vouchers',
@@ -23,6 +24,7 @@
         'expense-vouchers' => 'How vouchers work, in Urdu',
         'cheque-register' => 'How cheques are cleared, in Urdu',
         'grn-correction' => 'How a posted GRN is corrected, in Urdu',
+        'tickets' => 'How tickets work, in Urdu',
         default => 'How this register works, in Urdu',
     };
 @endphp
@@ -146,6 +148,8 @@
                             @include('expense-vouchers.partials.help-topics')
                         @elseif ($page === 'cheque-register')
                             @include('reports.cheque-register.partials.help-topics')
+                        @elseif ($page === 'tickets')
+                            @include('tickets.partials.help-topics')
                         @elseif ($page === 'goods-issues')
                             <section data-topic="what">
                                 <h2>گڈز ایشو کیا ہے؟</h2>

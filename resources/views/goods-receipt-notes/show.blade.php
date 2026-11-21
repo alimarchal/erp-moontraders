@@ -101,7 +101,7 @@
                             onclick="confirmReverseGrn()">Reverse GRN</button>
                     @endcan
                     @role('super-admin')
-                        <a href="{{ route('goods-receipt-notes.edit-special', $grn->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">Special Edit</a>
+                        <a href="{{ route('goods-receipt-notes.edit-special', $grn->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">GRN Correction</a>
                     @endrole
                 @endif
             </div>
@@ -339,6 +339,62 @@
                 <p style="margin:0; padding:12px 18px; border-top:1px solid var(--ak-line); font-size:13.5px"><b>Notes:</b> {{ $grn->notes }}</p>
             @endif
         </section>
+
+        @if ($grn->corrections->isNotEmpty())
+            <section class="uf-card" style="padding:0; overflow:hidden" aria-labelledby="gr-corrections">
+                <header class="uf-card-head" style="padding:14px 18px 10px">
+                    <div>
+                        <h2 class="uf-card-title" id="gr-corrections">Corrections</h2>
+                        <p class="uf-card-sub" style="margin-left:0">Posted after the GRN. Quantity differences are dated on the receipt date.</p>
+                    </div>
+                </header>
+                <div class="ak-dt-scroll" style="max-height:none">
+                    <table class="ak-dt">
+                        <thead>
+                            <tr>
+                                <th>Correction</th>
+                                <th>Line</th>
+                                <th>Product</th>
+                                <th class="ak-num">Factor</th>
+                                <th class="ak-num">Quantity</th>
+                                <th class="ak-num">Unit cost</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($grn->corrections as $correction)
+                                @foreach ($correction->lines as $line)
+                                    <tr>
+                                        @if ($loop->first)
+                                            <td rowspan="{{ $correction->lines->count() }}">
+                                                <b>{{ $correction->correction_number }}</b>
+                                                <span class="gr-sub">{{ $correction->corrected_at->format('d M Y, h:i A') }} · {{ $correction->correctedBy->name ?? '' }}</span>
+                                                @if ($correction->journal_entry_id)
+                                                    <span class="gr-sub">Journal #{{ $correction->journal_entry_id }} · COGS {{ number_format((float) $correction->cogs_delta, 2) }}</span>
+                                                @endif
+                                            </td>
+                                        @endif
+                                        <td>{{ $line->grnItem->line_no ?? '—' }}</td>
+                                        <td>
+                                            {{ $line->newProduct->product_name ?? '—' }}
+                                            @if ($line->old_product_id !== $line->new_product_id)
+                                                <span class="gr-sub">was {{ $line->oldProduct->product_name ?? '—' }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="ak-num">{{ (float) $line->old_conversion_factor }} → {{ (float) $line->new_conversion_factor }}</td>
+                                        <td class="ak-num">{{ number_format((float) $line->old_quantity, 2) }} → {{ number_format((float) $line->new_quantity, 2) }}</td>
+                                        <td class="ak-num">{{ number_format((float) $line->old_unit_cost, 2) }} → {{ number_format((float) $line->new_unit_cost, 2) }}</td>
+                                        @if ($loop->first)
+                                            <td rowspan="{{ $correction->lines->count() }}">{{ $correction->reason }}</td>
+                                        @endif
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
 
         <div class="gr-cards">
             {{-- Details (the printed header already carries these) --}}

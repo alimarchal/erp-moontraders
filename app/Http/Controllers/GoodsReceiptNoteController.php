@@ -15,10 +15,8 @@ use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Services\BatchRecostService;
 use App\Services\CartonConversionService;
-use App\Services\GrnCostDriftService;
-use App\Services\InventoryGlAdjustmentService;
+use App\Services\GrnCorrectionService;
 use App\Services\InventoryService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -222,6 +220,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         $this->assertLineQuantitiesAddUp($validated['items']);
         $this->assertLineCostMatchesInvoice((int) $validated['supplier_id'], $validated['items']);
+        $this->assertConversionFactorsAreUsual($request, $validated['items']);
 
         DB::beginTransaction();
 
@@ -371,7 +370,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     {
         $this->authorizeGrnSupplierAccess($goodsReceiptNote);
 
-        $goodsReceiptNote->load(['supplier', 'warehouse', 'receivedBy', 'verifiedBy', 'items.product', 'items.stockUom', 'items.purchaseUom', 'items.promotionalCampaign']);
+        $goodsReceiptNote->load(['supplier', 'warehouse', 'receivedBy', 'verifiedBy', 'items.product', 'items.stockUom', 'items.purchaseUom', 'items.promotionalCampaign', 'corrections.correctedBy', 'corrections.lines.grnItem', 'corrections.lines.oldProduct', 'corrections.lines.newProduct']);
 
         return view('goods-receipt-notes.show', [
             'grn' => $goodsReceiptNote,
@@ -482,6 +481,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         $this->assertLineQuantitiesAddUp($validated['items']);
         $this->assertLineCostMatchesInvoice((int) $validated['supplier_id'], $validated['items']);
+        $this->assertConversionFactorsAreUsual($request, $validated['items'], $goodsReceiptNote->id);
 
         DB::beginTransaction();
 
@@ -979,17 +979,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     }
 
     /**
-     * Apply special quantity correction to a posted GRN — Super Admin only.
+     * Post a GRN Correction on a posted GRN — super admin only, with a reason and the user's password.
      *
-     * For each line item where uom_conversion_factor changed:
-     *   new_qty   = qty_in_purchase_uom × new_factor
-     *   unit_cost = total_cost / new_qty   (invoice amount stays fixed)
-     *
-     * Tables updated (9 total):
-     *   goods_receipt_note_items, stock_movements, stock_batches,
-     *   stock_ledger_entries (GRN row + cascade), stock_valuation_layers,
-     *   current_stock_by_batch, current_stock, inventory_ledger_entries,
-     *   goods_receipt_notes (header total_quantity)
+     * The quantity difference is posted as a movement of its own on the GRN's receipt date and the old figures are
+     * kept in grn_corrections; see GrnCorrectionService.
      */
     public function updateSpecial(Request $request, GoodsReceiptNote $goodsReceiptNote)
     {
@@ -998,315 +991,55 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             403
         );
 
-        if ($goodsReceiptNote->status !== 'posted') {
-            return back()->with('error', 'Only posted GRNs can be corrected. Current status: '.$goodsReceiptNote->status);
-        }
-
-        $request->validate([
+        $validated = $request->validate([
+            'reason' => 'required|string|min:10|max:1000',
+            'password' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|integer|exists:goods_receipt_note_items,id',
             'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.uom_conversion_factor' => 'required|numeric|min:0.0001',
         ]);
 
-        DB::beginTransaction();
+        if (! Hash::check($validated['password'], auth()->user()->password)) {
+            Log::warning("Failed GRN correction attempt on {$goodsReceiptNote->grn_number} - invalid password by user: ".auth()->user()->name);
+
+            return back()->withInput($request->except('password'))->with('error', 'Invalid password. A GRN Correction needs your password confirmation.');
+        }
 
         try {
-            $inventoryService = app(InventoryService::class);
-            $batchRecostService = app(BatchRecostService::class);
-            $processedProducts = [];
-            $cogsDelta = 0.0;
-            $recostedMovements = 0;
-            $valueDeltas = [];
-            $vanValueDelta = 0.0;
-            $costJumps = [];
+            $result = app(GrnCorrectionService::class)->correct($goodsReceiptNote, $validated['items'], trim($validated['reason']));
+        } catch (\Throwable $e) {
+            Log::error('GRN correction failed', ['grn_id' => $goodsReceiptNote->id, 'error' => $e->getMessage()]);
 
-            foreach ($request->input('items') as $formItem) {
-                $item = DB::table('goods_receipt_note_items')
-                    ->where('id', $formItem['id'])
-                    ->where('grn_id', $goodsReceiptNote->id)
-                    ->first();
-
-                if (! $item) {
-                    throw new \Exception('One or more submitted items do not belong to this GRN.');
-                }
-
-                $newProductId = (int) $formItem['product_id'];
-                $newFactor = (float) $formItem['uom_conversion_factor'];
-                $productChanged = $newProductId !== (int) $item->product_id;
-
-                // Skip lines where nothing changed
-                if (! $productChanged && abs($newFactor - (float) $item->uom_conversion_factor) < 0.0001) {
-                    continue;
-                }
-
-                $newProduct = Product::query()
-                    ->whereKey($newProductId)
-                    ->where('supplier_id', $goodsReceiptNote->supplier_id)
-                    ->where('is_active', true)
-                    ->first();
-
-                if (! $newProduct) {
-                    throw new \Exception("Product {$newProductId} is not active for this GRN supplier.");
-                }
-
-                $svl = DB::table('stock_valuation_layers')->where('grn_item_id', $item->id)->first();
-                if (! $svl) {
-                    throw new \Exception("Valuation layer not found for GRN item {$item->id} (product {$item->product_id}). Ensure this GRN was properly posted.");
-                }
-
-                if ($productChanged) {
-                    if ((int) $newProduct->uom_id !== (int) $item->stock_uom_id) {
-                        throw new \Exception("Product {$newProduct->product_name} must use the same stock UOM as the original GRN item.");
-                    }
-
-                    if ((bool) $newProduct->is_powder !== (bool) Product::query()->whereKey($item->product_id)->value('is_powder')) {
-                        throw new \Exception('Product cannot be changed between powder and non-powder classifications because the posted FMR journal would no longer match.');
-                    }
-
-                    $hasDownstreamMovement = DB::table('stock_movements')
-                        ->where('stock_batch_id', $svl->stock_batch_id)
-                        ->where('id', '!=', $svl->stock_movement_id)
-                        ->exists();
-
-                    $hasConsumedQuantity = (float) $svl->quantity_remaining < (float) $svl->quantity_received;
-
-                    if ($hasDownstreamMovement || $hasConsumedQuantity) {
-                        throw new \Exception("Product cannot be changed for GRN item {$item->id} because its batch has already been consumed or adjusted.");
-                    }
-                }
-
-                $newQty = round((float) $item->qty_in_purchase_uom * $newFactor, 2);
-                $totalCost = (float) $item->total_cost; // invoice amount — intentionally unchanged
-
-                // total_cost is carried over as the line's value, so it must already be what the
-                // line is worth. One left over from an earlier quantity prices the corrected line
-                // wrongly in every ledger and sends the difference to Round Off.
-                $impliedTotal = (float) $item->qty_in_stock_uom * (float) $item->unit_cost;
-
-                if (abs($impliedTotal - $totalCost) > max(1.0, GrnCostDriftService::TOTAL_COST_TOLERANCE_RATIO * abs($totalCost))) {
-                    throw new \Exception(sprintf(
-                        'GRN item %d is not consistent: total cost %s but quantity × unit cost is %s. Run "php artisan stock:repair-grn-cost-drift" before correcting this line.',
-                        $item->id,
-                        number_format($totalCost, 2),
-                        number_format($impliedTotal, 2)
-                    ));
-                }
-
-                $newUnitCost = $newQty > 0 ? round($totalCost / $newQty, 6) : (float) $item->unit_cost;
-                $delta = $newQty - (float) $item->quantity_accepted;
-
-                if ((float) $item->unit_cost > 0 && abs($newUnitCost / (float) $item->unit_cost - 1) > 0.10) {
-                    $costJumps[] = sprintf('line %d: %s → %s', $item->line_no, number_format((float) $item->unit_cost, 2), number_format($newUnitCost, 2));
-                }
-
-                // 1. goods_receipt_note_items
-                DB::table('goods_receipt_note_items')->where('id', $item->id)->update([
-                    'product_id' => $newProductId,
-                    'qty_in_stock_uom' => $newQty,
-                    'uom_conversion_factor' => $newFactor,
-                    'quantity_received' => $newQty,
-                    'quantity_accepted' => $newQty,
-                    'unit_cost' => $newUnitCost,
-                    // total_cost intentionally unchanged (invoice amount)
-                ]);
-
-                // Get the original GRN receipt row in SLE (quantity_in > 0, quantity_out = 0)
-                $sle = DB::table('stock_ledger_entries')
-                    ->where('stock_movement_id', $svl->stock_movement_id)
-                    ->where('quantity_in', '>', 0)
-                    ->where('quantity_out', 0)
-                    ->first();
-
-                if (! $sle) {
-                    throw new \Exception("Stock ledger entry not found for movement {$svl->stock_movement_id}.");
-                }
-
-                // 2. stock_movements — update quantity and unit_cost (total_value = invoice, unchanged)
-                DB::table('stock_movements')->where('id', $svl->stock_movement_id)->update([
-                    'product_id' => $newProductId,
-                    'quantity' => $newQty,
-                    'unit_cost' => $newUnitCost,
-                    // total_value intentionally unchanged
-                ]);
-
-                // 3. stock_batches — update unit_cost so FIFO picks up correct cost
-                DB::table('stock_batches')->where('id', $svl->stock_batch_id)->update([
-                    'product_id' => $newProductId,
-                    'unit_cost' => $newUnitCost,
-                ]);
-
-                // 4a. stock_ledger_entries — GRN receipt row
-                $newSleBalance = (float) $sle->quantity_balance + $delta;
-                DB::table('stock_ledger_entries')->where('id', $sle->id)->update([
-                    'product_id' => $newProductId,
-                    'quantity_in' => $newQty,
-                    'quantity_balance' => $newSleBalance,
-                    'valuation_rate' => $newUnitCost,
-                    'stock_value' => round($newSleBalance * $newUnitCost, 4),
-                ]);
-
-                // 5. stock_valuation_layers
-                $newRemaining = (float) $svl->quantity_remaining + $delta;
-                if ($newRemaining < 0) {
-                    throw new \Exception("The corrected quantity for GRN item {$item->id} cannot be less than its already consumed quantity.");
-                }
-                DB::table('stock_valuation_layers')->where('id', $svl->id)->update([
-                    'product_id' => $newProductId,
-                    'quantity_received' => $newQty,
-                    'quantity_remaining' => $newRemaining,
-                    'unit_cost' => $newUnitCost,
-                    'total_value' => $totalCost, // mirrors the original invoice amount
-                    'value_remaining' => round($newRemaining * $newUnitCost, 4),
-                ]);
-
-                // 6. current_stock_by_batch
-                $csbb = DB::table('current_stock_by_batch')->where('stock_batch_id', $svl->stock_batch_id)->first();
-                if ($csbb) {
-                    $newCsbbQty = (float) $csbb->quantity_on_hand + $delta;
-                    DB::table('current_stock_by_batch')->where('id', $csbb->id)->update([
-                        'product_id' => $newProductId,
-                        'quantity_on_hand' => $newCsbbQty,
-                        'unit_cost' => $newUnitCost,
-                        'total_value' => round($newCsbbQty * $newUnitCost, 4),
-                        'last_updated' => now(),
-                    ]);
-                }
-
-                // 7. inventory_ledger_entries — scoped by stock_batch_id to target correct row
-                //    when the same product appears in multiple lines of this GRN
-                DB::table('inventory_ledger_entries')
-                    ->where('goods_receipt_note_id', $goodsReceiptNote->id)
-                    ->where('stock_batch_id', $svl->stock_batch_id)
-                    ->update([
-                        'product_id' => $newProductId,
-                        'debit_qty' => $newQty,
-                        'unit_cost' => $newUnitCost,
-                    ]);
-
-                // 7b. Everything already issued, sold or returned out of this batch was posted at
-                //     the old cost. Restate it too, otherwise the warehouse keeps a value residue
-                //     that matches no physical stock and those documents keep the wrong COGS.
-                $recost = $batchRecostService->recostBatch(
-                    (int) $svl->stock_batch_id,
-                    $newUnitCost,
-                    (int) $svl->stock_movement_id
-                );
-
-                $cogsDelta += $recost['cogs_delta'];
-                $recostedMovements += $recost['movements'];
-
-                $vanValueDelta += $recost['van_value_delta'];
-
-                foreach ($recost['value_deltas'] as $type => $value) {
-                    $valueDeltas[$type] = ($valueDeltas[$type] ?? 0.0) + $value;
-                }
-
-                // Queue product for current_stock recalc after all items processed
-                $processedProducts[$item->product_id] = [
-                    'product_id' => $item->product_id,
-                    'warehouse_id' => $goodsReceiptNote->warehouse_id,
-                ];
-                $processedProducts[$newProductId] = [
-                    'product_id' => $newProductId,
-                    'warehouse_id' => $goodsReceiptNote->warehouse_id,
-                ];
-            }
-
-            foreach ($processedProducts as $entry) {
-                app(InventoryService::class)->recalculateStockLedgerBalances($entry['product_id'], $entry['warehouse_id']);
-                $this->recalculateInventoryLedgerBalances($entry['product_id']);
-            }
-
-            // 8. current_stock — full recalc via InventoryService
-            //    (correctly handles total_batches, promotional_batches, priority_batches)
-            foreach ($processedProducts as $entry) {
-                $inventoryService->syncCurrentStockFromValuationLayers(
-                    $entry['product_id'],
-                    $entry['warehouse_id']
-                );
-            }
-
-            // 9. goods_receipt_notes header — recalculate total_quantity
-            $newTotalQty = DB::table('goods_receipt_note_items')
-                ->where('grn_id', $goodsReceiptNote->id)
-                ->sum('qty_in_stock_uom');
-
-            DB::table('goods_receipt_notes')->where('id', $goodsReceiptNote->id)->update([
-                'total_quantity' => $newTotalQty,
-            ]);
-
-            // The documents posted out of these batches kept their journal entries at the old
-            // cost; carry the difference to the ledger so Stock In Hand stays equal to the stock.
-            $adjustment = app(InventoryGlAdjustmentService::class)->postRecostAdjustment(
-                $valueDeltas,
-                "RECOST-{$goodsReceiptNote->grn_number}-".now()->format('YmdHis'),
-                "Cost correction on {$goodsReceiptNote->grn_number}: stock already issued, sold or returned re-costed",
-                vanValueDelta: $vanValueDelta
-            );
-
-            DB::commit();
-
-            $message = 'GRN inventory corrections applied successfully.';
-
-            if ($costJumps !== []) {
-                $message .= ' Unit cost moved by more than 10% ('.implode('; ', $costJumps).') — check it against the other receipts of the product.';
-            }
-
-            if ($recostedMovements > 0) {
-                Log::info('GRN correction re-costed already-posted stock movements', [
-                    'grn_id' => $goodsReceiptNote->id,
-                    'movements' => $recostedMovements,
-                    'cogs_delta' => $cogsDelta,
-                    'value_deltas' => $valueDeltas,
-                    'adjusting_journal_entry_id' => $adjustment?->id,
-                ]);
-
-                $message .= sprintf(
-                    ' %d already-posted stock movement(s) were re-costed%s.',
-                    $recostedMovements,
-                    $adjustment ? " and journal entry #{$adjustment->id} posts the cost difference (COGS {$this->signedAmount($cogsDelta)})" : ''
-                );
-            }
-
-            return redirect()
-                ->route('goods-receipt-notes.show', $goodsReceiptNote)
-                ->with('success', $message);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Error in GRN special update', [
-                'grn_id' => $goodsReceiptNote->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return back()->with('error', 'Update failed: '.$e->getMessage());
+            return back()->withInput($request->except('password'))->with('error', 'Correction failed: '.$e->getMessage());
         }
+
+        $correction = $result['correction'];
+
+        if (! $correction) {
+            return back()->withInput($request->except('password'))->with('error', 'Nothing was changed: no line has a new product or conversion factor.');
+        }
+
+        $message = "{$correction->correction_number} posted.";
+
+        if ($result['cost_jumps'] !== []) {
+            $message .= ' Unit cost moved by more than 10% ('.implode('; ', $result['cost_jumps']).') — check it against the other receipts of the product.';
+        }
+
+        if ($correction->recosted_movements > 0) {
+            $message .= sprintf(
+                ' %d already-posted stock movement(s) were re-costed%s.',
+                $correction->recosted_movements,
+                $correction->journal_entry_id ? " and journal entry #{$correction->journal_entry_id} posts the cost difference (COGS {$this->signedAmount((float) $correction->cogs_delta)})" : ''
+            );
+        }
+
+        return redirect()->route('goods-receipt-notes.show', $goodsReceiptNote)->with('success', $message);
     }
 
     private function signedAmount(float $amount): string
     {
         return ($amount >= 0 ? '+' : '−').number_format(abs($amount), 2);
-    }
-
-    private function recalculateInventoryLedgerBalances(int $productId): void
-    {
-        $balance = 0.0;
-
-        $entries = DB::table('inventory_ledger_entries')
-            ->where('product_id', $productId)
-            ->orderBy('date')
-            ->orderBy('id')
-            ->get(['id', 'debit_qty', 'credit_qty']);
-
-        foreach ($entries as $entry) {
-            $balance += (float) $entry->debit_qty - (float) $entry->credit_qty;
-
-            DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
-                'running_balance' => $balance,
-            ]);
-        }
     }
 
     /**
@@ -1378,6 +1111,49 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         if ($errors !== []) {
             throw RequestValidationException::withMessages($errors);
+        }
+    }
+
+    /**
+     * A conversion factor unlike the one on the product's last posted GRN is the usual way a wrong quantity gets
+     * posted (1 entered for a carton of 12), and it is costly to correct once stock is issued. Such lines are refused
+     * until the person ticks that the factor is right.
+     *
+     * @param  array<int, array{product_id?: int|string, uom_conversion_factor?: float|int|string|null}>  $items
+     *
+     * @throws RequestValidationException
+     */
+    private function assertConversionFactorsAreUsual(Request $request, array $items, ?int $exceptGrnId = null): void
+    {
+        if ($request->boolean('confirm_unusual_factor')) {
+            return;
+        }
+
+        $unusual = [];
+
+        foreach ($items as $index => $item) {
+            if (empty($item['product_id']) || ! isset($item['uom_conversion_factor']) || $item['uom_conversion_factor'] === '') {
+                continue;
+            }
+
+            $lastFactor = DB::table('goods_receipt_note_items as item')
+                ->join('goods_receipt_notes as grn', 'grn.id', '=', 'item.grn_id')
+                ->where('grn.status', 'posted')
+                ->where('item.product_id', $item['product_id'])
+                ->when($exceptGrnId, fn ($query, $id) => $query->where('grn.id', '!=', $id))
+                ->orderByDesc('grn.receipt_date')
+                ->orderByDesc('item.id')
+                ->value('item.uom_conversion_factor');
+
+            if ($lastFactor !== null && abs((float) $lastFactor - (float) $item['uom_conversion_factor']) > 0.0001) {
+                $unusual[] = sprintf('line %d is %s, the last GRN of this product used %s', $index + 1, (float) $item['uom_conversion_factor'], (float) $lastFactor);
+            }
+        }
+
+        if ($unusual !== []) {
+            throw RequestValidationException::withMessages([
+                'confirm_unusual_factor' => 'Check the conversion factor: '.implode('; ', $unusual).'. If it is right, tick "The conversion factor is right" and save again.',
+            ]);
         }
     }
 

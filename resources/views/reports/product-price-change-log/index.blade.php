@@ -109,7 +109,8 @@
         .pl-tag-purple { background: rgba(175,82,222,.14); color: #7a2fa3; }
         .pl-tag-amber { background: rgba(255,159,10,.16); color: #8a4b00; }
         .pl-tag-grey { background: rgba(120,120,128,.14); color: #3a3a40; }
-        .pl-old { color: #6e6e73; text-decoration: line-through; }
+        .pl-old { color: #6e6e73; }
+        .pl-old > span { text-decoration: line-through; }
         .pl-up { color: #c4161c; font-weight: 600; }
         .pl-down { color: #1f7a35; font-weight: 600; }
         .pl-batches { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -332,7 +333,7 @@
                                             <div class="ak-muted">{{ $log->product->product_code ?? '' }}{{ $log->product?->supplier ? ' · '.$log->product->supplier->supplier_name : '' }}</div>
                                         </td>
                                         <td data-label="Field"><span class="pl-tag {{ $typeTone[$log->price_type] ?? 'pl-tag-grey' }}">{{ $priceTypeOptions[$log->price_type] ?? $log->price_type }}</span></td>
-                                        <td class="ak-num pl-old" data-label="Old">{{ $log->old_price !== null ? number_format((float) $log->old_price, 2) : '—' }}</td>
+                                        <td class="ak-num pl-old" data-label="Old"><span>{{ $log->old_price !== null ? number_format((float) $log->old_price, 2) : '—' }}</span></td>
                                         <td class="ak-num ak-strong" data-label="New">{{ $log->new_price !== null ? number_format((float) $log->new_price, 2) : '—' }}</td>
                                         <td class="ak-num pl-nw {{ $diff > 0 ? 'pl-up' : ($diff < 0 ? 'pl-down' : '') }}" data-label="Change">
                                             {{ $diff > 0 ? '+' : '' }}{{ number_format($diff, 2) }}

@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ٹکٹ — استعمال کی رہنمائی</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Noto+Nastaliq+Urdu:wght@400..700&display=swap" rel="stylesheet">
     <style>
         :root { --navy: #1e2a5a; --line: #e2e8f0; --soft: #f8fafc; --text: #0f172a; --muted: #475569; }
         * { box-sizing: border-box; }
-        body { margin: 0; background: #f1f5f9; color: var(--text); font-family: 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', Tahoma, serif; font-size: 18px; line-height: 2; }
+        body { margin: 0; background: #f1f5f9; color: var(--text); font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', Tahoma, serif; font-size: 17px; line-height: 2.5; }
         .bar { position: sticky; top: 0; z-index: 5; display: flex; gap: 10px; justify-content: space-between; align-items: center; padding: 10px 24px; background: #fff; border-bottom: 1px solid var(--line); }
         .bar h1 { margin: 0; font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif; font-size: 22px; color: var(--navy); }
         .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 18px; border: 1px solid var(--navy); border-radius: 8px; background: var(--navy); color: #fff; font: inherit; font-size: 16px; cursor: pointer; text-decoration: none; }
@@ -28,7 +29,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 16px; line-height: 1.9; }
         th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: right; vertical-align: top; }
         th { background: var(--soft); }
-        .en { direction: ltr; unicode-bidi: isolate; font-family: Inter, Arial, sans-serif; font-size: 0.85em; background: #eef2ff; border-radius: 6px; padding: 0 6px; white-space: nowrap; }
+        .en { direction: ltr; unicode-bidi: isolate; font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 0.85em; background: #eef2ff; border-radius: 6px; padding: 0 6px; white-space: nowrap; }
         .badge { display: inline-block; padding: 0 12px; border-radius: 999px; font-size: 15px; }
         .b-pending { background: #fef3c7; color: #92400e; } .b-ok { background: #dcfce7; color: #166534; } .b-no { background: #fee2e2; color: #991b1b; }
         @media print { .bar .btn { display: none; } body { background: #fff; font-size: 15px; } section { break-inside: avoid; border-color: #cbd5e1; } .bar { position: static; } }
@@ -94,7 +95,7 @@
             <p style="margin-top:10px"><b>اسٹاک ایڈجسٹمنٹ:</b> گودام اور بیچ چنیں، پھر گنتی کی مقدار لکھیں۔ فرق اور اس کی مالیت خود نکل آتی ہے۔</p>
             <p style="margin-top:10px"><b>آئٹم کو غیر فعال کرنے کی شرط:</b> کسی فعال آئٹم کو <span class="en">Inactive</span> کروانے کے لیے سسٹم میں اس کی مقدار صفر ہونی چاہیے، یعنی گودام میں بھی اور وینز پر بھی۔ اگر کچھ مال باقی ہو تو ٹکٹ نہیں بنتا اور فارم پر لال پیغام میں بچی ہوئی مقدار نظر آتی ہے۔ منظوری کے وقت بھی مقدار دوبارہ دیکھی جاتی ہے، اس لیے اگر ٹکٹ بننے کے بعد مال آ گیا ہو تو منظوری رک جاتی ہے۔ غیر فعال آئٹم کو دوبارہ فعال کرنے پر یہ شرط نہیں لگتی۔</p>
             <p style="margin-top:10px"><b>سیلنگ کاسٹ:</b> لائن میں بیچ چننے کے بعد <span class="en">Selling cost</span> کا خانہ نظر آتا ہے (اس بیچ کی فروخت قیمت، پہلے سے بھری ہوتی ہے)۔ اسے بدلنا ہو تو صرف نئی قیمت لکھیں؛ مقدار نہ بدلیں تو لائن صرف <span class="en">selling cost</span> کی تبدیلی بن جاتی ہے۔ منظوری پر اس بیچ کی فروخت قیمت بدلتی ہے اور <span class="en">Price Change Log</span> میں درج ہوتی ہے۔ ٹکٹ سے بیچ کی <span class="en">Unit cost</span> (خریداری لاگت) نہیں بدلتی؛ ویلیو ہمیشہ بیچ کی اپنی لاگت پر بنتی ہے۔ اگر مقدار اور سیلنگ کاسٹ دونوں پہلے جیسی ہوں تو ٹکٹ نہیں بنتا۔ اگر اسی بیچ کا کچھ مال کسی دوسرے گودام میں ہو یا وین پر ہو تو منظوری رک جاتی ہے اور وجہ بتا دی جاتی ہے۔</p>
-            <div class="note"><b>یونٹ کاسٹ بدلنے پر پاس ورڈ:</b> یونٹ کاسٹ (جی آر این کے علاوہ بھی کبھی کبھار) بدلی جا سکتی ہے، مگر اس سے اسٹاک کی ویلیو اور اکاؤنٹس بدلتے ہیں۔ اس لیے <span class="en">Submit</span> دبانے پر اردو ونڈو کھلتی ہے جس میں پرانی اور نئی کاسٹ دکھائی جاتی ہے۔ آپ کو (۱) ٹک لگا کر تصدیق کرنی ہوتی ہے کہ تبدیلی جان بوجھ کر ہے اور (۲) اپنا پاس ورڈ لکھنا ہوتا ہے۔ ٹک یا درست پاس ورڈ کے بغیر ٹکٹ نہیں بنتا۔ یہ سب آڈٹ کے لیے ہے۔ منظوری کے وقت ایڈمن سے دوبارہ پاس ورڈ لیا جاتا ہے۔</div>
+            <div class="note"><b>گنتی اور منظوری:</b> ایک بیچ ایک وقت میں صرف ایک زیر التوا ٹکٹ پر ہو سکتا ہے؛ دوسری گنتی ہو تو پہلا ٹکٹ ہی <span class="en">Edit</span> کریں۔ اگر گنتی کے بعد بیچ کا اسٹاک بدل گیا ہو (فروخت، وصولی یا کوئی اور ایڈجسٹمنٹ) تو منظوری رک جاتی ہے اور دونوں مقداریں دکھائی جاتی ہیں؛ دوبارہ گن کر ٹکٹ <span class="en">Edit</span> کریں۔ اسی طرح اگر قیمت کا ٹکٹ بننے کے بعد وہی قیمت کسی اور نے بدل دی ہو تو منظوری رک جاتی ہے۔</div>
             <p style="margin-top:10px"><b>ای میل:</b> ٹکٹ بنتے ہی ایڈمن کو ای میل جاتی ہے؛ منظوری یا رد ہونے پر ٹکٹ بنانے والے کو ای میل آتی ہے اور ٹکٹ کے صفحے پر <span class="en">Ticket history</span> میں قدم درج ہو جاتا ہے۔</p>
             <figure><img src="{{ asset('icons-images/ticket-help/5-adjustment.jpg') }}" alt="اسٹاک ایڈجسٹمنٹ" loading="lazy"><figcaption>اسٹاک ایڈجسٹمنٹ کا ٹکٹ</figcaption></figure>
         </section>

@@ -26,3 +26,5 @@ Thumbs.db
 graphify-out/graph.html
 graphify-out/cache/
 graphify-out/.graphify_*
+# Server-specific rewrite rules at the project root (public/.htaccess stays tracked)
+/.htaccess

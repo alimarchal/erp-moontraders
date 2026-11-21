@@ -162,3 +162,27 @@ it('shows each stock adjustment line with its SKU, batch, counted figures, diffe
         ->assertSee('73 → 119', false)->assertSee('+46')->assertSee('20,522.90');
     expect($response->viewData('itemsTotal'))->toBe(1);
 });
+
+it('opens a quick look with every line of a ticket, like Goods Issues', function () {
+    $warehouse = Warehouse::factory()->create(['disabled' => false]);
+    $grapes = Product::factory()->create(['supplier_id' => $this->supplier->id, 'product_name' => 'Red Grapes Gold']);
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'type' => TicketType::StockAdjustment, 'title' => 'Big count']);
+    $ticket->items()->create(['payload' => [
+        'warehouse_id' => (string) $warehouse->id, 'adjustment_type' => 'count_variance',
+        'items' => collect(range(1, 5))->map(fn (int $n) => [
+            'product_id' => (string) $grapes->id, 'stock_batch_id' => (string) StockBatch::factory()->create(['product_id' => $grapes->id, 'batch_code' => "QL-BATCH-{$n}"])->id,
+            'system_quantity' => 10, 'actual_quantity' => '11', 'adjustment_quantity' => 1, 'adjustment_value' => 100,
+        ])->all(),
+    ]]);
+
+    $html = $this->actingAs($this->admin)->get(route('tickets.index', ['filter' => ['status' => 'all']]))->assertOk()
+        ->assertSee("\$dispatch('tk-peek'", false)
+        ->assertSee('id="tk-peek-'.$ticket->id.'"', false)
+        ->assertSee('class="tk-type-pill"', false)
+        ->getContent();
+
+    // The row shows three lines; the quick look template holds all five.
+    $template = str($html)->after('id="tk-peek-'.$ticket->id.'"')->before('</template>');
+    expect(substr_count($template, 'QL-BATCH-'))->toBe(5)
+        ->and(substr_count(str($html)->before('id="tk-peek-'.$ticket->id.'"'), 'QL-BATCH-'))->toBe(3);
+});

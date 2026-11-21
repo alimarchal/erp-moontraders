@@ -128,12 +128,22 @@
         html.apl-on .tk-table .ak-primary-link { display: inline-block; padding: 4px 0; }
         html.apl-on .tk-table td[data-label="Ticket"] .ak-primary-link { font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
         .tk-meta { white-space: nowrap; }
-        .tk-c-no { width: 40px; } .tk-c-ticket { width: 170px; } .tk-c-det { min-width: 320px; } .tk-c-man { width: 150px; } .tk-c-stage { width: 150px; } .tk-c-act { width: 1%; }
+        .tk-c-no { width: 40px; } .tk-c-ticket { width: 140px; } .tk-c-title { width: 190px; } .tk-c-det { min-width: 300px; } .tk-c-man { width: 130px; } .tk-c-stage { width: 140px; } .tk-c-act { width: 1%; }
+        /* Desktop: the whole row fits the card, nothing scrolls sideways (long names wrap) */
+        @media screen and (min-width: 1024px) {
+            .tk-table { min-width: 0 !important; }
+            .tk-table td[data-label="Raised by"] { white-space: normal !important; min-width: 120px; }
+            .tk-table td[data-label="Ticket"] .tk-meta { white-space: normal; }
+            .tk-table td.tk-nw .tk-stage-sub { white-space: normal; }
+        }
         .tk-table td.tk-no { width: 40px; color: #8e8e93; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-        .tk-desc { min-width: 180px; max-width: 280px; color: #334155; font-size: 13px; line-height: 1.4; }
-        .tk-type { font-size: 12px; font-weight: 600; color: #0071e3; }
+        .tk-desc { min-width: 150px; max-width: 200px; color: #334155; font-size: 13px; line-height: 1.4; }
+        /* Ticket type under the title: a small capsule (not .tk-type, which is the create form's type card) */
+        .tk-type-pill { display: inline-block; margin-top: 4px; padding: 2px 9px; border-radius: 980px; background: rgba(0,113,227,.1); color: #0058b0; font-size: 11.5px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
         /* Details: the figures a reviewer needs, per ticket type */
-        .tk-det-cell { min-width: 320px; }
+        .tk-det-cell { min-width: 300px; cursor: pointer; }
+        .tk-det-cell:hover .tk-det-sku { color: #0066cc; }
+        .tk-det-table td:first-child { white-space: normal; overflow-wrap: anywhere; min-width: 170px; }
         .tk-det { font-size: 13px; line-height: 1.45; color: #1d1d1f; }
         .tk-det-line + .tk-det-line { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e5e7eb; }
         .tk-det-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -202,8 +212,19 @@
         /* Laptops (1024–1279px): the table fits without sideways scrolling */
         @media screen and (min-width: 1024px) and (max-width: 1279px) {
             .tk-table { min-width: 0 !important; }
-            .tk-desc { min-width: 150px; max-width: 220px; }
-            .tk-det-cell { min-width: 260px; }
+            .tk-desc { min-width: 110px; max-width: 140px; }
+            .tk-c-title { width: 130px; }
+            .tk-table td.tk-nw[data-label="Status"] { white-space: normal; min-width: 0; }
+            .tk-c-man { width: 105px; }
+            .tk-table thead th { white-space: normal; }
+            .tk-table td[data-label="Status"] { padding-left: 10px !important; padding-right: 10px !important; }
+            .tk-table .tk-c-no, .tk-table td.tk-no { display: none; }
+            .tk-det-cell { min-width: 240px; }
+            .tk-det-table td:first-child { min-width: 110px; }
+            .tk-c-stage { width: 96px; }
+            .tk-view .tk-view-label { display: none; }
+            .tk-table td[data-label="Raised by"] { min-width: 100px; }
+            .tk-det-cell { min-width: 240px; }
             .tk-table .tk-meta { white-space: normal; }
         }
         /* Tablets (768–1023px): rows become cards, as on a phone */
@@ -236,7 +257,7 @@
             .tk-table td[data-label="Details"] .tk-det-table td:first-child { grid-column: 1 / -1; white-space: normal; overflow-wrap: anywhere; }
             .tk-table td[data-label="Details"] .tk-det-table td.ak-num { text-align: right; }
             .tk-table td[data-label="Details"] .tk-det-table tbody { display: table-row-group; }
-            .tk-table td[data-label="Ticket"], .tk-table td[data-label="Title · type"], .tk-table td[data-label="Raised by"], .tk-table td[data-label="Status"] { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
+            .tk-table td[data-label="Ticket"], .tk-table td[data-label="Title · company"], .tk-table td[data-label="Raised by"], .tk-table td[data-label="Status"] { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
             .tk-table td[data-label="Ticket"]::before, .tk-table td[data-label="Title · type"]::before, .tk-table td[data-label="Raised by"]::before, .tk-table td[data-label="Status"]::before { grid-row: 1; }
             .tk-table td[data-label="Ticket"] > *, .tk-table td[data-label="Title · type"] > *, .tk-table td[data-label="Raised by"] > *, .tk-table td[data-label="Status"] > * { grid-column: 2; justify-self: end; text-align: right; }
             .tk-table td.ak-num { display: flex !important; justify-content: space-between !important; align-items: center; }
@@ -439,10 +460,10 @@
                             <thead>
                                 <tr>
                                     <th scope="col" class="tk-c-no">#</th>
-                                    <th scope="col" class="tk-c-ticket" aria-sort="{{ $ariaSort($sortField === 'created_at' ? 'created_at' : 'ticket_number') }}"><a href="{{ $sortUrl('ticket_number') }}">Ticket <span aria-hidden="true">{{ $sortMark('ticket_number') }}</span></a> &middot; <a href="{{ $sortUrl('created_at') }}">Date <span aria-hidden="true">{{ $sortMark('created_at') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('title') }}"><a href="{{ $sortUrl('title') }}">Title &middot; type <span aria-hidden="true">{{ $sortMark('title') }}</span></a></th>
+                                    <th scope="col" class="tk-c-ticket" aria-sort="{{ $ariaSort($sortField === 'created_at' ? 'created_at' : 'ticket_number') }}"><a href="{{ $sortUrl('ticket_number') }}">Ticket <span aria-hidden="true">{{ $sortMark('ticket_number') }}</span></a> &middot; type</th>
+                                    <th scope="col" class="tk-c-title" aria-sort="{{ $ariaSort('title') }}"><a href="{{ $sortUrl('title') }}">Title &middot; company <span aria-hidden="true">{{ $sortMark('title') }}</span></a></th>
                                     <th scope="col" class="tk-c-det">Details</th>
-                                    <th scope="col" class="tk-c-man">Raised by</th>
+                                    <th scope="col" class="tk-c-man"><a href="{{ $sortUrl('created_at') }}">Raised by &middot; on <span aria-hidden="true">{{ $sortMark('created_at') }}</span></a></th>
                                     <th scope="col" class="tk-c-stage" aria-sort="{{ $ariaSort('status') }}"><a href="{{ $sortUrl('status') }}">Status <span aria-hidden="true">{{ $sortMark('status') }}</span></a></th>
                                     <th scope="col" class="ak-sticky-end no-print tk-c-act"><span class="sr-only">Actions</span></th>
                                 </tr>
@@ -453,16 +474,31 @@
                                         $canChange = $ticket->isPending() && ($ticket->created_by === $authUser->id || $isAdmin);
                                         $canEdit = $canChange && $authUser->can('ticket-edit');
                                         $canDelete = $canChange && $authUser->can('ticket-delete');
+                                        $peek = [
+                                            'id' => $ticket->id,
+                                            'number' => $ticket->ticket_number,
+                                            'url' => route('tickets.show', $ticket),
+                                            'status' => $ticket->status->label(),
+                                            'tone' => $stageTone[$ticket->status->value] ?? 'amber',
+                                            'type' => $ticket->type->label(),
+                                            'supplier' => $ticket->supplier->supplier_name ?? '',
+                                            'title' => $ticket->title,
+                                            'description' => (string) $ticket->description,
+                                            'raised' => ($ticket->creator->name ?? '—').' · '.$ticket->created_at->format('D, d M Y h:i A'),
+                                            'decided' => $ticket->reviewer ? $ticket->status->label().' by '.$ticket->reviewer->name.($ticket->reviewed_at ? ' · '.$ticket->reviewed_at->format('d M Y h:i A') : '') : ($ticket->isPending() ? 'Waiting for admin' : ''),
+                                            'remarks' => (string) $ticket->review_remarks,
+                                        ];
                                     @endphp
                                     <tr class="{{ $ticket->isPending() ? 'tk-pending' : '' }}">
                                         <td class="tk-no" data-label="#">{{ $tickets->firstItem() + $loop->index }}</td>
                                         <td data-label="Ticket">
-                                            <a href="{{ route('tickets.show', $ticket) }}" class="ak-primary-link" title="{{ $ticket->ticket_number }}">{{ $shortNumber($ticket->ticket_number) }}</a>
-                                            <div class="ak-muted tk-meta" title="{{ $ticket->supplier->supplier_name ?? 'No company' }} · {{ $ticket->created_at->format('l, d M Y h:i A') }}">{{ $ticket->supplier ? $shortSupplier($ticket->supplier->supplier_name) : 'No company' }} · {{ $ticket->created_at->format('d M Y') }}</div>
+                                            <a href="{{ route('tickets.show', $ticket) }}" class="ak-primary-link" title="Quick look at {{ $ticket->ticket_number }}" aria-haspopup="dialog"
+                                                x-data @click="if (! ($event.metaKey || $event.ctrlKey || $event.shiftKey)) { $event.preventDefault(); $dispatch('tk-peek', @js($peek)) }">{{ $shortNumber($ticket->ticket_number) }}</a>
+                                            <div><span class="tk-type-pill" title="{{ $ticket->type->label() }}">{{ $ticket->type->shortLabel() }}</span></div>
                                         </td>
                                         <td class="tk-desc" data-label="Title · type">
                                             <span class="ak-strong">{{ $ticket->title }}</span>
-                                            <div class="tk-type">{{ $ticket->type->label() }}</div>
+                                            <div class="ak-muted" title="{{ $ticket->supplier->supplier_name ?? 'No company' }}">{{ $ticket->supplier->supplier_name ?? 'No company' }}</div>
                                             @if (filled($ticket->description))
                                                 <div class="ak-muted tk-desc-remarks" title="{{ $ticket->description }}">{{ Str::limit(preg_replace('/\s+/', ' ', $ticket->description), 90) }}</div>
                                             @endif
@@ -470,12 +506,13 @@
                                                 <div class="ak-muted tk-desc-remarks" title="{{ $ticket->review_remarks }}">Admin: {{ Str::limit(preg_replace('/\s+/', ' ', $ticket->review_remarks), 80) }}</div>
                                             @endif
                                         </td>
-                                        <td class="tk-det-cell" data-label="Details">
+                                        <td class="tk-det-cell" data-label="Details" x-data @click="if (! $event.target.closest('a, button')) { $dispatch('tk-peek', @js($peek)) }" title="Click for every line">
                                             @include('tickets.partials.row-details', ['ticket' => $ticket, 'lookups' => $lookups])
+                                            <template id="tk-peek-{{ $ticket->id }}">@include('tickets.partials.row-details', ['ticket' => $ticket, 'lookups' => $lookups, 'limit' => PHP_INT_MAX])</template>
                                         </td>
                                         <td data-label="Raised by">
                                             <span class="ak-strong">{{ $ticket->creator->name ?? '—' }}</span>
-                                            <div class="ak-muted tk-nw">{{ $ticket->created_at->format('h:i A') }}</div>
+                                            <div class="ak-muted" title="{{ $ticket->created_at->format('l, d M Y h:i A') }}">{{ $ticket->created_at->format('d M Y') }} · {{ $ticket->created_at->format('h:i A') }}</div>
                                         </td>
                                         <td class="tk-nw" data-label="Status">
                                             <span class="tk-stage tk-stage-{{ $stageTone[$ticket->status->value] ?? 'amber' }}">{{ $ticket->status->label() }}</span>
@@ -495,7 +532,7 @@
                                                 } }" @keydown.escape.window="open = false" @scroll.window="open = false" @resize.window="open = false">
                                                 <a href="{{ route('tickets.show', $ticket) }}" class="ak-btn ak-btn-outline ak-btn-sm tk-view" title="Open {{ $ticket->ticket_number }}" aria-label="View {{ $ticket->ticket_number }}">
                                                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-                                                    View
+                                                    <span class="tk-view-label">View</span>
                                                 </a>
                                                 @if ($canEdit || $canDelete)
                                                     <button type="button" class="ak-icon tk-more" @click="toggle($event)" :aria-expanded="open" aria-haspopup="menu" title="More actions" aria-label="More actions for {{ $ticket->ticket_number }}">
@@ -602,4 +639,57 @@
             });
         </script>
     @endpush
+
+    <x-quick-look-style />
+    <style>
+        .tk-gq-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 22px 16px; }
+        .tk-gq-body .tk-det { font-size: 14px; }
+        .tk-gq-body .tk-det-table { width: 100%; }
+        .tk-gq-body .tk-det-table td { white-space: normal; font-size: 13.5px; padding: 6px 10px 6px 0 !important; border-bottom: 1px solid rgba(60,60,67,.08) !important; vertical-align: top; }
+        .tk-gq-body .tk-det-table td.ak-num { white-space: nowrap; }
+        .tk-gq-desc { margin: 8px 0 0; font-size: 13.5px; color: #424245; }
+        @media (max-width: 640px) { .tk-gq-body { padding: 10px 18px 14px; } }
+    </style>
+    {{-- Quick look, as on Goods Issues: opened by the ticket number or the Details of any row; View still opens the full page --}}
+    <div x-data="{ open: false, tk: null, html: '', opener: null,
+            show(detail) {
+                this.opener = document.activeElement;
+                this.tk = detail;
+                this.html = document.getElementById('tk-peek-' + detail.id)?.innerHTML ?? '';
+                this.open = true;
+                this.$nextTick(() => this.$refs.close.focus());
+            },
+            hide() { this.open = false; this.opener?.focus(); } }"
+        @tk-peek.window="show($event.detail)" @keydown.escape.window="open && hide()">
+        <template x-if="tk">
+            <div class="gq-wrap" x-show="open" role="dialog" aria-modal="true" aria-labelledby="tk-gq-title" x-trap.noscroll="open">
+                <div class="gq-scrim" @click="hide()" x-show="open"
+                    x-transition:enter="gq-fade-enter" x-transition:enter-start="gq-fade-from" x-transition:leave="gq-fade-leave" x-transition:leave-end="gq-fade-from"></div>
+                <div class="gq-box" x-show="open"
+                    x-transition:enter="gq-enter" x-transition:enter-start="gq-from" x-transition:leave="gq-leave" x-transition:leave-end="gq-from">
+                    <div class="gq-head">
+                        <div class="gq-top">
+                            <h2 class="gq-num" id="tk-gq-title" x-text="tk.number"></h2>
+                            <button type="button" class="gq-close" x-ref="close" @click="hide()" aria-label="Close quick look">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path stroke-linecap="round" d="M6 6l12 12M18 6 6 18" /></svg>
+                            </button>
+                        </div>
+                        <div class="gq-chips">
+                            <span class="gq-chip gq-chip-dot" :class="'gq-' + tk.tone" x-text="tk.status"></span>
+                            <span class="gq-chip gq-grey" x-text="tk.type"></span>
+                            <span class="gq-chip gq-blue" x-show="tk.supplier" x-text="tk.supplier"></span>
+                        </div>
+                        <p class="gq-who" style="margin-top:12px"><b x-text="tk.title"></b><br><span x-text="'Raised by ' + tk.raised"></span><template x-if="tk.decided"><span><br><span x-text="tk.decided"></span></span></template></p>
+                        <p class="tk-gq-desc" x-show="tk.description" x-text="tk.description"></p>
+                        <p class="tk-gq-desc" x-show="tk.remarks" x-text="'Admin: ' + tk.remarks"></p>
+                    </div>
+                    <div class="gq-list-head"><span>Details</span><span>Every line</span></div>
+                    <div class="tk-gq-body" x-html="html"></div>
+                    <div class="gq-foot">
+                        <a :href="tk.url" class="gq-open">Open full ticket <span aria-hidden="true">→</span></a>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 </x-app-layout>

@@ -26,6 +26,22 @@ enum TicketType: string
     }
 
     /**
+     * A short name for tight places such as the type capsule on the tickets list.
+     */
+    public function shortLabel(): string
+    {
+        return match ($this) {
+            self::PriceUpdate => 'Price update',
+            self::NewSku => 'New SKU',
+            self::ReactivateSku => 'SKU status',
+            self::StockAdjustment => 'Stock adjustment',
+            self::LedgerEntry => 'Ledger entry',
+            self::ClaimEntry => 'Claim entry',
+            self::NewCustomer => 'New customer',
+        };
+    }
+
+    /**
      * Types whose approval only stores a small record described by TicketEntryForms.
      */
     public function isSimpleEntry(): bool

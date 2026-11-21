@@ -9,6 +9,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -69,4 +70,15 @@ it('refuses a batch that still holds stock, since that would change the stock va
         ->expectsOutputToContain('still holds stock')->assertFailed();
 
     expect((float) $batch->fresh()->unit_cost)->toBe(3060.35);
+});
+
+it('changes and logs nothing when the batch already carries the cost', function () {
+    ['batch' => $batch] = mistypedEmptyBatch();
+    $this->artisan('stock:correct-depleted-batch-cost', ['batch' => $batch->batch_code, 'cost' => 360.35])->assertSuccessful();
+    $logged = DB::table('activity_log')->count();
+
+    $this->artisan('stock:correct-depleted-batch-cost', ['batch' => $batch->batch_code, 'cost' => 360.35])
+        ->expectsOutputToContain('already carries 360.35')->assertSuccessful();
+
+    expect(DB::table('activity_log')->count())->toBe($logged);
 });

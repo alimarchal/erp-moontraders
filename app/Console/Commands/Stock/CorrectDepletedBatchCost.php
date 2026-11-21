@@ -65,6 +65,14 @@ class CorrectDepletedBatchCost extends Command
             $layers->map(fn ($layer) => (float) $layer->quantity_received > 0 ? number_format((float) $layer->total_value / (float) $layer->quantity_received, 2, '.', '') : '-')->implode(', '),
         ]]);
 
+        if (abs((float) $batch->unit_cost - $newCost) < 0.000001
+            && ! DB::table('stock_valuation_layers')->where('stock_batch_id', $batch->id)->where('unit_cost', '!=', $newCost)->exists()
+            && ! DB::table('current_stock_by_batch')->where('stock_batch_id', $batch->id)->where('unit_cost', '!=', $newCost)->exists()) {
+            $this->info("Batch {$batch->batch_code} already carries {$newCost}. Nothing to change.");
+
+            return self::SUCCESS;
+        }
+
         if ($this->option('dry-run')) {
             $this->warn('DRY RUN — no data was changed.');
 

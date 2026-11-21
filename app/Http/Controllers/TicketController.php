@@ -9,12 +9,14 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Ticket;
+use App\Models\TicketItem;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\ProductPricingService;
 use App\Services\TicketEntryForms;
 use App\Services\TicketService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,14 +95,21 @@ class TicketController extends Controller implements HasMiddleware
             'creators' => User::query()
                 ->whereIn('id', Ticket::query()->visibleTo($user)->select('created_by'))
                 ->orderBy('name')->get(['id', 'name']),
+            'reviewers' => User::query()
+                ->whereIn('id', Ticket::query()->visibleTo($user)->whereNotNull('reviewed_by')->select('reviewed_by'))
+                ->orderBy('name')->get(['id', 'name']),
+            'itemsTotal' => TicketItem::query()->whereIn('ticket_id', $this->filteredTickets($user, $filters)->select('id'))->count(),
             'perPage' => $perPage,
         ]);
     }
 
     /**
-     * @param  array<string, mixed>  $filters
+     * Tickets the user may see, narrowed by the list filters (status "all" keeps every status).
+     *
+     * @param  array{status?: string, type?: string, supplier_id?: string, created_by?: string, reviewed_by?: string, date_from?: string, date_to?: string, search?: string}  $filters
+     * @return Builder<Ticket>
      */
-    private function filteredTickets(User $user, array $filters)
+    private function filteredTickets(User $user, array $filters): Builder
     {
         return Ticket::query()
             ->visibleTo($user)
@@ -108,11 +117,15 @@ class TicketController extends Controller implements HasMiddleware
             ->when($filters['type'] ?? null, fn ($q, $value) => $q->where('type', $value))
             ->when($filters['supplier_id'] ?? null, fn ($q, $value) => $q->where('supplier_id', $value))
             ->when($filters['created_by'] ?? null, fn ($q, $value) => $q->where('created_by', $value))
+            ->when($filters['reviewed_by'] ?? null, fn ($q, $value) => $q->where('reviewed_by', $value))
             ->when($filters['date_from'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '>=', $value))
             ->when($filters['date_to'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '<=', $value))
             ->when($filters['search'] ?? null, function ($q, $value) {
-                $term = '%'.$value.'%';
-                $q->where(fn ($q) => $q->where('title', 'like', $term)->orWhere('ticket_number', 'like', $term));
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $q->where(fn ($q) => $q
+                    ->whereRaw('LOWER(title) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(ticket_number) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(description) LIKE ?', [$term]));
             });
     }
 

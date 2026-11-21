@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -47,6 +48,12 @@ class TicketController extends Controller implements HasMiddleware
     public const PER_PAGE = [15, 25, 50, 100, 500, 'all'];
 
     private const SORTS = ['created_at', 'ticket_number', 'title', 'status'];
+
+    /** Most products a free-text search or a batch code is expanded to before matching the ticket lines. */
+    private const MATCH_LIMIT = 300;
+
+    /** Payload keys the free-text search also looks at (new SKU, customer, claim, ledger and stock adjustment tickets). */
+    private const SEARCHED_PAYLOAD_KEYS = ['product_code', 'product_name', 'customer_name', 'business_name', 'customer_code', 'city', 'stock_adjustment_number', 'reference_number', 'document_number'];
 
     public function index(Request $request): View
     {
@@ -73,7 +80,7 @@ class TicketController extends Controller implements HasMiddleware
             ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
 
         $tickets = $this->filteredTickets($user, $filters)
-            ->with(['supplier', 'creator', 'reviewer'])
+            ->with(['supplier', 'creator', 'reviewer', 'items'])
             ->withCount('items')
             ->orderBy(ltrim($sort, '-'), str_starts_with($sort, '-') ? 'desc' : 'asc')
             ->orderByDesc('id')
@@ -82,6 +89,7 @@ class TicketController extends Controller implements HasMiddleware
 
         return view('tickets.index', [
             'tickets' => $tickets,
+            'lookups' => $this->detailLookups($tickets->getCollection()),
             'stats' => [
                 'total' => (int) $counts->sum(),
                 'pending' => (int) ($counts[TicketStatus::Pending->value] ?? 0),
@@ -98,7 +106,13 @@ class TicketController extends Controller implements HasMiddleware
             'reviewers' => User::query()
                 ->whereIn('id', Ticket::query()->visibleTo($user)->whereNotNull('reviewed_by')->select('reviewed_by'))
                 ->orderBy('name')->get(['id', 'name']),
-            'itemsTotal' => TicketItem::query()->whereIn('ticket_id', $this->filteredTickets($user, $filters)->select('id'))->count(),
+            'products' => $this->productsFor($request)->orderBy('product_code')->get(['id', 'product_code', 'product_name']),
+            'warehouses' => Warehouse::query()->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
+            'adjustmentTypes' => TicketRequest::ADJUSTMENT_TYPES,
+            // Counted like the Details cell: each stock adjustment line, and one per other ticket line.
+            'itemsTotal' => TicketItem::query()->whereIn('ticket_id', $this->filteredTickets($user, $filters)->select('id'))->get(['id', 'payload'])
+                ->sum(fn (TicketItem $item) => max(1, count((array) (($item->payload ?? [])['items'] ?? [])))),
             'perPage' => $perPage,
         ]);
     }
@@ -106,7 +120,10 @@ class TicketController extends Controller implements HasMiddleware
     /**
      * Tickets the user may see, narrowed by the list filters (status "all" keeps every status).
      *
-     * @param  array{status?: string, type?: string, supplier_id?: string, created_by?: string, reviewed_by?: string, date_from?: string, date_to?: string, search?: string}  $filters
+     * Product, batch, warehouse and adjustment type also look inside the stock adjustment lines kept in the
+     * item payload, where ids may be stored as strings or as numbers.
+     *
+     * @param  array{status?: string, type?: string, supplier_id?: string, created_by?: string, reviewed_by?: string, date_from?: string, date_to?: string, search?: string, product_id?: string, batch?: string, warehouse_id?: string, adjustment_type?: string, category_id?: string}  $filters
      * @return Builder<Ticket>
      */
     private function filteredTickets(User $user, array $filters): Builder
@@ -120,13 +137,131 @@ class TicketController extends Controller implements HasMiddleware
             ->when($filters['reviewed_by'] ?? null, fn ($q, $value) => $q->where('reviewed_by', $value))
             ->when($filters['date_from'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '>=', $value))
             ->when($filters['date_to'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '<=', $value))
-            ->when($filters['search'] ?? null, function ($q, $value) {
-                $term = '%'.mb_strtolower(trim((string) $value)).'%';
-                $q->where(fn ($q) => $q
-                    ->whereRaw('LOWER(title) LIKE ?', [$term])
-                    ->orWhereRaw('LOWER(ticket_number) LIKE ?', [$term])
-                    ->orWhereRaw('LOWER(description) LIKE ?', [$term]));
-            });
+            ->when($filters['product_id'] ?? null, fn ($q, $value) => $this->whereProduct($q, (int) $value))
+            ->when($filters['batch'] ?? null, fn ($q, $value) => $this->whereBatch($q, (string) $value))
+            ->when($filters['warehouse_id'] ?? null, fn ($q, $value) => $q->whereHas('items', fn ($items) => $items->where('ticket_items.payload->warehouse_id', (string) $value)))
+            ->when($filters['adjustment_type'] ?? null, fn ($q, $value) => $q->whereHas('items', fn ($items) => $items->where('ticket_items.payload->adjustment_type', (string) $value)))
+            ->when($filters['category_id'] ?? null, fn ($q, $value) => $q->whereHas('items', fn ($items) => $items->where(fn ($items) => $items
+                ->where('ticket_items.payload->category_id', (string) $value)
+                ->orWhereIn('ticket_items.product_id', Product::withTrashed()->select('id')->where('category_id', (int) $value)))))
+            ->when($filters['search'] ?? null, fn ($q, $value) => $this->whereSearch($q, (string) $value));
+    }
+
+    /**
+     * Tickets about one product: price / re-activation lines, stock adjustment lines, or a new SKU with its code.
+     *
+     * @param  Builder<Ticket>  $query
+     */
+    private function whereProduct(Builder $query, int $productId): void
+    {
+        $code = Product::withTrashed()->whereKey($productId)->value('product_code');
+
+        $query->whereHas('items', fn ($items) => $items->where(function ($items) use ($productId, $code) {
+            $items->where('ticket_items.product_id', $productId);
+            $this->orWhereAdjustmentLine($items, 'product_id', [$productId]);
+
+            if ($code !== null) {
+                $items->orWhere('ticket_items.payload->product_code', $code);
+            }
+        }));
+    }
+
+    /**
+     * Tickets touching a batch whose code contains the text: stock adjustment lines or price changes for chosen batches.
+     *
+     * @param  Builder<Ticket>  $query
+     */
+    private function whereBatch(Builder $query, string $code): void
+    {
+        $batchIds = DB::table('stock_batches')
+            ->whereRaw('LOWER(batch_code) LIKE ?', ['%'.mb_strtolower(trim($code)).'%'])
+            ->limit(self::MATCH_LIMIT)->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        if ($batchIds === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->whereHas('items', fn ($items) => $items->where(function ($items) use ($batchIds) {
+            $this->orWhereAdjustmentLine($items, 'stock_batch_id', $batchIds);
+
+            foreach ($batchIds as $batchId) {
+                $items->orWhereJsonContains('ticket_items.batch_ids', [$batchId])
+                    ->orWhereJsonContains('ticket_items.batch_ids', [(string) $batchId]);
+            }
+        }));
+    }
+
+    /**
+     * Case-insensitive search over the ticket itself, its products (by code or name) and the main payload fields.
+     *
+     * @param  Builder<Ticket>  $query
+     */
+    private function whereSearch(Builder $query, string $value): void
+    {
+        $term = '%'.mb_strtolower(trim($value)).'%';
+
+        $productIds = Product::withTrashed()
+            ->where(fn ($q) => $q->whereRaw('LOWER(product_code) LIKE ?', [$term])->orWhereRaw('LOWER(product_name) LIKE ?', [$term]))
+            ->limit(self::MATCH_LIMIT)->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        $query->where(fn ($q) => $q
+            ->whereRaw('LOWER(title) LIKE ?', [$term])
+            ->orWhereRaw('LOWER(ticket_number) LIKE ?', [$term])
+            ->orWhereRaw('LOWER(description) LIKE ?', [$term])
+            ->orWhereHas('items', fn ($items) => $items->where(function ($items) use ($term, $productIds) {
+                $grammar = $items->getQuery()->getGrammar();
+
+                foreach (self::SEARCHED_PAYLOAD_KEYS as $key) {
+                    $items->orWhereRaw('LOWER('.$grammar->wrap("ticket_items.payload->{$key}").') LIKE ?', [$term]);
+                }
+
+                if ($productIds !== []) {
+                    $items->orWhereIn('ticket_items.product_id', $productIds);
+                    $this->orWhereAdjustmentLine($items, 'product_id', $productIds);
+                }
+            })));
+    }
+
+    /**
+     * OR-matches stock adjustment lines (payload "items") whose key holds one of the ids, stored as a string or a number.
+     *
+     * @param  Builder<TicketItem>  $items
+     * @param  array<int, int>  $ids
+     */
+    private function orWhereAdjustmentLine(Builder $items, string $key, array $ids): void
+    {
+        foreach ($ids as $id) {
+            $items->orWhereJsonContains('ticket_items.payload->items', [[$key => (string) $id]])
+                ->orWhereJsonContains('ticket_items.payload->items', [[$key => $id]]);
+        }
+    }
+
+    /**
+     * Names behind the ids kept on this page's ticket lines, one query per kind, for the Details cell.
+     *
+     * @param  Collection<int, Ticket>  $tickets
+     * @return array{products: Collection<int, Product>, batches: Collection<int, string>, warehouses: Collection<int, string>, suppliers: Collection<int, string>}
+     */
+    private function detailLookups(Collection $tickets): array
+    {
+        $items = $tickets->flatMap(fn (Ticket $ticket) => $ticket->items);
+        $payloads = $items->map(fn (TicketItem $item) => (array) ($item->payload ?? []));
+        $lines = $payloads->flatMap(fn (array $payload) => (array) ($payload['items'] ?? []));
+        $ids = fn ($values) => collect($values)->filter(fn ($id) => is_numeric($id))->map(fn ($id) => (int) $id)->unique()->values()->all();
+
+        $productIds = $ids($items->pluck('product_id')->merge($lines->pluck('product_id')));
+        $batchIds = $ids($lines->pluck('stock_batch_id'));
+        $warehouseIds = $ids($payloads->pluck('warehouse_id'));
+        $supplierIds = $ids($payloads->pluck('supplier_id'));
+
+        return [
+            'products' => $productIds === [] ? collect() : Product::withTrashed()->whereIn('id', $productIds)->get(['id', 'product_code', 'product_name'])->keyBy('id'),
+            'batches' => $batchIds === [] ? collect() : DB::table('stock_batches')->whereIn('id', $batchIds)->pluck('batch_code', 'id'),
+            'warehouses' => $warehouseIds === [] ? collect() : Warehouse::query()->whereIn('id', $warehouseIds)->pluck('warehouse_name', 'id'),
+            'suppliers' => $supplierIds === [] ? collect() : Supplier::query()->whereIn('id', $supplierIds)->pluck('supplier_name', 'id'),
+        ];
     }
 
     /**

@@ -1,10 +1,14 @@
 <?php
 
 use App\Enums\TicketStatus;
+use App\Enums\TicketType;
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\StockBatch;
 use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -87,4 +91,74 @@ it('opens the Urdu help in a window on the list, like Goods Issues', function ()
         ->assertSee('Help: Tickets')
         ->assertSee("\$dispatch('rg-help'", false)
         ->assertSee('data-topic="adjustment"', false);
+});
+
+/**
+ * A stock adjustment ticket whose payload keeps ids the way the form posts them (strings) or as numbers.
+ */
+function adjustmentTicket(object $t, string $title, Product $product, StockBatch $batch, Warehouse $warehouse, string $type, bool $idsAsStrings = true): Ticket
+{
+    $ticket = Ticket::factory()->create(['supplier_id' => $t->supplier->id, 'created_by' => $t->companyUser->id, 'type' => TicketType::StockAdjustment, 'title' => $title]);
+    $id = fn (int $value) => $idsAsStrings ? (string) $value : $value;
+    $ticket->items()->create(['payload' => [
+        'warehouse_id' => $id($warehouse->id), 'adjustment_type' => $type, 'supplier_id' => $t->supplier->id,
+        'items' => [['product_id' => $id($product->id), 'stock_batch_id' => $id($batch->id), 'system_quantity' => 73, 'actual_quantity' => '119', 'adjustment_quantity' => 46, 'adjustment_value' => 20522.9, 'unit_cost' => 446.15]],
+    ]]);
+
+    return $ticket;
+}
+
+it('filters tickets by product, batch, warehouse and adjustment type inside stock adjustment lines', function () {
+    $warehouse = Warehouse::factory()->create(['disabled' => false]);
+    $otherWarehouse = Warehouse::factory()->create(['disabled' => false]);
+    $grapes = Product::factory()->create(['supplier_id' => $this->supplier->id, 'product_code' => 'FV-GRAPE', 'product_name' => 'Red Grapes Gold']);
+    $orange = Product::factory()->create(['supplier_id' => $this->supplier->id, 'product_code' => 'FV-ORANGE', 'product_name' => 'Orange Gold']);
+    $grapesBatch = StockBatch::factory()->create(['product_id' => $grapes->id, 'batch_code' => 'BATCH-2026-3409']);
+    $orangeBatch = StockBatch::factory()->create(['product_id' => $orange->id, 'batch_code' => 'BATCH-2026-3505']);
+
+    adjustmentTicket($this, 'Grapes count', $grapes, $grapesBatch, $warehouse, 'count_variance');
+    adjustmentTicket($this, 'Orange damage', $orange, $orangeBatch, $otherWarehouse, 'damage', idsAsStrings: false);
+    $this->actingAs($this->admin);
+    $list = fn (array $filter) => $this->get(route('tickets.index', ['filter' => $filter + ['status' => 'all']]))->assertOk();
+
+    $list(['product_id' => $grapes->id])->assertSee('Grapes count')->assertDontSee('Orange damage');
+    $list(['product_id' => $orange->id])->assertSee('Orange damage')->assertDontSee('Grapes count');
+    $list(['batch' => '3409'])->assertSee('Grapes count')->assertDontSee('Orange damage');
+    $list(['warehouse_id' => $otherWarehouse->id])->assertSee('Orange damage')->assertDontSee('Grapes count');
+    $list(['adjustment_type' => 'count_variance'])->assertSee('Grapes count')->assertDontSee('Orange damage');
+    $list(['search' => 'fv-orange'])->assertSee('Orange damage')->assertDontSee('Grapes count');
+});
+
+it('filters new SKU tickets by category and product code', function () {
+    $category = Category::create(['name' => 'Juices', 'slug' => 'juices', 'is_active' => true]);
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'type' => TicketType::NewSku, 'title' => 'New juice SKU']);
+    $ticket->items()->create(['payload' => ['product_code' => 'NEW-JUICE-1', 'product_name' => 'Mango Nectar', 'category_id' => (string) $category->id]]);
+    Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'title' => 'Unrelated ticket']);
+
+    $this->actingAs($this->admin)->get(route('tickets.index', ['filter' => ['status' => 'all', 'category_id' => $category->id]]))
+        ->assertSee('New juice SKU')->assertDontSee('Unrelated ticket');
+    $this->get(route('tickets.index', ['filter' => ['status' => 'all', 'search' => 'mango nectar']]))
+        ->assertSee('New juice SKU')->assertDontSee('Unrelated ticket');
+});
+
+it('offers a company user only their own products in the product filter', function () {
+    $own = Product::factory()->create(['supplier_id' => $this->supplier->id, 'product_code' => 'OWN-SKU']);
+    $foreign = Product::factory()->create(['supplier_id' => $this->otherSupplier->id, 'product_code' => 'FOREIGN-SKU']);
+
+    $response = $this->actingAs($this->companyUser)->get(route('tickets.index'))->assertOk();
+
+    expect($response->viewData('products')->pluck('id')->all())->toContain($own->id)->not->toContain($foreign->id);
+});
+
+it('shows each stock adjustment line with its SKU, batch, counted figures, difference and value', function () {
+    $warehouse = Warehouse::factory()->create(['disabled' => false, 'warehouse_name' => 'Main Store']);
+    $grapes = Product::factory()->create(['supplier_id' => $this->supplier->id, 'product_name' => 'Red Grapes Gold']);
+    $batch = StockBatch::factory()->create(['product_id' => $grapes->id, 'batch_code' => 'BATCH-2026-3409']);
+    adjustmentTicket($this, 'Grapes count', $grapes, $batch, $warehouse, 'count_variance');
+
+    $response = $this->actingAs($this->admin)->get(route('tickets.index', ['filter' => ['status' => 'all']]))->assertOk();
+
+    $response->assertSee('Red Grapes Gold')->assertSee('BATCH-2026-3409')->assertSee('Main Store')
+        ->assertSee('73 → 119', false)->assertSee('+46')->assertSee('20,522.90');
+    expect($response->viewData('itemsTotal'))->toBe(1);
 });

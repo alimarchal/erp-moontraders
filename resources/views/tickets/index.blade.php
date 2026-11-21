@@ -43,12 +43,17 @@
         'created_by' => $creators->pluck('name', 'id'),
         'reviewed_by' => $reviewers->pluck('name', 'id'),
         'type' => collect($types)->mapWithKeys(fn ($t) => [$t->value => $t->label()]),
+        'product_id' => $products->mapWithKeys(fn ($p) => [$p->id => $p->product_code.' — '.$p->product_name]),
+        'warehouse_id' => $warehouses->pluck('warehouse_name', 'id'),
+        'category_id' => $categories->pluck('name', 'id'),
+        'adjustment_type' => collect($adjustmentTypes)->mapWithKeys(fn ($t) => [$t => Str::headline($t)]),
     ];
-    $chipLabels = ['search' => 'Search', 'type' => 'Type', 'supplier_id' => 'Company', 'created_by' => 'Raised by', 'reviewed_by' => 'Decided by'];
+    $chipLabels = ['search' => 'Search', 'type' => 'Type', 'supplier_id' => 'Company', 'created_by' => 'Raised by', 'reviewed_by' => 'Decided by',
+        'product_id' => 'Product', 'batch' => 'Batch', 'warehouse_id' => 'Warehouse', 'adjustment_type' => 'Adjustment type', 'category_id' => 'Category'];
     $chipValue = fn (string $key, $value) => isset($names[$key]) ? ($names[$key][$value] ?? $value) : $value;
     // Dates and status have their own controls, so they are not chips.
     $chips = Arr::except($filters, ['status', 'date_from', 'date_to']);
-    $advancedKeys = ['type', 'created_by', 'reviewed_by'];
+    $advancedKeys = ['type', 'created_by', 'reviewed_by', 'product_id', 'batch', 'warehouse_id', 'adjustment_type', 'category_id'];
     $advancedCount = collect($advancedKeys)->filter(fn ($k) => isset($filters[$k]))->count();
     $statusLabels = ['all' => 'All', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'];
     $stageTone = ['pending' => 'amber', 'approved' => 'green', 'rejected' => 'red'];
@@ -123,9 +128,24 @@
         html.apl-on .tk-table .ak-primary-link { display: inline-block; padding: 4px 0; }
         html.apl-on .tk-table td[data-label="Ticket"] .ak-primary-link { font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
         .tk-meta { white-space: nowrap; }
-        .tk-c-no { width: 40px; } .tk-c-ticket { width: 170px; } .tk-c-items { width: 64px; } .tk-c-man { width: 150px; } .tk-c-stage { width: 150px; } .tk-c-act { width: 1%; }
+        .tk-c-no { width: 40px; } .tk-c-ticket { width: 170px; } .tk-c-det { min-width: 320px; } .tk-c-man { width: 150px; } .tk-c-stage { width: 150px; } .tk-c-act { width: 1%; }
         .tk-table td.tk-no { width: 40px; color: #8e8e93; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-        .tk-desc { min-width: 200px; max-width: 340px; color: #334155; font-size: 13px; line-height: 1.4; }
+        .tk-desc { min-width: 180px; max-width: 280px; color: #334155; font-size: 13px; line-height: 1.4; }
+        .tk-type { font-size: 12px; font-weight: 600; color: #0071e3; }
+        /* Details: the figures a reviewer needs, per ticket type */
+        .tk-det-cell { min-width: 320px; }
+        .tk-det { font-size: 13px; line-height: 1.45; color: #1d1d1f; }
+        .tk-det-line + .tk-det-line { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e5e7eb; }
+        .tk-det-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+        .tk-det-sku { font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+        .tk-det-name { color: #334155; }
+        .tk-det-tag { display: inline-block; padding: 1px 8px; border-radius: 980px; background: rgba(0,113,227,.1); color: #0058b0; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+        .tk-det-changes { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; }
+        .tk-det-change { white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .tk-det-table { width: 100%; margin-top: 4px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+        .tk-det-table td { padding: 1px 8px 1px 0 !important; border: 0 !important; background: transparent !important; white-space: nowrap; font-size: 12.5px; }
+        .tk-det-table td.ak-num { text-align: right; }
+        .tk-det-foot { margin-top: 3px; font-size: 12.5px; }
         .ak-dt-scroll.is-compact .tk-table td { padding-top: 6px; padding-bottom: 6px; vertical-align: middle; }
         .ak-dt-scroll.is-compact .tk-table td .ak-muted { font-size: 12px; }
         .ak-dt-scroll.is-compact .tk-desc-remarks, .ak-dt-scroll.is-compact .tk-stage-sub { display: none; }
@@ -182,7 +202,8 @@
         /* Laptops (1024–1279px): the table fits without sideways scrolling */
         @media screen and (min-width: 1024px) and (max-width: 1279px) {
             .tk-table { min-width: 0 !important; }
-            .tk-desc { min-width: 160px; max-width: 240px; }
+            .tk-desc { min-width: 150px; max-width: 220px; }
+            .tk-det-cell { min-width: 260px; }
             .tk-table .tk-meta { white-space: normal; }
         }
         /* Tablets (768–1023px): rows become cards, as on a phone */
@@ -204,9 +225,15 @@
             .tk-table tfoot tr { flex-wrap: wrap; gap: 4px 12px; }
             .tk-table tfoot td { width: auto !important; min-width: 0; }
             .tk-table tfoot td:empty { display: none; }
-            .tk-table td[data-label="Ticket"], .tk-table td[data-label="Title · type"], .tk-table td[data-label="Description"], .tk-table td[data-label="Raised by"], .tk-table td[data-label="Status"] { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
-            .tk-table td[data-label="Ticket"]::before, .tk-table td[data-label="Title · type"]::before, .tk-table td[data-label="Description"]::before, .tk-table td[data-label="Raised by"]::before, .tk-table td[data-label="Status"]::before { grid-row: 1; }
-            .tk-table td[data-label="Ticket"] > *, .tk-table td[data-label="Title · type"] > *, .tk-table td[data-label="Description"] > *, .tk-table td[data-label="Raised by"] > *, .tk-table td[data-label="Status"] > * { grid-column: 2; justify-self: end; text-align: right; }
+            .tk-table td[data-label="Details"] { display: block !important; text-align: left; min-width: 0; }
+            .tk-table td[data-label="Details"]::before { display: block; margin-bottom: 4px; }
+            .tk-table td[data-label="Details"] .tk-det-table td { display: table-cell; width: auto !important; padding: 1px 8px 1px 0 !important; }
+            .tk-table td[data-label="Details"] .tk-det-table tr { display: table-row; margin: 0; border: 0; }
+            .tk-table td[data-label="Details"] .tk-det-table, .tk-table td[data-label="Details"] .tk-det-table tbody { display: table; width: 100%; }
+            .tk-table td[data-label="Details"] .tk-det-table tbody { display: table-row-group; }
+            .tk-table td[data-label="Ticket"], .tk-table td[data-label="Title · type"], .tk-table td[data-label="Raised by"], .tk-table td[data-label="Status"] { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
+            .tk-table td[data-label="Ticket"]::before, .tk-table td[data-label="Title · type"]::before, .tk-table td[data-label="Raised by"]::before, .tk-table td[data-label="Status"]::before { grid-row: 1; }
+            .tk-table td[data-label="Ticket"] > *, .tk-table td[data-label="Title · type"] > *, .tk-table td[data-label="Raised by"] > *, .tk-table td[data-label="Status"] > * { grid-column: 2; justify-self: end; text-align: right; }
             .tk-table td.ak-num { display: flex !important; justify-content: space-between !important; align-items: center; }
             .tk-table td.ak-sticky-end { display: flex !important; justify-content: flex-end !important; }
         }
@@ -244,7 +271,7 @@
                         <div class="ak-search">
                             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
                             <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
-                                placeholder="Ticket number, title or description" x-ref="search"
+                                placeholder="Ticket no, title, SKU, product, customer, SA no or reference" x-ref="search"
                                 @keydown.window.slash="if (! ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { $event.preventDefault(); $refs.search.focus(); }">
                             <kbd aria-hidden="true">/</kbd>
                         </div>
@@ -312,6 +339,46 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="ak-field">
+                        <label for="f_product">Product / SKU</label>
+                        <select id="f_product" class="tk-select" data-placeholder="Any product" name="filter[product_id]">
+                            <option value=""></option>
+                            @foreach ($products as $product)
+                                <option value="{{ $product->id }}" @selected((string) ($filters['product_id'] ?? '') === (string) $product->id)>{{ $product->product_code }} — {{ $product->product_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_batch">Batch</label>
+                        <input id="f_batch" type="search" name="filter[batch]" value="{{ $filters['batch'] ?? '' }}" autocomplete="off" placeholder="Batch code or part of it">
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_warehouse">Warehouse</label>
+                        <select id="f_warehouse" class="tk-select" data-placeholder="Any warehouse" name="filter[warehouse_id]">
+                            <option value=""></option>
+                            @foreach ($warehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}" @selected((string) ($filters['warehouse_id'] ?? '') === (string) $warehouse->id)>{{ $warehouse->warehouse_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_adjustment_type">Adjustment type</label>
+                        <select id="f_adjustment_type" class="tk-select" data-placeholder="Any adjustment" name="filter[adjustment_type]">
+                            <option value=""></option>
+                            @foreach ($adjustmentTypes as $adjustmentType)
+                                <option value="{{ $adjustmentType }}" @selected(($filters['adjustment_type'] ?? '') === $adjustmentType)>{{ Str::headline($adjustmentType) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="ak-field">
+                        <label for="f_category">Category</label>
+                        <select id="f_category" class="tk-select" data-placeholder="Any category" name="filter[category_id]">
+                            <option value=""></option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 <nav class="tk-ranges" aria-label="Quick dates">
                     <span class="tk-ranges-label">Quick dates</span>
@@ -369,8 +436,7 @@
                                     <th scope="col" class="tk-c-no">#</th>
                                     <th scope="col" class="tk-c-ticket" aria-sort="{{ $ariaSort($sortField === 'created_at' ? 'created_at' : 'ticket_number') }}"><a href="{{ $sortUrl('ticket_number') }}">Ticket <span aria-hidden="true">{{ $sortMark('ticket_number') }}</span></a> &middot; <a href="{{ $sortUrl('created_at') }}">Date <span aria-hidden="true">{{ $sortMark('created_at') }}</span></a></th>
                                     <th scope="col" aria-sort="{{ $ariaSort('title') }}"><a href="{{ $sortUrl('title') }}">Title &middot; type <span aria-hidden="true">{{ $sortMark('title') }}</span></a></th>
-                                    <th scope="col">Description</th>
-                                    <th scope="col" class="ak-num tk-c-items">Items</th>
+                                    <th scope="col" class="tk-c-det">Details</th>
                                     <th scope="col" class="tk-c-man">Raised by</th>
                                     <th scope="col" class="tk-c-stage" aria-sort="{{ $ariaSort('status') }}"><a href="{{ $sortUrl('status') }}">Status <span aria-hidden="true">{{ $sortMark('status') }}</span></a></th>
                                     <th scope="col" class="ak-sticky-end no-print tk-c-act"><span class="sr-only">Actions</span></th>
@@ -389,21 +455,19 @@
                                             <a href="{{ route('tickets.show', $ticket) }}" class="ak-primary-link" title="{{ $ticket->ticket_number }}">{{ $shortNumber($ticket->ticket_number) }}</a>
                                             <div class="ak-muted tk-meta" title="{{ $ticket->supplier->supplier_name ?? 'No company' }} · {{ $ticket->created_at->format('l, d M Y h:i A') }}">{{ $ticket->supplier ? $shortSupplier($ticket->supplier->supplier_name) : 'No company' }} · {{ $ticket->created_at->format('d M Y') }}</div>
                                         </td>
-                                        <td data-label="Title · type">
+                                        <td class="tk-desc" data-label="Title · type">
                                             <span class="ak-strong">{{ $ticket->title }}</span>
-                                            <div class="ak-muted">{{ $ticket->type->label() }}</div>
-                                        </td>
-                                        <td class="tk-desc" data-label="Description">
+                                            <div class="tk-type">{{ $ticket->type->label() }}</div>
                                             @if (filled($ticket->description))
-                                                <span title="{{ $ticket->description }}">{{ Str::limit(preg_replace('/\s+/', ' ', $ticket->description), 110) }}</span>
-                                            @else
-                                                <span class="ak-muted">—</span>
+                                                <div class="ak-muted tk-desc-remarks" title="{{ $ticket->description }}">{{ Str::limit(preg_replace('/\s+/', ' ', $ticket->description), 90) }}</div>
                                             @endif
                                             @if (filled($ticket->review_remarks))
                                                 <div class="ak-muted tk-desc-remarks" title="{{ $ticket->review_remarks }}">Admin: {{ Str::limit(preg_replace('/\s+/', ' ', $ticket->review_remarks), 80) }}</div>
                                             @endif
                                         </td>
-                                        <td class="ak-num" data-label="Items">{{ number_format($ticket->items_count) }}</td>
+                                        <td class="tk-det-cell" data-label="Details">
+                                            @include('tickets.partials.row-details', ['ticket' => $ticket, 'lookups' => $lookups])
+                                        </td>
                                         <td data-label="Raised by">
                                             <span class="ak-strong">{{ $ticket->creator->name ?? '—' }}</span>
                                             <div class="ak-muted tk-nw">{{ $ticket->created_at->format('h:i A') }}</div>
@@ -456,8 +520,8 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="4">Total &middot; {{ number_format($tickets->total()) }} {{ Str::plural('ticket', $tickets->total()) }}{{ $tickets->hasPages() ? ' (all pages)' : '' }}</td>
-                                    <td class="ak-num" title="Product lines on these tickets">{{ number_format($itemsTotal) }}</td>
+                                    <td colspan="3">Total &middot; {{ number_format($tickets->total()) }} {{ Str::plural('ticket', $tickets->total()) }}{{ $tickets->hasPages() ? ' (all pages)' : '' }}</td>
+                                    <td title="Lines on these tickets">{{ number_format($itemsTotal) }} {{ Str::plural('line', $itemsTotal) }}</td>
                                     <td colspan="3"></td>
                                 </tr>
                             </tfoot>

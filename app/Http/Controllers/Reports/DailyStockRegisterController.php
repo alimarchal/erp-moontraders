@@ -37,6 +37,22 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         }
         $dropdownProducts = $dropdownProductsQuery->get();
 
+        $viewData = [
+            'date' => $date,
+            'suppliers' => Supplier::orderBy('supplier_name')->get(),
+            'products' => $dropdownProducts, // For the filter dropdown
+            'selectedSupplierId' => $supplierId,
+            'selectedProductId' => $productId,
+            'showAdjustment' => $request->input('show_adjustment', '1') !== '0',
+            'needsSupplier' => ! $supplierId && ! $productId,
+        ];
+
+        // Every company's products in one register is heavy and hard to read: nothing is worked out
+        // until a supplier (or a single product) is picked.
+        if ($viewData['needsSupplier']) {
+            return view('reports.daily-stock-register.index', ['reportData' => collect()] + $viewData);
+        }
+
         // Products for Report (Filtered by Supplier AND Product if selected)
         // Active products always show. An inactive (or deactivated-later) product still shows while it holds
         // stock or moves on the date, otherwise its stock is missing from the register and the totals.
@@ -234,17 +250,6 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             ];
         });
 
-        // Filter out zero rows if needed? User didn't specify, but "Show all supplier products" implies showing even zeros.
-        // User said: "supplier ke sare stocks... jo nahi hoga zero show ho". So KEEP ALL.
-
-        return view('reports.daily-stock-register.index', [
-            'reportData' => $reportData,
-            'date' => $date,
-            'suppliers' => Supplier::orderBy('supplier_name')->get(),
-            'products' => $dropdownProducts, // For the filter dropdown
-            'selectedSupplierId' => $supplierId,
-            'selectedProductId' => $productId,
-            'showAdjustment' => $request->input('show_adjustment', '1') !== '0',
-        ]);
+        return view('reports.daily-stock-register.index', ['reportData' => $reportData] + $viewData);
     }
 }

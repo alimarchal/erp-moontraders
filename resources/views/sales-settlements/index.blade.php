@@ -187,6 +187,25 @@
         .gl-bar { height: 5px; border-radius: 99px; background: #eef2ff; overflow: hidden; }
         .gl-bar i { display: block; height: 100%; background: var(--ak-navy); border-radius: 99px; }
         .gl-late { color: #b45309; font-weight: 600; }
+        /* Phones: rows are cards (shared ak-dt), so the 820px desktop width must go or every value runs off-screen.
+           Label on the left, the value and its second line stacked on the right — same as Goods Issues. */
+        @media screen and (max-width: 767px) {
+            .gl-table { min-width: 0 !important; }
+            .ak-dt-scroll { max-height: none; min-height: 0; }
+            .gl-table tbody > tr > td { width: 100% !important; white-space: normal; }
+            .gl-table td[data-label="Settlement"], .gl-table td[data-label="Salesman · vehicle"], .gl-table td.ak-num, .gl-table td[data-label="Date"], .gl-table td[data-label="Status"] {
+                display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; }
+            .gl-table td[data-label="Settlement"]::before, .gl-table td[data-label="Salesman · vehicle"]::before, .gl-table td.ak-num::before, .gl-table td[data-label="Date"]::before, .gl-table td[data-label="Status"]::before { grid-row: 1 / span 2; }
+            .gl-table td[data-label="Settlement"] > *, .gl-table td[data-label="Salesman · vehicle"] > *, .gl-table td.ak-num > *, .gl-table td[data-label="Date"] > *, .gl-table td[data-label="Status"] > * { grid-column: 2; justify-self: end; text-align: right; min-width: 0; }
+            .gl-table td[data-label="Salesman · vehicle"] .ak-muted { overflow-wrap: anywhere; }
+            .gl-table td.ak-num, .gl-table td[data-label="Date"] { text-align: right; }
+            .gl-table td[data-label="Status"] .gl-dot { display: none; }
+            .gl-table td.ak-sticky-end { display: flex !important; justify-content: flex-end !important; }
+            /* totals: one labelled line each, like the card above */
+            .gl-table tfoot tr { display: block; margin: 0 12px 12px; }
+            .gl-table tfoot td { width: 100% !important; min-width: 0; box-sizing: border-box; }
+            .gl-table tfoot td:empty { display: none; }
+        }
         @media print {
             .gl-salesmen, .gl-ranges, .ak-filters, .ak-tabs { display: none !important; }
             .gl-table { min-width: 0 !important; }
@@ -491,10 +510,10 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="3">Total &middot; {{ number_format($settlements->total()) }} {{ \Illuminate\Support\Str::plural('settlement', $settlements->total()) }}{{ $settlements->hasPages() ? ' (all pages)' : '' }}</td>
-                                    <td class="ak-num" title="Sales {{ number_format($totals->total_sales_amount, 2) }} / COGS {{ number_format($totals->total_cogs, 2) }}">{{ number_format($totals->total_sales_amount) }}<div class="ak-muted" style="font-weight:400">cost {{ number_format($totals->total_cogs) }}</div></td>
-                                    <td class="ak-num">{{ number_format($totals->total_expenses) }}</td>
-                                    <td class="ak-num {{ $totals->total_net_profit < 0 ? 'gl-loss' : '' }}">{{ number_format($totals->total_net_profit) }}</td>
+                                    <td colspan="3" data-label="">Total &middot; {{ number_format($settlements->total()) }} {{ \Illuminate\Support\Str::plural('settlement', $settlements->total()) }}{{ $settlements->hasPages() ? ' (all pages)' : '' }}</td>
+                                    <td class="ak-num" data-label="Sales (Rs)" title="Sales {{ number_format($totals->total_sales_amount, 2) }} / COGS {{ number_format($totals->total_cogs, 2) }}">{{ number_format($totals->total_sales_amount) }}<div class="ak-muted" style="font-weight:400">cost {{ number_format($totals->total_cogs) }}</div></td>
+                                    <td class="ak-num" data-label="Expenses (Rs)">{{ number_format($totals->total_expenses) }}</td>
+                                    <td class="ak-num {{ $totals->total_net_profit < 0 ? 'gl-loss' : '' }}" data-label="Net profit (Rs)">{{ number_format($totals->total_net_profit) }}</td>
                                     <td colspan="3"></td>
                                 </tr>
                             </tfoot>

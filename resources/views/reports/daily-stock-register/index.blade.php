@@ -86,7 +86,7 @@
                 <x-label for="supplier_id" value="Supplier" />
                 <select id="supplier_id" name="supplier_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
+                    <option value="">Select a supplier</option>
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->id }}" {{ $selectedSupplierId == $supplier->id ? 'selected' : '' }}>
                             {{ $supplier->supplier_name }}
@@ -118,6 +118,10 @@
             </div>
         </div>
     </x-filter-section>
+    @if ($needsSupplier)
+        {{-- Nothing to show until a supplier is picked, so the filters start open --}}
+        <script>document.getElementById('filters')?.style.setProperty('display', 'block');</script>
+    @endif
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
@@ -175,7 +179,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ $showAdjustment ? 13 : 12 }}" class="text-center py-4">No data found based on filters.</td>
+                                <td colspan="{{ $showAdjustment ? 13 : 12 }}" class="text-center py-4">{{ $needsSupplier ? 'Select a supplier in Filters to see its stock register.' : 'No data found based on filters.' }}</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -123,9 +123,6 @@
     .ssf-page .ssf-actions .ak-btn:active:not(:disabled) { transform: scale(.97); }
     .ssf-page .ssf-actions .ak-btn:disabled { opacity: .6; cursor: progress; }
 
-    /* Special-edit warning */
-    .ssf-page .bg-amber-50 { border-radius: 14px; }
-
     /* Entry modals (credit sales, recoveries, cheques, transfers, slips, advance tax, % expense, AMR) */
     .ssf-page .fixed.inset-0.z-50 > .fixed.inset-0[class*="bg-gray-900"] { background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: none; backdrop-filter: none; }
     .ssf-page .fixed.inset-0.z-50 .relative.w-full.bg-white { border-radius: 20px; box-shadow: 0 24px 64px rgba(0, 0, 0, .22); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif; }

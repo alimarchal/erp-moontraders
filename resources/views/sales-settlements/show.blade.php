@@ -68,9 +68,6 @@
                         <button type="button" class="ak-btn ak-btn-danger-outline" title="Reverse this settlement back to draft"
                             onclick="window.showPasswordModal('revertSettlementModal')">Reverse Settlement</button>
                     @endcan
-                    @role('super-admin')
-                        <a href="{{ route('sales-settlements.edit-special', $settlement->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">Special Edit</a>
-                    @endrole
                 @endif
             </div>
         </div>

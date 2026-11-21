@@ -1,7 +1,6 @@
 <x-app-layout>
-    @php $isSpecialEdit = $isSpecialEdit ?? false; @endphp
     <x-slot name="header">
-        <x-page-header :title="$isSpecialEdit ? 'Special Edit · '.$settlement->settlement_number : 'Edit Sales Settlement · '.$settlement->settlement_number" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" backRoute="sales-settlements.index" />
+        <x-page-header :title="'Edit Sales Settlement · '.$settlement->settlement_number" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" backRoute="sales-settlements.index" />
     </x-slot>
 
     @php
@@ -174,36 +173,13 @@
             <x-status-message class="mb-4 shadow-md" />
             <x-validation-errors class="mb-4" />
 
-            @if ($isSpecialEdit)
-                <div class="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-lg shadow">
-                    <div class="flex items-start space-x-3">
-                        <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        <div class="text-sm text-amber-800">
-                            <p class="font-semibold mb-1">This settlement is posted. Saving here will fully reverse
-                                its accounting, inventory, and ledger impact, apply your changes, and re-post it —
-                                all inside a single transaction.</p>
-                            <p>The original journal entry is never altered (posted entries are immutable); a
-                                reversing entry and a fresh corrected entry are created instead, so the full history
-                                stays intact. If the corrected figures fail posting validation, nothing is changed.</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
             <div class="ssf-shell">
                 <form method="POST"
-                    action="{{ $isSpecialEdit ? route('sales-settlements.update-special', $settlement) : route('sales-settlements.update', $settlement) }}"
+                    action="{{ route('sales-settlements.update', $settlement) }}"
                     id="settlementForm" enctype="multipart/form-data">
                     @csrf
                     @include('sales-settlements.partials.submit-lock')
-                    @unless ($isSpecialEdit)
-                        @method('PUT')
-                    @endunless
+                    @method('PUT')
                     {{-- Hidden input to store current employee ID for credit sales modal --}}
                     <input type="hidden" id="current_settlement_employee_id"
                         value="{{ old('employee_id', $settlement->employee_id) }}">
@@ -1064,20 +1040,13 @@
                             <span>Short / Excess</span>
                             <b data-mirror="summary_short_excess_display">Rs 0.00</b>
                         </div>
-                        <a href="{{ $isSpecialEdit ? route('sales-settlements.show', $settlement) : route('sales-settlements.index') }}"
+                        <a href="{{ route('sales-settlements.index') }}"
                             class="ak-btn ak-btn-outline">
                             Cancel
                         </a>
-                        @if ($isSpecialEdit)
-                            <button type="submit" class="ak-btn ak-btn-primary" data-submit-lock data-busy-label="Re-posting…"
-                                onclick="return confirm('This will reverse the accounting and inventory impact of this posted settlement, apply your changes, and re-post it. Continue?');">
-                                Apply Correction &amp; Re-Post
-                            </button>
-                        @else
-                            <button type="submit" class="ak-btn ak-btn-primary" data-submit-lock data-busy-label="Saving…">
-                                Update Settlement
-                            </button>
-                        @endif
+                        <button type="submit" class="ak-btn ak-btn-primary" data-submit-lock data-busy-label="Saving…">
+                            Update Settlement
+                        </button>
                     </div>
                 </form>
             </div>
@@ -1090,7 +1059,6 @@
             let invoiceCounter = 1;
             const savedBatchQuantities = @json($savedBatchesData);
             const savedGoodsIssueItemIds = @json($savedGoodsIssueItemIds);
-            const isSpecialEditPage = @json($isSpecialEdit);
             const savedCreditSales = @json($creditSalesDecoded);
             const savedRecoveries = @json($recoveriesDecoded);
             const savedBankTransfers = @json($bankTransfersDecoded);
@@ -2227,8 +2195,7 @@
                                     const savedShortage = Math.round(parseFloat(savedBatch.shortage) || 0);
                                     // Stock is not carried on the van, so a draft line saved with nothing sold,
                                     // returned or short was never filled in: it starts fully sold, like a new line.
-                                    const savedNothingSettled = !isSpecialEditPage
-                                        && Math.round(parseFloat(savedBatch.sold) || 0) + savedReturned + savedShortage === 0;
+                                    const savedNothingSettled = Math.round(parseFloat(savedBatch.sold) || 0) + savedReturned + savedShortage === 0;
                                     const savedSold = isNewLine || savedNothingSettled
                                         ? Math.round(parseFloat(batch.quantity) || 0)
                                         : Math.round(parseFloat(savedBatch.sold) || 0);

@@ -1,4 +1,4 @@
-{{-- One-send lock for the settlement form (create, edit, special edit). The first submit locks every
+{{-- One-send lock for the settlement form (create, edit). The first submit locks every
      [data-submit-lock] button and shows its data-busy-label; any further submit is dropped. When something
      else stops the send (a size warning, a browser alert) the buttons unlock again. While photos are still
      being shrunk the attachments script holds the submit and re-sends it once with data-resubmitting set,

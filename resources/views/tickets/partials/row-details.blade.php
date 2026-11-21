@@ -1,6 +1,6 @@
 {{--
     The "Details" cell of the tickets list: what a reviewer needs at a glance for each ticket type.
-    Expects $ticket (items loaded) and $lookups (products, batches, warehouses, suppliers keyed by id,
+    Expects $ticket (items loaded), optional $limit (lines shown, default 3) and $lookups (products, batches, warehouses, suppliers keyed by id,
     built once per page by TicketController::detailLookups, so there is no query per row).
 --}}
 @php
@@ -19,7 +19,8 @@
         return $found ? ['code' => $found->product_code, 'name' => $found->product_name] : ['code' => '—', 'name' => 'Deleted product'];
     };
     $items = $ticket->items;
-    $shown = 3;
+    // The list shows the first few lines; the Quick look passes a larger limit to show them all.
+    $shown = $limit ?? 3;
 @endphp
 
 <div class="tk-det">
@@ -28,7 +29,7 @@
             @foreach ($items->take($shown) as $item)
                 @php $p = $product($item->product_id); $batchCount = count((array) ($item->batch_ids ?? [])); @endphp
                 <div class="tk-det-line">
-                    <span class="tk-det-sku">{{ $p['code'] }}</span> <span class="tk-det-name" title="{{ $p['name'] }}">{{ Str::limit($p['name'], 38) }}</span>
+                    <span class="tk-det-sku">{{ $p['code'] }}</span> @if (mb_strtolower(trim($p['name'])) !== mb_strtolower(trim($p['code'])))<span class="tk-det-name" title="{{ $p['name'] }}">{{ Str::limit($p['name'], 38) }}</span>@endif
                     <span class="tk-det-tag">{{ $item->apply_to_all_batches || $batchCount === 0 ? 'All batches' : $batchCount.' '.Str::plural('batch', $batchCount) }}</span>
                     <div class="tk-det-changes">
                         @forelse ($item->priceChanges() as $change)
@@ -107,7 +108,7 @@
             @foreach ($items->take($shown) as $item)
                 @php $p = $product($item->product_id); @endphp
                 <div class="tk-det-line">
-                    <span class="tk-det-sku">{{ $p['code'] }}</span> <span class="tk-det-name" title="{{ $p['name'] }}">{{ Str::limit($p['name'], 38) }}</span>
+                    <span class="tk-det-sku">{{ $p['code'] }}</span> @if (mb_strtolower(trim($p['name'])) !== mb_strtolower(trim($p['code'])))<span class="tk-det-name" title="{{ $p['name'] }}">{{ Str::limit($p['name'], 38) }}</span>@endif
                     <span class="ak-muted">→</span> <b class="{{ $item->new_is_active ? 'tk-up' : 'tk-down' }}">{{ $item->new_is_active ? 'Active' : 'Inactive' }}</b>
                 </div>
             @endforeach
@@ -139,7 +140,7 @@
                 @php $data = (array) ($item->payload ?? []); @endphp
                 <div class="tk-det-line">
                     <span class="tk-det-sku">{{ $data['customer_code'] ?? '—' }}</span> <span class="tk-det-name">{{ $data['customer_name'] ?? '' }}</span>
-                    <div class="ak-muted">{{ collect([$data['business_name'] ?? null, $data['city'] ?? null, $data['channel_type'] ?? null])->filter()->implode(' · ') ?: '—' }}</div>
+                    <div class="ak-muted">{{ collect([($data['business_name'] ?? null) !== ($data['customer_name'] ?? null) ? ($data['business_name'] ?? null) : null, $data['city'] ?? null, $data['channel_type'] ?? null])->filter()->implode(' · ') ?: '—' }}</div>
                 </div>
             @endforeach
             @break

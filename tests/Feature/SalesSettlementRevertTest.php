@@ -870,3 +870,92 @@ it('refuses to revert when the van stock row is missing instead of dropping the 
         ->and($result['message'])->toContain('van stock row for Olper TBA 250ml')
         ->and($settlement->fresh()->status)->toBe('posted');
 });
+
+// ──────────────────────────────────────────────────────
+// Reversal date
+// ──────────────────────────────────────────────────────
+
+it('books every reversal on the date of the posting it undoes', function () {
+    // Posted on the 19th, reverted two days later.
+    $this->travelTo('2026-11-19 17:00:00');
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id, 'settlement_date' => '2026-11-19']);
+    $this->travelTo('2026-11-21 09:24:00');
+    $product = Product::factory()->create();
+
+    $customerAccount = CustomerEmployeeAccount::create([
+        'account_number' => 'CA-'.fake()->unique()->numerify('####'),
+        'customer_id' => Customer::factory()->create()->id,
+        'employee_id' => $settlement->employee_id,
+        'opened_date' => '2026-11-01',
+        'status' => 'active',
+    ]);
+    CustomerEmployeeAccountTransaction::create([
+        'customer_employee_account_id' => $customerAccount->id,
+        'transaction_date' => '2026-11-19',
+        'transaction_type' => 'credit_sale',
+        'sales_settlement_id' => $settlement->id,
+        'description' => 'Credit sale',
+        'debit' => 95220,
+        'credit' => 0,
+    ]);
+    InventoryLedgerEntry::create([
+        'date' => '2026-11-19',
+        'transaction_type' => 'sale',
+        'product_id' => $product->id,
+        'vehicle_id' => $settlement->vehicle_id,
+        'sales_settlement_id' => $settlement->id,
+        'debit_qty' => 0,
+        'credit_qty' => 49,
+        'unit_cost' => 100,
+        'running_balance' => 0,
+    ]);
+    StockMovement::create([
+        'movement_type' => 'sale',
+        'reference_type' => 'App\\Models\\SalesSettlement',
+        'reference_id' => $settlement->id,
+        'movement_date' => '2026-11-19',
+        'product_id' => $product->id,
+        'vehicle_id' => $settlement->vehicle_id,
+        'uom_id' => Uom::factory()->create()->id,
+        'quantity' => -49,
+        'unit_cost' => 100,
+        'total_value' => 4900,
+        'created_by' => $user->id,
+    ]);
+
+    $this->actingAs($user);
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')
+        ->once()
+        ->with($settlement->journal_entry_id, Mockery::any(), '2026-11-19')
+        ->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    $result = (new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class)))
+        ->revert($settlement);
+
+    expect($result['success'])->toBeTrue($result['message'] ?? '')
+        ->and(CustomerEmployeeAccountTransaction::where('sales_settlement_id', $settlement->id)->whereNotNull('reverses_transaction_id')->sole()->transaction_date->toDateString())->toBe('2026-11-19')
+        ->and(InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)->where('transaction_type', 'adjustment')->sole()->date->toDateString())->toBe('2026-11-19')
+        ->and(StockMovement::where('reference_id', $settlement->id)->where('quantity', 49)->sole()->movement_date->toDateString())->toBe('2026-11-19');
+});
+
+it('books the reversal today when the posting it undoes lies in a closed period', function () {
+    $this->travelTo('2026-10-15 17:00:00');
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id, 'settlement_date' => '2026-10-15']);
+    AccountingPeriod::where('name', 'October 2026')->update(['status' => 'closed']);
+    $this->travelTo('2026-11-21 09:24:00');
+
+    $this->actingAs($user);
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')
+        ->once()
+        ->with($settlement->journal_entry_id, Mockery::any(), '2026-11-21')
+        ->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    $result = (new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class)))
+        ->revert($settlement);
+
+    expect($result['success'])->toBeTrue($result['message'] ?? '');
+});

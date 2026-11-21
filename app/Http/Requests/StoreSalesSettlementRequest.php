@@ -77,6 +77,7 @@ class StoreSalesSettlementRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'settlement_date.before_or_equal' => 'The settlement date cannot be in the future. Check the day, month and year.',
             'expenses.*.expense_account_id.required_with' => 'Expense line :position has an amount but no expense account. Select an account for it or remove the line.',
             'expenses.*.expense_account_id.exists' => 'Expense line :position has an invalid expense account. Please select it again.',
             'recoveries_entries.*.bank_account_id.required_if' => 'Recovery :position is a bank/online recovery, so a bank account must be selected.',
@@ -99,7 +100,7 @@ class StoreSalesSettlementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'settlement_date' => 'required|date',
+            'settlement_date' => 'required|date|before_or_equal:today',
             'goods_issue_id' => 'required|exists:goods_issues,id',
             'cash_sales_amount' => 'nullable|numeric',
             'cheque_sales_amount' => 'nullable|numeric|min:0',

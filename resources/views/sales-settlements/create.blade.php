@@ -29,7 +29,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2" x-data="goodsIssueSelector()">
                             <div>
                                 <x-label for="settlement_date" value="Settlement Date" class="required" />
-                                <x-input id="settlement_date" name="settlement_date" type="date"
+                                <x-input id="settlement_date" name="settlement_date" type="date" :max="date('Y-m-d')"
                                     class="mt-1 block w-full" :value="old('settlement_date', date('Y-m-d'))" required />
                                 <x-input-error for="settlement_date" class="mt-2" />
                             </div>

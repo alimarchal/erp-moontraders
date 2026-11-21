@@ -507,12 +507,7 @@ class AccountingService
     {
         $date = $entryDate instanceof \DateTimeInterface ? $entryDate->format('Y-m-d') : substr((string) $entryDate, 0, 10);
 
-        $closedPeriod = AccountingPeriod::query()
-            ->where('status', '!=', AccountingPeriod::STATUS_OPEN)
-            ->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date)
-            ->orderByDesc('start_date')
-            ->first(['name', 'status']);
+        $closedPeriod = AccountingPeriod::closedCovering($date);
 
         if ($closedPeriod) {
             throw new \RuntimeException("Cannot post an entry dated {$date}: the accounting period {$closedPeriod->name} is {$closedPeriod->status}.");

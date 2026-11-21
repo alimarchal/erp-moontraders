@@ -42,6 +42,21 @@ class AccountingPeriod extends Model
     }
 
     /**
+     * The period that keeps entries off this day, if any. Periods overlap (a fiscal year and its
+     * quarters), so a day is closed when any period covering it is not open, e.g. a closed Q1
+     * inside an open fiscal year.
+     */
+    public static function closedCovering(string $date): ?self
+    {
+        return self::query()
+            ->where('status', '!=', self::STATUS_OPEN)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->orderByDesc('start_date')
+            ->first(['name', 'status']);
+    }
+
+    /**
      * Determine if the period is currently active.
      */
     public function isCurrent(): bool

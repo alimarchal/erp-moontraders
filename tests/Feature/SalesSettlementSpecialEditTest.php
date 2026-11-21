@@ -153,7 +153,7 @@ it('rejects the correction when no open accounting period covers the new date', 
 
     $this->actingAs($setup['superAdmin'])
         ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup, [
-            'settlement_date' => '2099-01-01',
+            'settlement_date' => '2001-01-01',
         ]))
         ->assertRedirect()
         ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'No open accounting period'));

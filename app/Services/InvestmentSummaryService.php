@@ -9,6 +9,7 @@ use App\Models\InvestmentOpeningBalance;
 use App\Models\LedgerRegister;
 use App\Models\SalesSettlement;
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -36,6 +37,7 @@ class InvestmentSummaryService
                             });
                     })
                     ->whereNull('ceat.deleted_at')
+                    ->tap(fn ($q) => $this->excludeRevertedPairs($q))
                     ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0)');
             }, 'opening_credit')
             ->selectSub(function ($query) use ($date) {
@@ -45,6 +47,7 @@ class InvestmentSummaryService
                     ->where('ceat.transaction_type', 'credit_sale')
                     ->where('ceat.transaction_date', $date)
                     ->whereNull('ceat.deleted_at')
+                    ->tap(fn ($q) => $this->excludeRevertedPairs($q))
                     ->selectRaw('COALESCE(SUM(ceat.debit), 0)');
             }, 'credit_amount')
             ->selectSub(function ($query) use ($date) {
@@ -54,6 +57,7 @@ class InvestmentSummaryService
                     ->where('ceat.transaction_type', 'recovery')
                     ->where('ceat.transaction_date', $date)
                     ->whereNull('ceat.deleted_at')
+                    ->tap(fn ($q) => $this->excludeRevertedPairs($q))
                     ->selectRaw('COALESCE(SUM(ceat.credit), 0)');
             }, 'recovery_amount');
 
@@ -77,6 +81,21 @@ class InvestmentSummaryService
 
             return $employee;
         });
+    }
+
+    /**
+     * Leave out both rows of every settlement-revert pair: the posting that was taken back and the
+     * reversal linked to it through reverses_transaction_id. Together they add nothing, but counted
+     * on their own they show the reverted posting's credit and recovery next to the re-posted ones,
+     * and on a day between the two they hold a balance that was later cancelled.
+     */
+    private function excludeRevertedPairs(Builder $query): void
+    {
+        $query->whereNull('ceat.reverses_transaction_id')
+            ->whereNotExists(fn ($reversal) => $reversal
+                ->from('customer_employee_account_transactions as reversal')
+                ->whereColumn('reversal.reverses_transaction_id', 'ceat.id')
+                ->whereNull('reversal.deleted_at'));
     }
 
     public function getPowderExpiry(int|array|null $supplierId, ?string $date = null): float

@@ -515,3 +515,54 @@ it('counts only warehouse rows in the stock amount for a past date', function ()
     // is sitting on a van.
     expect($response->viewData('stockAmount'))->toBe(1000.0);
 });
+
+it('counts a settlement reverted and posted again only once in salesman credit', function () {
+    $employee = Employee::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+        'is_active' => true,
+    ]);
+    $account = CustomerEmployeeAccount::create([
+        'account_number' => 'ACC-REVERT',
+        'customer_id' => Customer::factory()->create(['is_active' => true])->id,
+        'employee_id' => $employee->id,
+        'opened_date' => '2026-08-01',
+        'status' => 'active',
+        'created_by' => $this->user->id,
+    ]);
+    $line = fn (string $date, string $type, float $debit, float $credit, ?int $reverses = null) => CustomerEmployeeAccountTransaction::create([
+        'customer_employee_account_id' => $account->id,
+        'transaction_date' => $date,
+        'transaction_type' => $type,
+        'reverses_transaction_id' => $reverses,
+        'description' => $type,
+        'debit' => $debit,
+        'credit' => $credit,
+    ]);
+
+    $line('2026-08-01', 'credit_sale', 100000, 0);
+
+    // Posted on the 19th, reverted on the 21st (as reverts used to book it), and posted again on the 19th.
+    $firstSale = $line('2026-08-19', 'credit_sale', 95220, 0);
+    $firstRecovery = $line('2026-08-19', 'recovery', 0, 40000);
+    $line('2026-08-21', 'adjustment', 0, 95220, $firstSale->id);
+    $line('2026-08-21', 'adjustment', 40000, 0, $firstRecovery->id);
+    $line('2026-08-19', 'credit_sale', 95220, 0);
+    $line('2026-08-19', 'recovery', 0, 40000);
+
+    $creditOn = fn (string $date) => $this->get(route('reports.investment-summary.index', [
+        'date' => $date,
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]))->assertOk()->viewData('salesmanCreditData')->firstWhere('id', $employee->id);
+
+    $onTheDay = $creditOn('2026-08-19');
+    expect($onTheDay->opening_credit)->toBe(100000.0)
+        ->and($onTheDay->credit_amount)->toBe(95220.0)
+        ->and($onTheDay->recovery_amount)->toBe(40000.0)
+        ->and($onTheDay->total_credit)->toBe(155220.0);
+
+    $onTheRevertDay = $creditOn('2026-08-21');
+    expect($onTheRevertDay->opening_credit)->toBe(155220.0)
+        ->and($onTheRevertDay->total_credit)->toBe(155220.0);
+});

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AccountingPeriod;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\CustomerEmployeeAccountTransaction;
@@ -59,14 +60,16 @@ class SalesSettlementRevertService
 
                 $this->assertReturnedStockStillOnHand($settlement);
 
-                $this->reverseGLEntry($settlement);
-                $this->reverseInventoryLedgerEntries($settlement);
+                $reversalDate = $this->reversalDate($settlement);
+
+                $this->reverseGLEntry($settlement, $reversalDate);
+                $this->reverseInventoryLedgerEntries($settlement, $reversalDate);
                 $this->restoreVanStockBalance($settlement);
                 $this->restoreVanStockBatches($settlement);
                 $this->reverseWarehouseStockForReturns($settlement);
                 $this->syncCurrentStockForReturns($settlement);
-                $this->reverseCustomerLedgerEntries($settlement);
-                $this->markStockMovementsReversed($settlement);
+                $this->reverseCustomerLedgerEntries($settlement, $reversalDate);
+                $this->markStockMovementsReversed($settlement, $reversalDate);
                 $this->resetSettlementToDraft($settlement);
 
                 // the settlement journal was reversed above: its bank register lines are reversed with it
@@ -144,13 +147,30 @@ class SalesSettlementRevertService
     }
 
     /**
+     * The day every reversal of this revert is booked on: the day the posting it undoes was booked on.
+     *
+     * A revert is almost always followed by a corrected re-post on the settlement's own date. Booking the
+     * reversal on the day of the revert instead left that date carrying both postings (credit, recovery and
+     * sales counted twice in the day's reports) and put a stray adjustment on the revert day. When the
+     * original day falls in a closed period the reversal goes to today, as the books there cannot change.
+     */
+    private function reversalDate(SalesSettlement $settlement): string
+    {
+        $postedOn = DB::table('journal_entries')->where('id', $settlement->journal_entry_id)->value('entry_date');
+        $postedOn = $postedOn ? substr((string) $postedOn, 0, 10) : $settlement->settlement_date->toDateString();
+
+        return AccountingPeriod::closedCovering($postedOn) === null ? $postedOn : now()->toDateString();
+    }
+
+    /**
      * Create a reversing GL journal entry (REV- prefix, swapped debit/credit).
      */
-    private function reverseGLEntry(SalesSettlement $settlement): void
+    private function reverseGLEntry(SalesSettlement $settlement, string $reversalDate): void
     {
         $result = $this->accountingService->reverseJournalEntry(
             $settlement->journal_entry_id,
-            "Revert Sales Settlement {$settlement->settlement_number}"
+            "Revert Sales Settlement {$settlement->settlement_number}",
+            $reversalDate
         );
 
         if (! $result['success']) {
@@ -165,7 +185,7 @@ class SalesSettlementRevertService
      * one, so a settlement that was posted and reverted before reverses only what is
      * currently standing; copying every row would reverse the earlier reversals too.
      */
-    private function reverseInventoryLedgerEntries(SalesSettlement $settlement): void
+    private function reverseInventoryLedgerEntries(SalesSettlement $settlement, string $reversalDate): void
     {
         $standing = InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)
             ->selectRaw('product_id, warehouse_id, vehicle_id, stock_batch_id, unit_cost,
@@ -187,7 +207,7 @@ class SalesSettlementRevertService
                 debitQty: $netQty < 0 ? abs($netQty) : 0.0,
                 creditQty: $netQty > 0 ? $netQty : 0.0,
                 unitCost: (float) $group->unit_cost,
-                date: now()->toDateString(),
+                date: $reversalDate,
                 notes: "Reversal: SS {$settlement->settlement_number}",
                 batchId: $group->stock_batch_id,
                 salesSettlementId: $settlement->id,
@@ -375,7 +395,7 @@ class SalesSettlementRevertService
      * to the row it undoes. Only rows still in effect are reversed: on a second revert the
      * first posting and its reversals have already cancelled out.
      */
-    private function reverseCustomerLedgerEntries(SalesSettlement $settlement): void
+    private function reverseCustomerLedgerEntries(SalesSettlement $settlement, string $reversalDate): void
     {
         $transactions = CustomerEmployeeAccountTransaction::where('sales_settlement_id', $settlement->id)
             ->whereNull('reverses_transaction_id')
@@ -385,7 +405,7 @@ class SalesSettlementRevertService
         foreach ($transactions as $txn) {
             CustomerEmployeeAccountTransaction::create([
                 'customer_employee_account_id' => $txn->customer_employee_account_id,
-                'transaction_date' => now()->toDateString(),
+                'transaction_date' => $reversalDate,
                 'transaction_type' => 'adjustment',
                 'reference_number' => 'REV-'.($txn->reference_number ?? $settlement->settlement_number),
                 'sales_settlement_id' => $settlement->id,
@@ -419,7 +439,7 @@ class SalesSettlementRevertService
      * settlement that is posted and reverted more than once reverses only what is
      * currently standing — copying every row would reverse earlier reversals too.
      */
-    private function markStockMovementsReversed(SalesSettlement $settlement): void
+    private function markStockMovementsReversed(SalesSettlement $settlement, string $reversalDate): void
     {
         $standing = StockMovement::where('reference_type', 'App\\Models\\SalesSettlement')
             ->where('reference_id', $settlement->id)
@@ -442,7 +462,7 @@ class SalesSettlementRevertService
                 'movement_type' => $group->movement_type,
                 'reference_type' => 'App\\Models\\SalesSettlement',
                 'reference_id' => $settlement->id,
-                'movement_date' => now()->toDateString(),
+                'movement_date' => $reversalDate,
                 'product_id' => $group->product_id,
                 'stock_batch_id' => $group->stock_batch_id,
                 'warehouse_id' => $group->warehouse_id,

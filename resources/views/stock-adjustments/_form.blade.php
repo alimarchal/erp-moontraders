@@ -1,6 +1,8 @@
 {{--
-    Stock adjustment form shared by Create and Edit (draft). Same field names as before, so the
-    controller is unchanged. Variables: $adjustment (null on create), $action, $suppliers, $warehouses, $submitLabel.
+    Stock adjustment form shared by Create and Edit (draft), in the Goods Issue form layout (numbered cards,
+    a lines table that becomes cards below 1024px, a sticky totals / Cancel / Save bar). Same field names as
+    before, so the controller is unchanged. Variables: $adjustment (null on create), $action, $suppliers,
+    $warehouses, $submitLabel. Needs goods-issues.partials.form-style and tickets.partials.style.
 --}}
 @php
     $isEdit = $adjustment !== null;
@@ -26,10 +28,10 @@
     @csrf
     @if ($isEdit) @method('PUT') @endif
 
-    <section class="uf-card" aria-label="Adjustment details" style="margin-bottom:16px">
+    <section class="uf-card gf-card" aria-labelledby="sa-details">
         <header class="uf-card-head"><div>
-            <h2 class="uf-card-title"><span class="uf-step">1</span> Adjustment details</h2>
-            <p class="uf-card-sub">Saved as a draft first. Posting moves stock, the ledgers, valuation and the journal.</p>
+            <h2 class="uf-card-title" id="sa-details"><span class="uf-step">1</span> Adjustment details</h2>
+            <p class="uf-card-sub">Pick the supplier first: its products appear in the lines, then the warehouse's batches.</p>
         </div></header>
         <div class="uf-body tk-gen4">
             <div><label class="tk-label" for="adjustment_date">Date <span class="uf-req">*</span></label>
@@ -61,15 +63,19 @@
         </div>
     </section>
 
-    <section class="uf-card" aria-labelledby="sa-lines">
+    <section class="uf-card gf-card" aria-labelledby="sa-lines">
         <header class="uf-card-head">
             <div>
-                <h2 class="uf-card-title" id="sa-lines"><span class="uf-step">2</span> Lines</h2>
+                <h2 class="uf-card-title" id="sa-lines"><span class="uf-step">2</span> SKUs to adjust</h2>
                 <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. To correct only a cost, keep the counted quantity and type the new value. Selling cost is the price you sell at; unit cost is what it was bought at (changing it needs the tick below).</p>
             </div>
-            <span class="ak-pill" x-text="lineCount() + ' line(s) · value ' + signed(total())"></span>
+            <div class="gf-head-stats">
+                <span class="ak-pill" x-text="lineCount() + ' of ' + rows.length + ' lines filled'"></span>
+                <span class="ak-pill ak-pill-red" x-show="costChangedLines().length" x-cloak x-text="costChangedLines().length + ' unit cost change(s)'"></span>
+            </div>
         </header>
-        <div style="overflow-x:auto">
+        <div class="gf-table">
+        <div class="form-table-scroll">
             <table class="tk-grid-table">
                 <thead><tr>
                     <th style="width:36px">#</th><th style="min-width:210px">Product</th><th style="min-width:190px">Batch</th>
@@ -79,13 +85,13 @@
                 <template x-for="(row, index) in rows" :key="row.uid">
                     <tbody>
                         <tr>
-                            <td class="ak-muted" x-text="index + 1"></td>
-                            <td>
+                            <td class="gf-no" data-label="#" x-text="index + 1"></td>
+                            <td data-label="SKU">
                                 <input type="hidden" :name="`items[${index}][product_id]`" :value="row.product_id">
                                 <input type="hidden" :name="`items[${index}][uom_id]`" :value="row.uom_id">
                                 <select class="tk-product-select" x-init="initPicker($el, row)"></select>
                             </td>
-                            <td>
+                            <td data-label="Batch">
                                 <select class="tk-mini" :name="`items[${index}][stock_batch_id]`" :disabled="!row.product_id || !warehouseId" @change="pickBatch(row, $event.target.value)">
                                     <option value="" x-text="!warehouseId ? 'Choose a warehouse first' : (row.loading ? 'Loading…' : (row.product_id && row.batches.length === 0 && !row.stock_batch_id ? 'No stock in this warehouse' : 'Select batch'))"></option>
                                     <template x-if="row.stock_batch_id && !row.batches.some((b) => String(b.id) === String(row.stock_batch_id))">
@@ -101,23 +107,35 @@
                                 </label>
                                 <input type="hidden" :name="`items[${index}][selling_scope]`" :value="row.selling_scope">
                             </td>
-                            <td class="tk-cell"><input type="number" step="0.001" readonly tabindex="-1" :name="`items[${index}][system_quantity]`" :value="row.system_quantity" style="background:#f8fafc"></td>
-                            <td class="tk-cell"><input type="number" step="0.001" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][actual_quantity]`" x-model="row.actual_quantity" placeholder="count"></td>
-                            <td><span x-show="diff(row) !== null" class="tk-delta" :class="diff(row) > 0 ? 'tk-delta-up' : (diff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(diff(row), 3)"></span> <small x-show="costOnly(row)" class="ak-muted">cost only</small></td>
-                            <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][selling_price]`" x-model="row.selling_price" :style="sellingChanged(row) ? 'background:#fffbeb;border-color:#f59e0b' : ''" title="Price this batch is sold at. Changing it updates the selling price (no stock or journal effect)."></td>
-                            <td class="tk-cell"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost" :style="costChanged(row) ? 'background:#fef2f2;border-color:#dc2626' : ''" title="Purchase cost of this batch. Changing it revalues the batch."></td>
-                            <td><span x-show="value(row) !== null" class="ak-strong" x-text="signed(value(row))"></span>
+                            <td class="tk-cell" data-label="System qty"><input type="number" step="0.001" readonly tabindex="-1" :name="`items[${index}][system_quantity]`" :value="row.system_quantity" style="background:#f8fafc"></td>
+                            <td class="tk-cell" data-label="Counted qty"><input type="number" step="0.001" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][actual_quantity]`" x-model="row.actual_quantity" placeholder="count"></td>
+                            <td data-label="Difference"><span x-show="diff(row) !== null" class="tk-delta" :class="diff(row) > 0 ? 'tk-delta-up' : (diff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(diff(row), 3)"></span> <small x-show="costOnly(row)" class="ak-muted">cost only</small></td>
+                            <td class="tk-cell" data-label="Selling cost"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][selling_price]`" x-model="row.selling_price" :style="sellingChanged(row) ? 'background:#fffbeb;border-color:#f59e0b' : ''" title="Price this batch is sold at. Changing it updates the selling price (no stock or journal effect)."></td>
+                            <td class="tk-cell" data-label="Unit cost"><input type="number" step="0.01" min="0" x-show="row.stock_batch_id" x-cloak :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost" :style="costChanged(row) ? 'background:#fef2f2;border-color:#dc2626' : ''" title="Purchase cost of this batch. Changing it revalues the batch."></td>
+                            <td data-label="Total value"><span x-show="value(row) !== null" class="ak-strong" x-text="signed(value(row))"></span>
                                 <small x-show="costChanged(row)" class="ak-muted" style="display:block">+ revaluation on posting</small></td>
-                            <td><button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></td>
+                            <td data-label=""><button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></td>
                         </tr>
                     </tbody>
                 </template>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="ak-strong" x-text="'Total · ' + lineCount() + ' line(s)'"></td>
+                        <td class="ak-strong" x-text="signed(rows.reduce((sum, row) => sum + (diff(row) || 0), 0), 3)"></td>
+                        <td colspan="2"></td>
+                        <td class="ak-strong" x-text="signed(total())"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="10"><button type="button" class="tk-add" @click="addRow()" :disabled="!supplierId">＋ Add another line</button></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
-        <div class="uf-body" style="padding-top:12px"><button type="button" class="tk-add" @click="addRow()" :disabled="!supplierId">＋ Add another line</button></div>
+        </div>
     </section>
 
-    <section class="uf-card" x-show="costChangedLines().length" x-cloak :style="needTick && !confirmTick ? 'border-color:#dc2626' : ''" style="margin-top:16px">
+    <section class="uf-card gf-card" x-show="costChangedLines().length" x-cloak :style="needTick && !confirmTick ? 'box-shadow:0 0 0 2px #dc2626' : ''">
         <div class="uf-body">
             <p style="margin:0 0 8px; font-weight:700; color:#b91c1c">You changed a unit cost</p>
             <template x-for="row in costChangedLines()" :key="row.uid">
@@ -133,11 +151,17 @@
 
     <input type="hidden" name="confirm_revaluation" :value="confirmTick ? 1 : 0">
 
-    <div class="tk-footer" style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 18px; background:#fff; border:1px solid var(--ak-border); border-radius:12px">
-        <span class="ak-muted" style="font-size:13px" x-text="lineCount() + ' line(s) · nothing moves until you post'"></span>
-        <div style="display:flex; gap:10px">
+    <div class="uf-actions gf-actions">
+        <div class="gf-totals" aria-live="polite">
+            <span><b x-text="lineCount()"></b> SKUs</span>
+            <span><b x-text="signed(rows.reduce((sum, row) => sum + (diff(row) || 0), 0), 3) || '0'"></b> qty change</span>
+            <span>Value Rs <b x-text="signed(total()) || '0.00'"></b></span>
+            <span class="gf-warn" x-show="needTick && !confirmTick" x-cloak>Tick the unit cost box before saving</span>
+            <span x-show="!(needTick && !confirmTick)">Nothing moves until you post</span>
+        </div>
+        <div>
             <a href="{{ $isEdit ? route('stock-adjustments.show', $adjustment) : route('stock-adjustments.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
-            <button type="submit" class="ak-btn ak-btn-primary" :disabled="submitting"><span x-show="!submitting">{{ $submitLabel }}</span><span x-show="submitting" x-cloak>Please wait…</span></button>
+            <button type="submit" class="ak-btn ak-btn-primary gf-submit" :disabled="submitting"><span x-show="!submitting">{{ $submitLabel }}</span><span x-show="submitting" x-cloak>Please wait…</span></button>
         </div>
     </div>
 </form>

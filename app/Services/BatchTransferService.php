@@ -21,27 +21,23 @@ class BatchTransferService
     ) {}
 
     /**
-     * Transfer a full batch (or partial quantity) from one product to another.
+     * Move stock of a batch to another product: the whole quantity on hand or part of it.
      *
-     * For FULL transfer  – all tables referencing this batch get product_id updated in-place.
-     * For PARTIAL transfer – source batch is reduced; a new cloned batch is created for the target.
+     * Either way the stock leaves the source product and arrives on the target as of today: an adjustment movement
+     * with stock and inventory ledger rows on each side, and a new batch for the target carrying the same cost,
+     * dates and supplier. Nothing already posted is changed: the batch's receipt, issues and sales keep their
+     * product, so past reports, the GRN and the settlements stay as they were. Units still on a van stay on the
+     * source batch and settle under the source product.
      *
-     * Tables touched (mirrors what GRN post/reverse touches):
-     *   1. stock_batches              – product_id (full) | new batch created (partial)
-     *   2. stock_valuation_layers     – product_id (full) | split: reduce source, create target SVL
-     *   3. current_stock_by_batch     – product_id (full) | split: reduce source, create target CSB
-     *   4. current_stock              – synced for both products via syncCurrentStockFromValuationLayers
-     *   5. goods_issue_items          – product_id updated for DRAFT GIs only (full transfer only)
-     *   6. stock_movements            – product_id updated (full) | out/in adjustment movements (partial)
-     *   7. stock_ledger_entries       – product_id updated (full) | out/in rows (partial)
-     *   8. inventory_ledger_entries   – product_id updated (full) | out/in rows (partial)
-     *
-     * Snapshots and ledgers are rebuilt per product from 6–8, so they must always agree with 1–3.
+     * Tables touched:
+     *   stock_batches (new target batch), stock_valuation_layers (source reduced, target layer added),
+     *   current_stock_by_batch (source reduced, target row added), current_stock (both products re-synced),
+     *   stock_movements, stock_ledger_entries, inventory_ledger_entries (one out row and one in row each)
      *
      * @param  int  $stockBatchId  Source batch ID
-     * @param  int  $targetProductId  Target product to assign the batch/quantity to
-     * @param  float  $quantity  Units to transfer (== batch qty means full transfer)
-     * @param  string  $reason  Admin's reason note recorded in logs
+     * @param  int  $targetProductId  Target product to move the quantity to
+     * @param  float  $quantity  Units to transfer (up to the batch's quantity on hand)
+     * @param  string  $reason  Admin's reason, kept on the new batch and the ledger rows
      * @return array{success: bool, message: string, data: array}
      */
     public function transfer(
@@ -76,17 +72,8 @@ class BatchTransferService
 
             $isFullTransfer = abs($quantity - $availableQty) < 0.001;
 
-            // A full transfer re-labels the batch's history. Stock still on a van would later be
-            // settled under the old product against a batch that now belongs to the new one.
-            if ($isFullTransfer && $this->quantityOnVans($batch->id) > 0.001) {
-                throw new \InvalidArgumentException(
-                    'Part of this batch is still on a van. Settle those goods issues before transferring the whole batch.'
-                );
-            }
-
-            $result = $isFullTransfer
-                ? $this->executeFullTransfer($batch, $csb, $targetProductId, $warehouseId, $reason)
-                : $this->executePartialTransfer($batch, $csb, $targetProductId, $warehouseId, $quantity, $reason);
+            $result = $this->moveQuantity($batch, $csb, $targetProductId, $warehouseId, $quantity, $reason);
+            $result['type'] = $isFullTransfer ? 'full' : 'partial';
 
             // Sync current_stock for both source and target from current_stock_by_batch
             $this->inventoryService->syncCurrentStockFromValuationLayers($sourceProductId, $warehouseId);
@@ -128,65 +115,9 @@ class BatchTransferService
     }
 
     /**
-     * Full transfer: update product_id in-place across ALL related tables.
-     * No new records are created; the existing batch is simply reassigned.
+     * Reduce the source batch and create a new batch for the target product with the same cost and dates.
      */
-    private function executeFullTransfer(
-        StockBatch $batch,
-        CurrentStockByBatch $csb,
-        int $targetProductId,
-        int $warehouseId,
-        string $reason
-    ): array {
-        $sourceProductId = $batch->product_id;
-
-        // 1. stock_batches – reassign product
-        $batch->product_id = $targetProductId;
-        $batch->save();
-
-        // 2. stock_valuation_layers – all layers for this batch
-        StockValuationLayer::where('stock_batch_id', $batch->id)
-            ->update(['product_id' => $targetProductId]);
-
-        // 3. current_stock_by_batch – reassign product
-        $csb->product_id = $targetProductId;
-        $csb->save();
-
-        // 4. stock_movements and both ledgers – everything tied to this batch
-        foreach (['stock_movements', 'stock_ledger_entries', 'inventory_ledger_entries'] as $table) {
-            DB::table($table)
-                ->where('stock_batch_id', $batch->id)
-                ->update(['product_id' => $targetProductId]);
-        }
-
-        foreach ([$sourceProductId, $targetProductId] as $productId) {
-            $this->recalculateStockLedgerBalances($productId, $warehouseId);
-            $this->recalculateInventoryLedgerBalances($productId);
-        }
-
-        // 5. goods_issue_items – DRAFT GIs only (posted GIs are immutable historical records)
-        $affectedDraftItems = $this->reassignDraftGoodsIssueItems(
-            $sourceProductId,
-            $targetProductId,
-            $batch->id
-        );
-
-        return [
-            'type' => 'full',
-            'batch_code' => $batch->batch_code,
-            'quantity_transferred' => $csb->quantity_on_hand,
-            'draft_gi_items_updated' => $affectedDraftItems,
-        ];
-    }
-
-    /**
-     * Partial transfer: reduce source batch, create a new cloned batch for the target product.
-     *
-     * We do NOT touch goods_issue_items for partial transfers because we cannot
-     * automatically determine which portion of a draft GI item maps to the transferred
-     * quantity. The admin is shown a warning if draft GIs exist.
-     */
-    private function executePartialTransfer(
+    private function moveQuantity(
         StockBatch $batch,
         CurrentStockByBatch $csb,
         int $targetProductId,
@@ -196,7 +127,7 @@ class BatchTransferService
     ): array {
         // Create a new batch for the target product, cloned from source attributes
         $newBatch = StockBatch::create([
-            'batch_code' => $batch->batch_code.'-PT'.now()->format('Hm'),
+            'batch_code' => $this->nextTransferBatchCode($batch->batch_code),
             'product_id' => $targetProductId,
             'supplier_id' => $batch->supplier_id,
             'receipt_date' => $batch->receipt_date,
@@ -211,7 +142,7 @@ class BatchTransferService
             'selling_price' => $batch->selling_price,
             'status' => 'active',
             'is_active' => true,
-            'notes' => "Partial transfer from {$batch->batch_code}. Reason: {$reason}",
+            'notes' => "Transferred from {$batch->batch_code}. Reason: {$reason}",
         ]);
 
         // Reduce source SVL quantity_remaining (FIFO: take from earliest layer first)
@@ -288,11 +219,9 @@ class BatchTransferService
         $this->recordTransferLeg($targetProductId, $newBatch->id, $warehouseId, $transferQty, $unitCost, $transferDate, $newBatch, $notes);
 
         return [
-            'type' => 'partial',
             'source_batch_code' => $batch->batch_code,
             'new_batch_code' => $newBatch->batch_code,
             'quantity_transferred' => $transferQty,
-            'draft_gi_items_updated' => 0,
         ];
     }
 
@@ -362,74 +291,19 @@ class BatchTransferService
     }
 
     /**
-     * Units of this batch issued to vans and not yet sold, returned or written off.
+     * The target batch is named after the original batch with a running number: BATCH-2026-0123-PT1, -PT2, …
+     * A batch that was itself transferred counts from its original, so codes do not grow -PT1-PT1.
      */
-    private function quantityOnVans(int $stockBatchId): float
+    private function nextTransferBatchCode(string $sourceCode): string
     {
-        return (float) DB::table('stock_movements')
-            ->where('stock_batch_id', $stockBatchId)
-            ->whereNotNull('vehicle_id')
-            ->selectRaw("COALESCE(SUM(CASE
-                WHEN movement_type IN ('transfer', 'return') THEN -quantity
-                WHEN movement_type IN ('sale', 'shortage') THEN quantity
-                ELSE 0 END), 0) as on_vans")
-            ->value('on_vans');
-    }
+        $originalCode = preg_replace('/(-PT\d+)+$/', '', $sourceCode);
+        $number = StockBatch::where('batch_code', 'like', $originalCode.'-PT%')->count() + 1;
 
-    private function recalculateStockLedgerBalances(int $productId, int $warehouseId): void
-    {
-        $balance = 0.0;
-
-        $entries = DB::table('stock_ledger_entries')
-            ->where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->orderBy('id')
-            ->get(['id', 'quantity_in', 'quantity_out', 'valuation_rate']);
-
-        foreach ($entries as $entry) {
-            $balance += (float) $entry->quantity_in - (float) $entry->quantity_out;
-
-            DB::table('stock_ledger_entries')->where('id', $entry->id)->update([
-                'quantity_balance' => $balance,
-                'stock_value' => round($balance * (float) $entry->valuation_rate, 4),
-            ]);
+        while (StockBatch::where('batch_code', $originalCode.'-PT'.$number)->exists()) {
+            $number++;
         }
-    }
 
-    private function recalculateInventoryLedgerBalances(int $productId): void
-    {
-        $balance = 0.0;
-
-        $entries = DB::table('inventory_ledger_entries')
-            ->where('product_id', $productId)
-            ->orderBy('date')
-            ->orderBy('id')
-            ->get(['id', 'debit_qty', 'credit_qty']);
-
-        foreach ($entries as $entry) {
-            $balance += (float) $entry->debit_qty - (float) $entry->credit_qty;
-
-            DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
-                'running_balance' => $balance,
-            ]);
-        }
-    }
-
-    /**
-     * For full batch transfers: find draft GI items that referenced the source product
-     * and whose quantities could have been fulfilled from this specific batch, then
-     * point them to the target product.
-     *
-     * Only DRAFT GIs are updated – posted/issued GIs are immutable historical records.
-     */
-    private function reassignDraftGoodsIssueItems(
-        int $sourceProductId,
-        int $targetProductId,
-        int $batchId
-    ): int {
-        return GoodsIssueItem::whereHas('goodsIssue', fn ($q) => $q->where('status', 'draft'))
-            ->where('product_id', $sourceProductId)
-            ->update(['product_id' => $targetProductId]);
+        return $originalCode.'-PT'.$number;
     }
 
     /**

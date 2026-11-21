@@ -218,13 +218,23 @@ class InventoryLedgerEntry extends Model
     {
         $table = $query->getModel()->getTable();
 
-        return $query->whereNot(fn ($reverted) => $reverted
-            ->whereNotNull("{$table}.sales_settlement_id")
-            ->whereExists(fn ($reversal) => $reversal
-                ->from('inventory_ledger_entries as reversal')
-                ->whereColumn('reversal.sales_settlement_id', "{$table}.sales_settlement_id")
-                ->where('reversal.transaction_type', self::TYPE_ADJUSTMENT)
-                ->whereColumn('reversal.id', '>=', "{$table}.id")));
+        // "Up to and including its latest reversal" is id <= the settlement's highest adjustment id. The
+        // excluded ids are worked out once (a few hundred rows) rather than with a lookup per ledger row,
+        // which doubled the time of every sum over a large supplier's history.
+        return $query->whereNotIn("{$table}.id", fn ($reverted) => $reverted
+            ->from('inventory_ledger_entries as posting')
+            ->joinSub(
+                fn ($latest) => $latest
+                    ->from('inventory_ledger_entries')
+                    ->where('transaction_type', self::TYPE_ADJUSTMENT)
+                    ->whereNotNull('sales_settlement_id')
+                    ->groupBy('sales_settlement_id')
+                    ->selectRaw('sales_settlement_id, MAX(id) AS latest_reversal_id'),
+                'reversal',
+                fn ($join) => $join
+                    ->on('reversal.sales_settlement_id', '=', 'posting.sales_settlement_id')
+                    ->on('posting.id', '<=', 'reversal.latest_reversal_id'))
+            ->select('posting.id'));
     }
 
     // ==================== STATIC HELPER METHODS ====================

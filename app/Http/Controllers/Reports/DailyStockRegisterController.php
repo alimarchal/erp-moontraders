@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DailyStockRegisterController extends Controller implements HasMiddleware
@@ -23,7 +23,10 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
 
     public function index(Request $request): View
     {
-        $date = $request->input('date', now()->format('Y-m-d'));
+        // A plain Y-m-d: the ledger's date column is a DATE, so it is compared as-is (no DATE() wrapper),
+        // which lets MySQL use the (date, product_id) index instead of scanning every sale / return row.
+        $request->validate(['date' => ['nullable', 'date']]);
+        $date = Carbon::parse($request->input('date') ?: now())->toDateString();
         $supplierId = $request->input('supplier_id');
         $productId = $request->input('product_id');
 
@@ -53,20 +56,9 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
             return view('reports.daily-stock-register.index', ['reportData' => collect()] + $viewData);
         }
 
-        // Products for Report (Filtered by Supplier AND Product if selected)
-        // Active products always show. An inactive (or deactivated-later) product still shows while it holds
-        // stock or moves on the date, otherwise its stock is missing from the register and the totals.
-        $productsQuery = Product::query()
-            ->where(function ($query) use ($date) {
-                $query->where('is_active', true)
-                    ->orWhereIn('id', InventoryLedgerEntry::query()
-                        ->withoutRevertedSettlementPostings()
-                        ->select('product_id')
-                        ->whereDate('date', '<=', $date)
-                        ->groupBy('product_id')
-                        ->havingRaw('ABS(SUM(debit_qty - credit_qty)) > 0.0001 OR SUM(CASE WHEN date = ? THEN 1 ELSE 0 END) > 0', [$date]));
-            })
-            ->with(['supplier', 'uom']);
+        // Products for Report (Filtered by Supplier AND Product if selected), inactive ones included here and
+        // dropped below unless they hold stock or move on the date.
+        $productsQuery = Product::query()->with(['supplier', 'uom']);
 
         if ($supplierId) {
             $productsQuery->where('supplier_id', $supplierId);
@@ -77,160 +69,65 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
         }
 
         $products = $productsQuery->orderBy('product_name')->get();
-        $productIds = $products->pluck('id')->toArray();
 
-        // Every query below leaves out settlement postings a revert took back (and their reversals), so a
+        // Every column comes from ONE pass over the ledger up to the date (conditional sums), instead of a
+        // query per column: a large supplier has most of the ledger's rows, and each separate query read them
+        // all again. It leaves out settlement postings a revert took back (and their reversals), so a
         // settlement reverted and posted again counts its sales once.
-
-        // 1. Warehouse Opening (Before Date)
-        $whOpening = InventoryLedgerEntry::query()
+        //   wh_opening  warehouse stock before the date        van_bf     van stock before the date
+        //   wh_purchase GRN into a warehouse on the date        van_issue  transfers into a van on the date
+        //   sale / ret / shortage  out of stock on the date     adjustment count differences on the date
+        //   in_hand_value  Opening + Purchase + BF + Adjustment - Sales - Shortage at ledger unit cost; a cost
+        //                  revaluation moves no quantity, so its row carries the value it moved in total_value
+        //   net_qty / moved_today  decide whether an inactive product still belongs in the register
+        $ledger = InventoryLedgerEntry::query()
             ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereNotNull('warehouse_id')
-            ->whereDate('date', '<', $date)
-            ->select('product_id', DB::raw('SUM(debit_qty - credit_qty) as qty'))
+            ->whereIn('product_id', $products->pluck('id'))
+            ->where('date', '<=', $date)
+            ->select('product_id')
+            ->selectRaw("
+                SUM(CASE WHEN date < ? AND warehouse_id IS NOT NULL THEN debit_qty - credit_qty ELSE 0 END) AS wh_opening,
+                SUM(CASE WHEN date = ? AND warehouse_id IS NOT NULL AND transaction_type = 'purchase' THEN debit_qty ELSE 0 END) AS wh_purchase,
+                SUM(CASE WHEN date < ? AND vehicle_id IS NOT NULL THEN debit_qty - credit_qty ELSE 0 END) AS van_bf,
+                SUM(CASE WHEN date = ? AND vehicle_id IS NOT NULL AND transaction_type = 'transfer_in' THEN debit_qty ELSE 0 END) AS van_issue,
+                SUM(CASE WHEN date = ? AND transaction_type = 'sale' THEN credit_qty ELSE 0 END) AS sale,
+                SUM(CASE WHEN date = ? AND transaction_type = 'return' THEN credit_qty ELSE 0 END) AS ret,
+                SUM(CASE WHEN date = ? AND transaction_type = 'shortage' THEN credit_qty ELSE 0 END) AS shortage,
+                SUM(CASE WHEN date = ? AND transaction_type = 'adjustment' THEN debit_qty - credit_qty ELSE 0 END) AS adjustment,
+                SUM(CASE
+                    WHEN date < ? AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
+                        + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
+                    WHEN date = ? AND transaction_type = 'purchase' AND warehouse_id IS NOT NULL THEN debit_qty * unit_cost
+                    WHEN date = ? AND transaction_type IN ('sale', 'shortage') THEN -credit_qty * unit_cost
+                    WHEN date = ? AND transaction_type = 'adjustment' AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
+                        + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
+                    ELSE 0 END) AS in_hand_value,
+                SUM(debit_qty - credit_qty) AS net_qty,
+                SUM(CASE WHEN date = ? THEN 1 ELSE 0 END) AS moved_today
+            ", array_fill(0, 13, $date))
             ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
+            ->get()
+            ->keyBy('product_id');
 
-        // 2. Warehouse Purchase (On Date) - GRN
-        // "Purchase" column strictly for GRN.
-        $whPurchase = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereNotNull('warehouse_id')
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'purchase')
-            ->select('product_id', DB::raw('SUM(debit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
+        // Active products always show. An inactive (or deactivated-later) product still shows while it holds
+        // stock or moves on the date, otherwise its stock is missing from the register and the totals.
+        $products = $products->filter(function (Product $product) use ($ledger) {
+            $row = $ledger->get($product->id);
 
-        // 3. Warehouse Returns (Inflow from Van)
-        $whReturns = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereNotNull('warehouse_id')
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'return') // Returns to WH
-            ->select('product_id', DB::raw('SUM(debit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
+            return $product->is_active || ($row && (abs((float) $row->net_qty) > 0.0001 || (int) $row->moved_today > 0));
+        });
 
-        // 3. Van Brought Forward (Before Date)
-        $vanBf = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereNotNull('vehicle_id')
-            ->whereDate('date', '<', $date)
-            ->select('product_id', DB::raw('SUM(debit_qty - credit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
+        $reportData = $products->map(function (Product $product) use ($ledger) {
+            $row = $ledger->get($product->id);
+            $sum = fn (string $column): float => (float) ($row?->{$column} ?? 0);
 
-        // 4. Van Issue (Transfer In from WH)
-        $vanIssue = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'transfer_in')
-            ->whereNotNull('vehicle_id')
-            ->select('product_id', DB::raw('SUM(debit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
-
-        // 5. Sales (Global)
-        $sales = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'sale')
-            ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
-
-        // 6. Returns (Global - usually Van to WH)
-        $returns = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'return')
-            ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
-
-        // 7. Shortage (Global)
-        $shortage = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'shortage')
-            ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
-
-        // 7b. Stock Adjustments (On Date): count differences and cost revaluations posted that day.
-        // They change the stock, so the day's closing In Hand includes them (as the end-of-day snapshot does).
-        $adjustments = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'adjustment')
-            ->select('product_id', DB::raw('SUM(debit_qty - credit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
-
-        // 8. In Hand Value (at recorded ledger unit cost)
-        // Mirrors the In Hand quantity formula: Opening + Purchase + BF - Sales - Shortage.
-        // A cost revaluation moves no quantity, so its ledger row carries the value it moved
-        // the batch by in total_value; without it the register drifts from the stock value.
-        $inHandValues = InventoryLedgerEntry::query()
-            ->withoutRevertedSettlementPostings()
-            ->whereIn('product_id', $productIds)
-            ->whereDate('date', '<=', $date)
-            ->select('product_id', DB::raw("SUM(CASE
-                WHEN date < ? AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
-                    + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
-                WHEN date = ? AND transaction_type = 'purchase' AND warehouse_id IS NOT NULL THEN debit_qty * unit_cost
-                WHEN date = ? AND transaction_type IN ('sale', 'shortage') THEN -credit_qty * unit_cost
-                WHEN date = ? AND transaction_type = 'adjustment' AND (warehouse_id IS NOT NULL OR vehicle_id IS NOT NULL) THEN (debit_qty - credit_qty) * unit_cost
-                    + (CASE WHEN debit_qty = 0 AND credit_qty = 0 THEN total_value ELSE 0 END)
-                ELSE 0 END) as value"))
-            ->addBinding([$date, $date, $date, $date], 'select')
-            ->groupBy('product_id')
-            ->pluck('value', 'product_id');
-
-        // Assemble Data
-        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $vanBf, $vanIssue, $sales, $returns, $shortage, $adjustments, $inHandValues) {
-            $pId = $product->id;
-
-            // 1. Opening
-            $open = $whOpening[$pId] ?? 0;
-            // 2. Purchase
-            $purch = $whPurchase[$pId] ?? 0;
-
-            // 3. Brought Forward (Van)
-            $bf = $vanBf[$pId] ?? 0;
-
-            // 4. Issue (Van In)
-            $issue = $vanIssue[$pId] ?? 0;
-
-            // 5. Total Issue
-            $totalIssue = $bf + $issue;
-
-            // 6. Returns
-            $ret = $returns[$pId] ?? 0;
-
-            // 7. Sales
-            $sale = $sales[$pId] ?? 0;
-
-            // 8. Shortage
-            $short = $shortage[$pId] ?? 0;
-
-            // 9. In Hand (Closing) -> System Stock (WH + Van)
-            // Logic: Opening (WH) + Purchase (WH) + BF (Van) + Adjustment - Sales (Van) - Shortage (Van).
-            // This represents the total physical stock available in the company (Warhouse + Van).
-            // Note: 'Issue' and 'Return' are internal transfers and do not change the System Stock total.
-            // Stock adjustments of the day change the system stock too.
-            $adj = $adjustments[$pId] ?? 0;
-            $inHand = $open + $purch + $bf + $adj - $sale - $short;
+            $open = $sum('wh_opening');
+            $purch = $sum('wh_purchase');
+            $bf = $sum('van_bf');
+            $issue = $sum('van_issue');
+            $sale = $sum('sale');
+            $short = $sum('shortage');
+            $adj = $sum('adjustment');
 
             return (object) [
                 'id' => $product->id,
@@ -240,15 +137,17 @@ class DailyStockRegisterController extends Controller implements HasMiddleware
                 'purchase' => $purch,
                 'bf' => $bf,
                 'issue' => $issue,
-                'total_issue' => $totalIssue,
-                'return' => $ret,
+                'total_issue' => $bf + $issue,
+                'return' => $sum('ret'),
                 'sale' => $sale,
                 'shortage' => $short,
                 'adjustment' => $adj,
-                'in_hand' => $inHand,
-                'in_hand_value' => (float) ($inHandValues[$pId] ?? 0),
+                // In Hand (closing) is the company's whole stock, warehouse + vans: Issue and Return are
+                // transfers between the two and do not change it; the day's adjustments do.
+                'in_hand' => $open + $purch + $bf + $adj - $sale - $short,
+                'in_hand_value' => $sum('in_hand_value'),
             ];
-        });
+        })->values();
 
         return view('reports.daily-stock-register.index', ['reportData' => $reportData] + $viewData);
     }

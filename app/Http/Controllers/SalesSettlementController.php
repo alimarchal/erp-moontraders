@@ -8,7 +8,6 @@ use App\Http\Requests\UpdateSalesSettlementRequest;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
-use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\InventoryLedgerEntry;
@@ -29,7 +28,6 @@ use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementPercentageExpense;
 use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
-use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -913,9 +911,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     }
 
     /**
-     * Build the data payload shared by the normal edit page (draft
-     * settlements) and the Super Admin special edit page (posted
-     * settlements) — both render the same `sales-settlements.edit` view.
+     * Build the data payload for the edit page of a draft settlement.
      *
      * @return array<string, mixed>
      */
@@ -1195,10 +1191,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
     /**
      * Apply the submitted field values and rebuild every child record for a
-     * settlement. Shared by update() (draft settlements) and updateSpecial()
-     * (posted settlements, where this runs between a full revert() and a
-     * re-post() inside one transaction) so both paths run identical
-     * validation, totals, and record-building logic.
+     * draft settlement on update().
      *
      * @return array{payment_breakdown_warning: ?string}
      *
@@ -2340,174 +2333,5 @@ class SalesSettlementController extends Controller implements HasMiddleware
             fn (int $i) => sprintf('%s%05d', $prefix, $maxSequence + $i),
             range(1, $count),
         );
-    }
-
-    /**
-     * Determine whether the current user may use Special Edit — Super Admin only.
-     */
-    private function isSuperAdmin(): bool
-    {
-        return auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin');
-    }
-
-    /**
-     * Show special edit form for posted settlements — Super Admin only.
-     * Reuses the same full edit page/form as the normal draft edit, so every
-     * field can be corrected (not just the date).
-     */
-    public function editSpecial(SalesSettlement $salesSettlement)
-    {
-        abort_unless($this->isSuperAdmin(), 403);
-
-        if ($salesSettlement->status !== 'posted') {
-            return redirect()
-                ->route('sales-settlements.show', $salesSettlement)
-                ->with('error', 'Only posted Sales Settlements can use Special Edit. Use the regular edit page for drafts.');
-        }
-
-        return view('sales-settlements.edit', $this->buildEditViewData($salesSettlement) + [
-            'isSpecialEdit' => true,
-        ]);
-    }
-
-    /**
-     * Apply a Super Admin correction to a posted settlement — any field can
-     * be changed, not just the date.
-     *
-     * Runs the exact same validation and record-building logic as the normal
-     * update() (via applySettlementUpdate()), sandwiched between a full
-     * revert() and a re-post():
-     *
-     *  1. SalesSettlementRevertService::revert() — identical to a manual
-     *     Revert: reverses the GL entry (new REV- journal entry; the
-     *     original posted entry is never mutated), inventory ledger, van
-     *     stock, warehouse stock, and customer ledger, and resets the
-     *     settlement to draft.
-     *  2. applySettlementUpdate() — identical to a normal draft update:
-     *     rebuilds every child record from the submitted form.
-     *  3. DistributionService::postSalesSettlement() — identical to a normal
-     *     Post: re-validates financial integrity and re-creates stock
-     *     movements, inventory ledger entries, van/warehouse stock, customer
-     *     ledger entries, and a fresh GL journal entry.
-     *
-     * All three run inside one transaction: if the re-post fails (e.g. the
-     * corrected numbers no longer balance), everything rolls back and the
-     * settlement is left exactly as it was before the attempt.
-     */
-    public function updateSpecial(UpdateSalesSettlementRequest $request, SalesSettlement $salesSettlement)
-    {
-        abort_unless($this->isSuperAdmin(), 403);
-
-        if ($salesSettlement->status !== 'posted') {
-            return back()->with('error', 'Only posted settlements can be corrected here. Current status: '.$salesSettlement->status);
-        }
-
-        $periodOpen = DB::table('accounting_periods')
-            ->whereDate('start_date', '<=', $request->settlement_date)
-            ->whereDate('end_date', '>=', $request->settlement_date)
-            ->where('status', 'open')
-            ->exists();
-
-        if (! $periodOpen) {
-            return back()->withInput()->with('error', "No open accounting period found for {$request->settlement_date}.");
-        }
-
-        $originalSettlementNumber = $salesSettlement->settlement_number;
-
-        if (! FormOnce::claim($request->input(FormOnce::FIELD))) {
-            return redirect()->route('sales-settlements.show', $salesSettlement)->with('error', FormOnce::alreadySentMessage('settlement'));
-        }
-
-        $this->prepareAttachmentUploads($request);
-
-        DB::beginTransaction();
-
-        try {
-            // Lock the row so two concurrent Special Edits of the same
-            // settlement serialise: the second one re-reads the status
-            // after the first commits and is turned away instead of
-            // reverting an already-reverted settlement.
-            $salesSettlement = SalesSettlement::whereKey($salesSettlement->id)->lockForUpdate()->firstOrFail();
-
-            if ($salesSettlement->status !== 'posted') {
-                DB::rollBack();
-
-                return back()->withInput()->with('error', 'This settlement was changed by another user while you were editing. Please reload and try again.');
-            }
-
-            $revertResult = app(SalesSettlementRevertService::class)->revert($salesSettlement);
-
-            if (! $revertResult['success']) {
-                DB::rollBack();
-
-                return back()->withInput()->with('error', $revertResult['message']);
-            }
-
-            $salesSettlement->refresh();
-
-            // SalesSettlementRevertService reverses (rather than deletes) the
-            // customer ledger, inventory ledger, and stock-movement rows for
-            // this settlement — correct for a standalone Revert, which may
-            // leave the settlement in draft indefinitely. But re-posting
-            // immediately below would otherwise create a THIRD set of rows
-            // on top of the original + its reversal, leaving permanent
-            // duplicate/ghost entries in the Customer Ledger and Inventory
-            // Ledger. Purge both generations (originals and revert()'s own
-            // reversal rows, all tagged with this settlement's id) so the
-            // re-post produces a single clean set — exactly like a fresh
-            // post would. The GL journal entry is deliberately left alone:
-            // reversing entries are the correct, permanent audit trail there.
-            CustomerEmployeeAccountTransaction::where('sales_settlement_id', $salesSettlement->id)->delete();
-
-            InventoryLedgerEntry::where('sales_settlement_id', $salesSettlement->id)->delete();
-
-            StockMovement::where('reference_type', SalesSettlement::class)
-                ->where('reference_id', $salesSettlement->id)
-                ->delete();
-
-            $updateResult = $this->applySettlementUpdate($request, $salesSettlement);
-
-            $postResult = app(DistributionService::class)->postSalesSettlement($salesSettlement);
-
-            if (! $postResult['success']) {
-                DB::rollBack();
-
-                return back()->withInput()->with('error', 'Unable to re-post the corrected settlement: '.$postResult['message']);
-            }
-
-            DB::commit();
-            $this->finalizeUploads($salesSettlement);
-            $this->linkBankRegisterAttachments($salesSettlement);
-
-            Log::info('Sales settlement special edit applied (reverted, corrected, re-posted)', [
-                'settlement_id' => $salesSettlement->id,
-                'settlement_number' => $originalSettlementNumber,
-                'user_id' => auth()->id(),
-            ]);
-
-            $redirect = redirect()
-                ->route('sales-settlements.show', $salesSettlement)
-                ->with('success', "Sales Settlement '{$originalSettlementNumber}' corrected and re-posted successfully.");
-
-            if ($updateResult['payment_breakdown_warning'] !== null) {
-                $redirect->with('warning', $updateResult['payment_breakdown_warning']);
-            }
-
-            return $redirect;
-
-        } catch (\RuntimeException $e) {
-            DB::rollBack();
-
-            return back()->withInput()->with('error', $e->getMessage());
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Error in sales settlement special update', [
-                'settlement_id' => $salesSettlement->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return back()->withInput()->with('error', 'Update failed: '.$e->getMessage());
-        }
     }
 }

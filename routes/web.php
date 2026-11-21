@@ -524,10 +524,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::post('sales-settlements/{salesSettlement}/revert', [SalesSettlementController::class, 'revert'])
         ->middleware('throttle:password-confirm')
         ->name('sales-settlements.revert');
-    Route::get('sales-settlements/{salesSettlement}/edit-special', [SalesSettlementController::class, 'editSpecial'])
-        ->name('sales-settlements.edit-special');
-    Route::post('sales-settlements/{salesSettlement}/update-special', [SalesSettlementController::class, 'updateSpecial'])
-        ->name('sales-settlements.update-special');
     Route::get('api/sales-settlements/goods-issues', [SalesSettlementController::class, 'fetchGoodsIssues'])
         ->name('api.sales-settlements.goods-issues');
     Route::get('api/sales-settlements/goods-issues/{id}/items', [SalesSettlementController::class, 'fetchGoodsIssueItems'])

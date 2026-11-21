@@ -472,3 +472,21 @@ it('refuses to edit or delete a ticket that was approved in the meantime', funct
         ->and($stale->fresh()->title)->toBe('x')
         ->and($stale->fresh()->items->first()->payload['items'][0]['actual_quantity'])->toEqual(90);
 });
+
+it('pushes an All batches selling cost to the other batches even when the chosen batch already has it', function () {
+    $stock = adjustableStock($this);
+    $other = StockBatch::factory()->create(['product_id' => $stock['product']->id, 'status' => 'active', 'selling_price' => 70]);
+    $stock['batch']->update(['selling_price' => 99]);
+    CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->update(['selling_price' => 99]);
+    CurrentStockByBatch::create(['product_id' => $stock['product']->id, 'warehouse_id' => $this->warehouse->id, 'stock_batch_id' => $other->id, 'quantity_on_hand' => 10, 'unit_cost' => 50, 'selling_price' => 70, 'total_value' => 500, 'status' => 'active']);
+
+    $payload = ['type' => 'stock_adjustment', 'title' => 'sell all'] + adjustmentPayload($this, $stock, 100);
+    $payload['items'][0]['selling_price'] = 99;
+    $payload['items'][0]['selling_scope'] = 'all';
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)->assertSessionHasNoErrors();
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstOrFail()), ['password' => 'password'])->assertSessionHasNoErrors();
+
+    expect((float) $other->fresh()->selling_price)->toBe(99.0)
+        ->and((float) $stock['product']->fresh()->unit_sell_price)->toBe(99.0);
+});

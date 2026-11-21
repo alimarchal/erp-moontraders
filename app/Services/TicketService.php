@@ -323,6 +323,8 @@ class TicketService
             throw ValidationException::withMessages(['ticket' => 'A product on this ticket no longer exists.']);
         }
 
+        $this->guardPricesStillCurrent($product, $item);
+
         if ($item->new_unit_sell_price !== null) {
             $this->applySellingPrice($product, $item, $admin);
         }
@@ -347,6 +349,29 @@ class TicketService
      * (new stock and every price lookup use it) and the price is pushed to the batches — all batches
      * with stock, or only the ones the ticket names.
      */
+    /**
+     * A price ticket asks to move a figure from what it was when raised. If the figure has been
+     * changed since (another ticket, a product edit), approving would silently overwrite that change.
+     *
+     * @throws ValidationException when a figure the ticket changes no longer has the value it was raised against
+     */
+    private function guardPricesStillCurrent(Product $product, TicketItem $item): void
+    {
+        foreach (TicketItem::PRICE_FIELDS as $field => $label) {
+            if ($item->{'new_'.$field} === null || $item->{'old_'.$field} === null || abs((float) $product->{$field} - (float) $item->{'old_'.$field}) < 0.005) {
+                continue;
+            }
+
+            throw ValidationException::withMessages(['ticket' => sprintf(
+                '%s: %s was %s when this ticket was raised but is now %s. Edit the ticket to confirm the new figure before approving.',
+                $product->product_name,
+                mb_strtolower($label),
+                number_format((float) $item->{'old_'.$field}, 2, '.', ''),
+                number_format((float) $product->{$field}, 2, '.', '')
+            )]);
+        }
+    }
+
     private function applySellingPrice(Product $product, TicketItem $item, User $admin): void
     {
         $new = $item->new_unit_sell_price;
@@ -361,19 +386,28 @@ class TicketService
 
             $product->update(['unit_sell_price' => $new]);
             $batchIds = $this->pricing->cascadeSellingPrice($product, $new);
-        } else {
-            if ($priceChanged) {
-                $product->update(['unit_sell_price' => $new]);
-            }
 
-            $batchIds = $this->pricing->cascadeSellingPrice(
-                $product,
-                $new,
-                collect($item->batch_ids)->map(fn ($id) => (int) $id)->values()
-            );
+            $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds);
+
+            return;
         }
 
-        $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds);
+        if ($priceChanged) {
+            $product->update(['unit_sell_price' => $new]);
+        }
+
+        // Only batches whose price actually moves are changed, and each is logged at its own old price.
+        $batchesByOldPrice = DB::table('stock_batches')
+            ->whereIn('id', collect($item->batch_ids)->map(fn ($id) => (int) $id))
+            ->where('is_promotional', false)
+            ->get(['id', 'selling_price'])
+            ->reject(fn ($batch) => abs((float) $batch->selling_price - (float) $new) < 0.005)
+            ->groupBy(fn ($batch) => number_format((float) $batch->selling_price, 2, '.', ''));
+
+        foreach ($batchesByOldPrice as $oldBatchPrice => $batches) {
+            $batchIds = $this->pricing->cascadeSellingPrice($product, $new, $batches->pluck('id')->values());
+            $this->pricing->logChange($product, 'selling_price', $oldBatchPrice, $new, $admin->id, $batchIds);
+        }
     }
 
     /**
@@ -485,17 +519,32 @@ class TicketService
     }
 
     /**
-     * Whether a line's selling cost differs from the batch's current selling price (blank = leave unchanged).
+     * Whether a line's selling cost would change anything (blank = leave unchanged). For "All batches"
+     * that is the product price or any stocked batch, not just the batch on the line.
      */
-    public static function sellingPriceChanged(int $stockBatchId, mixed $sellingPrice): bool
+    public static function sellingPriceChanged(int $stockBatchId, mixed $sellingPrice, string $scope = 'batch'): bool
     {
         if ($sellingPrice === null || $sellingPrice === '') {
             return false;
         }
 
-        $current = (float) DB::table('stock_batches')->where('id', $stockBatchId)->value('selling_price');
+        $differs = fn (mixed $current) => abs((float) $sellingPrice - (float) $current) > 0.004;
 
-        return abs((float) $sellingPrice - $current) > 0.004;
+        if ($differs(DB::table('stock_batches')->where('id', $stockBatchId)->value('selling_price'))) {
+            return true;
+        }
+
+        if ($scope !== 'all') {
+            return false;
+        }
+
+        $product = Product::query()->find(DB::table('stock_batches')->where('id', $stockBatchId)->value('product_id'));
+
+        return $product !== null && ($differs($product->unit_sell_price) || DB::table('stock_batches')
+            ->whereIn('id', app(ProductPricingService::class)->batchIdsWithStock($product))
+            ->where('is_promotional', false)
+            ->pluck('selling_price')
+            ->contains($differs));
     }
 
     /**
@@ -514,7 +563,7 @@ class TicketService
             $line['unit_cost'] = self::batchCost((int) $line['stock_batch_id'], $warehouseId);
             $line['adjustment_value'] = $line['adjustment_quantity'] * $line['unit_cost'];
             $line['old_selling_price'] = (float) DB::table('stock_batches')->where('id', $line['stock_batch_id'])->value('selling_price');
-            $line['selling_changed'] = self::sellingPriceChanged((int) $line['stock_batch_id'], $line['selling_price'] ?? null);
+            $line['selling_changed'] = self::sellingPriceChanged((int) $line['stock_batch_id'], $line['selling_price'] ?? null, $line['selling_scope'] ?? 'batch');
 
             return $line;
         })->values();

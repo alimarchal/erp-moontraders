@@ -291,6 +291,12 @@ class TicketRequest extends FormRequest
             $validator->errors()->add("items.$index.unit_sell_price", "Enter at least one new value different from the current one for {$product->product_name}.");
         }
 
+        if ($perBatch && isset($row['unit_sell_price']) && $row['unit_sell_price'] !== '' && ! empty($row['batch_ids'])
+            && ! StockBatch::whereIn('id', $row['batch_ids'])->where('is_promotional', false)->get(['selling_price'])
+                ->contains(fn (StockBatch $batch) => abs((float) $batch->selling_price - (float) $row['unit_sell_price']) >= 0.005)) {
+            $validator->errors()->add("items.$index.unit_sell_price", "Every selected batch of {$product->product_name} already sells at {$row['unit_sell_price']}. Enter a different selling price.");
+        }
+
         if ($perBatch && (! isset($row['unit_sell_price']) || $row['unit_sell_price'] === '')) {
             $validator->errors()->add("items.$index.unit_sell_price", "Enter the new selling price for the selected batches of {$product->product_name}, or choose All batches.");
         }
@@ -339,7 +345,7 @@ class TicketRequest extends FormRequest
             if ($onHand <= 0) {
                 $validator->errors()->add("items.$index.stock_batch_id", "Batch {$batch->batch_code} has no stock in the selected warehouse.");
             } elseif (abs((float) $row['actual_quantity'] - $onHand) < 0.0005
-                && ! TicketService::sellingPriceChanged($batch->id, $row['selling_price'] ?? null)) {
+                && ! TicketService::sellingPriceChanged($batch->id, $row['selling_price'] ?? null, $row['selling_scope'] ?? 'batch')) {
                 $validator->errors()->add("items.$index.actual_quantity", "Batch {$batch->batch_code}: the counted quantity and selling cost equal what the system holds, so there is nothing to adjust. Change the quantity or the selling cost.");
             }
         }

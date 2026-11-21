@@ -227,9 +227,14 @@
             .tk-table tfoot td:empty { display: none; }
             .tk-table td[data-label="Details"] { display: block !important; text-align: left; min-width: 0; }
             .tk-table td[data-label="Details"]::before { display: block; margin-bottom: 4px; }
-            .tk-table td[data-label="Details"] .tk-det-table td { display: table-cell; width: auto !important; padding: 1px 8px 1px 0 !important; }
-            .tk-table td[data-label="Details"] .tk-det-table tr { display: table-row; margin: 0; border: 0; }
-            .tk-table td[data-label="Details"] .tk-det-table, .tk-table td[data-label="Details"] .tk-det-table tbody { display: table; width: 100%; }
+            /* Each adjustment line: SKU and batch on top, the figures underneath, so nothing is cut off */
+            .tk-table td[data-label="Details"] .tk-det-table, .tk-table td[data-label="Details"] .tk-det-table tbody { display: block; width: 100%; }
+            .tk-table td[data-label="Details"] .tk-det-table tr { display: grid; grid-template-columns: 1fr auto auto; gap: 0 12px; margin: 0; padding: 4px 0; border: 0; border-top: 1px dashed #e5e7eb; border-radius: 0; }
+            .tk-table td[data-label="Details"] .tk-det-table tr:first-child { border-top: 0; }
+            .tk-table td[data-label="Details"] .tk-det-table td { display: block; width: auto !important; padding: 0 !important; text-align: left; }
+            .tk-table td[data-label="Details"] .tk-det-table td::before { content: none; }
+            .tk-table td[data-label="Details"] .tk-det-table td:first-child { grid-column: 1 / -1; white-space: normal; overflow-wrap: anywhere; }
+            .tk-table td[data-label="Details"] .tk-det-table td.ak-num { text-align: right; }
             .tk-table td[data-label="Details"] .tk-det-table tbody { display: table-row-group; }
             .tk-table td[data-label="Ticket"], .tk-table td[data-label="Title · type"], .tk-table td[data-label="Raised by"], .tk-table td[data-label="Status"] { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
             .tk-table td[data-label="Ticket"]::before, .tk-table td[data-label="Title · type"]::before, .tk-table td[data-label="Raised by"]::before, .tk-table td[data-label="Status"]::before { grid-row: 1; }

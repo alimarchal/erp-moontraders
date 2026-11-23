@@ -1,3 +1,4 @@
+@php($grnLayout = $grnLayout ?? 'classic')
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
@@ -42,14 +43,17 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
+            <div class="{{ $grnLayout === 'classic' ? 'bg-white overflow-hidden shadow-xl sm:rounded-lg' : '' }}">
+                <div class="{{ $grnLayout === 'classic' ? 'p-6' : '' }}">
                     <x-validation-errors class="mb-4 mt-4" />
 
                     <form method="POST" action="{{ route('goods-receipt-notes.store') }}" id="grnForm"
-                        x-data="grnForm(@js($withholdingTaxRate))">
+                        x-data="{{ $grnLayout === 'classic' ? 'grnForm('.Js::from($withholdingTaxRate).')' : 'grnLayout(grnForm('.Js::from($withholdingTaxRate).'))' }}"
+                        @if ($grnLayout !== 'classic') novalidate x-on:submit="checkBeforeSubmit($event)" @endif
+                        x-on:grn-products-loaded.window="if (typeof productsVersion !== 'undefined') { productsVersion++ }">
                         @csrf
 
+                        @if ($grnLayout === 'classic')
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                             <div>
                                 <x-label for="receipt_date" value="Receipt Date *" />
@@ -446,6 +450,9 @@
                                 Create GRN
                             </x-button>
                         </div>
+                        @else
+                            @include('goods-receipt-notes.partials.form-option-'.$grnLayout, ['grn' => null, 'submitLabel' => 'Create GRN'])
+                        @endif
 
                         <!-- Promotional Details Modal -->
                         <div x-show="showPromoModal" x-cloak @keydown.escape.window="showPromoModal = false"
@@ -1114,6 +1121,7 @@
                         throw new Error('Failed to load products');
                     }
                     allProducts = await response.json();
+                    window.dispatchEvent(new CustomEvent('grn-products-loaded'));
                 } catch (error) {
                     console.error('Error loading products:', error);
                     window.dispatchEvent(new CustomEvent('open-alert-modal', {

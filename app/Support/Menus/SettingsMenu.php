@@ -59,7 +59,7 @@ class SettingsMenu extends Menu
                     ['label' => 'Users', 'description' => 'System users and logins', 'url' => route('users.index'), 'permission' => 'user-list', 'icon' => 'users', 'count' => fn (): int => User::count(), 'keywords' => 'login'],
                     ['label' => 'Roles', 'description' => 'Groups of permissions', 'url' => route('roles.index'), 'permission' => 'role-list', 'icon' => 'shield', 'count' => fn (): int => Role::count(), 'keywords' => 'access levels'],
                     ['label' => 'Permissions', 'description' => 'Fine-grained access control', 'url' => route('permissions.index'), 'permission' => 'permission-list', 'icon' => 'key', 'count' => fn (): int => Permission::count()],
-                    ['label' => 'Appearance', 'description' => 'Choose the layout of the dashboard, Settings and Reports', 'url' => route('settings.appearance.edit'), 'permission' => 'manage-appearance', 'icon' => 'swatch', 'keywords' => 'layout look'],
+                    ['label' => 'Appearance', 'description' => 'Choose the layout of the dashboard, Settings, Reports and GRNs', 'url' => route('settings.appearance.edit'), 'permission' => 'manage-appearance', 'icon' => 'swatch', 'keywords' => 'layout look'],
                 ],
             ],
             [

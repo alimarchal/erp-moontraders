@@ -6,6 +6,7 @@ use App\Exports\GoodsReceiptNoteTemplateExport;
 use App\Http\Requests\ImportGoodsReceiptNoteRequest;
 use App\Http\Requests\PostGoodsReceiptNoteRequest;
 use App\Imports\GoodsReceiptNoteItemsImport;
+use App\Models\AppSetting;
 use App\Models\GoodsReceiptNote;
 use App\Models\Product;
 use App\Models\PromotionalCampaign;
@@ -22,6 +23,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -95,16 +97,27 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             $query->where('supplier_id', $userSupplierId);
         }
 
+        $filters = [
+            AllowedFilter::partial('grn_number'),
+            AllowedFilter::partial('supplier_invoice_number'),
+            AllowedFilter::exact('supplier_id'),
+            AllowedFilter::exact('warehouse_id'),
+            AllowedFilter::exact('status'),
+            AllowedFilter::scope('receipt_date_from'),
+            AllowedFilter::scope('receipt_date_to'),
+        ];
+        $indexLayout = AppSetting::layoutFor('goods_receipt_notes_index')->value;
+
+        // The redesigned lists show a count and amount per status for the same filters (bar the status itself, so every tab has its count).
+        $statsRequest = Request::create($request->url(), 'GET', ['filter' => Arr::except((array) $request->input('filter', []), 'status')]);
+        $statusTotals = $indexLayout === 'classic'
+            ? collect()
+            : QueryBuilder::for(clone $query, $statsRequest)->allowedFilters($filters)->toBase()->reorder()
+                ->selectRaw('status, count(*) as grn_count, coalesce(sum(grand_total), 0) as amount')
+                ->groupBy('status')->get()->keyBy('status');
+
         $grns = QueryBuilder::for($query)
-            ->allowedFilters([
-                AllowedFilter::partial('grn_number'),
-                AllowedFilter::partial('supplier_invoice_number'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::scope('receipt_date_from'),
-                AllowedFilter::scope('receipt_date_to'),
-            ])
+            ->allowedFilters($filters)
             ->defaultSort('-receipt_date')
             ->paginate(20)
             ->withQueryString();
@@ -117,6 +130,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'grns' => $grns,
             'suppliers' => $suppliers,
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'indexLayout' => $indexLayout,
+            'statusTotals' => $statusTotals,
+            'hasDateFilter' => $hasDateFilter,
         ]);
     }
 
@@ -137,6 +153,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'withholdingTaxRate' => $this->resolveActiveWithholdingTaxRate(),
+            'grnLayout' => AppSetting::layoutFor('goods_receipt_notes')->value,
         ]);
     }
 
@@ -377,6 +394,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'reversalRefusal' => $goodsReceiptNote->status === 'posted' && auth()->user()->can('goods-receipt-note-reverse')
                 ? app(InventoryService::class)->grnReversalRefusal($goodsReceiptNote)
                 : null,
+            'grnLayout' => AppSetting::layoutFor('goods_receipt_notes')->value,
         ]);
     }
 
@@ -406,6 +424,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'withholdingTaxRate' => $this->resolveActiveWithholdingTaxRate(),
+            'grnLayout' => AppSetting::layoutFor('goods_receipt_notes')->value,
         ]);
     }
 

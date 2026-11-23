@@ -24,6 +24,8 @@ class AppSetting extends Model
         'dashboard' => [PageLayout::Classic, PageLayout::OptionA],
         'settings' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB],
         'reports' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB],
+        'goods_receipt_notes' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB, PageLayout::OptionC, PageLayout::OptionD, PageLayout::OptionE, PageLayout::OptionF, PageLayout::OptionG, PageLayout::OptionH, PageLayout::OptionI],
+        'goods_receipt_notes_index' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB, PageLayout::OptionC, PageLayout::OptionD],
     ];
 
     protected $fillable = ['key', 'value', 'updated_by'];

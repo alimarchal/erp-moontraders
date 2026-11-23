@@ -1,0 +1,256 @@
+{{--
+    GRN view for the Option A and Option B layouts. It is included by show.blade.php after its
+    data block, so $grn, $totals, $ledger, $ledgerMatches, $timeline, $links and the rest are the
+    classic page's own values. Same actions, password confirmations and sections as the classic view.
+--}}
+@php
+    $statusChip = ['draft' => 'bg-amber-100 text-amber-900', 'posted' => 'bg-green-100 text-green-800', 'reversed' => 'bg-red-100 text-red-800'];
+    $lineRows = $grn->items->map(function ($item) use ($isUnilever) {
+        $taxes = (float) $item->excise_duty + (float) $item->sales_tax_value + (float) $item->advance_income_tax + (float) $item->other_charges + ($isUnilever ? (float) $item->withholding_tax : 0);
+
+        return [
+            'item' => $item,
+            'taxes' => $taxes,
+            'details' => array_filter([
+                'Code' => $item->product->product_code ?? null,
+                'Batch' => $item->batch_number,
+                'Lot' => $item->lot_number,
+                'Manufactured' => $item->manufacturing_date ? \Carbon\Carbon::parse($item->manufacturing_date)->format('d M Y') : null,
+                'Expiry' => $item->expiry_date ? \Carbon\Carbon::parse($item->expiry_date)->format('d M Y') : null,
+                'Must sell before' => $item->must_sell_before ? \Carbon\Carbon::parse($item->must_sell_before)->format('d M Y') : null,
+                'Storage' => $item->storage_location,
+                'Quality' => $item->quality_status ? ucfirst($item->quality_status) : null,
+                'Selling strategy' => $item->selling_strategy ? strtoupper(str_replace('_', ' ', $item->selling_strategy)) : null,
+                'Promotional' => $item->is_promotional ? 'Yes'.($item->promotionalCampaign ? ' · '.$item->promotionalCampaign->campaign_name : '').($item->promotional_price ? ' · Rs '.number_format((float) $item->promotional_price, 2) : '') : null,
+                'Cartons' => $item->product?->formatCartons($item->quantity_received),
+                'Rejected' => $item->quantity_rejected > 0 ? number_format((float) $item->quantity_rejected, 2) : null,
+            ], fn ($value) => filled($value)),
+        ];
+    });
+    $breakdown = array_filter([
+        'Value' => [$totals['extended_value'], ''],
+        'Discount' => [-$totals['discount_value'], 'text-red-700'],
+        'FMR' => [-$totals['fmr_allowance'], 'text-red-700'],
+        'Before tax' => [$totals['discounted_value_before_tax'], ''],
+        'Excise' => [$totals['excise_duty'], ''],
+        'Sales tax' => [$totals['sales_tax_value'], ''],
+        'Adv. income tax' => [$totals['advance_income_tax'], ''],
+        'Other charges' => [$totals['other_charges'], ''],
+        'WHT' => $isUnilever ? [$totals['withholding_tax'], ''] : null,
+    ]);
+    $th = 'whitespace-nowrap px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide text-gray-600';
+    $td = 'whitespace-nowrap px-3 py-2 text-right tabular-nums';
+@endphp
+
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="min-w-0">
+                <nav aria-label="Breadcrumb" class="flex gap-1.5 text-xs text-gray-500">
+                    <a href="{{ route('goods-receipt-notes.index') }}" class="hover:underline">Goods receipt notes</a><span aria-hidden="true">/</span><span>{{ $grn->grn_number }}</span>
+                </nav>
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <h1 class="text-xl font-bold text-gray-900">GRN {{ $grn->grn_number }}</h1>
+                    <span class="rounded-full px-2.5 py-0.5 text-xs font-bold {{ $statusChip[$grn->status] ?? $statusChip['draft'] }}">{{ ucfirst($grn->status) }}</span>
+                    @if ($ledgerStatus)
+                        <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $ledgerStatus === 'posted' ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900' }}">Ledger {{ $ledgerStatus }}</span>
+                    @endif
+                    @if ($grn->is_opening_stock)
+                        <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-800">Opening stock</span>
+                    @endif
+                </div>
+                <p class="mt-0.5 text-sm text-gray-600">{{ $grn->supplier->supplier_name }} · {{ $grn->warehouse->warehouse_name }} · received {{ $grn->receipt_date?->format('d M Y') }}</p>
+            </div>
+            <div class="ml-auto flex flex-wrap items-center gap-2 print:hidden">
+                @include('goods-receipt-notes.partials.show-header-actions')
+            </div>
+        </div>
+    </x-slot>
+
+    <div class="mx-auto max-w-7xl space-y-4 px-3 py-5 sm:px-6 lg:px-8">
+        <x-status-message class="print:hidden" />
+
+        <div role="status" class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-3 text-sm ring-1 {{ $isPosted ? 'bg-green-50 text-green-900 ring-green-200' : ($isDraft ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-red-50 text-red-900 ring-red-200') }}">
+            @if ($isPosted)
+                <b>Posted to inventory</b><span>{{ $grn->posted_at ? 'on '.$grn->posted_at->format('d M Y \a\t h:i A').'.' : '' }} Stock and the supplier ledger were updated.</span>
+            @elseif ($isDraft)
+                <b>Draft — stock has not moved yet.</b><span>Check the lines, then post to inventory. Everything can still be edited.</span>
+            @else
+                <b>Reversed</b><span>{{ $grn->reversed_at ? 'on '.$grn->reversed_at->format('d M Y \a\t h:i A') : '' }}{{ $grn->reversedBy ? ' by '.$grn->reversedBy->name : '' }}. The received stock was taken back out.</span>
+            @endif
+        </div>
+
+        <div class="flex flex-col gap-4 lg:flex-row">
+            <section aria-label="Receipt details" class="grid flex-1 grid-cols-2 gap-4 rounded-2xl bg-white p-5 ring-1 ring-gray-200 sm:grid-cols-3 xl:grid-cols-6">
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Supplier</div><div class="mt-1 text-sm font-semibold">{{ $grn->supplier->supplier_name }}</div></div>
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Warehouse</div><div class="mt-1 text-sm font-semibold">{{ $grn->warehouse->warehouse_name }}</div></div>
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Receipt date</div><div class="mt-1 text-sm font-semibold">{{ $grn->receipt_date?->format('d M Y') }}</div></div>
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Supplier invoice</div><div class="mt-1 text-sm font-semibold">{{ $grn->supplier_invoice_number ?? '—' }}</div><div class="text-xs text-gray-500">{{ $grn->supplier_invoice_date ? 'dated '.$grn->supplier_invoice_date->format('d M Y') : 'no invoice date' }}</div></div>
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Received by</div><div class="mt-1 text-sm font-semibold">{{ $grn->receivedBy->name ?? 'N/A' }}</div>@if ($grn->verifiedBy)<div class="text-xs text-gray-500">verified by {{ $grn->verifiedBy->name }}</div>@endif</div>
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Lines</div><div class="mt-1 text-sm font-semibold">{{ number_format($grn->items->count()) }} · {{ number_format($totals['quantity_received'], 2) }} received</div>@if ($rejected > 0 || $promoLines)<div class="text-xs text-gray-500">{{ $rejected > 0 ? number_format($rejected, 2).' rejected' : '' }}{{ $rejected > 0 && $promoLines ? ' · ' : '' }}{{ $promoLines ? $promoLines.' promotional' : '' }}</div>@endif</div>
+            </section>
+            <section aria-label="Grand total" class="rounded-2xl bg-slate-900 p-5 text-white lg:w-80">
+                <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Grand total with taxes</div>
+                <div class="mt-1 text-3xl font-bold tabular-nums">Rs {{ $rs($itemsTotalWithTax) }}</div>
+                <div class="mt-1 text-sm tabular-nums text-slate-300">before tax Rs {{ $rs($totals['discounted_value_before_tax']) }} · taxes Rs {{ $rs($taxTotal) }}</div>
+            </section>
+        </div>
+
+        <section aria-label="Total breakdown" class="grid grid-cols-2 gap-3 rounded-2xl bg-white px-5 py-4 ring-1 ring-gray-200 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9">
+            @foreach ($breakdown as $label => [$value, $tone])
+                <div><div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{{ $label }}</div><div class="mt-1 text-sm font-bold tabular-nums {{ $tone }}">{{ $value < 0 ? '− '.$rs(abs($value)) : $rs($value) }}</div></div>
+            @endforeach
+        </section>
+
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-start">
+            <div class="min-w-0 flex-1 space-y-4">
+                <section aria-labelledby="grn-items-heading" class="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200"
+                    x-data="{ view: 'summary', open: null, find: '' }">
+                    <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3">
+                        <h2 id="grn-items-heading" class="text-base font-bold text-gray-900">Items received <span class="font-semibold text-gray-500">· {{ $grn->items->count() }}</span></h2>
+                        @if ($grn->items->count() > 6)
+                            <label for="grn-show-find" class="sr-only">Find an item</label>
+                            <input id="grn-show-find" type="search" x-model="find" placeholder="Find product or line no." class="h-8 w-56 rounded-lg border-gray-300 text-sm shadow-sm print:hidden">
+                        @endif
+                        <div class="ml-auto inline-flex gap-0.5 rounded-lg bg-gray-100 p-0.5 print:hidden" role="group" aria-label="Columns to show">
+                            <button type="button" @click="view = 'summary'" :aria-pressed="view === 'summary'" :class="view === 'summary' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'" class="rounded-md px-3 py-1 text-xs font-semibold">Summary</button>
+                            <button type="button" @click="view = 'tax'" :aria-pressed="view === 'tax'" :class="view === 'tax' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'" class="rounded-md px-3 py-1 text-xs font-semibold">Taxes</button>
+                            <button type="button" @click="view = 'all'" :aria-pressed="view === 'all'" :class="view === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'" class="rounded-md px-3 py-1 text-xs font-semibold">All columns</button>
+                        </div>
+                    </div>
+                    @if ($grn->items->count() > 0)
+                        <div class="max-h-[70vh] overflow-auto print:max-h-none print:overflow-visible">
+                            <table class="w-full border-separate border-spacing-0 text-sm">
+                                <thead class="sticky top-0 z-10 bg-gray-50">
+                                    <tr class="[&>th]:border-b [&>th]:border-gray-200">
+                                        <th class="sticky left-0 z-20 bg-gray-50 px-3 py-2 text-left text-[11px] font-bold uppercase text-gray-600">#</th>
+                                        <th class="sticky left-10 z-20 min-w-[14rem] bg-gray-50 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-600">Product</th>
+                                        <th x-show="view !== 'tax'" class="{{ $th }}">Qty</th>
+                                        <th x-show="view === 'all'" class="{{ $th }}">UP / case</th>
+                                        <th x-show="view !== 'tax'" class="{{ $th }}">Value</th>
+                                        <th x-show="view !== 'tax'" class="{{ $th }}">Discount</th>
+                                        <th x-show="view === 'all'" class="{{ $th }}">FMR</th>
+                                        <th x-show="view !== 'summary'" class="{{ $th }}">Before tax</th>
+                                        <th x-show="view !== 'summary'" class="{{ $th }}">Excise</th>
+                                        <th x-show="view !== 'summary'" class="{{ $th }}">Sales tax</th>
+                                        <th x-show="view !== 'summary'" class="{{ $th }}">Adv. IT</th>
+                                        <th x-show="view !== 'summary'" class="{{ $th }}">Other</th>
+                                        @if ($isUnilever)
+                                            <th x-show="view !== 'summary'" class="{{ $th }}">WHT</th>
+                                        @endif
+                                        <th x-show="view === 'summary'" class="{{ $th }}">Taxes</th>
+                                        <th x-show="view !== 'tax'" class="{{ $th }}">Qty rec.</th>
+                                        <th x-show="view === 'all'" class="{{ $th }}">Unit cost</th>
+                                        <th x-show="view === 'all'" class="{{ $th }}">Sell price</th>
+                                        <th class="{{ $th }}">Line total</th>
+                                        <th class="w-10 print:hidden"><span class="sr-only">Details</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($lineRows as $row)
+                                        @php($item = $row['item'])
+                                        <tr x-show="!find || '{{ $item->line_no }}' === find.trim() || {{ Js::from(\Illuminate\Support\Str::lower(($item->product->product_code ?? '').' '.($item->product->product_name ?? ''))) }}.includes(find.trim().toLowerCase())"
+                                            @click="open = open === {{ $loop->index }} ? null : {{ $loop->index }}"
+                                            :class="open === {{ $loop->index }} ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'" class="cursor-pointer [&>td]:border-b [&>td]:border-gray-100">
+                                            <td class="sticky left-0 bg-inherit px-3 py-2 text-xs font-semibold tabular-nums text-gray-500">{{ $item->line_no }}</td>
+                                            <td class="sticky left-10 bg-inherit px-3 py-2">
+                                                <div class="font-semibold text-gray-900">{{ $item->product->product_name ?? '—' }}</div>
+                                                <div class="text-xs text-gray-500">{{ $item->product->product_code ?? '' }}@if ($item->is_promotional) · <span class="font-semibold text-orange-700">Promotional</span>@endif</div>
+                                            </td>
+                                            <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->qty_in_purchase_uom, 2) }}</td>
+                                            <td x-show="view === 'all'" class="{{ $td }}">{{ number_format((float) $item->unit_price_per_case, 2) }}</td>
+                                            <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->extended_value, 2) }}</td>
+                                            <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->discount_value, 2) }}</td>
+                                            <td x-show="view === 'all'" class="{{ $td }}">{{ number_format((float) $item->fmr_allowance, 2) }}</td>
+                                            <td x-show="view !== 'summary'" class="{{ $td }} font-semibold">{{ number_format((float) $item->discounted_value_before_tax, 2) }}</td>
+                                            <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->excise_duty, 2) }}</td>
+                                            <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->sales_tax_value, 2) }}</td>
+                                            <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->advance_income_tax, 2) }}</td>
+                                            <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->other_charges, 2) }}</td>
+                                            @if ($isUnilever)
+                                                <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->withholding_tax, 2) }}</td>
+                                            @endif
+                                            <td x-show="view === 'summary'" class="{{ $td }}">{{ number_format($row['taxes'], 2) }}</td>
+                                            <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->quantity_received, 2) }}</td>
+                                            <td x-show="view === 'all'" class="{{ $td }}">{{ number_format((float) $item->unit_cost, 2) }}</td>
+                                            <td x-show="view === 'all'" class="{{ $td }}">{{ $item->selling_price ? number_format((float) $item->selling_price, 2) : '—' }}</td>
+                                            <td class="{{ $td }} font-bold text-gray-900">{{ number_format((float) ($item->total_value_with_taxes ?? $item->total_cost), 2) }}</td>
+                                            <td class="px-2 text-center text-gray-400 print:hidden">
+                                                <button type="button" :aria-expanded="open === {{ $loop->index }}" aria-label="Details for line {{ $item->line_no }}" class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-gray-200">
+                                                    <svg class="h-4 w-4 transition-transform" :class="open === {{ $loop->index }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr x-show="open === {{ $loop->index }}" x-cloak>
+                                            <td colspan="20" class="border-b border-blue-100 bg-blue-50/50 px-4 py-3">
+                                                @if (count($row['details']) > 0)
+                                                    <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                                                        @foreach ($row['details'] as $label => $value)
+                                                            <div><dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{{ $label }}</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums text-gray-900">{{ $value }}</dd></div>
+                                                        @endforeach
+                                                        <div><dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Unit cost</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums">{{ number_format((float) $item->unit_cost, 2) }}</dd></div>
+                                                        <div><dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Selling price</dt><dd class="mt-0.5 text-sm font-semibold tabular-nums">{{ $item->selling_price ? number_format((float) $item->selling_price, 2) : '—' }}</dd></div>
+                                                    </dl>
+                                                @else
+                                                    <p class="text-sm text-gray-600">No batch, expiry or promotion details on this line.</p>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="sticky bottom-0 z-10 bg-gray-100 font-bold">
+                                    <tr class="[&>td]:border-t [&>td]:border-gray-300">
+                                        <td colspan="2" class="sticky left-0 bg-gray-100 px-3 py-2 text-left">Totals · {{ $grn->items->count() }} {{ \Illuminate\Support\Str::plural('line', $grn->items->count()) }}</td>
+                                        <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['qty_in_purchase_uom']) }}</td>
+                                        <td x-show="view === 'all'"></td>
+                                        <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['extended_value']) }}</td>
+                                        <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['discount_value']) }}</td>
+                                        <td x-show="view === 'all'" class="{{ $td }}">{{ $rs($totals['fmr_allowance']) }}</td>
+                                        <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['discounted_value_before_tax']) }}</td>
+                                        <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['excise_duty']) }}</td>
+                                        <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['sales_tax_value']) }}</td>
+                                        <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['advance_income_tax']) }}</td>
+                                        <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['other_charges']) }}</td>
+                                        @if ($isUnilever)
+                                            <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['withholding_tax']) }}</td>
+                                        @endif
+                                        <td x-show="view === 'summary'" class="{{ $td }}">{{ $rs($taxTotal) }}</td>
+                                        <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['quantity_received']) }}</td>
+                                        <td x-show="view === 'all'"></td>
+                                        <td x-show="view === 'all'"></td>
+                                        <td class="{{ $td }}">Rs {{ $rs($totals['total_value_with_taxes']) }}</td>
+                                        <td class="print:hidden"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <p class="border-t border-gray-100 px-4 py-2 text-xs text-gray-500 print:hidden">Values as on the supplier invoice. Click a line for batch, expiry, promotion and cost details.</p>
+                    @else
+                        <p class="px-4 py-10 text-center text-sm font-semibold text-gray-600">No items on this GRN</p>
+                    @endif
+                </section>
+
+                @if ($grn->notes)
+                    <section aria-labelledby="grn-notes-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
+                        <h2 id="grn-notes-heading" class="mb-1 text-base font-bold text-gray-900">Notes</h2>
+                        <p class="text-sm text-gray-700">Notes: {{ $grn->notes }}</p>
+                    </section>
+                @endif
+
+                @include('goods-receipt-notes.partials.show-corrections')
+            </div>
+
+            <aside class="space-y-4 xl:w-[22rem] xl:shrink-0">
+                @include('goods-receipt-notes.partials.show-side-cards')
+            </aside>
+        </div>
+
+        <div class="hidden justify-between pt-10 text-xs print:flex">
+            <span class="w-1/4 border-t border-black pt-1 text-center">Received by</span>
+            <span class="w-1/4 border-t border-black pt-1 text-center">Checked by</span>
+            <span class="w-1/4 border-t border-black pt-1 text-center">Store keeper</span>
+        </div>
+    </div>
+
+    @include('goods-receipt-notes.partials.show-actions')
+</x-app-layout>

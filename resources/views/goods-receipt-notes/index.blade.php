@@ -1,3 +1,6 @@
+@if (($indexLayout ?? 'classic') !== 'classic')
+    @include('goods-receipt-notes.partials.index-modern')
+@else
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Goods Receipt Notes" :createRoute="route('goods-receipt-notes.create')" createLabel=""
@@ -191,3 +194,4 @@
         </p>
     </x-alpine-confirmation-modal>
 </x-app-layout>
+@endif

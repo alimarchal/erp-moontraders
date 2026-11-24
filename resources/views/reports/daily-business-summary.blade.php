@@ -72,57 +72,81 @@
 
             /* ---------- Report ---------- */
             .dbs { --dbs-text: #1d1d1f; --dbs-muted: #6e6e73; --dbs-line: rgba(60,60,67,.12); --dbs-fill: #f5f5f7; --dbs-red: #d70015; --dbs-blue: #0071e3;
+                --dbs-navy: #1f3a68; --dbs-navy-2: #2b4f8a; --dbs-navy-soft: #e9eff8; --dbs-teal: #0e7c7b; --dbs-teal-2: #12999a; --dbs-teal-soft: #e4f3f2; --dbs-teal-ink: #0a5655;
                 color: var(--dbs-text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
             .dbs-card { background: #fff; border-radius: 18px; box-shadow: 0 0 0 1px rgba(0,0,0,.035), 0 2px 6px rgba(0,0,0,.04), 0 10px 28px -6px rgba(0,0,0,.08); }
             .dbs-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
             .dbs-neg { color: var(--dbs-red); }
 
             /* Title block */
-            .dbs-head { padding: 18px 20px; text-align: center; }
-            .dbs-head-org { font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--dbs-muted); text-transform: uppercase; }
+            .dbs-head { padding: 18px 20px; text-align: center; color: #fff; background: linear-gradient(135deg, var(--dbs-navy) 0%, var(--dbs-navy-2) 100%); }
+            .dbs-head-org { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: rgba(255,255,255,.72); text-transform: uppercase; }
             .dbs-head-title { margin-top: 2px; font-size: clamp(20px, 5vw, 28px); line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
             .dbs-head-meta { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-            .dbs-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 980px; background: var(--dbs-fill); font-size: 13px; color: var(--dbs-text); }
+            .dbs-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 980px; background: rgba(255,255,255,.14); font-size: 13px; color: #fff; }
             .dbs-pill b { font-weight: 600; }
-            .dbs-pill span { color: var(--dbs-muted); }
+            .dbs-pill span { color: rgba(255,255,255,.72); }
 
             /* Headline figures */
             .dbs-kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
             @media (min-width: 900px) { .dbs-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-            .dbs-kpi { padding: 14px 16px; min-width: 0; }
+            .dbs-kpi { --tone: var(--dbs-blue); --tone-soft: #eaf3fe; padding: 14px 16px; min-width: 0; background: linear-gradient(180deg, var(--tone-soft) 0%, #fff 75%); border-top: 4px solid var(--tone); }
+            .dbs-kpi-sales { --tone: #0071e3; --tone-soft: #e7f1fd; }
+            .dbs-kpi-cash { --tone: #1f9d55; --tone-soft: #e6f5ec; }
+            .dbs-kpi-credit { --tone: #d9480f; --tone-soft: #fdeee4; }
+            .dbs-kpi-discount { --tone: #7c3aed; --tone-soft: #f1eafe; }
+            .dbs-kpi .dbs-kpi-value { color: color-mix(in srgb, var(--tone) 70%, #000); }
             .dbs-kpi-label { font-size: 12px; font-weight: 500; color: var(--dbs-muted); line-height: 1.25; }
             .dbs-kpi-value { margin-top: 6px; font-size: clamp(15px, 4.2vw, 24px); font-weight: 700; letter-spacing: -.015em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .dbs-kpi-sub { margin-top: 2px; font-size: 11.5px; color: var(--dbs-muted); }
+
+            /* Ledger Amount: the supplier ledger balance, called out on its own like the management sheet */
+            .dbs-ledger { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding: 18px 22px; color: #fff; background: linear-gradient(135deg, var(--dbs-teal) 0%, var(--dbs-teal-2) 100%); }
+            .dbs-ledger-label { font-size: clamp(18px, 4.5vw, 24px); font-weight: 700; letter-spacing: -.01em; }
+            .dbs-ledger-sub { margin-top: 2px; font-size: 12.5px; color: rgba(255,255,255,.8); }
+            .dbs-ledger-value { font-size: clamp(24px, 7vw, 36px); font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+            .dbs-ledger-value.dbs-neg { color: #ffd6d6; }
+            .dbs-ledger-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 4px 12px; border-radius: 980px; background: rgba(255,255,255,.16); color: #fff; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+            .dbs-ledger-link:hover { background: rgba(255,255,255,.26); }
+            .dbs-ledger .rg-info { background: rgba(255,255,255,.22); color: #fff; }
+            .dbs-ledger-right { text-align: right; }
+            @media (max-width: 520px) { .dbs-ledger-right { text-align: left; } }
 
             /* Numbered section tables, two per row on wide screens so the rows line up */
             .dbs-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
             @media (min-width: 900px) { .dbs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
             .dbs-section { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
-            .dbs-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 14px 16px 8px; }
+            .dbs-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 12px 16px; color: #fff; background: linear-gradient(135deg, var(--dbs-navy) 0%, var(--dbs-navy-2) 100%); }
+            .dbs-section-head.is-teal { background: linear-gradient(135deg, var(--dbs-teal) 0%, var(--dbs-teal-2) 100%); }
             .dbs-section-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
-            .dbs-section-title .rg-info { margin-left: 6px; vertical-align: 1px; }
+            .dbs-section-title .rg-info { margin-left: 6px; vertical-align: 1px; background: rgba(255,255,255,.22); color: #fff; }
+            .dbs-section-head .dbs-section-note { color: rgba(255,255,255,.75); }
             .dbs-section-note { font-size: 12px; color: var(--dbs-muted); white-space: nowrap; }
             .dbs-table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.3; }
             .dbs-table th, .dbs-table td { padding: 8px 12px; border-top: 1px solid var(--dbs-line); vertical-align: middle; }
-            .dbs-table thead th { border-top: 0; background: var(--dbs-fill); font-size: 12px; font-weight: 600; color: var(--dbs-muted); text-align: left; white-space: nowrap; }
+            .dbs-table thead th { border-top: 0; background: var(--dbs-teal-soft); font-size: 12px; font-weight: 600; color: var(--dbs-teal-ink); text-align: left; white-space: nowrap; }
+            .dbs-table tbody tr:nth-child(even) td { background: #fafbfd; }
             .dbs-table thead th.dbs-num { text-align: right; }
             .dbs-table .dbs-idx { width: 1%; padding-right: 4px; color: var(--dbs-muted); font-variant-numeric: tabular-nums; text-align: left; white-space: nowrap; }
             .dbs-table tbody tr:hover td { background: #f3f8fe; }
-            .dbs-table .dbs-sub td { font-weight: 600; background: rgba(118,118,128,.06); }
-            .dbs-table .dbs-total td { font-weight: 700; background: var(--dbs-fill); border-top: 1px solid rgba(60,60,67,.28); }
+            .dbs-table .dbs-sub td { font-weight: 600; background: var(--dbs-teal-soft) !important; color: var(--dbs-teal-ink); }
+            .dbs-table .dbs-total td { font-weight: 700; background: var(--dbs-navy-soft) !important; color: var(--dbs-navy); border-top: 1px solid rgba(31,58,104,.35); }
+            .dbs-table .dbs-total td.dbs-neg { color: var(--dbs-red); }
             .dbs-table .dbs-empty td { text-align: center; color: var(--dbs-muted); font-style: italic; padding: 18px 12px; }
 
             /* Salesman table: scrolls sideways on tablets, one card per salesman on phones */
             .dbs-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
             .dbs-salesmen { min-width: 920px; }
-            .dbs-salesmen thead th { position: sticky; top: 0; z-index: 1; }
+            .dbs-salesmen thead th { position: sticky; top: 0; z-index: 1; background: var(--dbs-teal); color: #fff; }
+            .dbs-salesmen thead th.dbs-idx { color: rgba(255,255,255,.8); }
             .dbs-salesmen .dbs-name { font-weight: 500; white-space: nowrap; }
             /* # and the name stay in view while the figures scroll sideways */
             @media (min-width: 768px) {
                 .dbs-salesmen .dbs-idx { position: sticky; left: 0; z-index: 2; width: 40px; min-width: 40px; background: #fff; }
                 .dbs-salesmen .dbs-name, .dbs-salesmen thead th:nth-child(2) { position: sticky; left: 40px; z-index: 2; background: #fff; box-shadow: 1px 0 0 var(--dbs-line); }
-                .dbs-salesmen thead th.dbs-idx, .dbs-salesmen thead th:nth-child(2) { z-index: 3; background: var(--dbs-fill); }
-                .dbs-salesmen tfoot td.dbs-idx, .dbs-salesmen tfoot td.dbs-name { background: var(--dbs-fill); }
+                .dbs-salesmen thead th.dbs-idx, .dbs-salesmen thead th:nth-child(2) { z-index: 3; background: var(--dbs-teal); }
+                .dbs-salesmen tbody tr:nth-child(even) .dbs-idx, .dbs-salesmen tbody tr:nth-child(even) .dbs-name { background: #fafbfd; }
+                .dbs-salesmen tfoot td.dbs-idx, .dbs-salesmen tfoot td.dbs-name { background: var(--dbs-navy-soft); }
             }
             .dbs-company { font-size: 12px; font-weight: 400; color: var(--dbs-muted); }
             .dbs-name .dbs-company { display: none; }
@@ -141,7 +165,10 @@
                 .dbs-salesmen .dbs-name .dbs-company { display: inline; margin-left: 6px; }
                 .dbs-salesmen .dbs-empty td { grid-column: 1 / -1; justify-content: center; }
                 .dbs-salesmen td[data-label="Credit"], .dbs-salesmen td.dbs-cash { margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--dbs-line) !important; font-weight: 600; }
-                .dbs-salesmen tfoot tr { background: var(--dbs-fill); }
+                .dbs-salesmen tfoot tr { background: var(--dbs-navy-soft); color: var(--dbs-navy); }
+                .dbs-salesmen tbody tr:nth-child(even) td { background: transparent; }
+                .dbs-salesmen tbody tr:nth-child(even) { background: #fafbfd; }
+                .dbs-salesmen td.dbs-name { color: var(--dbs-navy); }
                 .dbs-salesmen tfoot td { background: transparent !important; border: 0 !important; }
                 .dbs-salesmen tfoot td.dbs-total-label { grid-column: 1 / -1; justify-content: flex-start; font-size: 15px; padding-bottom: 6px; }
                 .dbs-salesmen tfoot td.dbs-name::before { display: none; }
@@ -173,12 +200,18 @@
                 .dbs-kpi { padding: 4px 6px; border-left: 0; }
                 .dbs-kpi-value { font-size: 13px; }
                 .dbs-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
-                .dbs-section-head { padding: 3px 6px; background: #f3f4f6; border-bottom: 1px solid #000; }
+                .dbs-section-head { padding: 3px 6px; border-bottom: 1px solid #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .dbs-head, .dbs-ledger, .dbs-salesmen thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .dbs-ledger { padding: 4px 8px; }
+                .dbs-ledger-value { font-size: 15px; }
+                .dbs-ledger-label { font-size: 12px; }
+                .dbs-ledger-link, .dbs-ledger-sub { display: none; }
                 .dbs-section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; }
                 .dbs-section-note { font-size: 9px; }
                 .dbs-table { font-size: 9.5px; }
                 .dbs-table th, .dbs-table td { padding: 2px 4px; border: 1px solid #000 !important; color: #000 !important; background: none !important; }
-                .dbs-table thead th { background: #f3f4f6 !important; }
+                .dbs-table thead th { background: #e4f3f2 !important; }
+                .dbs-salesmen thead th { background: #0e7c7b !important; color: #fff !important; }
                 .dbs-scroll { overflow: visible !important; }
                 .dbs-salesmen { min-width: 0 !important; }
                 .dbs-gap { margin-top: 6px !important; }
@@ -269,6 +302,9 @@
                 'Ledger Amount' => $investment['ledger'],
             ];
             $salesmanColumns = $allCompanies ? 11 : 10;
+            $ledgerUrl = ! $allCompanies && $supplierId && auth()->user()->can('report-audit-ledger-register')
+                ? route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $supplierId, 'date_from' => $report['month_start'], 'date_to' => $date]])
+                : null;
         @endphp
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 mt-4">
@@ -289,25 +325,39 @@
 
                 {{-- Headline figures --}}
                 <section class="dbs-kpis dbs-gap" aria-label="Headline figures">
-                    <div class="dbs-card dbs-kpi">
+                    <div class="dbs-card dbs-kpi dbs-kpi-sales">
                         <div class="dbs-kpi-label">Total Sales</div>
                         <div class="dbs-kpi-value" title="{{ number_format($report['total_sales_mtd'], 2) }}">{{ number_format($report['total_sales_mtd'], 2) }}</div>
                         <div class="dbs-kpi-sub">Month to date</div>
                     </div>
-                    <div class="dbs-card dbs-kpi">
+                    <div class="dbs-card dbs-kpi dbs-kpi-cash">
                         <div class="dbs-kpi-label">Today's Cash</div>
                         <div class="dbs-kpi-value" title="{{ number_format($totals['cash'], 2) }}">{{ number_format($totals['cash'], 2) }}</div>
                         <div class="dbs-kpi-sub">Cash + bank slips</div>
                     </div>
-                    <div class="dbs-card dbs-kpi">
+                    <div class="dbs-card dbs-kpi dbs-kpi-credit">
                         <div class="dbs-kpi-label">Total Credit</div>
                         <div class="dbs-kpi-value" title="{{ number_format($totals['credit'], 2) }}">{{ number_format($totals['credit'], 2) }}</div>
                         <div class="dbs-kpi-sub">Closing market credit</div>
                     </div>
-                    <div class="dbs-card dbs-kpi">
+                    <div class="dbs-card dbs-kpi dbs-kpi-discount">
                         <div class="dbs-kpi-label">Total Discount</div>
                         <div class="dbs-kpi-value" title="{{ number_format($totals['discount'], 2) }}">{{ number_format($totals['discount'], 2) }}</div>
                         <div class="dbs-kpi-sub">Today</div>
+                    </div>
+                </section>
+
+                {{-- Ledger Amount: the supplier ledger balance to the report date, the same figure as in Investment Position --}}
+                <section class="dbs-card dbs-ledger dbs-gap" aria-labelledby="dbs-ledger">
+                    <div>
+                        <h2 id="dbs-ledger" class="dbs-ledger-label">Ledger Amount <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'ledger' })" aria-label="What Ledger Amount means" title="What Ledger Amount means">i</button></h2>
+                        <div class="dbs-ledger-sub">Supplier ledger balance{{ $allCompanies ? ' of all companies' : '' }} as on {{ $reportDate->format('d M Y') }}</div>
+                    </div>
+                    <div class="dbs-ledger-right">
+                        <div class="dbs-ledger-value {{ $investment['ledger'] < 0 ? 'dbs-neg' : '' }}">{{ $signed($investment['ledger']) }}</div>
+                        @if ($ledgerUrl)
+                            <a href="{{ $ledgerUrl }}" class="dbs-ledger-link no-print">Open Supplier Ledger <span aria-hidden="true">→</span></a>
+                        @endif
                     </div>
                 </section>
 
@@ -331,7 +381,7 @@
 
                     {{-- TTS, month to date --}}
                     <section class="dbs-card dbs-section" aria-labelledby="dbs-tts">
-                        <div class="dbs-section-head">
+                        <div class="dbs-section-head is-teal">
                             <h2 id="dbs-tts" class="dbs-section-title">TTS Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'tts' })" aria-label="How the TTS balance is worked out" title="How the TTS balance is worked out">i</button></h2>
                             <span class="dbs-section-note">Month to date · {{ $period }}</span>
                         </div>
@@ -371,7 +421,7 @@
 
                     {{-- Category groups, month to date --}}
                     <section class="dbs-card dbs-section" aria-labelledby="dbs-groups">
-                        <div class="dbs-section-head">
+                        <div class="dbs-section-head is-teal">
                             <h2 id="dbs-groups" class="dbs-section-title">Category Group Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="Which categories make each group" title="Which categories make each group">i</button></h2>
                             <span class="dbs-section-note">{{ $period }}</span>
                         </div>

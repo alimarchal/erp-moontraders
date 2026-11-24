@@ -318,6 +318,12 @@
                                     <p>آج دیا گیا <span class="en">%age</span> اور <span class="en">Scheme</span> ملا کر۔</p>
                                 </div>
                             </section>
+                            <section data-topic="ledger">
+                                <h2>لیجر اماؤنٹ</h2>
+                                <p>کمپنی (سپلائر) کے لیجر کا بیلنس، رپورٹ کی تاریخ تک: کمپنی کے پاس ہماری کتنی رقم پڑی ہے۔ یہ <span class="en">Supplier Ledger Register</span> کی پوسٹ شدہ لائنوں سے بنتا ہے:</p>
+                                <div class="tip">اوپننگ بیلنس + آن لائن جمع − انوائس − اخراجات + <bdi class="lt" dir="ltr">ZA 0.5%</bdi> + کلیم ایڈجسٹ</div>
+                                <p>مثبت رقم = کمپنی کے پاس ہمارا پیسہ؛ بریکٹ میں رقم = ہم نے کمپنی کو دینا ہے۔ <span class="en">All Companies</span> میں سب کمپنیوں کا جوڑ۔ یہی رقم انویسٹمنٹ پوزیشن کی <span class="en">Ledger Amount</span> لائن میں بھی ہے۔ <span class="en">Open Supplier Ledger</span> سے اس مہینے کا پورا لیجر کھلتا ہے۔</p>
+                            </section>
                             <section data-topic="investment">
                                 <h2>انویسٹمنٹ پوزیشن</h2>
                                 <p>کمپنی کے کاروبار میں ہمارا پیسہ اس وقت کہاں کہاں لگا ہوا ہے:</p>

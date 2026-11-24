@@ -102,7 +102,7 @@
                             <td class="amount-cell">{{ number_format($ttsPassed, 2) }}</td>
                         </tr>
                         <tr>
-                            <td>Promotion Passed (Account 5287)</td>
+                            <td>Promotion Passed (Promotion OFF, Account 5288)</td>
                             <td class="amount-cell">{{ number_format($promoPassed, 2) }}</td>
                         </tr>
                         <tr class="font-semibold bg-gray-50">

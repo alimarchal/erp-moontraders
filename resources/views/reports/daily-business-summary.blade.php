@@ -253,7 +253,7 @@
                     </table>
 
                     <p class="mt-2 text-xs text-gray-500 no-print">
-                        Sales by category and the TTS summary run from the 1st of the month to the report date. Salesman figures are for the report date; Credit is each salesman's closing market credit. %age = advance tax (1161); Scheme = scheme discount (5292) + promo (5287); Amount = cash counted + bank slips.
+                        Sales by category and the TTS summary run from the 1st of the month to the report date. Salesman figures are for the report date; Credit is each salesman's closing market credit. %age = advance tax (1161); Scheme = scheme discount (5292) + Promotion OFF (5288); Amount = cash counted + bank slips.
                     </p>
                 </div>
             </div>

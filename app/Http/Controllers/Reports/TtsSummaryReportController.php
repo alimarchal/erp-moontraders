@@ -66,7 +66,7 @@ class TtsSummaryReportController extends Controller implements HasMiddleware
             ->sum('sales_settlement_expenses.amount');
 
         $promoPassed = (float) (clone $expenseBaseQuery)
-            ->where('chart_of_accounts.account_code', '5287')
+            ->where('chart_of_accounts.account_code', '5288')
             ->sum('sales_settlement_expenses.amount');
 
         $percentagePassed = (float) (clone $expenseBaseQuery)

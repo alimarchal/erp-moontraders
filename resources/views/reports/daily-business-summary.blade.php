@@ -101,7 +101,7 @@
             .dbs-kpi-sub { margin-top: 2px; font-size: 11.5px; color: var(--dbs-muted); }
 
             /* Ledger Amount: the supplier ledger balance, called out on its own like the management sheet */
-            .dbs-ledger { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding: 18px 22px; color: #fff; background: linear-gradient(135deg, var(--dbs-teal) 0%, var(--dbs-teal-2) 100%); }
+            .dbs-ledger { display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 18px 22px; color: #fff; background: linear-gradient(135deg, var(--dbs-teal) 0%, var(--dbs-teal-2) 100%); }
             .dbs-ledger-label { font-size: clamp(18px, 4.5vw, 24px); font-weight: 700; letter-spacing: -.01em; }
             .dbs-ledger-sub { margin-top: 2px; font-size: 12.5px; color: rgba(255,255,255,.8); }
             .dbs-ledger-value { font-size: clamp(24px, 7vw, 36px); font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -109,12 +109,15 @@
             .dbs-ledger-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 4px 12px; border-radius: 980px; background: rgba(255,255,255,.16); color: #fff; font-size: 12.5px; font-weight: 600; text-decoration: none; }
             .dbs-ledger-link:hover { background: rgba(255,255,255,.26); }
             .dbs-ledger .rg-info { background: rgba(255,255,255,.22); color: #fff; }
-            .dbs-ledger-right { text-align: right; }
-            @media (max-width: 520px) { .dbs-ledger-right { text-align: left; } }
 
             /* Numbered section tables, two per row on wide screens so the rows line up */
-            .dbs-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-            @media (min-width: 900px) { .dbs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+            /* Three columns like the management sheet: investment + ledger | category sales + groups | TTS.
+               Two columns on tablets (TTS underneath, full width), one on phones, always in that order. */
+            .dbs-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+            .dbs-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+            .dbs-col > .dbs-card:last-child { flex: 1 1 auto; }
+            @media (min-width: 768px) { .dbs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dbs-col-tts { grid-column: 1 / -1; } }
+            @media (min-width: 1200px) { .dbs-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dbs-col-tts { grid-column: auto; } }
             .dbs-section { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
             .dbs-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 12px 16px; color: #fff; background: linear-gradient(135deg, var(--dbs-navy) 0%, var(--dbs-navy-2) 100%); }
             .dbs-section-head.is-teal { background: linear-gradient(135deg, var(--dbs-teal) 0%, var(--dbs-teal-2) 100%); }
@@ -199,7 +202,9 @@
                 .dbs-kpis { grid-template-columns: repeat(4, 1fr) !important; gap: 0 !important; }
                 .dbs-kpi { padding: 4px 6px; border-left: 0; }
                 .dbs-kpi-value { font-size: 13px; }
-                .dbs-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
+                .dbs-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+                .dbs-col { gap: 6px; }
+                .dbs-col-tts { grid-column: auto !important; }
                 .dbs-section-head { padding: 3px 6px; border-bottom: 1px solid #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .dbs-head, .dbs-ledger, .dbs-salesmen thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .dbs-ledger { padding: 4px 8px; }
@@ -347,94 +352,97 @@
                     </div>
                 </section>
 
-                {{-- Ledger Amount: the supplier ledger balance to the report date, the same figure as in Investment Position --}}
-                <section class="dbs-card dbs-ledger dbs-gap" aria-labelledby="dbs-ledger">
-                    <div>
-                        <h2 id="dbs-ledger" class="dbs-ledger-label">Ledger Amount <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'ledger' })" aria-label="What Ledger Amount means" title="What Ledger Amount means">i</button></h2>
-                        <div class="dbs-ledger-sub">Supplier ledger balance{{ $allCompanies ? ' of all companies' : '' }} as on {{ $reportDate->format('d M Y') }}</div>
-                    </div>
-                    <div class="dbs-ledger-right">
-                        <div class="dbs-ledger-value {{ $investment['ledger'] < 0 ? 'dbs-neg' : '' }}">{{ $signed($investment['ledger']) }}</div>
-                        @if ($ledgerUrl)
-                            <a href="{{ $ledgerUrl }}" class="dbs-ledger-link no-print">Open Supplier Ledger <span aria-hidden="true">→</span></a>
-                        @endif
-                    </div>
-                </section>
-
+                {{-- Same order as the management sheet: investment and ledger, then sales by category, then TTS --}}
                 <div class="dbs-grid dbs-gap">
-                    {{-- Investment position --}}
-                    <section class="dbs-card dbs-section" aria-labelledby="dbs-investment">
-                        <div class="dbs-section-head">
-                            <h2 id="dbs-investment" class="dbs-section-title">Investment Position <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'investment' })" aria-label="What Investment Position means" title="What Investment Position means">i</button></h2>
-                            <span class="dbs-section-note">As on {{ $reportDate->format('d M') }}</span>
-                        </div>
-                        <table class="dbs-table">
-                            <thead><tr><th class="dbs-idx">#</th><th>Head</th><th class="dbs-num">Amount (PKR)</th></tr></thead>
-                            <tbody>
-                                @foreach ($investmentRows as $label => $amount)
-                                    <tr><td class="dbs-idx">{{ $loop->iteration }}</td><td>{{ $label }}</td><td class="dbs-num">{{ number_format($amount, 2) }}</td></tr>
-                                @endforeach
-                                <tr class="dbs-total"><td class="dbs-idx"></td><td>Total Investment</td><td class="dbs-num">{{ number_format($investment['total'], 2) }}</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
-
-                    {{-- TTS, month to date --}}
-                    <section class="dbs-card dbs-section" aria-labelledby="dbs-tts">
-                        <div class="dbs-section-head is-teal">
-                            <h2 id="dbs-tts" class="dbs-section-title">TTS Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'tts' })" aria-label="How the TTS balance is worked out" title="How the TTS balance is worked out">i</button></h2>
-                            <span class="dbs-section-note">Month to date · {{ $period }}</span>
-                        </div>
-                        <table class="dbs-table">
-                            <thead><tr><th class="dbs-idx">#</th><th>Head</th><th class="dbs-num">Amount (PKR)</th></tr></thead>
-                            <tbody>
-                                <tr><td class="dbs-idx">1</td><td>TTS Received</td><td class="dbs-num">{{ number_format($tts['tts_received'], 2) }}</td></tr>
-                                <tr><td class="dbs-idx">2</td><td>Promo Received</td><td class="dbs-num">{{ number_format($tts['promo_received'], 2) }}</td></tr>
-                                <tr class="dbs-sub"><td class="dbs-idx"></td><td>Total Received</td><td class="dbs-num">{{ number_format($tts['total_received'], 2) }}</td></tr>
-                                <tr><td class="dbs-idx">3</td><td>TTS Passed</td><td class="dbs-num">{{ number_format($tts['tts_passed'], 2) }}</td></tr>
-                                <tr><td class="dbs-idx">4</td><td>Promo Passed</td><td class="dbs-num">{{ number_format($tts['promo_passed'], 2) }}</td></tr>
-                                <tr class="dbs-sub"><td class="dbs-idx"></td><td>Total Scheme Passed</td><td class="dbs-num">{{ number_format($tts['total_passed'], 2) }}</td></tr>
-                                <tr><td class="dbs-idx">5</td><td>Percentage Passed</td><td class="dbs-num">{{ number_format($tts['percentage_passed'], 2) }}</td></tr>
-                                <tr class="dbs-total"><td class="dbs-idx"></td><td>Balance</td><td class="dbs-num {{ $tts['balance'] < 0 ? 'dbs-neg' : '' }}">{{ $signed($tts['balance']) }}</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
-
-                    {{-- Category-wise sales, month to date --}}
-                    <section class="dbs-card dbs-section" aria-labelledby="dbs-categories">
-                        <div class="dbs-section-head">
-                            <h2 id="dbs-categories" class="dbs-section-title">Category-wise Sales <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="What Category-wise Sales means" title="What Category-wise Sales means">i</button></h2>
-                            <span class="dbs-section-note">{{ $period }}</span>
-                        </div>
-                        <table class="dbs-table">
-                            <thead><tr><th class="dbs-idx">#</th><th>Category</th><th class="dbs-num">Sales (PKR)</th></tr></thead>
-                            <tbody>
-                                @forelse ($report['categories'] as $category)
-                                    <tr><td class="dbs-idx">{{ $loop->iteration }}</td><td>{{ $category->name }}</td><td class="dbs-num">{{ number_format($category->amount, 2) }}</td></tr>
-                                @empty
-                                    <tr class="dbs-empty"><td colspan="3">No sales this month</td></tr>
-                                @endforelse
-                                <tr class="dbs-total"><td class="dbs-idx"></td><td>Total Sales</td><td class="dbs-num">{{ number_format($categoryTotal, 2) }}</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
-
-                    {{-- Category groups, month to date --}}
-                    <section class="dbs-card dbs-section" aria-labelledby="dbs-groups">
-                        <div class="dbs-section-head is-teal">
-                            <h2 id="dbs-groups" class="dbs-section-title">Category Group Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="Which categories make each group" title="Which categories make each group">i</button></h2>
-                            <span class="dbs-section-note">{{ $period }}</span>
-                        </div>
-                        <table class="dbs-table">
-                            <thead><tr><th class="dbs-idx">#</th><th>Group</th><th class="dbs-num">Sales (PKR)</th></tr></thead>
-                            <tbody>
-                                @foreach ($report['category_groups'] as $group => $amount)
-                                    <tr><td class="dbs-idx">{{ $loop->iteration }}</td><td>{{ $group }}</td><td class="dbs-num">{{ number_format($amount, 2) }}</td></tr>
-                                @endforeach
-                                <tr class="dbs-total"><td class="dbs-idx"></td><td>Total</td><td class="dbs-num">{{ number_format($groupTotal, 2) }}</td></tr>
-                            </tbody>
-                        </table>
-                    </section>
+                    <div class="dbs-col">
+                        {{-- Investment position --}}
+                        <section class="dbs-card dbs-section" aria-labelledby="dbs-investment">
+                            <div class="dbs-section-head">
+                                <h2 id="dbs-investment" class="dbs-section-title">Investment Position <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'investment' })" aria-label="What Investment Position means" title="What Investment Position means">i</button></h2>
+                                <span class="dbs-section-note">As on {{ $reportDate->format('d M') }}</span>
+                            </div>
+                            <table class="dbs-table">
+                                <thead><tr><th class="dbs-idx">#</th><th>Head</th><th class="dbs-num">Amount (PKR)</th></tr></thead>
+                                <tbody>
+                                    @foreach ($investmentRows as $label => $amount)
+                                        <tr><td class="dbs-idx">{{ $loop->iteration }}</td><td>{{ $label }}</td><td class="dbs-num">{{ number_format($amount, 2) }}</td></tr>
+                                    @endforeach
+                                    <tr class="dbs-total"><td class="dbs-idx"></td><td>Total Investment</td><td class="dbs-num">{{ number_format($investment['total'], 2) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                        {{-- Ledger Amount: the supplier ledger balance to the report date, the same figure as in Investment Position --}}
+                        <section class="dbs-card dbs-ledger" aria-labelledby="dbs-ledger">
+                            <div>
+                                <h2 id="dbs-ledger" class="dbs-ledger-label">Ledger Amount <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'ledger' })" aria-label="What Ledger Amount means" title="What Ledger Amount means">i</button></h2>
+                                <div class="dbs-ledger-sub">Supplier ledger balance{{ $allCompanies ? ' of all companies' : '' }} as on {{ $reportDate->format('d M Y') }}</div>
+                            </div>
+                            <div class="dbs-ledger-right">
+                                <div class="dbs-ledger-value {{ $investment['ledger'] < 0 ? 'dbs-neg' : '' }}">{{ $signed($investment['ledger']) }}</div>
+                                @if ($ledgerUrl)
+                                    <a href="{{ $ledgerUrl }}" class="dbs-ledger-link no-print">Open Supplier Ledger <span aria-hidden="true">→</span></a>
+                                @endif
+                            </div>
+                        </section>
+                    </div>
+                    <div class="dbs-col">
+                        {{-- Category-wise sales, month to date --}}
+                        <section class="dbs-card dbs-section" aria-labelledby="dbs-categories">
+                            <div class="dbs-section-head">
+                                <h2 id="dbs-categories" class="dbs-section-title">Category-wise Sales <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="What Category-wise Sales means" title="What Category-wise Sales means">i</button></h2>
+                                <span class="dbs-section-note">{{ $period }}</span>
+                            </div>
+                            <table class="dbs-table">
+                                <thead><tr><th class="dbs-idx">#</th><th>Category</th><th class="dbs-num">Sales (PKR)</th></tr></thead>
+                                <tbody>
+                                    @forelse ($report['categories'] as $category)
+                                        <tr><td class="dbs-idx">{{ $loop->iteration }}</td><td>{{ $category->name }}</td><td class="dbs-num">{{ number_format($category->amount, 2) }}</td></tr>
+                                    @empty
+                                        <tr class="dbs-empty"><td colspan="3">No sales this month</td></tr>
+                                    @endforelse
+                                    <tr class="dbs-total"><td class="dbs-idx"></td><td>Total Sales</td><td class="dbs-num">{{ number_format($categoryTotal, 2) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                        {{-- Category groups, month to date --}}
+                        <section class="dbs-card dbs-section" aria-labelledby="dbs-groups">
+                            <div class="dbs-section-head is-teal">
+                                <h2 id="dbs-groups" class="dbs-section-title">Category Group Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="Which categories make each group" title="Which categories make each group">i</button></h2>
+                                <span class="dbs-section-note">{{ $period }}</span>
+                            </div>
+                            <table class="dbs-table">
+                                <thead><tr><th class="dbs-idx">#</th><th>Group</th><th class="dbs-num">Sales (PKR)</th></tr></thead>
+                                <tbody>
+                                    @foreach ($report['category_groups'] as $group => $amount)
+                                        <tr><td class="dbs-idx">{{ $loop->iteration }}</td><td>{{ $group }}</td><td class="dbs-num">{{ number_format($amount, 2) }}</td></tr>
+                                    @endforeach
+                                    <tr class="dbs-total"><td class="dbs-idx"></td><td>Total</td><td class="dbs-num">{{ number_format($groupTotal, 2) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    </div>
+                    <div class="dbs-col dbs-col-tts">
+                        {{-- TTS, month to date --}}
+                        <section class="dbs-card dbs-section" aria-labelledby="dbs-tts">
+                            <div class="dbs-section-head is-teal">
+                                <h2 id="dbs-tts" class="dbs-section-title">TTS Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'tts' })" aria-label="How the TTS balance is worked out" title="How the TTS balance is worked out">i</button></h2>
+                                <span class="dbs-section-note">Month to date · {{ $period }}</span>
+                            </div>
+                            <table class="dbs-table">
+                                <thead><tr><th class="dbs-idx">#</th><th>Head</th><th class="dbs-num">Amount (PKR)</th></tr></thead>
+                                <tbody>
+                                    <tr><td class="dbs-idx">1</td><td>TTS Received</td><td class="dbs-num">{{ number_format($tts['tts_received'], 2) }}</td></tr>
+                                    <tr><td class="dbs-idx">2</td><td>Promo Received</td><td class="dbs-num">{{ number_format($tts['promo_received'], 2) }}</td></tr>
+                                    <tr class="dbs-sub"><td class="dbs-idx"></td><td>Total Received</td><td class="dbs-num">{{ number_format($tts['total_received'], 2) }}</td></tr>
+                                    <tr><td class="dbs-idx">3</td><td>TTS Passed</td><td class="dbs-num">{{ number_format($tts['tts_passed'], 2) }}</td></tr>
+                                    <tr><td class="dbs-idx">4</td><td>Promo Passed</td><td class="dbs-num">{{ number_format($tts['promo_passed'], 2) }}</td></tr>
+                                    <tr class="dbs-sub"><td class="dbs-idx"></td><td>Total Scheme Passed</td><td class="dbs-num">{{ number_format($tts['total_passed'], 2) }}</td></tr>
+                                    <tr><td class="dbs-idx">5</td><td>Percentage Passed</td><td class="dbs-num">{{ number_format($tts['percentage_passed'], 2) }}</td></tr>
+                                    <tr class="dbs-total"><td class="dbs-idx"></td><td>Balance</td><td class="dbs-num {{ $tts['balance'] < 0 ? 'dbs-neg' : '' }}">{{ $signed($tts['balance']) }}</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    </div>
                 </div>
 
                 {{-- Salesman-wise performance for the day --}}

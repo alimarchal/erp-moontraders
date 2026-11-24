@@ -71,6 +71,8 @@ it('is empty until a company is chosen in the filters', function () {
     $this->get(route('reports.daily-business-summary.index'))
         ->assertOk()
         ->assertSee('No company selected')
+        ->assertSee('Help: Daily Business Summary')
+        ->assertSee('یہ رپورٹ کیا ہے؟')
         ->assertDontSee('DAILY SALESMAN-WISE PERFORMANCE');
 });
 
@@ -100,6 +102,7 @@ it('builds the salesman rows, month-to-date sales by category and the TTS balanc
 
     $response = $this->get(route('reports.daily-business-summary.index', ['date' => '2026-11-14', 'supplier_id' => $this->supplier->id]))
         ->assertOk()
+        ->assertSee('Ledger Amount')
         ->assertDontSee('Engro Salesman');
 
     $report = $response->viewData('report');

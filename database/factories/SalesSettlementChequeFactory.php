@@ -26,7 +26,7 @@ class SalesSettlementChequeFactory extends Factory
             'cheque_date' => fake()->dateTimeBetween('-7 days', '+30 days'),
             'account_holder_name' => fake()->optional()->name(),
             'status' => fake()->randomElement(['pending', 'cleared', 'bounced', 'cancelled']),
-            'cleared_date' => fn (array $attributes) => $attributes['status'] === 'cleared' ? fake()->dateTimeBetween($attributes['cheque_date'], 'now') : null,
+            'cleared_date' => fn (array $attributes) => $attributes['status'] === 'cleared' ? fake()->dateTimeBetween(min($attributes['cheque_date'], now()), 'now') : null,
             'notes' => fake()->optional()->sentence(),
         ];
     }

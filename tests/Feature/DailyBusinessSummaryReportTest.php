@@ -87,8 +87,9 @@ it('builds the salesman rows, month-to-date sales by category and the TTS balanc
     $salesman = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'designation' => 'Salesman', 'name' => 'Tanveer Malik']);
     $otherCompanySalesman = Employee::factory()->create(['supplier_id' => $this->otherSupplier->id, 'designation' => 'Salesman', 'name' => 'Engro Salesman']);
 
-    // Report day: advance tax 1,588 + scheme 1,305 = discount 2,893; amount = cash 34,500 + slips 70,990.
-    dailySummarySettlement($salesman, '2026-11-14', 127581.48, ['1161' => 1588, '5292' => 1305, '5223' => 400], 34500, 70990, $nutrition);
+    // Report day: advance tax 1,588 + scheme 1,305 + Promotion OFF 250 = discount 3,143; amount = cash 34,500 + slips 70,990.
+    // The unused 5287 "Promotion Passed" account is not read.
+    dailySummarySettlement($salesman, '2026-11-14', 127581.48, ['1161' => 1588, '5292' => 1305, '5288' => 250, '5287' => 9999, '5223' => 400], 34500, 70990, $nutrition);
     // Earlier in the month: counts towards month-to-date sales and TTS, not the salesman row.
     dailySummarySettlement($salesman, '2026-11-02', 50000, ['5292' => 700, '5223' => 100], 50000, 0, $dairy);
     // Last month and another company: left out.
@@ -106,16 +107,18 @@ it('builds the salesman rows, month-to-date sales by category and the TTS balanc
 
     expect($row->sales)->toBe(127581.48)
         ->and($row->percentage)->toBe(1588.0)
-        ->and($row->scheme)->toBe(1305.0)
-        ->and($row->discount)->toBe(2893.0)
+        ->and($row->scheme)->toBe(1555.0)
+        ->and($row->discount)->toBe(3143.0)
         ->and($row->cash)->toBe(105490.0)
         ->and($report['total_sales_mtd'])->toBe(177581.48)
         ->and($report['categories']->pluck('amount', 'name')->all())->toBe(['Nutrition' => 127581.48, 'Dairy' => 50000.0])
         ->and($report['category_groups'])->toBe(['F&B' => 50000.0, 'Nutrition' => 127581.48, 'Water' => 0.0])
         ->and($report['tts']['tts_received'])->toBe(5000.0)
         ->and($report['tts']['tts_passed'])->toBe(2005.0)
+        ->and($report['tts']['promo_passed'])->toBe(250.0)
+        ->and($report['tts']['total_passed'])->toBe(2255.0)
         ->and($report['tts']['percentage_passed'])->toBe(500.0)
-        ->and($report['tts']['balance'])->toBe(2495.0);
+        ->and($report['tts']['balance'])->toBe(2245.0);
 });
 
 it('adds every company together for all companies', function () {

@@ -659,7 +659,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-expense-detail', 'expense-voucher-list', 'expense-vendor-list', 'expense-category-manage', 'expense-vendor-payment-list', 'payroll-list', 'payroll-adjustment-manage', 'report-audit-percentage-expense', 'report-audit-profit-after-category', 'report-audit-revenue-detail', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-scheme-received', 'report-sales-summary-roi', 'report-sales-tts-summary'])
+                @canany(['report-audit-expense-detail', 'expense-voucher-list', 'expense-vendor-list', 'expense-category-manage', 'expense-vendor-payment-list', 'payroll-list', 'payroll-adjustment-manage', 'report-audit-percentage-expense', 'report-audit-profit-after-category', 'report-audit-revenue-detail', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-scheme-received', 'report-sales-summary-roi', 'report-sales-tts-summary', 'report-sales-trade-offer-dashboard'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Profitability &amp; Schemes</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -818,6 +818,18 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M3.75 3v18h16.5M7.5 16.5h2.25V9H7.5v7.5zm6-3h2.25V6h-2.25v7.5z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-sales-trade-offer-dashboard')
+                                <x-settings-row data-settings-item data-search="daily sales trade offer dashboard to received passed promotion percentage balance company wise all companies tts profitability and schemes returns, expenses, revenue and schemes" x-bind:hidden="! matches($el)" href="{{ route('reports.sales-trade-offer.index') }}" label="Daily Sales & Trade Offer Dashboard"
+                                    description="Company-wise sale, TO received vs passed, percentage and balance" icon-bg="bg-teal-700">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12a2.25 2.25 0 002.25-2.25V3M3.75 3h16.5M3.75 3H2.25m18 0h1.5M8.25 21l3.75-4.5L15.75 21M7.5 12l3-3 2.25 2.25L16.5 7.5" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

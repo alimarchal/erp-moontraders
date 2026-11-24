@@ -38,3 +38,14 @@ it('refuses a duplicate customer code when editing, but lets a customer keep or 
 
     expect($customer->fresh()->customer_code)->toBe('N00000700010');
 });
+
+it('refuses a code whose number another customer has under a different letter, but lets old shared numbers be kept', function () {
+    Customer::factory()->create(['customer_code' => 'K00000509462']);
+    $sharing = Customer::factory()->create(['customer_code' => 'B00000509462']);
+
+    $this->actingAs($this->admin)->post(route('customers.store'), customerForm(['customer_code' => 'P00000509462']))->assertSessionHasErrors('customer_code');
+    $this->put(route('customers.update', $sharing), customerForm(['customer_code' => 'B00000509462']))->assertSessionHasNoErrors();
+    $this->put(route('customers.update', $sharing), customerForm(['customer_code' => 'M00000509462']))->assertSessionHasErrors('customer_code');
+
+    expect($sharing->fresh()->customer_code)->toBe('B00000509462');
+});

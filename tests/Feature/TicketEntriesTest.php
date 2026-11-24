@@ -226,22 +226,39 @@ it('creates a customer from a ticket with every optional field left blank', func
     expect($customer)->not->toBeNull()->and($customer->country)->toBe('Pakistan')->and($customer->payment_terms)->not->toBeNull();
 });
 
-it('makes the customer code from the company letter and the next number of that letter, whatever the user sends', function () {
+it('gives every company the next number of one shared series, while Nestle keeps its own', function () {
     $kausar = Supplier::factory()->create(['disabled' => false, 'short_name' => 'Kausar']);
     $krm = Supplier::factory()->create(['disabled' => false, 'short_name' => 'KRM']);
     $lipton = Supplier::factory()->create(['disabled' => false, 'short_name' => 'Lipton']);
+    $ebm = Supplier::factory()->create(['disabled' => false, 'short_name' => 'EBM']);
+    $nestle = Supplier::factory()->create(['disabled' => false, 'short_name' => 'Nestle']);
     Customer::factory()->create(['customer_code' => 'K00000509410']);
     Customer::factory()->create(['customer_code' => 'M00000509409']);
     Customer::factory()->create(['customer_code' => 'N00000549384']);
     Customer::factory()->create(['customer_code' => 'L00000509252']);
+    // A number already taken by Nestle is skipped by the shared series.
+    Customer::factory()->create(['customer_code' => 'N00000509413']);
 
-    foreach ([[$kausar, 'K00000509411'], [$krm, 'K00000509412'], [$lipton, 'L00000509253']] as [$supplier, $expected]) {
+    foreach ([[$kausar, 'K00000509411'], [$krm, 'K00000509412'], [$lipton, 'L00000509414'], [$ebm, 'B00000509415'], [$nestle, 'N00000549385']] as [$supplier, $expected]) {
         $user = User::factory()->create(['supplier_id' => $supplier->id]);
         $user->assignRole('company-user');
-        $this->actingAs($user)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => $expected, 'data' => customerData(['customer_code' => 'HACK-1'])])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => $expected, 'data' => customerData(['customer_code' => 'HACK-1', 'email' => null])])->assertSessionHasNoErrors();
 
         expect(Ticket::firstWhere('title', $expected)->items->first()->payload['customer_code'])->toBe($expected);
     }
+});
+
+it('replaces a generated code at approval when its number was taken under another letter meanwhile', function () {
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'New customer', 'data' => customerData()]);
+    $ticket = Ticket::firstOrFail();
+    $generated = $ticket->items->first()->payload['customer_code'];
+    Customer::factory()->create(['customer_code' => 'Z'.substr($generated, 1)]);
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertSessionHasNoErrors();
+
+    $code = $ticket->fresh()->items->first()->payload['customer_code'];
+    expect(substr($code, 1))->not->toBe(substr($generated, 1))
+        ->and(Customer::where('customer_code', $code)->exists())->toBeTrue();
 });
 
 it('keeps the generated code when the requester edits the ticket', function () {
@@ -263,6 +280,7 @@ it('lets an admin type the code and an approver change it before approving', fun
 
     $this->actingAs($this->admin)->get(route('tickets.show', $ticket))->assertOk()->assertSee('name="customer_code"', false);
     $this->post(route('tickets.customer-code', $ticket), ['customer_code' => 'M00000700001'])->assertSessionHasErrors('customer_code');
+    $this->post(route('tickets.customer-code', $ticket), ['customer_code' => 'B00000700001'])->assertSessionHasErrors('customer_code');
 
     $this->post(route('tickets.customer-code', $ticket), ['customer_code' => 'k00000800000'])->assertSessionHasNoErrors();
     expect($ticket->fresh()->items->first()->payload)->toMatchArray(['customer_code' => 'K00000800000', 'code_generated' => false]);
@@ -281,6 +299,10 @@ it('answers whether a customer code is free, counting customers, deleted custome
         $this->getJson(route('tickets.customer-code.check', ['code' => $taken]))->assertOk()->assertJson(['available' => false]);
     }
 
+    // The same number under another letter counts as taken too.
+    foreach (['B00000600001', 'P00000600003'] as $sameNumber) {
+        $this->getJson(route('tickets.customer-code.check', ['code' => $sameNumber]))->assertJson(['available' => false]);
+    }
     $this->getJson(route('tickets.customer-code.check', ['code' => 'K00000600004']))->assertJson(['available' => true]);
     $this->getJson(route('tickets.customer-code.check', ['code' => 'K00000600003', 'except' => $waiting->uuid]))->assertJson(['available' => true]);
 

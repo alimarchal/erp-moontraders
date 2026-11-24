@@ -367,7 +367,7 @@ class TicketController extends Controller implements HasMiddleware
         return response()->json([
             'code' => $code,
             'available' => $available,
-            'message' => $code === '' ? 'Enter a customer code.' : ($available ? "{$code} is available." : "{$code} is already used by a customer or another waiting ticket."),
+            'message' => $code === '' ? 'Enter a customer code.' : ($available ? "{$code} is available." : "{$code}, or its number with another letter, is already used by a customer or another waiting ticket."),
         ]);
     }
 

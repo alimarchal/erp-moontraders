@@ -260,7 +260,7 @@ class TicketService
             $code = strtoupper(trim($code));
 
             if ($this->customerCodeInUse($code, $item->id)) {
-                throw ValidationException::withMessages(['customer_code' => "Customer code {$code} is already used by a customer or another waiting ticket."]);
+                throw ValidationException::withMessages(['customer_code' => "Customer code {$code}, or its number with another letter, is already used by a customer or another waiting ticket."]);
             }
 
             $old = $item->payload['customer_code'] ?? null;
@@ -281,14 +281,17 @@ class TicketService
         return $code !== '' && ! $this->customerCodeInUse($code, null, $except?->id);
     }
 
+    /**
+     * A code is in use when a customer (deleted ones too) or another waiting ticket has it, or has its number under another letter.
+     */
     private function customerCodeInUse(string $code, ?int $exceptItemId = null, ?int $exceptTicketId = null): bool
     {
-        return Customer::withTrashed()->where('customer_code', $code)->exists()
+        return $this->customerCodes->usedByCustomer($code)
             || TicketItem::query()
                 ->when($exceptItemId, fn ($q) => $q->whereKeyNot($exceptItemId))
                 ->when($exceptTicketId, fn ($q) => $q->where('ticket_id', '!=', $exceptTicketId))
                 ->whereHas('ticket', fn ($q) => $q->where('type', TicketType::NewCustomer)->where('status', TicketStatus::Pending))
-                ->get()->contains(fn (TicketItem $other) => ($other->payload['customer_code'] ?? null) === $code);
+                ->get()->contains(fn (TicketItem $other) => $this->customerCodes->clashes($code, $other->payload['customer_code'] ?? null));
     }
 
     /**
@@ -452,16 +455,16 @@ class TicketService
         $data = TicketEntryForms::normalize(TicketType::NewCustomer, $item->payload);
 
         // A system-made code that someone else used in the meantime is simply replaced by the next free one.
-        if (! empty($data['code_generated']) && Customer::withTrashed()->where('customer_code', $data['customer_code'])->exists()) {
+        if (! empty($data['code_generated']) && $this->customerCodes->usedByCustomer($data['customer_code'])) {
             $data['customer_code'] = $this->customerCodes->next($item->ticket?->supplier_id);
             $item->update(['payload' => ['customer_code' => $data['customer_code']] + $item->payload]);
         }
 
-        $taken = Customer::query()->where('customer_code', $data['customer_code'])
-            ->when($data['email'] ?? null, fn ($q, $email) => $q->orWhere('email', $email))->exists();
+        $taken = $this->customerCodes->usedByCustomer($data['customer_code'])
+            || (($data['email'] ?? null) && Customer::query()->where('email', $data['email'])->exists());
 
         if ($taken) {
-            throw ValidationException::withMessages(['ticket' => "A customer with code '{$data['customer_code']}' or that e-mail already exists, so this ticket cannot be approved."]);
+            throw ValidationException::withMessages(['ticket' => "A customer with code '{$data['customer_code']}' (or its number with another letter) or that e-mail already exists, so this ticket cannot be approved."]);
         }
 
         // Blank optional fields fall back to the column defaults (payment terms, country, … are NOT NULL).

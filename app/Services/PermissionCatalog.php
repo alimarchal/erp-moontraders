@@ -66,6 +66,7 @@ class PermissionCatalog
         'Distribution & Logistics' => [
             'report-sales-goods-issue', 'report-sales-daily-sales', 'report-sales-vehicle',
             'report-audit-product-price-change-log', 'report-sales-tts-summary',
+            'report-sales-trade-offer-dashboard', 'report-sales-trade-offer-dashboard-all-companies',
         ],
         'Supplier Reports' => [
             'report-audit-invoice-summary', 'report-audit-custom-settlement', 'report-sales-sku-rates',
@@ -188,6 +189,8 @@ class PermissionCatalog
         'report-sales-vehicle' => 'Vehicle Report',
         'report-audit-product-price-change-log' => 'Product Price Change Log',
         'report-sales-tts-summary' => 'TTS Summary',
+        'report-sales-trade-offer-dashboard' => 'Daily Sales & Trade Offer Dashboard',
+        'report-sales-trade-offer-dashboard-all-companies' => 'Daily Sales & Trade Offer Dashboard - All Companies',
         'report-audit-invoice-summary' => 'Invoice Summary',
         'report-audit-custom-settlement' => 'Custom Settlement',
         'report-sales-sku-rates' => 'SKU & Pricing',

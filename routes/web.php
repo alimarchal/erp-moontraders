@@ -95,6 +95,7 @@ use App\Http\Controllers\Reports\RevenueDetailReportController;
 use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
 use App\Http\Controllers\Reports\SalesSettlementReportController;
+use App\Http\Controllers\Reports\SalesTradeOfferReportController;
 use App\Http\Controllers\Reports\SchemeDiscountReportController;
 use App\Http\Controllers\Reports\SchemeReceivedReportController;
 use App\Http\Controllers\Reports\ShopListController;
@@ -975,6 +976,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         /* Analytics & Tax */
         Route::get('tts-summary', [TtsSummaryReportController::class, 'index'])->name('tts-summary.index');
+        Route::get('sales-trade-offer', [SalesTradeOfferReportController::class, 'index'])->name('sales-trade-offer.index');
         Route::get('roi', [RoiReportController::class, 'index'])->name('roi.index');
         Route::get('summary-roi', [SummaryRoiReportController::class, 'index'])->name('summary-roi.index');
         Route::get('summary-roi/help', [SummaryRoiReportController::class, 'help'])->name('summary-roi.help');

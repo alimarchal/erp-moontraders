@@ -93,6 +93,7 @@ class ReportsMenu extends Menu
                     ['label' => 'Schemes & discounts', 'description' => 'Scheme and discount tracking', 'url' => route('reports.scheme-discount.index'), 'permission' => 'report-sales-scheme-discount', 'keywords' => 'promotional'],
                     ['label' => 'Scheme received', 'description' => 'TTS and promo received', 'url' => route('reports.scheme-received.index'), 'permission' => 'report-sales-scheme-received'],
                     ['label' => 'TTS summary', 'description' => 'Received vs passed', 'url' => route('reports.tts-summary.index'), 'permission' => 'report-sales-tts-summary'],
+                    ['label' => 'Daily sales & trade offer dashboard', 'description' => 'Company-wise TO received vs passed', 'url' => route('reports.sales-trade-offer.index'), 'permission' => 'report-sales-trade-offer-dashboard', 'keywords' => 'tts to promotion percentage balance all companies'],
                 ],
             ],
             [

@@ -419,7 +419,8 @@
                             </section>
                             <section data-topic="print">
                                 <h2>پرنٹ</h2>
-                                <p>پرنٹ کے بٹن سے رپورٹ <bdi class="lt" dir="ltr">A4 Landscape</bdi> پر ایک بارڈر والی شیٹ بن کر چھپتی ہے؛ چاروں ٹیبل ایک لائن میں۔</p>
+                                <p>پرنٹ میں رنگ نہیں آتے: بلیک اینڈ وائٹ پرنٹر کے لیے سادہ بارڈر والے ٹیبل، اسی ترتیب میں جو سکرین پر ہے۔ براؤزر کے پرنٹ ڈائیلاگ میں <span class="en">Portrait</span> یا <span class="en">Landscape</span> خود چن سکتے ہیں۔</p>
+                                <p>اوپر ڈاؤن لوڈ کے بٹن سے <bdi class="lt" dir="ltr">A4 PDF</bdi> بنتی ہے، <span class="en">Portrait</span> یا <span class="en">Landscape</span>۔ سیل مین زیادہ ہوں تو اگلے صفحے پر ٹیبل کی سرخی دوبارہ آتی ہے۔</p>
                             </section>
                         @elseif ($page === 'grn-correction')
                             <section data-topic="what">

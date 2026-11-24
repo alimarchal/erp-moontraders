@@ -147,3 +147,17 @@ it('keeps users without the all-companies permission to their own company', func
     $this->get(route('reports.daily-business-summary.index', ['supplier_id' => 'all']))->assertForbidden();
     $this->get(route('reports.daily-business-summary.index', ['supplier_id' => $this->supplier->id]))->assertOk();
 });
+
+it('downloads the report as an A4 PDF in portrait or landscape, and asks for a company first', function () {
+    $salesman = Employee::factory()->create(['supplier_id' => $this->supplier->id, 'designation' => 'Salesman', 'name' => 'Tanveer Malik']);
+    dailySummarySettlement($salesman, '2026-11-14', 1000, ['5288' => 50], 1000, 0);
+
+    $this->get(route('reports.daily-business-summary.index', ['format' => 'pdf']))
+        ->assertRedirect();
+
+    foreach (['portrait', 'landscape'] as $orientation) {
+        $this->get(route('reports.daily-business-summary.index', ['date' => '2026-11-14', 'supplier_id' => $this->supplier->id, 'format' => 'pdf', 'orientation' => $orientation]))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+});

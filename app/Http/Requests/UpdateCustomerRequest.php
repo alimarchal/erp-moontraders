@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Models\Customer;
+use App\Services\CustomerCodeGenerator;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -52,7 +54,7 @@ class UpdateCustomerRequest extends FormRequest
         $customerId = optional($this->route('customer'))->id;
 
         return [
-            'customer_code' => ['required', 'string', 'max:191', Rule::unique('customers', 'customer_code')->ignore($customerId)],
+            'customer_code' => ['bail', 'required', 'string', 'max:191', Rule::unique('customers', 'customer_code')->ignore($customerId), $this->numberNotUsedElsewhere($customerId)],
             'customer_name' => ['required', 'string', 'max:191'],
             'business_name' => ['nullable', 'string', 'max:191'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -80,5 +82,22 @@ class UpdateCustomerRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
         ];
+    }
+
+    /**
+     * A new code may not reuse the number another customer has under a different letter (K00000509462 vs B00000509462).
+     * A customer keeping its current code is left alone, since some older codes already share a number.
+     */
+    private function numberNotUsedElsewhere(?int $customerId): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail) use ($customerId): void {
+            if ($value === optional($this->route('customer'))->customer_code) {
+                return;
+            }
+
+            if (app(CustomerCodeGenerator::class)->usedByCustomer((string) $value, $customerId)) {
+                $fail('The number of this customer code is already used by another customer with a different letter.');
+            }
+        };
     }
 }

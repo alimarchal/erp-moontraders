@@ -230,7 +230,7 @@ class TicketRequest extends FormRequest
                 $ticket = $this->route('ticket');
 
                 if (! app(TicketService::class)->customerCodeAvailable((string) $this->input('data.customer_code'), $ticket instanceof Ticket ? $ticket : null)) {
-                    $validator->errors()->add('data.customer_code', 'This customer code is already used by a customer or another waiting ticket.');
+                    $validator->errors()->add('data.customer_code', 'This customer code, or its number with another letter, is already used by a customer or another waiting ticket.');
                 }
 
                 return;

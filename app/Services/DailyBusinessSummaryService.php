@@ -24,7 +24,8 @@ class DailyBusinessSummaryService
 
     public const SCHEME_DISCOUNT_ACCOUNT_CODE = '5292';
 
-    public const PROMO_ACCOUNT_CODE = '5287';
+    /** "Promotion OFF": the promo discount salesmen give in the market, booked on the sales settlement. */
+    public const PROMO_ACCOUNT_CODE = '5288';
 
     public const AMR_LIQUID_ACCOUNT_CODE = '5262';
 

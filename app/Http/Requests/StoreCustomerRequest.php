@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Models\Customer;
+use App\Services\CustomerCodeGenerator;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -50,7 +52,7 @@ class StoreCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_code' => ['required', 'string', 'max:191', Rule::unique('customers', 'customer_code')],
+            'customer_code' => ['bail', 'required', 'string', 'max:191', Rule::unique('customers', 'customer_code'), $this->numberNotUsedElsewhere()],
             'customer_name' => ['required', 'string', 'max:191'],
             'business_name' => ['nullable', 'string', 'max:191'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -78,5 +80,17 @@ class StoreCustomerRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
         ];
+    }
+
+    /**
+     * A new code may not reuse the number another customer has under a different letter (K00000509462 vs B00000509462).
+     */
+    private function numberNotUsedElsewhere(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if (app(CustomerCodeGenerator::class)->usedByCustomer((string) $value)) {
+                $fail('The number of this customer code is already used by another customer with a different letter.');
+            }
+        };
     }
 }

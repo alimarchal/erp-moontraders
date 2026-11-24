@@ -71,12 +71,12 @@ function tradeOfferReceived(Supplier $supplier, string $category, string $date, 
 /**
  * The 13-Nov management sheet for Nestle F&B, Kousar and EBM, split over a few settlements, plus
  * entries that must be left out: last month, a draft, a deleted settlement, an inactive receipt and
- * the advance tax line (1161), which is not a trade offer.
+ * the advance tax (1161) and unused "Promotion Passed" (5287) lines, which are not read.
  */
 function seedSampleSheet(object $test): void
 {
-    tradeOfferSettlement($test->nestle, '2026-11-03', 12112760, ['5292' => 50503, '5287' => 1504.65, '5223' => 129631, '1161' => 18000]);
-    tradeOfferSettlement($test->nestle, '2026-11-13', 20000000, ['5292' => 85000, '5287' => 2000, '5223' => 200000]);
+    tradeOfferSettlement($test->nestle, '2026-11-03', 12112760, ['5292' => 50503, '5288' => 1504.65, '5223' => 129631, '1161' => 18000]);
+    tradeOfferSettlement($test->nestle, '2026-11-13', 20000000, ['5292' => 85000, '5288' => 2000, '5223' => 200000, '5287' => 777]);
     tradeOfferReceived($test->nestle, 'tts_received', '2026-11-05', 126190);
     tradeOfferReceived($test->nestle, 'promo_received', '2026-11-10', 3840.46);
 

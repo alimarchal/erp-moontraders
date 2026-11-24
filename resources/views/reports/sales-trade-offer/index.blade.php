@@ -451,7 +451,7 @@
             </div>
 
             <p class="mt-2 text-xs text-gray-500 no-print">
-                Total Sale, TO Passed (5292), Promotion Passed (5287) and Percentage (5223) are from posted sales
+                Total Sale, TO Passed (5292), Promotion Passed (5288 Promotion OFF) and Percentage (5223) are from posted sales
                 settlements; TO Received and Promotion Received are active Scheme Received entries.
                 Balance = Total TO Received − Total TO Passed − Percentage. Click a company name for its TTS Summary.
                 <span class="md:hidden">Swipe the table sideways to see every company.</span>

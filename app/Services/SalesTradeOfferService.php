@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Per company it is the same arithmetic as the TTS Summary report, laid side by side:
  *   Total TO Received = TO Received (scheme received "tts_received") + Promotion Received ("promo_received")
- *   Total TO Passed   = TO Passed (5292 scheme discount) + Promotion Passed (5287 promo)
+ *   Total TO Passed   = TO Passed (5292 scheme discount) + Promotion Passed (5288 Promotion OFF)
  *   Balance           = Total TO Received − Total TO Passed − Percentage (5223)
  * Sale and passed figures come from posted sales settlements, by the settlement's company.
  */
@@ -23,7 +23,8 @@ class SalesTradeOfferService
 {
     public const TO_PASSED_ACCOUNT_CODE = '5292';
 
-    public const PROMOTION_PASSED_ACCOUNT_CODE = '5287';
+    /** "Promotion OFF": the promo discount salesmen give in the market, booked on the sales settlement. */
+    public const PROMOTION_PASSED_ACCOUNT_CODE = '5288';
 
     public const PERCENTAGE_ACCOUNT_CODE = '5223';
 

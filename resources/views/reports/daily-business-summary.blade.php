@@ -31,6 +31,11 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
                 </button>
             </x-slot>
+            <x-slot name="actions">
+                @if ($hasQuery)
+                    <x-register-header-actions page="daily-business-summary" :help="false" />
+                @endif
+            </x-slot>
         </x-page-header>
     </x-slot>
 
@@ -144,7 +149,7 @@
             .dbs-salesmen thead th.dbs-idx { color: rgba(255,255,255,.8); }
             .dbs-salesmen .dbs-name { font-weight: 500; white-space: nowrap; }
             /* # and the name stay in view while the figures scroll sideways */
-            @media (min-width: 768px) {
+            @media screen and (min-width: 768px) {
                 .dbs-salesmen .dbs-idx { position: sticky; left: 0; z-index: 2; width: 40px; min-width: 40px; background: #fff; }
                 .dbs-salesmen .dbs-name, .dbs-salesmen thead th:nth-child(2) { position: sticky; left: 40px; z-index: 2; background: #fff; box-shadow: 1px 0 0 var(--dbs-line); }
                 .dbs-salesmen thead th.dbs-idx, .dbs-salesmen thead th:nth-child(2) { z-index: 3; background: var(--dbs-teal); }
@@ -153,7 +158,7 @@
             }
             .dbs-company { font-size: 12px; font-weight: 400; color: var(--dbs-muted); }
             .dbs-name .dbs-company { display: none; }
-            @media (max-width: 767px) {
+            @media screen and (max-width: 767px) {
                 .dbs-salesmen { min-width: 0; font-size: 13px; }
                 .dbs-salesmen thead { display: none; }
                 .dbs-salesmen, .dbs-salesmen tbody, .dbs-salesmen tfoot { display: block; }
@@ -178,7 +183,7 @@
                 .dbs-section-head { flex-direction: column; align-items: flex-start; gap: 2px; }
                 .dbs-section-note { white-space: normal; }
             }
-            @media (max-width: 359px) {
+            @media screen and (max-width: 359px) {
                 .dbs-salesmen tr { grid-template-columns: minmax(0, 1fr); }
                 .dbs-table th, .dbs-table td { padding-left: 10px; padding-right: 10px; }
                 .dbs-kpis { gap: 8px; }
@@ -192,7 +197,8 @@
                as the screen and the management sheet (four headline figures, then investment + ledger |
                category sales + groups | TTS, then the salesman table). No colour, no shadows, no rounding. */
             @media print {
-                @page { margin: 8mm; size: A4 landscape; }
+                /* No page size or orientation here, so the browser's print dialog offers Portrait and Landscape */
+                @page { margin: 8mm; }
                 .no-print, #dbs-filter-panel, .rg-gi-filters, .rg-info { display: none !important; }
                 body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
                 .max-w-7xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }

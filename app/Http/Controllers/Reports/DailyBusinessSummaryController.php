@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Supplier;
 use App\Services\DailyBusinessSummaryService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Daily Business Summary: the management sheet for one company or all companies. Empty until
@@ -28,7 +31,11 @@ class DailyBusinessSummaryController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(Request $request): View
+    /**
+     * The report page, or with format=pdf the same report as an A4 PDF download (portrait unless
+     * orientation=landscape), like the sales settlement and the supplier ledger.
+     */
+    public function index(Request $request): View|RedirectResponse|Response
     {
         $user = $request->user();
         $canChooseCompany = $user->can('report-audit-daily-business-summary-all-companies') || $user->isTicketAdmin();
@@ -77,6 +84,25 @@ class DailyBusinessSummaryController extends Controller implements HasMiddleware
             : null;
 
         $companyLabel = $allCompanies ? 'All Companies' : (string) $suppliers->firstWhere('id', $supplierId)?->supplier_name;
+
+        if ($request->query('format') === 'pdf') {
+            if (! $hasQuery) {
+                return redirect()->route('reports.daily-business-summary.index', $request->except(['format', 'orientation']))
+                    ->with('error', 'Choose a company before downloading the PDF.');
+            }
+
+            $orientation = $request->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+
+            return Pdf::loadView('reports.daily-business-summary-pdf', [
+                'date' => $date,
+                'allCompanies' => $allCompanies,
+                'companyLabel' => $companyLabel,
+                'designation' => $designation,
+                'report' => $report,
+                'orientation' => $orientation,
+            ])->setPaper('a4', $orientation)
+                ->download('daily-business-summary-'.str($allCompanies ? 'all-companies' : $companyLabel)->slug().'-'.$date.'.pdf');
+        }
 
         return view('reports.daily-business-summary', [
             'date' => $date,

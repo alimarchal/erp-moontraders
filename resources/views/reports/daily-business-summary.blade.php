@@ -188,38 +188,57 @@
 
             .print-only { display: none; }
 
+            /* Print: plain black-and-white bordered tables for an ordinary office printer, in the same order
+               as the screen and the management sheet (four headline figures, then investment + ledger |
+               category sales + groups | TTS, then the salesman table). No colour, no shadows, no rounding. */
             @media print {
                 @page { margin: 8mm; size: A4 landscape; }
-                .no-print, #dbs-filter-panel, .rg-gi-filters { display: none !important; }
+                .no-print, #dbs-filter-panel, .rg-gi-filters, .rg-info { display: none !important; }
                 body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
                 .max-w-7xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
                 .print-only { display: block !important; }
-                .dbs { color: #000; font-size: 10px; }
-                .dbs-card { box-shadow: none !important; border-radius: 0; border: 1px solid #000; }
-                .dbs-head { padding: 4px; }
-                .dbs-head-title { font-size: 15px; }
-                .dbs-pill { background: none; padding: 0 6px; font-size: 10px; }
-                .dbs-kpis { grid-template-columns: repeat(4, 1fr) !important; gap: 0 !important; }
-                .dbs-kpi { padding: 4px 6px; border-left: 0; }
-                .dbs-kpi-value { font-size: 13px; }
-                .dbs-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+                .dbs, .dbs * { color: #000 !important; background: #fff !important; box-shadow: none !important; text-shadow: none !important; border-radius: 0 !important; }
+                .dbs { font-size: 10px; padding: 0 2px; }
+                .dbs.space-y-4 > * + * { margin-top: 5px !important; }
+                .dbs-card { border: 1px solid #000 !important; }
+
+                .dbs-head { padding: 3px 6px; border-width: 2px !important; }
+                .dbs-head-org { font-size: 10px; letter-spacing: 0; }
+                .dbs-head-title { font-size: 15px; text-transform: uppercase; }
+                .dbs-head-meta { margin-top: 2px; gap: 0 14px; }
+                .dbs-pill { padding: 0; font-size: 10px; }
+                .dbs-pill span { font-weight: 400; }
+
+                .dbs-kpis { grid-template-columns: repeat(4, 1fr) !important; gap: 0 !important; border: 1px solid #000; }
+                .dbs-kpi { padding: 3px 6px; border: 0 !important; border-left: 1px solid #000 !important; text-align: center; }
+                .dbs-kpi:first-child { border-left: 0 !important; }
+                .dbs-kpi-label { font-size: 9px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 2px; }
+                .dbs-kpi-value { margin-top: 2px; font-size: 13px; }
+                .dbs-kpi-sub { display: none; }
+
+                .dbs-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; align-items: start !important; }
                 .dbs-col { gap: 6px; }
+                .dbs-col > .dbs-card:last-child { flex: none; }
                 .dbs-col-tts { grid-column: auto !important; }
-                .dbs-section-head { padding: 3px 6px; border-bottom: 1px solid #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .dbs-head, .dbs-ledger, .dbs-salesmen thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                .dbs-ledger { padding: 4px 8px; }
-                .dbs-ledger-value { font-size: 15px; }
-                .dbs-ledger-label { font-size: 12px; }
-                .dbs-ledger-link, .dbs-ledger-sub { display: none; }
+                .dbs-section { border: 0 !important; overflow: visible; }
+                .dbs-section-head { padding: 2px 4px; border: 1px solid #000; border-bottom: 0; justify-content: center; }
                 .dbs-section-title { font-size: 10px; font-weight: 800; text-transform: uppercase; }
-                .dbs-section-note { font-size: 9px; }
+                .dbs-section-note { display: none; }
+
+                .dbs-ledger { padding: 4px 6px; flex-direction: row !important; align-items: center; justify-content: space-between; border-width: 2px !important; }
+                .dbs-ledger-label { font-size: 12px; text-transform: uppercase; }
+                .dbs-ledger-value { font-size: 15px; }
+                .dbs-ledger-link, .dbs-ledger-sub { display: none !important; }
+
                 .dbs-table { font-size: 9.5px; }
-                .dbs-table th, .dbs-table td { padding: 2px 4px; border: 1px solid #000 !important; color: #000 !important; background: none !important; }
-                .dbs-table thead th { background: #e4f3f2 !important; }
-                .dbs-salesmen thead th { background: #0e7c7b !important; color: #fff !important; }
+                .dbs-table th, .dbs-table td { padding: 1px 4px; border: 1px solid #000 !important; position: static !important; }
+                .dbs-table thead th { font-size: 9.5px; font-weight: 700; }
+                .dbs-table .dbs-sub td, .dbs-table .dbs-total td, .dbs-table tbody tr:nth-child(even) td { background: #fff !important; }
+                .dbs-table .dbs-sub td, .dbs-table .dbs-total td { font-weight: 800; }
+                .dbs-table .dbs-total td { border-top: 2px solid #000 !important; }
                 .dbs-scroll { overflow: visible !important; }
                 .dbs-salesmen { min-width: 0 !important; }
-                .dbs-gap { margin-top: 6px !important; }
+                .dbs-salesmen thead th { text-align: center; }
                 .dbs-footnote { display: none; }
             }
         </style>

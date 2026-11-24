@@ -1,4 +1,4 @@
-{{-- Urdu help window of the Claim Register ("claims"), the Supplier Ledger Register ("ledger"), Goods Issues and Payroll, like the Bank
+{{-- Urdu help window of the Claim Register ("claims"), the Supplier Ledger Register ("ledger"), Goods Issues, Payroll and the Daily Business Summary, like the Bank
      Register's. Opened by the header Help button (event "rg-help"): it goes to the part that fits what is on screen
      (no supplier chosen: getting started; otherwise reading the register). The small ⓘ buttons on the page pass a
      topic and the window opens on that part, briefly highlighted. Each window ends with the page's flow. --}}
@@ -8,7 +8,7 @@
 
 @php
     $isClaims = $page === 'claims';
-    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers', 'grn-correction', 'tickets'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
+    $defaultTopic = in_array($page, ['payroll', 'expense-vouchers', 'grn-correction', 'tickets', 'daily-business-summary'], true) ? 'what' : ($hasSupplier ? 'read' : 'start');
     $helpTitle = match ($page) {
         'claims' => 'Claim Register',
         'goods-issues' => 'Goods Issues',
@@ -17,6 +17,7 @@
         'payroll' => 'Payroll',
         'expense-vouchers' => 'Expense Vouchers',
         'cheque-register' => 'Cheque Register',
+        'daily-business-summary' => 'Daily Business Summary',
         default => 'Supplier Ledger Register',
     };
     $helpSubtitle = match ($page) {
@@ -25,6 +26,7 @@
         'cheque-register' => 'How cheques are cleared, in Urdu',
         'grn-correction' => 'How a posted GRN is corrected, in Urdu',
         'tickets' => 'How tickets work, in Urdu',
+        'daily-business-summary' => 'How this report works, in Urdu',
         default => 'How this register works, in Urdu',
     };
 @endphp
@@ -270,6 +272,149 @@
                                 <p>اوپر کے بٹن: <span class="en">Excel</span> فلٹر شدہ فہرست؛ ڈاؤن لوڈ سے <bdi class="lt" dir="ltr">A4 PDF</bdi> عام طور پر <span class="en">Portrait</span> یا <span class="en">Landscape</span>؛ پرنٹ کے بٹن سے براؤزر میں دونوں رخ۔</p>
                             </section>
                             <section data-topic="flow"><x-help-flow flow="goods-issues" /></section>
+                        @elseif ($page === 'daily-business-summary')
+                            <section data-topic="what">
+                                <h2>یہ رپورٹ کیا ہے؟</h2>
+                                <p>ایک کمپنی (یا سب کمپنیوں) کا ایک دن کا پورا کاروباری خلاصہ ایک صفحے پر: مہینے کی سیل، پیسہ کہاں لگا ہے، کمپنی سے آئی اور مارکیٹ کو دی گئی سکیم کا حساب، اور ہر سیل مین کا اس دن کا کام۔</p>
+                                <div class="tip">سب رقمیں صرف <b>پوسٹ</b> ہوئی سیلز سیٹلمنٹ سے آتی ہیں۔ جو سیٹلمنٹ ابھی ڈرافٹ ہے وہ اس رپورٹ میں نہیں گنی جاتی۔</div>
+                            </section>
+                            <section data-topic="start">
+                                <h2>شروع کیسے کریں</h2>
+                                <ol>
+                                    <li>اوپر فلٹر کا بٹن دبائیں۔ کمپنی چننے سے پہلے فلٹر خود کھلا ہوتا ہے۔</li>
+                                    <li><span class="en">Date</span> چنیں: جس دن کی رپورٹ چاہیے۔ <span class="en">Quick dates</span> سے آج، کل یا پچھلے مہینے کا آخری دن ایک کلک میں۔</li>
+                                    <li><span class="en">Company</span> چنیں، یا اجازت ہو تو <span class="en">All Companies</span>۔</li>
+                                    <li><span class="en">Designation</span> عام طور پر <span class="en">Salesman</span> رہنے دیں؛ <span class="en">Salesmen</span> میں چند نام چن کر صرف ان کو دیکھ سکتے ہیں۔</li>
+                                    <li><span class="en">Apply</span> دبائیں۔</li>
+                                </ol>
+                            </section>
+                            <section data-topic="period">
+                                <h2>کون سا حصہ کس مدت کا ہے</h2>
+                                <table>
+                                    <thead><tr><th>حصہ</th><th>مدت</th></tr></thead>
+                                    <tbody>
+                                        <tr><td><span class="en">Total Sales</span>، <span class="en">Category-wise Sales</span>، <span class="en">Category Group</span>، <span class="en">TTS Summary</span></td><td>مہینے کی پہلی تاریخ سے رپورٹ کی تاریخ تک</td></tr>
+                                        <tr><td><span class="en">Today's Cash</span>، <span class="en">Total Discount</span>، سیل مین والا ٹیبل</td><td>صرف رپورٹ کی تاریخ</td></tr>
+                                        <tr><td><span class="en">Credit</span> اور <span class="en">Investment Position</span></td><td>رپورٹ کی تاریخ تک کا بقایا (کلوزنگ)</td></tr>
+                                    </tbody>
+                                </table>
+                            </section>
+                            <section data-topic="kpis">
+                                <h2>اوپر کے چار خانے</h2>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Total Sales</span><b>کل سیل</b></div>
+                                    <p>مہینے کے شروع سے آج تک کی کل فروخت۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Today's Cash</span><b>آج کا کیش</b></div>
+                                    <p>آج سیل مینوں نے جو نقد گن کر دیا، اس میں بینک سلپ کی رقم جمع۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Total Credit</span><b>کل ادھار</b></div>
+                                    <p>تمام سیل مینوں کا مارکیٹ میں بقایا ادھار (کلوزنگ)۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Total Discount</span><b>آج کی رعایت</b></div>
+                                    <p>آج دیا گیا <span class="en">%age</span> اور <span class="en">Scheme</span> ملا کر۔</p>
+                                </div>
+                            </section>
+                            <section data-topic="investment">
+                                <h2>انویسٹمنٹ پوزیشن</h2>
+                                <p>کمپنی کے کاروبار میں ہمارا پیسہ اس وقت کہاں کہاں لگا ہوا ہے:</p>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Powder / Liquid Expiry</span><b>ایکسپائری</b></div>
+                                    <p>اس مہینے سیٹلمنٹ میں مارکیٹ سے واپس آیا ایکسپائر مال (پاؤڈر اور لیکوئڈ الگ) جو ابھی تلف یا نمٹایا نہیں گیا۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Claim Amount</span><b>کلیم</b></div>
+                                    <p>کلیم رجسٹر کا بیلنس: کمپنی سے لینے والے کلیم، رپورٹ کی تاریخ تک۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Stock Amount</span><b>سٹاک</b></div>
+                                    <p>گودام میں موجود مال کی مالیت (رپورٹ کی تاریخ پر)۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Credit Amount</span><b>ادھار</b></div>
+                                    <p>مارکیٹ میں سیل مینوں کا بقایا ادھار۔ یہ نیچے سیل مین ٹیبل کے <span class="en">Credit</span> کا جوڑ ہے۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Ledger Amount</span><b>لیجر</b></div>
+                                    <p>سپلائر لیجر رجسٹر کا بیلنس، رپورٹ کی تاریخ تک: کمپنی کے پاس ہماری رقم۔</p>
+                                </div>
+                                <div class="tip"><span class="en">Total Investment</span> = اوپر کی سب لائنوں کا جوڑ۔</div>
+                            </section>
+                            <section data-topic="tts">
+                                <h2>ٹی ٹی ایس خلاصہ</h2>
+                                <p>کمپنی نے سکیم کی جو رقم ہمیں دی (<b>وصول</b>) اور ہم نے مارکیٹ میں دکانداروں کو جو آگے دی (<b>پاس</b>)، اس مہینے میں اب تک:</p>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">TTS Received</span><b>ٹی ٹی ایس وصول</b></div>
+                                    <p>کمپنی سے وصول ہونے والی ٹی ٹی ایس (<span class="en">Scheme Received</span> میں درج)۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Promo Received</span><b>پرومو وصول</b></div>
+                                    <p>کمپنی سے وصول ہونے والی پروموشن کی رقم۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">TTS Passed</span><b>ٹی ٹی ایس پاس</b></div>
+                                    <p>سیٹلمنٹ میں <bdi class="lt" dir="ltr">Scheme Discount (5292)</bdi> کے طور پر مارکیٹ کو دی گئی سکیم۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Promo Passed</span><b>پرومو پاس</b></div>
+                                    <p>سیٹلمنٹ میں <bdi class="lt" dir="ltr">Promotion OFF (5288)</bdi> کے طور پر مارکیٹ کو دی گئی پروموشن۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Percentage Passed</span><b>پرسنٹیج پاس</b></div>
+                                    <p>سیٹلمنٹ میں <bdi class="lt" dir="ltr">Percentage Expense (5223)</bdi> کے طور پر دی گئی رقم۔</p>
+                                </div>
+                                <div class="tip"><span class="en">Balance</span> = کل وصول − کل سکیم پاس − پرسنٹیج پاس۔ بریکٹ میں سرخ رقم کا مطلب ہے کہ کمپنی سے جتنا آیا اس سے زیادہ مارکیٹ کو دیا جا چکا ہے۔</div>
+                            </section>
+                            <section data-topic="categories">
+                                <h2>کیٹیگری وار سیل اور گروپ</h2>
+                                <p><span class="en">Category-wise Sales</span> میں ہر کیٹیگری کی اس مہینے کی سیل، بڑی سے چھوٹی۔ <span class="en">Category Group Summary</span> انہیں تین گروپ میں جوڑتا ہے:</p>
+                                <ul>
+                                    <li><span class="en">Nutrition</span>: نیوٹریشن اور بے بی فوڈ۔</li>
+                                    <li><span class="en">Water</span>: پانی۔</li>
+                                    <li><span class="en">F&amp;B</span>: باقی سب کیٹیگریاں۔</li>
+                                </ul>
+                                <p>دونوں ٹیبلوں کا کل برابر ہوتا ہے۔</p>
+                            </section>
+                            <section data-topic="salesmen">
+                                <h2>سیل مین ٹیبل کے کالم</h2>
+                                <p>رپورٹ کی تاریخ پر ہر سیل مین کی ایک لائن۔ موبائل پر ہر سیل مین ایک کارڈ بن جاتا ہے۔ <span class="en">All Companies</span> میں ساتھ کمپنی کا نام بھی آتا ہے۔</p>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Sales</span><b>سیل</b></div>
+                                    <p>اس دن کی پوسٹ شدہ سیٹلمنٹ کی کل فروخت۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">%age</span><b>پرسنٹیج</b></div>
+                                    <p>سیل پر کاٹا گیا ایڈوانس ٹیکس (<bdi class="lt" dir="ltr">1161</bdi>)۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Scheme</span><b>سکیم</b></div>
+                                    <p>سکیم ڈسکاؤنٹ (<bdi class="lt" dir="ltr">5292</bdi>) اور پروموشن آف (<bdi class="lt" dir="ltr">5288</bdi>) ملا کر۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Total Discount</span><b>کل رعایت</b></div>
+                                    <p><span class="en">%age</span> + <span class="en">Scheme</span>۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Expiry Liquid / Powder</span><b>ایکسپائری</b></div>
+                                    <p>اس دن مارکیٹ سے واپس لیا ایکسپائر مال (<bdi class="lt" dir="ltr">5262</bdi> لیکوئڈ، <bdi class="lt" dir="ltr">5252</bdi> پاؤڈر)۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Credit</span><b>ادھار</b></div>
+                                    <p>اس سیل مین کا مارکیٹ میں بقایا ادھار (کلوزنگ)، صرف اس دن کا نہیں۔</p>
+                                </div>
+                                <div class="rgh-col">
+                                    <div class="rgh-col-head"><span class="en">Amount</span><b>رقم</b></div>
+                                    <p>سیل مین نے جو نقد گن کر دیا، اس میں بینک سلپ کی رقم جمع۔</p>
+                                </div>
+                                <div class="tip">خالی جگہ پر <bdi class="lt" dir="ltr">–</bdi> کا مطلب صفر ہے۔</div>
+                            </section>
+                            <section data-topic="print">
+                                <h2>پرنٹ</h2>
+                                <p>پرنٹ کے بٹن سے رپورٹ <bdi class="lt" dir="ltr">A4 Landscape</bdi> پر ایک بارڈر والی شیٹ بن کر چھپتی ہے؛ چاروں ٹیبل ایک لائن میں۔</p>
+                            </section>
                         @elseif ($page === 'grn-correction')
                             <section data-topic="what">
                                 <h2>جی آر این کریکشن کیا ہے؟</h2>

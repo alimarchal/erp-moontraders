@@ -23,13 +23,22 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Daily Business Summary" :createRoute="null" createLabel="" :showSearch="true"
-            :showRefresh="true" backRoute="reports.index" />
+            :showRefresh="true" backRoute="reports.index">
+            <x-slot name="afterFilter">
+                {{-- Help sits next to Filters, like the goods issues list --}}
+                <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest transition ease-in-out duration-150 no-print"
+                    x-data @click="$dispatch('rg-help', { topic: @js($hasQuery ? 'what' : 'start') })" aria-haspopup="dialog" aria-label="Help in Urdu" title="How this report works, in Urdu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+                </button>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
     <x-apple-skin />
     <x-register-apple-style />
     <x-apple-fields-style />
+    <x-register-help page="daily-business-summary" />
 
     @push('header')
         <style>
@@ -91,6 +100,7 @@
             .dbs-section { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
             .dbs-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 14px 16px 8px; }
             .dbs-section-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+            .dbs-section-title .rg-info { margin-left: 6px; vertical-align: 1px; }
             .dbs-section-note { font-size: 12px; color: var(--dbs-muted); white-space: nowrap; }
             .dbs-table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.3; }
             .dbs-table th, .dbs-table td { padding: 8px 12px; border-top: 1px solid var(--dbs-line); vertical-align: middle; }
@@ -305,7 +315,7 @@
                     {{-- Investment position --}}
                     <section class="dbs-card dbs-section" aria-labelledby="dbs-investment">
                         <div class="dbs-section-head">
-                            <h2 id="dbs-investment" class="dbs-section-title">Investment Position</h2>
+                            <h2 id="dbs-investment" class="dbs-section-title">Investment Position <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'investment' })" aria-label="What Investment Position means" title="What Investment Position means">i</button></h2>
                             <span class="dbs-section-note">As on {{ $reportDate->format('d M') }}</span>
                         </div>
                         <table class="dbs-table">
@@ -322,7 +332,7 @@
                     {{-- TTS, month to date --}}
                     <section class="dbs-card dbs-section" aria-labelledby="dbs-tts">
                         <div class="dbs-section-head">
-                            <h2 id="dbs-tts" class="dbs-section-title">TTS Summary</h2>
+                            <h2 id="dbs-tts" class="dbs-section-title">TTS Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'tts' })" aria-label="How the TTS balance is worked out" title="How the TTS balance is worked out">i</button></h2>
                             <span class="dbs-section-note">Month to date · {{ $period }}</span>
                         </div>
                         <table class="dbs-table">
@@ -343,7 +353,7 @@
                     {{-- Category-wise sales, month to date --}}
                     <section class="dbs-card dbs-section" aria-labelledby="dbs-categories">
                         <div class="dbs-section-head">
-                            <h2 id="dbs-categories" class="dbs-section-title">Category-wise Sales</h2>
+                            <h2 id="dbs-categories" class="dbs-section-title">Category-wise Sales <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="What Category-wise Sales means" title="What Category-wise Sales means">i</button></h2>
                             <span class="dbs-section-note">{{ $period }}</span>
                         </div>
                         <table class="dbs-table">
@@ -362,7 +372,7 @@
                     {{-- Category groups, month to date --}}
                     <section class="dbs-card dbs-section" aria-labelledby="dbs-groups">
                         <div class="dbs-section-head">
-                            <h2 id="dbs-groups" class="dbs-section-title">Category Group Summary</h2>
+                            <h2 id="dbs-groups" class="dbs-section-title">Category Group Summary <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'categories' })" aria-label="Which categories make each group" title="Which categories make each group">i</button></h2>
                             <span class="dbs-section-note">{{ $period }}</span>
                         </div>
                         <table class="dbs-table">
@@ -380,7 +390,7 @@
                 {{-- Salesman-wise performance for the day --}}
                 <section class="dbs-card dbs-section dbs-gap" aria-labelledby="dbs-salesmen">
                     <div class="dbs-section-head">
-                        <h2 id="dbs-salesmen" class="dbs-section-title">Daily Salesman-wise Performance, Credit &amp; Cash</h2>
+                        <h2 id="dbs-salesmen" class="dbs-section-title">Daily Salesman-wise Performance, Credit &amp; Cash <button type="button" class="rg-info no-print" x-data @click.stop="$dispatch('rg-help', { topic: 'salesmen' })" aria-label="What each salesman column means" title="What each salesman column means">i</button></h2>
                         <span class="dbs-section-note">{{ $reportDate->format('d M Y') }} · {{ $report['salesmen']->count() }} {{ \Illuminate\Support\Str::plural('salesman', $report['salesmen']->count()) }}</span>
                     </div>
                     <div class="dbs-scroll">

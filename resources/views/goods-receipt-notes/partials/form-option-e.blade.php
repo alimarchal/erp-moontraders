@@ -127,13 +127,14 @@
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[40rem] text-sm">
                     <thead class="text-[11px] font-bold uppercase tracking-wide text-gray-600">
-                        <tr class="border-b border-gray-200 [&>th]:px-2 [&>th]:py-2"><th class="text-left">#</th><th class="text-left">Product</th><th class="text-right">Pcs</th><th class="text-right">Value</th><th class="text-right">Taxes</th><th class="text-right">Total</th><th class="text-left">Check</th></tr>
+                        <tr class="border-b border-gray-200 [&>th]:px-2 [&>th]:py-2"><th class="text-left">#</th><th class="text-left">Product</th><th class="text-right" x-text="isCartonMode ? 'Ctn' : 'Cases'"></th><th class="text-right">Pcs</th><th class="text-right">Value</th><th class="text-right">Taxes</th><th class="text-right">Total</th><th class="text-left">Check</th></tr>
                     </thead>
                     <tbody>
                         <template x-for="(item, index) in items" :key="'review-' + index">
                             <tr class="border-b border-gray-100 tabular-nums [&>td]:px-2 [&>td]:py-2">
                                 <td class="text-gray-500" x-text="index + 1"></td>
                                 <td class="font-semibold" x-text="productLabel(item)"></td>
+                                <td class="text-right" x-text="isCartonMode ? formatNumber(item.entered_cartons || 0) : formatNumber(item.qty_in_purchase_uom)"></td>
                                 <td class="text-right" x-text="formatNumber(item.qty_in_stock_uom)"></td>
                                 <td class="text-right" x-text="formatNumber(item.extended_value)"></td>
                                 <td class="text-right" x-text="formatNumber((parseFloat(item.total_value_with_taxes) || 0) - (parseFloat(item.discounted_value_before_tax) || 0))"></td>

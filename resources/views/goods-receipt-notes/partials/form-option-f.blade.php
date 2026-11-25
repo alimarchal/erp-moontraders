@@ -56,7 +56,7 @@
                                 <td>
                                     <span class="block font-semibold text-gray-900" x-text="productLabel(item)"></span>
                                     <span class="block text-xs" :class="{ 'text-red-700': lineIssue(item).level === 'error', 'text-amber-800': lineIssue(item).level === 'warning', 'text-blue-700': lineIssue(item).level === 'new', 'text-gray-500': lineIssue(item).level === 'ok' }"
-                                        x-text="lineIssue(item).level === 'ok' ? (productCode(item) + ' · ' + formatNumber(item.qty_in_stock_uom) + ' pcs') : lineIssue(item).text"></span>
+                                        x-text="lineIssue(item).level === 'ok' ? (productCode(item) + ' · ' + lineSummary(item)) : lineIssue(item).text"></span>
                                 </td>
                                 <td class="text-right" x-text="formatNumber(item.qty_in_purchase_uom)"></td>
                                 <td class="text-right" x-text="formatNumber(item.unit_price_per_case)"></td>

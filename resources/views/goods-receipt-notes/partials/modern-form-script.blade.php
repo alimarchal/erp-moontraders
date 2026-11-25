@@ -247,6 +247,11 @@
                     return this.formatNumber(item.qty_in_purchase_uom) + ' cases · ' + pieces + ' pcs';
                 },
 
+                /** Total cases on the GRN (cartons when the supplier is entered in cartons). */
+                totalCases() {
+                    return this.sumOf(this.isCartonMode ? 'entered_cartons' : 'qty_in_purchase_uom');
+                },
+
                 sumOf(field) {
                     return this.items.reduce((sum, item) => sum + (parseFloat(item[field]) || 0), 0);
                 },

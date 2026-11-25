@@ -33,6 +33,7 @@ class LedgerRegister extends Model
         'posted_at',
         'posted_by',
         'journal_entry_id',
+        'bank_account_id',
         'goods_receipt_note_id',
     ];
 
@@ -63,6 +64,14 @@ class LedgerRegister extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    /**
+     * The bank account the online amount was paid from, chosen when the entry was posted.
+     */
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 
     public function postedBy(): BelongsTo

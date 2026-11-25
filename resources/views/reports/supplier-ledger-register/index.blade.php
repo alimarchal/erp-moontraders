@@ -496,7 +496,7 @@
                                             @else
                                                 @can('report-audit-ledger-register-post')
                                                     <button type="button"
-                                                        x-on:click="$dispatch('open-ledger-post-modal', { url: '{{ route('reports.supplier-ledger-register.post', $entry) }}' })"
+                                                        x-on:click="$dispatch('open-ledger-post-modal', { url: '{{ route('reports.supplier-ledger-register.post', $entry) }}', online: {{ $entry->document_type === \App\Enums\DocumentType::Ob ? 0 : (float) $entry->online_amount }}, onlineLabel: '{{ number_format((float) $entry->online_amount, 2) }}' })"
                                                         class="rg-icon rg-green inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                                                         title="Post to GL">
                                                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -886,10 +886,27 @@
     @can('report-audit-ledger-register-post')
         <div class="rg-confirm">
         <x-alpine-confirmation-modal eventName="open-ledger-post-modal" title="Post to General Ledger"
-            confirmButtonText="Post to GL" confirmButtonClass="bg-green-600 hover:bg-green-700">
+            confirmButtonText="Post to GL" confirmButtonClass="bg-green-600 hover:bg-green-700" formId="ledger-post-form">
             <p class="text-sm text-gray-700">
                 Post this entry to the general ledger? Each amount is booked against Creditors. Once posted, the entry can no longer be edited or deleted; a correction needs a reversing entry.
             </p>
+            <template x-if="dynamicData.online > 0">
+                <div class="mt-3">
+                    <label for="ledger-post-bank" class="block text-sm font-medium text-gray-700">
+                        Paid from bank account <span class="text-gray-500">(online amount <span x-text="dynamicData.onlineLabel"></span>)</span>
+                    </label>
+                    <select id="ledger-post-bank" name="bank_account_id" form="ledger-post-form" required
+                        class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">
+                        <option value="">Choose bank account</option>
+                        @foreach ($payingBankAccounts as $bankAccount)
+                            <option value="{{ $bankAccount->id }}">
+                                {{ trim(($bankAccount->bank_name ? $bankAccount->bank_name.' - ' : '').$bankAccount->account_name) }}{{ $bankAccount->account_number ? ' ('.$bankAccount->account_number.')' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">The payment is credited to this bank's GL account and recorded in the Bank Register for reconciliation.</p>
+                </div>
+            </template>
         </x-alpine-confirmation-modal>
         </div>
     @endcan

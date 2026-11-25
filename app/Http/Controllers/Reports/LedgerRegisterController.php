@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Reports;
 
 use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PostLedgerRegisterRequest;
 use App\Http\Requests\StoreLedgerRegisterRequest;
 use App\Http\Requests\UpdateLedgerRegisterRequest;
+use App\Models\BankAccount;
 use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use App\Services\LedgerRegisterService;
@@ -223,6 +225,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'supplierLedgerDateEditable' => $supplierLedgerDateEditable,
+            'payingBankAccounts' => BankAccount::query()->active()->whereNotNull('chart_of_account_id')->orderBy('account_name')->get(),
         ]);
     }
 
@@ -275,7 +278,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         }
     }
 
-    public function post(LedgerRegister $ledgerRegister)
+    public function post(PostLedgerRegisterRequest $request, LedgerRegister $ledgerRegister)
     {
         $this->authorizeSupplierScope((int) $ledgerRegister->supplier_id);
 
@@ -283,7 +286,9 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             return redirect()->back()->with('error', 'Entry is already posted.');
         }
 
-        $result = $this->ledgerService->postEntry($ledgerRegister);
+        $bankAccount = $request->filled('bank_account_id') ? BankAccount::find($request->integer('bank_account_id')) : null;
+
+        $result = $this->ledgerService->postEntry($ledgerRegister, $bankAccount);
 
         if ($result['success']) {
             return redirect()->back()->with('success', $result['message']);

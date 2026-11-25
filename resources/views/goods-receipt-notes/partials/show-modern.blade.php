@@ -29,13 +29,11 @@
     });
     /*
      * The price, deduction and tax columns in the supplier's order (Settings → Suppliers → Edit).
-     * Value follows the price; Before tax follows the last of price, discount and FMR. A column the
-     * supplier hid still shows when this GRN has an amount in it. Layout only: every figure is the line's own.
+     * Value follows the price; Before tax follows the last of price, discount and FMR. Layout only: every
+     * figure is the line's own.
      */
-    $columnTotals = $totals + ['unit_price_per_case' => (float) $grn->items->sum('unit_price_per_case')];
     $supplierColumns = collect($grn->supplier->grnLineColumns())
         ->filter(fn ($column) => $column['key'] !== 'withholding_tax' || $isUnilever)
-        ->filter(fn ($column) => $column['visible'] || abs($columnTotals[$column['key']] ?? 0) > 0)
         ->values();
     $columnSpec = [
         'unit_price_per_case' => ['UP / case', "view === 'all'"],

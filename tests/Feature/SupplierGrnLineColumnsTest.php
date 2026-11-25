@@ -20,46 +20,43 @@ beforeEach(function () {
 });
 
 /**
- * @param  array<int, array{0: string, 1: bool}>  $columns
- * @return array<int, array{key: string, visible: string}>
+ * @param  list<string>  $keys
+ * @return array<int, array{key: string}>
  */
-function grnColumnsPayload(array $columns): array
+function grnColumnsPayload(array $keys): array
 {
-    return array_map(fn (array $column) => ['key' => $column[0], 'visible' => $column[1] ? '1' : '0'], $columns);
+    return array_map(fn (string $key) => ['key' => $key], $keys);
 }
 
-it('saves the GRN line column order and visibility from the supplier edit form, leaving the sales tax rate alone', function () {
+it('saves the GRN line column order from the supplier edit form, each section on its own, leaving the sales tax rate alone', function () {
     $supplier = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan', 'sales_tax' => 18]);
 
     // The rate drives GRN sales tax, so the supplier form shows it but never changes it.
     $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), [
         'supplier_name' => 'Nestle Pakistan',
         'sales_tax' => '17.50',
-        'grn_line_columns' => grnColumnsPayload([
-            ['sales_tax_value', true], ['unit_price_per_case', false], ['excise_duty', true], ['other_charges', false],
-        ]),
+        'grn_line_columns' => grnColumnsPayload(['excise_duty', 'discount_value', 'sales_tax_value', 'unit_price_per_case']),
     ])->assertRedirect(route('suppliers.index'));
 
     $supplier->refresh();
     expect((float) $supplier->sales_tax)->toBe(18.0)
+        // A tax never moves into Price & discount: each section keeps its own columns, in the order sent.
         ->and(array_column($supplier->grnLineColumns(), 'key'))->toBe([
-            'sales_tax_value', 'unit_price_per_case', 'excise_duty', 'other_charges',
-            'discount_value', 'fmr_allowance', 'advance_income_tax', 'withholding_tax',
+            'discount_value', 'unit_price_per_case', 'fmr_allowance',
+            'excise_duty', 'sales_tax_value', 'advance_income_tax', 'other_charges', 'withholding_tax',
         ])
-        // The price is needed on every line, so it is stored as shown even when the box came unticked.
-        ->and($supplier->grn_line_columns[1])->toBe(['key' => 'unit_price_per_case', 'visible' => true])
-        ->and(collect($supplier->grnLineColumns())->firstWhere('key', 'other_charges')['visible'])->toBeFalse();
+        ->and($supplier->grn_line_columns[0])->toBe(['key' => 'discount_value']);
 
     $this->actingAs($this->admin)->get(route('suppliers.show', $supplier))
         ->assertSuccessful()
-        ->assertSeeInOrder(['GRN line columns', 'Sales tax', 'Price / case', 'Excise duty', 'Other charges', '(hidden unless used)'])
+        ->assertSeeInOrder(['GRN line columns', 'Price &amp; discount', 'Discount', 'Price / case', 'Taxes &amp; charges', 'Excise duty', 'Sales tax'], false)
         ->assertSee('18.00%');
 });
 
 it('keeps the saved column order when an update does not send it', function () {
     $supplier = Supplier::factory()->create([
         'supplier_name' => 'Nestle Pakistan', 'sales_tax' => 17,
-        'grn_line_columns' => [['key' => 'sales_tax_value', 'visible' => true]],
+        'grn_line_columns' => [['key' => 'excise_duty']],
     ]);
 
     $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), ['supplier_name' => 'Nestle Pakistan'])
@@ -67,7 +64,7 @@ it('keeps the saved column order when an update does not send it', function () {
 
     $supplier->refresh();
     expect((float) $supplier->sales_tax)->toBe(17.0)
-        ->and($supplier->grn_line_columns)->toBe([['key' => 'sales_tax_value', 'visible' => true]]);
+        ->and($supplier->grn_line_columns)->toBe([['key' => 'excise_duty']]);
 });
 
 it('rejects a column named twice and redisplays the edit form after a malformed column list', function () {
@@ -75,7 +72,7 @@ it('rejects a column named twice and redisplays the edit form after a malformed 
 
     $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), [
         'supplier_name' => 'Nestle Pakistan',
-        'grn_line_columns' => grnColumnsPayload([['excise_duty', true], ['excise_duty', false]]),
+        'grn_line_columns' => grnColumnsPayload(['excise_duty', 'excise_duty']),
     ])->assertSessionHasErrors('grn_line_columns.1.key');
 
     $this->actingAs($this->admin)->from(route('suppliers.edit', $supplier))->put(route('suppliers.update', $supplier), [
@@ -93,7 +90,7 @@ it('rejects an unknown GRN line column', function () {
 
     $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), [
         'supplier_name' => 'Nestle Pakistan',
-        'grn_line_columns' => grnColumnsPayload([['freight', true]]),
+        'grn_line_columns' => grnColumnsPayload(['freight']),
     ])->assertSessionHasErrors(['grn_line_columns.0.key']);
 
     expect($supplier->fresh()->grn_line_columns)->toBeNull();
@@ -121,22 +118,23 @@ it('offers the column order on edit only; a new supplier starts with the default
         ->assertSee('grn_line_columns[', false);
 });
 
-it('keeps a saved order usable when it lacks columns or names unknown ones', function () {
-    $columns = Supplier::resolveGrnLineColumns([['key' => 'excise_duty', 'visible' => false], ['key' => 'freight'], 'sales_tax_value', ['key' => 'excise_duty']]);
+it('keeps a saved order usable when it lacks columns, names unknown ones or mixes the sections', function () {
+    $columns = Supplier::resolveGrnLineColumns([['key' => 'excise_duty'], ['key' => 'freight'], 'fmr_allowance', ['key' => 'excise_duty']]);
 
     expect(array_column($columns, 'key'))->toBe([
-        'excise_duty', 'sales_tax_value', 'unit_price_per_case', 'discount_value',
-        'fmr_allowance', 'advance_income_tax', 'other_charges', 'withholding_tax',
-    ])->and($columns[0]['visible'])->toBeFalse()
-        ->and($columns[1]['visible'])->toBeTrue();
+        'fmr_allowance', 'unit_price_per_case', 'discount_value',
+        'excise_duty', 'sales_tax_value', 'advance_income_tax', 'other_charges', 'withholding_tax',
+    ])->and(array_column($columns, 'group'))->toBe(['price', 'price', 'price', 'taxes', 'taxes', 'taxes', 'taxes', 'taxes'])
+        // No order saved: the GRN popup's own order, sales tax before excise.
+        ->and(array_column(Supplier::resolveGrnLineColumns(null), 'key'))->toBe(array_keys(Supplier::GRN_LINE_COLUMNS))
+        ->and(array_keys(Supplier::GRN_LINE_COLUMNS)[3])->toBe('sales_tax_value');
 });
 
-it('shows the GRN view columns and totals in the supplier order, hiding unused hidden columns only', function () {
+it('shows the GRN view columns and totals in the supplier order', function () {
     AppSetting::put('layout.goods_receipt_notes', 'i');
     $supplier = Supplier::factory()->create(['grn_line_columns' => [
-        ['key' => 'unit_price_per_case', 'visible' => true], ['key' => 'sales_tax_value', 'visible' => true],
-        ['key' => 'excise_duty', 'visible' => true], ['key' => 'other_charges', 'visible' => false],
-        ['key' => 'advance_income_tax', 'visible' => false],
+        ['key' => 'unit_price_per_case'], ['key' => 'discount_value'], ['key' => 'fmr_allowance'],
+        ['key' => 'excise_duty'], ['key' => 'sales_tax_value'], ['key' => 'advance_income_tax'],
     ]]);
     $grn = GoodsReceiptNote::factory()->create(['supplier_id' => $supplier->id, 'status' => 'draft']);
     GoodsReceiptNoteItem::factory()->create([
@@ -149,24 +147,24 @@ it('shows the GRN view columns and totals in the supplier order, hiding unused h
     $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']))
         ->get(route('goods-receipt-notes.show', $grn))
         ->assertSuccessful()
-        ->assertSeeInOrder(['UP / case', 'Value', 'Sales tax', 'Excise', 'Adv. IT', 'Discount', 'FMR', 'Before tax'])
-        // Other charges is hidden and unused; advance income tax is hidden but has an amount, so it still shows.
-        ->assertDontSee('Other charges')
-        ->assertSeeInOrder(['Sales tax', '2,070.00', 'Excise', 'Adv. income tax', '13.25']);
+        ->assertSeeInOrder(['UP / case', 'Value', 'Discount', 'FMR', 'Before tax', 'Excise', 'Sales tax', 'Adv. IT', 'Other'])
+        ->assertSeeInOrder(['Excise', 'Sales tax', '2,070.00', 'Adv. income tax', '13.25']);
 });
 
 it('gives the GRN form each supplier\'s column order', function () {
     AppSetting::put('layout.goods_receipt_notes', 'i');
-    $supplier = Supplier::factory()->create(['grn_line_columns' => [['key' => 'sales_tax_value', 'visible' => true]]]);
+    $supplier = Supplier::factory()->create(['grn_line_columns' => [['key' => 'discount_value']]]);
     $grn = GoodsReceiptNote::factory()->create(['supplier_id' => $supplier->id, 'status' => 'draft']);
     $admin = User::factory()->create(['is_super_admin' => 'Yes']);
 
     $this->actingAs($admin)->get(route('goods-receipt-notes.create'))
         ->assertSuccessful()
-        ->assertSee('"grn_columns":[{"key":"sales_tax_value"', false);
+        ->assertSee('"grn_columns":[{"key":"discount_value"', false);
 
     $this->actingAs($admin)->get(route('goods-receipt-notes.edit', $grn))
         ->assertSuccessful()
-        ->assertSee('lineColumns: [{"key":"sales_tax_value"', false)
-        ->assertSee("colShown(item, 'excise_duty')", false);
+        ->assertSee('lineColumns: [{"key":"discount_value"', false)
+        // The popup keeps its sections; only the boxes inside them follow the order.
+        ->assertSeeInOrder(['Price &amp; discount', "colOrder('unit_price_per_case')", 'Taxes &amp; charges', "colOrder('sales_tax_value')", "colOrder('excise_duty')"], false)
+        ->assertDontSee('colShown(', false);
 });

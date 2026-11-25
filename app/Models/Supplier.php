@@ -54,8 +54,8 @@ class Supplier extends Model
     ];
 
     /**
-     * The GRN line inputs whose order a supplier can set, in the default order, with their labels.
-     * Layout only: the order and visibility never change any calculation.
+     * The GRN line inputs whose order a supplier can set, in the default order (the order of the GRN
+     * line popup), with their labels. Layout only: the order never changes any calculation.
      *
      * @var array<string, string>
      */
@@ -63,11 +63,21 @@ class Supplier extends Model
         'unit_price_per_case' => 'Price / case',
         'discount_value' => 'Discount',
         'fmr_allowance' => 'FMR allowance',
-        'excise_duty' => 'Excise duty',
         'sales_tax_value' => 'Sales tax',
+        'excise_duty' => 'Excise duty',
         'advance_income_tax' => 'Advance income tax',
         'other_charges' => 'Other charges',
         'withholding_tax' => 'Withholding tax',
+    ];
+
+    /**
+     * The GRN line popup's sections. A column only moves inside its own section.
+     *
+     * @var array<string, array{label: string, keys: list<string>}>
+     */
+    public const GRN_LINE_COLUMN_GROUPS = [
+        'price' => ['label' => 'Price & discount', 'keys' => ['unit_price_per_case', 'discount_value', 'fmr_allowance']],
+        'taxes' => ['label' => 'Taxes & charges', 'keys' => ['sales_tax_value', 'excise_duty', 'advance_income_tax', 'other_charges', 'withholding_tax']],
     ];
 
     public function usesCartonEntry(): bool
@@ -77,9 +87,9 @@ class Supplier extends Model
 
     /**
      * This supplier's GRN line inputs in their order: the saved order first (unknown keys dropped),
-     * then any column the saved order lacks, in the default order and shown.
+     * then any column the saved order lacks, in the default order.
      *
-     * @return list<array{key: string, label: string, visible: bool}>
+     * @return list<array{key: string, label: string, group: string}>
      */
     public function grnLineColumns(): array
     {
@@ -87,33 +97,36 @@ class Supplier extends Model
     }
 
     /**
+     * The columns grouped by section (Price & discount first, then Taxes & charges), each section
+     * keeping the saved order of its own columns.
+     *
      * @param  mixed  $saved  The stored list, old form input, or anything else (treated as no order saved).
-     * @return list<array{key: string, label: string, visible: bool}>
+     * @return list<array{key: string, label: string, group: string}>
      */
     public static function resolveGrnLineColumns(mixed $saved): array
     {
-        $columns = [];
+        $ordered = [];
 
         foreach (is_array($saved) ? $saved : [] as $entry) {
             $key = is_array($entry) ? ($entry['key'] ?? null) : $entry;
 
-            if (! is_string($key) || ! isset(self::GRN_LINE_COLUMNS[$key]) || isset($columns[$key])) {
-                continue;
+            if (is_string($key) && isset(self::GRN_LINE_COLUMNS[$key]) && ! in_array($key, $ordered, true)) {
+                $ordered[] = $key;
             }
-
-            $columns[$key] = [
-                'key' => $key,
-                'label' => self::GRN_LINE_COLUMNS[$key],
-                // The price is required on every line, so it can be moved but never hidden.
-                'visible' => $key === 'unit_price_per_case' || ! is_array($entry) || filter_var($entry['visible'] ?? true, FILTER_VALIDATE_BOOLEAN),
-            ];
         }
 
-        foreach (self::GRN_LINE_COLUMNS as $key => $label) {
-            $columns[$key] ??= ['key' => $key, 'label' => $label, 'visible' => true];
+        $ordered = array_merge($ordered, array_diff(array_keys(self::GRN_LINE_COLUMNS), $ordered));
+        $columns = [];
+
+        foreach (self::GRN_LINE_COLUMN_GROUPS as $group => $section) {
+            foreach ($ordered as $key) {
+                if (in_array($key, $section['keys'], true)) {
+                    $columns[] = ['key' => $key, 'label' => self::GRN_LINE_COLUMNS[$key], 'group' => $group];
+                }
+            }
         }
 
-        return array_values($columns);
+        return $columns;
     }
 
     /**

@@ -62,8 +62,8 @@ class StoreSupplierRequest extends FormRequest
             'is_advance_tax_income' => ['boolean'],
             'qty_entry_mode' => ['nullable', Rule::in(['pieces', 'carton'])],
             'sales_tax' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'grn_line_columns' => ['nullable', 'array'],
-            'grn_line_columns.*.key' => ['required', 'string', Rule::in(array_keys(Supplier::GRN_LINE_COLUMNS))],
+            'grn_line_columns' => ['nullable', 'array', 'max:'.count(Supplier::GRN_LINE_COLUMNS)],
+            'grn_line_columns.*.key' => ['required', 'string', 'distinct', Rule::in(array_keys(Supplier::GRN_LINE_COLUMNS))],
             'grn_line_columns.*.visible' => ['boolean'],
             'disabled' => ['boolean'],
             'default_currency_id' => ['nullable', 'exists:currencies,id'],
@@ -86,7 +86,11 @@ class StoreSupplierRequest extends FormRequest
      */
     public function validated($key = null, $default = null)
     {
-        $validated = parent::validated($key, $default);
+        if ($key !== null) {
+            return data_get($this->validated(), $key, $default);
+        }
+
+        $validated = parent::validated();
 
         $validated['is_transporter'] = (bool) ($validated['is_transporter'] ?? false);
         $validated['is_internal_supplier'] = (bool) ($validated['is_internal_supplier'] ?? false);
@@ -102,7 +106,7 @@ class StoreSupplierRequest extends FormRequest
             $validated['grn_line_columns'] = $validated['grn_line_columns'] === null ? null : array_map(fn (array $column) => [
                 'key' => $column['key'],
                 // The price is needed on every line, so it is always shown.
-                'visible' => $column['key'] === 'unit_price_per_case' || (bool) ($column['visible'] ?? false),
+                'visible' => $column['key'] === 'unit_price_per_case' || (bool) ($column['visible'] ?? true),
             ], array_values($validated['grn_line_columns']));
         }
         $validated['disabled'] = (bool) ($validated['disabled'] ?? false);

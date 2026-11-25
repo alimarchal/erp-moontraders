@@ -87,14 +87,14 @@ class Supplier extends Model
     }
 
     /**
-     * @param  array<int, mixed>|null  $saved
+     * @param  mixed  $saved  The stored list, old form input, or anything else (treated as no order saved).
      * @return list<array{key: string, label: string, visible: bool}>
      */
-    public static function resolveGrnLineColumns(?array $saved): array
+    public static function resolveGrnLineColumns(mixed $saved): array
     {
         $columns = [];
 
-        foreach ($saved ?? [] as $entry) {
+        foreach (is_array($saved) ? $saved : [] as $entry) {
             $key = is_array($entry) ? ($entry['key'] ?? null) : $entry;
 
             if (! is_string($key) || ! isset(self::GRN_LINE_COLUMNS[$key]) || isset($columns[$key])) {

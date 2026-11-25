@@ -36,6 +36,8 @@ use Spatie\QueryBuilder\QueryBuilder;
 
 class GoodsReceiptNoteController extends Controller implements HasMiddleware
 {
+    public const PER_PAGE = [20, 50, 100, 500];
+
     /**
      * Get the middleware that should be assigned to the controller.
      */
@@ -103,25 +105,39 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             AllowedFilter::partial('supplier_invoice_number'),
             AllowedFilter::exact('supplier_id'),
             AllowedFilter::exact('warehouse_id'),
-            AllowedFilter::exact('status'),
+            AllowedFilter::callback('status', function ($grnQuery, $value) {
+                if ($value !== 'all') {
+                    $grnQuery->where('goods_receipt_notes.status', $value);
+                }
+            }),
             AllowedFilter::scope('receipt_date_from'),
             AllowedFilter::scope('receipt_date_to'),
+            AllowedFilter::callback('search', function ($grnQuery, $value) {
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $grnQuery->where(fn ($q) => $q
+                    ->whereRaw('LOWER(grn_number) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(supplier_invoice_number) LIKE ?', [$term])
+                    ->orWhereHas('supplier', fn ($s) => $s->whereRaw('LOWER(supplier_name) LIKE ?', [$term])));
+            }),
         ];
-        $indexLayout = AppSetting::layoutFor('goods_receipt_notes_index')->value;
 
-        // The redesigned lists show a count and amount per status for the same filters (bar the status itself, so every tab has its count).
+        // Count and amount per status for the same filters (bar the status itself, so every tab has its count).
         $statsRequest = Request::create($request->url(), 'GET', ['filter' => Arr::except((array) $request->input('filter', []), 'status')]);
-        $statusTotals = $indexLayout === 'classic'
-            ? collect()
-            : QueryBuilder::for(clone $query, $statsRequest)->allowedFilters($filters)->toBase()->reorder()
-                ->selectRaw('status, count(*) as grn_count, coalesce(sum(grand_total), 0) as amount')
-                ->groupBy('status')->get()->keyBy('status');
+        $statusTotals = QueryBuilder::for(clone $query, $statsRequest)->allowedFilters($filters)->toBase()->reorder()
+            ->selectRaw('status, count(*) as grn_count, coalesce(sum(grand_total), 0) as amount')
+            ->groupBy('status')->get()->keyBy('status');
 
-        $grns = QueryBuilder::for($query)
+        $perPage = (string) $request->input('per_page', '20');
+        $perPage = in_array($perPage, array_map('strval', self::PER_PAGE), true) ? $perPage : '20';
+
+        $grnList = QueryBuilder::for($query)
             ->allowedFilters($filters)
-            ->defaultSort('-receipt_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->allowedSorts(['receipt_date', 'grn_number', 'grand_total', 'created_at'])
+            ->defaultSort('-receipt_date', '-id');
+
+        $totalValue = (float) $grnList->getEloquentBuilder()->clone()->toBase()->reorder()->sum('grand_total');
+
+        $grns = $grnList->paginate((int) $perPage)->withQueryString();
 
         $suppliers = $userSupplierId
             ? Supplier::where('id', $userSupplierId)->orderBy('supplier_name')->get(['id', 'supplier_name'])
@@ -131,9 +147,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'grns' => $grns,
             'suppliers' => $suppliers,
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'indexLayout' => $indexLayout,
             'statusTotals' => $statusTotals,
             'hasDateFilter' => $hasDateFilter,
+            'perPage' => $perPage,
+            'totalValue' => $totalValue,
         ]);
     }
 

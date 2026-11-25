@@ -132,8 +132,8 @@ class BankReconciliationService
         DB::transaction(function () use ($reconciliation, $item, $user) {
             $entry = $item->entry;
 
-            // A manual link to an existing journal line is undone completely; posted and settlement lines stay booked.
-            if ($item->match_type === 'manual' && ! $entry->receipt_no && ! $entry->sales_settlement_id) {
+            // A manual link to an existing journal line is undone completely; posted, settlement and supplier ledger lines stay booked.
+            if ($item->match_type === 'manual' && ! $entry->receipt_no && ! $entry->sales_settlement_id && ! $entry->supplier_ledger_register_id) {
                 $entry->forceFill([
                     'status' => $entry->bank_entry_category_id ? BankStatementEntry::STATUS_CLASSIFIED : BankStatementEntry::STATUS_UNCLASSIFIED,
                     'journal_entry_id' => null,

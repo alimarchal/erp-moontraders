@@ -40,6 +40,10 @@
                 <tr><th>Raised from</th><td colspan="3"><a href="{{ route('sales-settlements.show', $entry->salesSettlement) }}" class="ak-primary-link">Sales Settlement {{ $entry->salesSettlement->settlement_number }}</a>
                     · {{ \App\Services\SettlementAttachmentService::SECTION_LABELS[$entry->settlement_section] ?? $entry->settlement_section }} · settlement is {{ $entry->salesSettlement->status }}</td></tr>
             @endif
+            @if ($entry->supplierLedgerRegister)
+                <tr><th>Raised from</th><td colspan="3"><a href="{{ route('reports.supplier-ledger-register.index', ['filter' => ['supplier_id' => $entry->supplierLedgerRegister->supplier_id, 'date_from' => $entry->supplierLedgerRegister->transaction_date->copy()->startOfMonth()->toDateString(), 'date_to' => $entry->supplierLedgerRegister->transaction_date->copy()->endOfMonth()->toDateString()]]) }}" class="ak-primary-link">Supplier Ledger Register #{{ $entry->supplierLedgerRegister->id }}</a>
+                    · {{ $entry->supplierLedgerRegister->supplier?->supplier_name }} · {{ $entry->supplierLedgerRegister->document_type?->value }} dated {{ $entry->supplierLedgerRegister->transaction_date->format('d-m-Y') }}</td></tr>
+            @endif
             <tr><th>Note</th><td colspan="3" dir="auto">{{ $entry->description ?: '—' }}</td></tr>
             @if ($entry->journalEntry)
                 <tr><th>In the books</th><td><a href="{{ route('journal-entries.show', $entry->journalEntry) }}" class="ak-primary-link">#{{ $entry->journalEntry->id }} · {{ $entry->journalEntry->reference }}</a>@if ($bookingLabel) <span class="ak-muted">({{ $bookingLabel }})</span>@endif</td>
@@ -224,7 +228,7 @@
             @endcan
 
             @can('bank-statement-entry-reverse')
-                @if ($entry->status === 'posted' && ! $entry->sales_settlement_id && ! $byRegister)
+                @if ($entry->status === 'posted' && ! $entry->sales_settlement_id && ! $entry->supplier_ledger_register_id && ! $byRegister)
                     <x-bank.action-modal title="Unlink from book entry" sub="The line goes back to the register. The journal it was linked to is not changed."
                         :action="route('bank-statement-entries.reverse', $entry)" trigger="Unlink" confirm="Unlink">
                         @include('bank-statement-entries.partials.summary')
@@ -258,6 +262,10 @@
 
         @if ($entry->sales_settlement_id && in_array($entry->status, ['posted', 'reconciled'], true))
             <p class="ak-muted">Booked by its sales settlement. To take it back, revert the settlement; this line is reversed with it.</p>
+        @endif
+
+        @if ($entry->supplier_ledger_register_id && in_array($entry->status, ['posted', 'reconciled'], true))
+            <p class="ak-muted">Booked by a supplier payment posted in the Supplier Ledger Register. A correction is made there with a reversing entry.</p>
         @endif
 
         @can('bank-statement-entry-reverse')

@@ -1,6 +1,6 @@
 {{-- The corrections posted after a GRN, for the redesigned GRN views. --}}
 @if ($grn->corrections->isNotEmpty())
-    <section aria-labelledby="grn-corrections-heading" class="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 {{ $cardShadow }}">
+    <section aria-labelledby="grn-corrections-heading" class="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 {{ $cardShadow ?? '' }}">
         <div class="border-b border-gray-200 px-4 py-3">
             <h2 id="grn-corrections-heading" class="text-base font-bold text-gray-900">Corrections</h2>
             <p class="text-xs text-gray-500">Posted after the GRN. Quantity differences are dated on the receipt date.</p>

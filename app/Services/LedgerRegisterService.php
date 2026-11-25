@@ -3,17 +3,22 @@
 namespace App\Services;
 
 use App\Enums\DocumentType;
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\LedgerRegister;
+use App\Services\BankRegister\SupplierPaymentBankRegisterSync;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class LedgerRegisterService
 {
-    public function __construct(private AccountingService $accountingService) {}
+    public function __construct(
+        private AccountingService $accountingService,
+        private SupplierPaymentBankRegisterSync $bankRegisterSync,
+    ) {}
 
     /**
      * Build and create the journal entry for an opening balance ledger entry.
@@ -202,14 +207,17 @@ class LedgerRegisterService
      *
      * Double-entry per column:
      *   invoice_amount  → DR 2142 Stock Received But Not Billed / CR 2111 Creditors
-     *   online_amount   → DR 2111 Creditors             / CR 1171 HBL Main Account
+     *   online_amount   → DR 2111 Creditors             / CR the chosen bank account's ledger
      *   expenses_amount → DR 5210 Admin Expenses        / CR 2111 Creditors
      *   za_amount       → DR 2111 Creditors             / CR 4240 ZA 0.5% Incentive Income
      *   claim_adjust    → DR 2111 Creditors             / CR 1112 Pending Claims Debtors
      *
+     * An online amount is paid out of $bankAccount (an active bank account with a ledger); when none is given it
+     * falls back to the bank account of 1171 HBL Main Account. The payment also gets its line in the Bank Register.
+     *
      * @return array{success: bool, data: ?LedgerRegister, message: string}
      */
-    public function postEntry(LedgerRegister $entry): array
+    public function postEntry(LedgerRegister $entry, ?BankAccount $bankAccount = null): array
     {
         try {
             DB::beginTransaction();
@@ -218,10 +226,14 @@ class LedgerRegisterService
                 throw new \Exception('Entry is already posted.');
             }
 
+            $paysFromBank = $entry->document_type !== DocumentType::Ob && (float) $entry->online_amount > 0;
+            $bank = $paysFromBank ? $this->resolvePayingBank($bankAccount) : null;
+
             if ($entry->document_type === DocumentType::Ob) {
                 $journalEntry = $this->createOpeningBalanceJournalEntry($entry);
             } else {
                 $accounts = $this->resolveAccounts();
+                $accounts['bank'] = $bank?->chart_of_account_id;
                 $journalEntry = $this->createJournalEntry($entry, $accounts);
             }
 
@@ -233,7 +245,12 @@ class LedgerRegisterService
                 'posted_at' => now(),
                 'posted_by' => auth()->id(),
                 'journal_entry_id' => $journalEntry->id,
+                'bank_account_id' => $bank?->id,
             ]);
+
+            if ($bank) {
+                $this->bankRegisterSync->record($entry, $bank, $journalEntry, auth()->id());
+            }
 
             DB::commit();
 
@@ -259,13 +276,37 @@ class LedgerRegisterService
     }
 
     /**
+     * The bank account an online payment goes out of: the one chosen, else the bank account of 1171 HBL Main.
+     */
+    protected function resolvePayingBank(?BankAccount $bankAccount): BankAccount
+    {
+        $bank = $bankAccount ?? BankAccount::query()
+            ->whereHas('chartOfAccount', fn ($query) => $query->where('account_code', '1171'))
+            ->first();
+
+        if (! $bank) {
+            throw new \Exception('Choose the bank account the online amount was paid from.');
+        }
+
+        if (! $bank->is_active) {
+            throw new \Exception("Bank account {$bank->account_name} is not active.");
+        }
+
+        if (! $bank->chart_of_account_id) {
+            throw new \Exception("Bank account {$bank->account_name} has no GL account linked to it.");
+        }
+
+        return $bank;
+    }
+
+    /**
      * Resolve all required GL account IDs by account code.
      *
      * @return array<string, int>
      */
     protected function resolveAccounts(): array
     {
-        $codes = ['2111', InventoryService::STOCK_RECEIVED_NOT_BILLED_CODE, '1171', '5210', '4240', '1112'];
+        $codes = ['2111', InventoryService::STOCK_RECEIVED_NOT_BILLED_CODE, '5210', '4240', '1112'];
         $accounts = ChartOfAccount::whereIn('account_code', $codes)->get()->keyBy('account_code');
 
         $missing = array_filter($codes, fn ($code) => ! $accounts->has($code));
@@ -276,7 +317,6 @@ class LedgerRegisterService
         return [
             'creditors' => $accounts['2111']->id,
             'stock_received_not_billed' => $accounts[InventoryService::STOCK_RECEIVED_NOT_BILLED_CODE]->id,
-            'hbl_main' => $accounts['1171']->id,
             'admin_expenses' => $accounts['5210']->id,
             'za_incentive_income' => $accounts['4240']->id,
             'pending_claims_debtors' => $accounts['1112']->id,
@@ -286,7 +326,7 @@ class LedgerRegisterService
     /**
      * Build and create the journal entry lines for a ledger register entry.
      *
-     * @param  array<string, int>  $accounts
+     * @param  array<string, int|null>  $accounts
      * @return JournalEntry|null
      */
     protected function createJournalEntry(LedgerRegister $entry, array $accounts)
@@ -303,10 +343,14 @@ class LedgerRegisterService
             $lines[] = ['account_id' => $accounts['creditors'], 'debit' => 0, 'credit' => (float) $entry->invoice_amount, 'description' => "Stock purchase from {$supplierName}", 'cost_center_id' => 1];
         }
 
-        // online_amount: DR Creditors / CR HBL Main
+        // online_amount: DR Creditors / CR the bank account it was paid from
         if ((float) $entry->online_amount > 0) {
+            if (empty($accounts['bank'])) {
+                throw new \Exception('Choose the bank account the online amount was paid from.');
+            }
+
             $lines[] = ['account_id' => $accounts['creditors'], 'debit' => (float) $entry->online_amount, 'credit' => 0, 'description' => "Payment to {$supplierName} via bank", 'cost_center_id' => 1];
-            $lines[] = ['account_id' => $accounts['hbl_main'], 'debit' => 0, 'credit' => (float) $entry->online_amount, 'description' => "Payment to {$supplierName} via bank", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => $accounts['bank'], 'debit' => 0, 'credit' => (float) $entry->online_amount, 'description' => "Payment to {$supplierName} via bank", 'cost_center_id' => 1];
         }
 
         // expenses_amount: DR Admin Expenses / CR Creditors

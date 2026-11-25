@@ -97,8 +97,9 @@ class BankStatementImportService
                         continue;
                     }
 
-                    // money a settlement already booked: the statement confirms that register line, no second line
-                    if ($this->confirmSettlementLine($import, $row, $user)) {
+                    // money a settlement or a supplier payment already booked: the statement confirms that register
+                    // line, no second line
+                    if ($this->confirmSettlementLine($import, $row, $user) || $this->confirmSupplierPaymentLine($import, $row, $user)) {
                         $merged++;
 
                         continue;
@@ -166,6 +167,51 @@ class BankStatementImportService
             ->whereNull('import_id')
             ->where('status', BankStatementEntry::STATUS_POSTED)
             ->where('credit', $row['credit'])
+            ->whereDate('posting_date', '>=', $date->copy()->subDays(BankEntryPostingService::MATCH_DAYS))
+            ->whereDate('posting_date', '<=', $date->copy()->addDays(BankEntryPostingService::MATCH_DAYS))
+            ->lockForUpdate()
+            ->get()
+            ->sortBy(fn (BankStatementEntry $candidate) => abs($candidate->posting_date->diffInDays($date)))
+            ->first();
+
+        if (! $entry) {
+            return false;
+        }
+
+        $entry->forceFill([
+            'import_id' => $import->id,
+            'statement_ref_no' => $row['statement_ref_no'],
+            'value_date' => $row['value_date'] ?? $entry->value_date,
+            'running_balance' => $row['running_balance'],
+            'pdf_page' => $row['pdf_page'],
+            'updated_by' => $user->id,
+        ])->save();
+
+        BankEntryAuditLog::record($entry, 'confirmed_by_statement', null, ['import_id' => $import->id, 'statement_ref_no' => $row['statement_ref_no']], $user->id);
+
+        return true;
+    }
+
+    /**
+     * A statement row that is a payment already booked from the supplier Ledger Register (same bank, same amount,
+     * within three days) is written onto that register line instead of becoming a second line for the same money.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    private function confirmSupplierPaymentLine(BankStatementImport $import, array $row, User $user): bool
+    {
+        if ((float) $row['debit'] <= 0) {
+            return false;
+        }
+
+        $date = Carbon::parse($row['posting_date']);
+
+        $entry = BankStatementEntry::query()
+            ->where('bank_account_id', $import->bank_account_id)
+            ->whereNotNull('supplier_ledger_register_id')
+            ->whereNull('import_id')
+            ->where('status', BankStatementEntry::STATUS_POSTED)
+            ->where('debit', $row['debit'])
             ->whereDate('posting_date', '>=', $date->copy()->subDays(BankEntryPostingService::MATCH_DAYS))
             ->whereDate('posting_date', '<=', $date->copy()->addDays(BankEntryPostingService::MATCH_DAYS))
             ->lockForUpdate()

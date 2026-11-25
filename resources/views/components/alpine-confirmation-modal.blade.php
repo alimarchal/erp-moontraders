@@ -12,6 +12,7 @@
     'formMethod' => 'POST',
     'csrfMethod' => null,
     'dynamicAction' => false,
+    'formId' => null,
 ])
 
 <div x-data="{ show: false, actionUrl: '{{ $formAction }}', dynamicData: {}, isSubmitting: false }"
@@ -64,7 +65,7 @@
                     class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50">
                     {{ $cancelButtonText }}
                 </button>
-                <form :action="actionUrl" method="POST"
+                <form :action="actionUrl" method="POST" @if ($formId) id="{{ $formId }}" @endif
                     @submit="if (isSubmitting) { $event.preventDefault(); return; } isSubmitting = true;">
                     @csrf
                     <input type="hidden" name="{{ \App\Support\FormOnce::FIELD }}" value="{{ \App\Support\FormOnce::token() }}">

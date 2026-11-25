@@ -180,6 +180,10 @@ class BankEntryPostingService
                 throw new BankRegisterException('This line is booked by its sales settlement. Revert the settlement instead; the line follows it.');
             }
 
+            if ($entry->supplier_ledger_register_id) {
+                throw new BankRegisterException('This line is a supplier payment booked from the supplier Ledger Register. Its journal is corrected there with a reversing entry.');
+            }
+
             $old = ['journal_entry_id' => $entry->journal_entry_id, 'status' => $entry->status];
 
             if (! $entry->isBookedByRegister()) {

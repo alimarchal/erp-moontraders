@@ -50,6 +50,7 @@ class BankStatementEntry extends Model
         'sales_settlement_id',
         'settlement_section',
         'settlement_row_id',
+        'supplier_ledger_register_id',
         'bank_reconciliation_id',
         'statement_ref_no',
         'posting_date',
@@ -153,7 +154,7 @@ class BankStatementEntry extends Model
      */
     public function isBookedByRegister(): bool
     {
-        if (! $this->journal_entry_id || ! $this->receipt_no || $this->sales_settlement_id) {
+        if (! $this->journal_entry_id || ! $this->receipt_no || $this->sales_settlement_id || $this->supplier_ledger_register_id) {
             return false;
         }
 
@@ -175,6 +176,10 @@ class BankStatementEntry extends Model
             return 'Booked by settlement';
         }
 
+        if ($this->supplier_ledger_register_id) {
+            return 'Booked by supplier ledger';
+        }
+
         return $this->isBookedByRegister() ? 'Posted by register' : 'Linked to book entry';
     }
 
@@ -194,6 +199,14 @@ class BankStatementEntry extends Model
     public function salesSettlement(): BelongsTo
     {
         return $this->belongsTo(SalesSettlement::class);
+    }
+
+    /**
+     * The supplier Ledger Register payment this line was raised from, when it was posted there.
+     */
+    public function supplierLedgerRegister(): BelongsTo
+    {
+        return $this->belongsTo(LedgerRegister::class, 'supplier_ledger_register_id');
     }
 
     public function reconciliation(): BelongsTo

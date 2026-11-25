@@ -559,6 +559,7 @@ class BankStatementEntryController extends Controller implements HasMiddleware
         $entry->load([
             'bankAccount', 'company', 'category', 'alias', 'journalEntry', 'attachments.uploader',
             'approvals.user', 'auditLogs.user', 'submitter', 'approver', 'rejecter', 'poster', 'reconciliation',
+            'supplierLedgerRegister.supplier',
         ]);
 
         $bookable = ! $entry->isLocked() && $entry->status !== BankStatementEntry::STATUS_PENDING_APPROVAL;

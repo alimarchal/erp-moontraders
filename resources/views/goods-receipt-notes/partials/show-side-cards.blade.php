@@ -1,5 +1,5 @@
 {{-- Supplier ledger entry, timeline, record and related links for the redesigned GRN views. --}}
-<section aria-labelledby="grn-ledger-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200">
+<section aria-labelledby="grn-ledger-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 {{ $cardShadow }}">
     <h2 id="grn-ledger-heading" class="mb-3 text-base font-bold text-gray-900">Supplier ledger entry</h2>
     @if ($ledger)
         <dl class="grid grid-cols-[1fr_auto] gap-y-2 text-sm">
@@ -36,7 +36,7 @@
     @endif
 </section>
 
-<section aria-labelledby="grn-timeline-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 print:hidden">
+<section aria-labelledby="grn-timeline-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 {{ $cardShadow }} print:hidden">
     <h2 id="grn-timeline-heading" class="mb-3 text-base font-bold text-gray-900">Timeline</h2>
     <ol class="space-y-3">
         @foreach ($timeline as $event)
@@ -48,7 +48,7 @@
     </ol>
 </section>
 
-<section aria-labelledby="grn-details-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 print:hidden">
+<section aria-labelledby="grn-details-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 {{ $cardShadow }} print:hidden">
     <h2 id="grn-details-heading" class="mb-3 text-base font-bold text-gray-900">Record</h2>
     <dl class="grid grid-cols-[1fr_auto] gap-y-2 text-sm">
         <dt class="text-gray-600">Created</dt><dd class="text-right">{{ $grn->created_at?->format('d M Y, h:i A') }}</dd>
@@ -57,7 +57,7 @@
     </dl>
 </section>
 
-<section aria-labelledby="grn-related-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 print:hidden">
+<section aria-labelledby="grn-related-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 {{ $cardShadow }} print:hidden">
     <h2 id="grn-related-heading" class="mb-2 text-base font-bold text-gray-900">Related</h2>
     <nav class="divide-y divide-gray-100">
         @foreach ($links as [$label, $url])

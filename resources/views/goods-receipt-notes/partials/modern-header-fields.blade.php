@@ -6,7 +6,7 @@
 @php
     $grn = $grn ?? null;
 @endphp
-<section aria-label="Receipt details" class="rounded-2xl bg-white p-4 ring-1 ring-gray-200">
+<section aria-label="Receipt details" class="grn-card rounded-2xl bg-white p-4 ring-1 ring-gray-200">
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div class="sm:col-span-2">
             <label for="supplier_id" class="mb-1 block text-xs font-semibold text-gray-600">Supplier <span class="text-red-600">*</span></label>

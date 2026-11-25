@@ -9,6 +9,8 @@ use App\Models\CostCenter;
 use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\BankRegister\BankEntryPostingService;
+use App\Services\BankRegister\BankRegisterException;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
@@ -145,6 +147,6 @@ test('a supplier payment line in the bank register can only be corrected from th
 
     $line = BankStatementEntry::where('supplier_ledger_register_id', $entry->id)->sole();
 
-    expect(fn () => app(\App\Services\BankRegister\BankEntryPostingService::class)->reverse($line, $this->user, 'test'))
-        ->toThrow(\App\Services\BankRegister\BankRegisterException::class);
+    expect(fn () => app(BankEntryPostingService::class)->reverse($line, $this->user, 'test'))
+        ->toThrow(BankRegisterException::class);
 });

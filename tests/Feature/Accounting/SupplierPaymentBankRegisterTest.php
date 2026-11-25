@@ -11,7 +11,11 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Services\BankRegister\BankEntryPostingService;
 use App\Services\BankRegister\BankRegisterException;
+use App\Services\BankRegister\BankStatementImportService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -149,4 +153,43 @@ test('a supplier payment line in the bank register can only be corrected from th
 
     expect(fn () => app(BankEntryPostingService::class)->reverse($line, $this->user, 'test'))
         ->toThrow(BankRegisterException::class);
+});
+
+test('a bank statement confirms the supplier payment line instead of adding the same payment again', function () {
+    $entry = supplierPayment($this, 7500);
+    $this->post(route('reports.supplier-ledger-register.post', $entry), ['bank_account_id' => $this->hbl->id]);
+    $line = BankStatementEntry::where('supplier_ledger_register_id', $entry->id)->sole();
+
+    $sheet = new Spreadsheet;
+    $active = $sheet->getActiveSheet();
+    $active->fromArray(['Statement ID', 'Posting date', 'Value date', 'Party name in statement', 'Client party name - unnamed entries', 'Party used for summary', 'Debit (PKR)', 'Credit (PKR)', 'Transaction / reference', 'Original statement narration', 'Source statement', 'PDF page', 'Response status'], null, 'A6');
+    $active->fromArray([
+        [1, now()->addDay()->toDateString(), null, 'LIPTON', null, null, 7500, 0, 'IBFT 9911', 'IBFT to Lipton', 'Nov statement', 2, null],
+    ], null, 'A7');
+    $path = tempnam(sys_get_temp_dir(), 'stmt').'.xlsx';
+    (new Xlsx($sheet))->save($path);
+
+    $imports = app(BankStatementImportService::class);
+    $import = $imports->preview($this->hbl, new UploadedFile($path, 'statement.xlsx', null, null, true), ['control_total_debit' => 7500, 'control_total_credit' => 0], $this->user);
+    $imports->commit($import, $this->user);
+
+    expect(BankStatementEntry::where('bank_account_id', $this->hbl->id)->where('debit', 7500)->count())->toBe(1)
+        ->and($line->refresh()->import_id)->toBe($import->id)
+        ->and($line->status)->toBe(BankStatementEntry::STATUS_POSTED);
+});
+
+test('the register entry shows the ledger payment it came from and offers no unlink', function () {
+    Permission::findOrCreate('bank-statement-entry-list');
+    Permission::findOrCreate('bank-statement-entry-reverse');
+    $this->user->givePermissionTo(['bank-statement-entry-list', 'bank-statement-entry-reverse']);
+
+    $entry = supplierPayment($this, 7500);
+    $this->post(route('reports.supplier-ledger-register.post', $entry), ['bank_account_id' => $this->hbl->id]);
+    $line = BankStatementEntry::where('supplier_ledger_register_id', $entry->id)->sole();
+
+    $this->get(route('bank-statement-entries.show', $line))
+        ->assertOk()
+        ->assertSee('Booked by supplier ledger')
+        ->assertSee("Supplier Ledger Register #{$entry->id}")
+        ->assertDontSee('Unlink from book entry');
 });

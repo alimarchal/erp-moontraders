@@ -4,7 +4,7 @@
     $currencyOptions = $currencyOptions ?? collect();
     $accountOptions = $accountOptions ?? collect();
     $entryMode = old('qty_entry_mode', optional($supplier)->qty_entry_mode ?? 'pieces');
-    $salesTaxRate = old('sales_tax', optional($supplier)->sales_tax ?? '18.00');
+    $salesTaxRate = number_format((float) (optional($supplier)->sales_tax ?? 18), 2);
     // The column order is set on Edit only: a new supplier starts with the default order.
     $grnColumns = $supplier
         ? \App\Models\Supplier::resolveGrnLineColumns(old('grn_line_columns', $supplier->grn_line_columns))
@@ -107,10 +107,9 @@
             @error('qty_entry_mode') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
         </div>
         <div class="ak-field">
-            <label for="sales_tax" class="ev-bi"><span>Sales tax rate (%)</span><span class="ev-ur" lang="ur" dir="rtl">سیلز ٹیکس کی شرح</span></label>
-            <input id="sales_tax" type="number" name="sales_tax" value="{{ $salesTaxRate }}" step="0.01" min="0" max="100" required>
-            <p class="ak-hint">Filled in automatically as sales tax on each GRN line (value before tax × rate). It can still be typed over on a line. Usually 18.</p>
-            @error('sales_tax') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
+            <label class="ev-bi"><span>Sales tax rate</span><span class="ev-ur" lang="ur" dir="rtl">سیلز ٹیکس کی شرح</span></label>
+            <div class="sp-rate">{{ $salesTaxRate }}%</div>
+            <p class="ak-hint">Filled in automatically as sales tax on each GRN line (value before tax × rate); it can be typed over on a line. Shown for reference: it is not changed here, so GRN amounts stay as they are.</p>
         </div>
     </div>
 
@@ -119,16 +118,10 @@
             <input type="hidden" name="is_fmr_allowed" value="0">
             <input id="is_fmr_allowed" type="checkbox" name="is_fmr_allowed" value="1" {{ old('is_fmr_allowed', optional($supplier)->is_fmr_allowed ?? false) ? 'checked' : '' }}>
             <span><b>FMR allowed</b> <span class="ev-ur" lang="ur" dir="rtl">ایف ایم آر کی اجازت</span>
-                <small>Tick for companies that give FMR off the invoice and do not want it in the stock cost (for example <b>Engro</b>).</small>
+                <small>Marks a company that gives FMR on its invoices (for example <b>Engro</b>). It shows an “FMR allowed” tag on this company's GRNs.</small>
             </span>
         </label>
-        <table class="sp-fmr-table" aria-label="What the FMR allowed setting changes">
-            <thead><tr><th></th><th>FMR allowed: ticked</th><th>Not ticked</th></tr></thead>
-            <tbody>
-                <tr><th scope="row">Unit cost on GRN</th><td>Without FMR: (total with taxes) ÷ pieces</td><td>FMR added back: (total with taxes + FMR) ÷ pieces</td></tr>
-                <tr><th scope="row">FMR on the GRN</th><td colspan="2">Entered per line either way, and credited to 4210 / 4220 FMR Allowance when the GRN is posted.</td></tr>
-            </tbody>
-        </table>
+        <p class="ak-hint sp-fmr-note">How FMR works on every GRN, ticked or not: the FMR allowance is typed per line, taken off the value before tax, and credited to <b>4210 / 4220 FMR Allowance</b> when the GRN is posted. Stock is carried at its cost before FMR, so unit cost = (total with taxes + FMR) ÷ pieces.</p>
     </div>
 
     @if ($grnColumns)
@@ -138,7 +131,7 @@
             <div class="sp-cols-head">
                 <div>
                     <h3 class="ev-bi" style="margin:0"><span>GRN line columns: order</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این لائن کے کالموں کی ترتیب</span></h3>
-                    <p class="ak-hint" style="margin:2px 0 0">The order of the price, deduction and tax boxes on this company's GRN lines (popup and view). Put them in the order of the supplier's invoice. Unticked boxes are hidden unless a line has an amount in them.</p>
+                    <p class="ak-hint" style="margin:2px 0 0">The order of the price, deduction and tax boxes on this company's GRN lines (popup and view). Put them in the order of the supplier's invoice. Unticked boxes are hidden unless a line has an amount in them; the GRN popup has a “Show all boxes” switch for the odd invoice that needs one. Sales tax always shows for carton-entry companies.</p>
                 </div>
                 <button type="button" class="ak-btn ak-btn-outline" @click="reset()">Reset to default</button>
             </div>
@@ -214,6 +207,8 @@
     .sp-grn-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
     @media (min-width: 900px) { .sp-grn-grid { grid-template-columns: 2fr 1fr; } }
     .sp-fmr { margin-top: 14px; display: grid; gap: 10px; }
+    .sp-rate { height: 40px; display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--ak-border); border-radius: 8px; background: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .sp-fmr-note { margin: 0; padding: 8px 12px; background: #fff; border: 1px solid var(--ak-border); border-radius: 8px; }
     .sp-fmr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 1px solid var(--ak-border); border-radius: 8px; overflow: hidden; }
     .sp-fmr-table th, .sp-fmr-table td { padding: 6px 10px; border-bottom: 1px solid var(--ak-border); text-align: left; vertical-align: top; }
     .sp-fmr-table thead th { background: var(--ak-soft); font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); }

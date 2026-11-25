@@ -34,7 +34,7 @@
      */
     $columnTotals = $totals + ['unit_price_per_case' => (float) $grn->items->sum('unit_price_per_case')];
     $supplierColumns = collect($grn->supplier->grnLineColumns())
-        ->filter(fn ($column) => $column['key'] !== 'withholding_tax' || $isUnilever || abs($columnTotals['withholding_tax']) > 0)
+        ->filter(fn ($column) => $column['key'] !== 'withholding_tax' || $isUnilever)
         ->filter(fn ($column) => $column['visible'] || abs($columnTotals[$column['key']] ?? 0) > 0)
         ->values();
     $columnSpec = [

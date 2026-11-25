@@ -28,9 +28,10 @@ function grnColumnsPayload(array $columns): array
     return array_map(fn (array $column) => ['key' => $column[0], 'visible' => $column[1] ? '1' : '0'], $columns);
 }
 
-it('saves the GRN line column order, visibility and sales tax rate from the supplier edit form', function () {
-    $supplier = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan']);
+it('saves the GRN line column order and visibility from the supplier edit form, leaving the sales tax rate alone', function () {
+    $supplier = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan', 'sales_tax' => 18]);
 
+    // The rate drives GRN sales tax, so the supplier form shows it but never changes it.
     $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), [
         'supplier_name' => 'Nestle Pakistan',
         'sales_tax' => '17.50',
@@ -40,7 +41,7 @@ it('saves the GRN line column order, visibility and sales tax rate from the supp
     ])->assertRedirect(route('suppliers.index'));
 
     $supplier->refresh();
-    expect((float) $supplier->sales_tax)->toBe(17.5)
+    expect((float) $supplier->sales_tax)->toBe(18.0)
         ->and(array_column($supplier->grnLineColumns(), 'key'))->toBe([
             'sales_tax_value', 'unit_price_per_case', 'excise_duty', 'other_charges',
             'discount_value', 'fmr_allowance', 'advance_income_tax', 'withholding_tax',
@@ -52,16 +53,16 @@ it('saves the GRN line column order, visibility and sales tax rate from the supp
     $this->actingAs($this->admin)->get(route('suppliers.show', $supplier))
         ->assertSuccessful()
         ->assertSeeInOrder(['GRN line columns', 'Sales tax', 'Price / case', 'Excise duty', 'Other charges', '(hidden unless used)'])
-        ->assertSee('17.50%');
+        ->assertSee('18.00%');
 });
 
-it('keeps the saved column order and sales tax rate when an update does not send them', function () {
+it('keeps the saved column order when an update does not send it', function () {
     $supplier = Supplier::factory()->create([
         'supplier_name' => 'Nestle Pakistan', 'sales_tax' => 17,
         'grn_line_columns' => [['key' => 'sales_tax_value', 'visible' => true]],
     ]);
 
-    $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), ['supplier_name' => 'Nestle Pakistan', 'sales_tax' => ''])
+    $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), ['supplier_name' => 'Nestle Pakistan'])
         ->assertRedirect(route('suppliers.index'));
 
     $supplier->refresh();
@@ -87,14 +88,13 @@ it('rejects a column named twice and redisplays the edit form after a malformed 
         ->assertSee('GRN line columns: order');
 });
 
-it('rejects an unknown GRN line column and a sales tax rate above 100', function () {
+it('rejects an unknown GRN line column', function () {
     $supplier = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan']);
 
     $this->actingAs($this->admin)->put(route('suppliers.update', $supplier), [
         'supplier_name' => 'Nestle Pakistan',
-        'sales_tax' => '150',
         'grn_line_columns' => grnColumnsPayload([['freight', true]]),
-    ])->assertSessionHasErrors(['sales_tax', 'grn_line_columns.0.key']);
+    ])->assertSessionHasErrors(['grn_line_columns.0.key']);
 
     expect($supplier->fresh()->grn_line_columns)->toBeNull();
 });

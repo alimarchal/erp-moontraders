@@ -5,6 +5,16 @@
 --}}
 @push('scripts')
     <script>
+        // Which hidden amount boxes have shown on a line (kept outside Alpine so marking one never re-renders).
+        const grnRevealedByLine = new WeakMap();
+        function grnRevealedColumns(item) {
+            const line = window.Alpine ? Alpine.raw(item) : item;
+            if (! grnRevealedByLine.has(line)) {
+                grnRevealedByLine.set(line, new Set());
+            }
+            return grnRevealedByLine.get(line);
+        }
+
         function grnLayout(base) {
             const extras = {
                 selected: 0,
@@ -21,6 +31,7 @@
                 // Option I edits each line in a popup.
                 lineModal: false,
                 lineModalOpen: false,
+                showAllColumns: false,
 
                 openLine(index) {
                     this.selectLine(index);
@@ -262,18 +273,42 @@
                 },
 
                 /**
-                 * A column the supplier hid stays hidden only while the line has no amount in it, so no
-                 * figure is ever out of sight. Withholding tax only applies to Unilever Pakistan.
+                 * A column the supplier hid stays hidden only while the line has never had an amount in it,
+                 * so no figure is ever out of sight: once a box has shown on a line it stays, even while the
+                 * amount is retyped. "Show all boxes" shows every box. Sales tax always shows in carton mode
+                 * (it is typed there, not worked out). Withholding tax only applies to Unilever Pakistan.
                  */
                 colShown(item, key) {
-                    if (parseFloat(item[key]) > 0) {
-                        return true;
+                    const seen = grnRevealedColumns(item);
+                    if ((parseFloat(item[key]) || 0) !== 0) {
+                        seen.add(key);
                     }
-                    if (key === 'withholding_tax' && ! this.isUnileverPakistan) {
+                    if (key === 'withholding_tax' && ! this.isUnileverPakistan && ! seen.has(key)) {
                         return false;
+                    }
+                    if (this.showAllColumns || seen.has(key) || (key === 'sales_tax_value' && this.isCartonMode)) {
+                        return true;
                     }
                     const column = (this.lineColumns || []).find((entry) => entry.key === key);
                     return column ? column.visible !== false : true;
+                },
+
+                /** True when the supplier hid at least one box. */
+                hasHiddenColumns() {
+                    return (this.lineColumns || []).some((column) => column.visible === false);
+                },
+
+                /**
+                 * Puts the amount boxes in the page in the supplier's order (not only on screen), so Tab moves
+                 * through them in the order they are seen. Re-run whenever the supplier, so the order, changes.
+                 */
+                arrangeAmountBoxes(grid) {
+                    JSON.stringify(this.lineColumns);
+                    this.$nextTick(() => {
+                        [...grid.children]
+                            .sort((a, b) => (parseFloat(a.style.order) || 0) - (parseFloat(b.style.order) || 0))
+                            .forEach((box) => grid.appendChild(box));
+                    });
                 },
 
                 /** Total cases on the GRN (cartons when the supplier is entered in cartons). */

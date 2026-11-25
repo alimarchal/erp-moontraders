@@ -4,6 +4,11 @@
     $currencyOptions = $currencyOptions ?? collect();
     $accountOptions = $accountOptions ?? collect();
     $entryMode = old('qty_entry_mode', optional($supplier)->qty_entry_mode ?? 'pieces');
+    $salesTaxRate = old('sales_tax', optional($supplier)->sales_tax ?? '18.00');
+    // The column order is set on Edit only: a new supplier starts with the default order.
+    $grnColumns = $supplier
+        ? \App\Models\Supplier::resolveGrnLineColumns(old('grn_line_columns', $supplier->grn_line_columns))
+        : null;
 @endphp
 <div class="ev-form-grid">
     <div class="ak-field ev-span-2">
@@ -30,15 +35,6 @@
         <label for="country" class="ev-bi"><span>Country</span><span class="ev-ur" lang="ur" dir="rtl">ملک</span></label>
         <input id="country" type="text" name="country" value="{{ old('country', optional($supplier)->country) }}" placeholder="Pakistan" >
         @error('country') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ev-span-3 sp-mode">
-        <label for="qty_entry_mode" class="ev-bi"><span>Quantity entry on GRN</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این میں مقدار کیسے درج ہو</span></label>
-        <select id="qty_entry_mode" name="qty_entry_mode" class="ev-select">
-            <option value="pieces" @selected($entryMode === 'pieces')>Pieces (normal entry)</option>
-            <option value="carton" @selected($entryMode === 'carton')>Carton (cartons + loose pieces, rate per TH): for Pakistan Tobacco Company</option>
-        </select>
-        <p class="ak-hint">Carton mode is only an input helper. Stock and the inventory ledger are always kept in pieces. Switch back to Pieces at any time; old GRNs are not affected. Each product needs “Pieces per carton” and “Pouches per piece” set.</p>
-        @error('qty_entry_mode') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
     </div>
     <div class="ak-field">
         <label for="default_currency_id" class="ev-bi"><span>Default currency</span><span class="ev-ur" lang="ur" dir="rtl">ڈیفالٹ کرنسی</span></label>
@@ -96,6 +92,82 @@
         <textarea id="supplier_details" name="supplier_details" rows="4" placeholder="Terms, payment notes">{{ old('supplier_details', optional($supplier)->supplier_details) }}</textarea>
     </div>
 </div>
+
+<fieldset class="sp-grn">
+    <legend class="ev-bi"><span>GRN settings</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این کی ترتیبات</span></legend>
+    <p class="ak-hint" style="margin-top:0">How this company's GRNs are entered. These settings change how the GRN screen looks and fills in; the GRN maths stays the same.</p>
+    <div class="sp-grn-grid">
+        <div class="ak-field">
+            <label for="qty_entry_mode" class="ev-bi"><span>Quantity entry on GRN</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این میں مقدار کیسے درج ہو</span></label>
+            <select id="qty_entry_mode" name="qty_entry_mode" class="ev-select">
+                <option value="pieces" @selected($entryMode === 'pieces')>Pieces (normal entry)</option>
+                <option value="carton" @selected($entryMode === 'carton')>Carton (cartons + loose pieces, rate per TH): for Pakistan Tobacco Company</option>
+            </select>
+            <p class="ak-hint">Carton mode is only an input helper. Stock and the inventory ledger are always kept in pieces. Old GRNs are not affected. Each product needs “Pieces per carton” and “Pouches per piece”.</p>
+            @error('qty_entry_mode') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
+        </div>
+        <div class="ak-field">
+            <label for="sales_tax" class="ev-bi"><span>Sales tax rate (%)</span><span class="ev-ur" lang="ur" dir="rtl">سیلز ٹیکس کی شرح</span></label>
+            <input id="sales_tax" type="number" name="sales_tax" value="{{ $salesTaxRate }}" step="0.01" min="0" max="100" required>
+            <p class="ak-hint">Filled in automatically as sales tax on each GRN line (value before tax × rate). It can still be typed over on a line. Usually 18.</p>
+            @error('sales_tax') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
+        </div>
+    </div>
+
+    <div class="sp-fmr">
+        <label class="sp-check" for="is_fmr_allowed">
+            <input type="hidden" name="is_fmr_allowed" value="0">
+            <input id="is_fmr_allowed" type="checkbox" name="is_fmr_allowed" value="1" {{ old('is_fmr_allowed', optional($supplier)->is_fmr_allowed ?? false) ? 'checked' : '' }}>
+            <span><b>FMR allowed</b> <span class="ev-ur" lang="ur" dir="rtl">ایف ایم آر کی اجازت</span>
+                <small>Tick for companies that give FMR off the invoice and do not want it in the stock cost (for example <b>Engro</b>).</small>
+            </span>
+        </label>
+        <table class="sp-fmr-table" aria-label="What the FMR allowed setting changes">
+            <thead><tr><th></th><th>FMR allowed: ticked</th><th>Not ticked</th></tr></thead>
+            <tbody>
+                <tr><th scope="row">Unit cost on GRN</th><td>Without FMR: (total with taxes) ÷ pieces</td><td>FMR added back: (total with taxes + FMR) ÷ pieces</td></tr>
+                <tr><th scope="row">FMR on the GRN</th><td colspan="2">Entered per line either way, and credited to 4210 / 4220 FMR Allowance when the GRN is posted.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    @if ($grnColumns)
+        <div class="sp-cols" x-data="{ cols: {{ Js::from($grnColumns) }},
+                move(i, step) { const j = i + step; if (j < 0 || j >= this.cols.length) { return; } const c = this.cols.splice(i, 1)[0]; this.cols.splice(j, 0, c); },
+                reset() { const order = {{ Js::from(array_keys(\App\Models\Supplier::GRN_LINE_COLUMNS)) }}; this.cols = order.map(k => ({ ...this.cols.find(c => c.key === k), visible: true })); } }">
+            <div class="sp-cols-head">
+                <div>
+                    <h3 class="ev-bi" style="margin:0"><span>GRN line columns: order</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این لائن کے کالموں کی ترتیب</span></h3>
+                    <p class="ak-hint" style="margin:2px 0 0">The order of the price, deduction and tax boxes on this company's GRN lines (popup and view). Put them in the order of the supplier's invoice. Unticked boxes are hidden unless a line has an amount in them.</p>
+                </div>
+                <button type="button" class="ak-btn ak-btn-outline" @click="reset()">Reset to default</button>
+            </div>
+            <ol class="sp-cols-list">
+                <template x-for="(col, i) in cols" :key="col.key">
+                    <li class="sp-col" :class="col.visible ? '' : 'sp-col-off'">
+                        <span class="sp-col-no" x-text="i + 1"></span>
+                        <span class="sp-col-name" x-text="col.label"></span>
+                        <span class="sp-col-note" x-show="col.key === 'withholding_tax'">Unilever Pakistan only</span>
+                        <label class="sp-col-show">
+                            <input type="hidden" :name="`grn_line_columns[${i}][key]`" :value="col.key">
+                            <input type="hidden" :name="`grn_line_columns[${i}][visible]`" value="0">
+                            <input type="checkbox" :name="`grn_line_columns[${i}][visible]`" value="1" x-model="col.visible" :disabled="col.key === 'unit_price_per_case'" :title="col.key === 'unit_price_per_case' ? 'Price is needed on every line' : ''" :aria-label="'Show ' + col.label">
+                            Show
+                        </label>
+                        <span class="sp-col-moves">
+                            <button type="button" class="sp-col-btn" @click="move(i, -1)" :disabled="i === 0" :aria-label="'Move ' + col.label + ' up'">↑</button>
+                            <button type="button" class="sp-col-btn" @click="move(i, 1)" :disabled="i === cols.length - 1" :aria-label="'Move ' + col.label + ' down'">↓</button>
+                        </span>
+                    </li>
+                </template>
+            </ol>
+            @error('grn_line_columns') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
+            @error('grn_line_columns.*') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
+        </div>
+    @else
+        <p class="ak-hint sp-cols-new">GRN line columns start in the default order (Price, Discount, FMR, Excise duty, Sales tax, Advance income tax, Other charges, WHT). Change it from <b>Edit</b> after the supplier is saved.</p>
+    @endif
+</fieldset>
 <div class="sp-checks">
     <label class="sp-check" for="is_transporter">
         <input type="hidden" name="is_transporter" value="0">
@@ -106,11 +178,6 @@
         <input type="hidden" name="is_internal_supplier" value="0">
         <input id="is_internal_supplier" type="checkbox" name="is_internal_supplier" value="1" {{ old('is_internal_supplier', optional($supplier)->is_internal_supplier ?? false) ? 'checked' : '' }}>
         <span><b>Internal supplier</b> <span class="ev-ur" lang="ur" dir="rtl">اندرونی سپلائر</span><small>Inter-company supplier.</small></span>
-    </label>
-    <label class="sp-check" for="is_fmr_allowed">
-        <input type="hidden" name="is_fmr_allowed" value="0">
-        <input id="is_fmr_allowed" type="checkbox" name="is_fmr_allowed" value="1" {{ old('is_fmr_allowed', optional($supplier)->is_fmr_allowed ?? false) ? 'checked' : '' }}>
-        <span><b>FMR allowed</b> <span class="ev-ur" lang="ur" dir="rtl">ایف ایم آر کی اجازت</span><small>Exclude FMR from the unit cost on GRN.</small></span>
     </label>
     <label class="sp-check" for="is_advance_tax_income">
         <input type="hidden" name="is_advance_tax_income" value="0">
@@ -124,11 +191,44 @@
     </label>
 </div>
 <style>
+    /* Layout rules this form relies on (they used to come from the expense-voucher styles). */
+    .ev-form { padding: 20px; }
+    .ev-form-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+    .ev-form-grid > * { min-width: 0; }
+    @media (min-width: 900px) { .ev-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ev-form-grid .ev-span-2 { grid-column: span 2; } .ev-form-grid .ev-span-3 { grid-column: span 3; } }
+    .ev-form .ev-bi { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .ev-form .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Geeza Pro', serif; font-size: 15px; font-weight: 600; color: var(--ak-navy); line-height: 1.5; }
+    .ev-form-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ak-line, #e5e7eb); }
+    .ev-form-foot .ak-btn { display: inline-flex; align-items: center; gap: 10px; }
+    @media (max-width: 640px) { .ev-form { padding: 14px; } .ev-form-foot { flex-wrap: wrap; } .ev-form-foot .ak-btn { flex: 1 1 100%; justify-content: center; } }
+    .sp-cols-head h3.ev-bi { justify-content: flex-start; font-size: 14.5px; font-weight: 700; }
+    .sp-grn legend.ev-bi { display: inline-flex; gap: 10px; }
     .sp-checks { display: grid; gap: 10px; grid-template-columns: 1fr; margin-top: 18px; }
     @media (min-width: 900px) { .sp-checks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     .sp-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--ak-border); border-radius: 8px; cursor: pointer; background: #fff; }
     .sp-check:hover { background: var(--ak-soft); }
     .sp-check input[type=checkbox] { margin-top: 3px; height: 16px; width: 16px; }
     .sp-check small { display: block; color: var(--ak-muted); font-size: 12px; font-weight: 400; margin-top: 2px; }
-    .sp-mode { padding: 12px; border: 1px dashed #a5b4fc; border-radius: 8px; background: #eef2ff; }
+    .sp-grn { margin-top: 18px; padding: 16px; border: 1px solid #c7d2fe; border-radius: 10px; background: #f5f7ff; }
+    .sp-grn legend { padding: 0 6px; font-weight: 700; font-size: 15px; }
+    .sp-grn-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 900px) { .sp-grn-grid { grid-template-columns: 2fr 1fr; } }
+    .sp-fmr { margin-top: 14px; display: grid; gap: 10px; }
+    .sp-fmr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 1px solid var(--ak-border); border-radius: 8px; overflow: hidden; }
+    .sp-fmr-table th, .sp-fmr-table td { padding: 6px 10px; border-bottom: 1px solid var(--ak-border); text-align: left; vertical-align: top; }
+    .sp-fmr-table thead th { background: var(--ak-soft); font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); }
+    .sp-cols { margin-top: 16px; padding: 14px; background: #fff; border: 1px solid var(--ak-border); border-radius: 10px; }
+    .sp-cols-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
+    .sp-cols-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+    .sp-col { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--ak-border); border-radius: 8px; background: #fff; }
+    .sp-col-off { background: var(--ak-soft); color: var(--ak-muted); }
+    .sp-col-no { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 999px; background: #e0e7ff; color: #3730a3; font-weight: 700; font-size: 12px; }
+    .sp-col-name { font-weight: 600; flex: 1; min-width: 140px; }
+    .sp-col-note { font-size: 11.5px; color: var(--ak-muted); }
+    .sp-col-show { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
+    .sp-col-moves { display: inline-flex; gap: 4px; }
+    .sp-col-btn { width: 34px; height: 30px; border: 1px solid var(--ak-border); border-radius: 6px; background: #fff; font-weight: 700; cursor: pointer; }
+    .sp-col-btn:hover:not(:disabled) { background: #eef2ff; }
+    .sp-col-btn:disabled { opacity: .35; cursor: default; }
+    .sp-cols-new { margin-top: 12px; }
 </style>

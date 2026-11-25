@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -60,6 +61,10 @@ class StoreSupplierRequest extends FormRequest
             'is_fmr_allowed' => ['boolean'],
             'is_advance_tax_income' => ['boolean'],
             'qty_entry_mode' => ['nullable', Rule::in(['pieces', 'carton'])],
+            'sales_tax' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'grn_line_columns' => ['nullable', 'array'],
+            'grn_line_columns.*.key' => ['required', 'string', Rule::in(array_keys(Supplier::GRN_LINE_COLUMNS))],
+            'grn_line_columns.*.visible' => ['boolean'],
             'disabled' => ['boolean'],
             'default_currency_id' => ['nullable', 'exists:currencies,id'],
             'default_bank_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
@@ -88,6 +93,18 @@ class StoreSupplierRequest extends FormRequest
         $validated['is_fmr_allowed'] = (bool) ($validated['is_fmr_allowed'] ?? false);
         $validated['is_advance_tax_income'] = (bool) ($validated['is_advance_tax_income'] ?? false);
         $validated['qty_entry_mode'] = $validated['qty_entry_mode'] ?? 'pieces';
+
+        if (array_key_exists('sales_tax', $validated) && $validated['sales_tax'] === null) {
+            unset($validated['sales_tax']);
+        }
+
+        if (array_key_exists('grn_line_columns', $validated)) {
+            $validated['grn_line_columns'] = $validated['grn_line_columns'] === null ? null : array_map(fn (array $column) => [
+                'key' => $column['key'],
+                // The price is needed on every line, so it is always shown.
+                'visible' => $column['key'] === 'unit_price_per_case' || (bool) ($column['visible'] ?? false),
+            ], array_values($validated['grn_line_columns']));
+        }
         $validated['disabled'] = (bool) ($validated['disabled'] ?? false);
 
         return $validated;

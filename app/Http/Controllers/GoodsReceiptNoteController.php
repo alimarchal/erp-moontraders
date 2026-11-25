@@ -20,6 +20,7 @@ use App\Services\CartonConversionService;
 use App\Services\GrnCorrectionService;
 use App\Services\InventoryService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -143,9 +144,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     {
         $userSupplierId = $this->getUserSupplierScope();
 
-        $suppliers = $userSupplierId
-            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode'])
-            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode']);
+        $suppliers = $this->suppliersForGrnForm($userSupplierId);
 
         return view('goods-receipt-notes.create', [
             'suppliers' => $suppliers,
@@ -414,9 +413,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $userSupplierId = $this->getUserSupplierScope();
         $goodsReceiptNote->load('items');
 
-        $suppliers = $userSupplierId
-            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode'])
-            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode']);
+        $suppliers = $this->suppliersForGrnForm($userSupplierId);
 
         return view('goods-receipt-notes.edit', [
             'grn' => $goodsReceiptNote,
@@ -1262,6 +1259,22 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         if ($userSupplierId && $grn->supplier_id != $userSupplierId) {
             abort(403, 'You do not have permission to access this GRN.');
         }
+    }
+
+    /**
+     * The active suppliers a GRN can be raised for, with what the GRN form needs from each:
+     * sales tax rate, FMR and carton flags, and the supplier's GRN line column order.
+     *
+     * @return EloquentCollection<int, Supplier>
+     */
+    private function suppliersForGrnForm(?int $userSupplierId): EloquentCollection
+    {
+        return Supplier::query()
+            ->when($userSupplierId, fn ($query) => $query->where('id', $userSupplierId))
+            ->where('disabled', false)
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed', 'qty_entry_mode', 'grn_line_columns'])
+            ->each(fn (Supplier $supplier) => $supplier->setAttribute('grn_columns', $supplier->grnLineColumns())->makeHidden('grn_line_columns'));
     }
 
     private function resolveActiveWithholdingTaxRate(): float

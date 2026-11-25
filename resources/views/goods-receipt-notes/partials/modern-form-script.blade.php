@@ -247,6 +247,35 @@
                     return this.formatNumber(item.qty_in_purchase_uom) + ' cases · ' + pieces + ' pcs';
                 },
 
+                /**
+                 * Where a price, deduction or tax input sits in the line: the supplier's column order
+                 * (Settings → Suppliers → Edit), ten apart so the worked-out boxes can sit between them.
+                 */
+                colOrder(key) {
+                    const at = (this.lineColumns || []).findIndex((column) => column.key === key);
+                    return (at < 0 ? 50 : at) * 10;
+                },
+
+                /** "Value before sales tax" follows the last of price, discount and FMR. */
+                beforeTaxOrder() {
+                    return Math.max(this.colOrder('unit_price_per_case'), this.colOrder('discount_value'), this.colOrder('fmr_allowance')) + 2;
+                },
+
+                /**
+                 * A column the supplier hid stays hidden only while the line has no amount in it, so no
+                 * figure is ever out of sight. Withholding tax only applies to Unilever Pakistan.
+                 */
+                colShown(item, key) {
+                    if (parseFloat(item[key]) > 0) {
+                        return true;
+                    }
+                    if (key === 'withholding_tax' && ! this.isUnileverPakistan) {
+                        return false;
+                    }
+                    const column = (this.lineColumns || []).find((entry) => entry.key === key);
+                    return column ? column.visible !== false : true;
+                },
+
                 /** Total cases on the GRN (cartons when the supplier is entered in cartons). */
                 totalCases() {
                     return this.sumOf(this.isCartonMode ? 'entered_cartons' : 'qty_in_purchase_uom');

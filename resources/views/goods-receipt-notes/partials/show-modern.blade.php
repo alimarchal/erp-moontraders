@@ -27,17 +27,65 @@
             ], fn ($value) => filled($value)),
         ];
     });
-    $breakdown = array_filter([
-        'Value' => [$totals['extended_value'], ''],
-        'Discount' => [-$totals['discount_value'], 'text-red-700'],
-        'FMR' => [-$totals['fmr_allowance'], 'text-red-700'],
-        'Before tax' => [$totals['discounted_value_before_tax'], ''],
-        'Excise' => [$totals['excise_duty'], ''],
-        'Sales tax' => [$totals['sales_tax_value'], ''],
-        'Adv. income tax' => [$totals['advance_income_tax'], ''],
-        'Other charges' => [$totals['other_charges'], ''],
-        'WHT' => $isUnilever ? [$totals['withholding_tax'], ''] : null,
-    ]);
+    /*
+     * The price, deduction and tax columns in the supplier's order (Settings → Suppliers → Edit).
+     * Value follows the price; Before tax follows the last of price, discount and FMR. A column the
+     * supplier hid still shows when this GRN has an amount in it. Layout only: every figure is the line's own.
+     */
+    $columnTotals = $totals + ['unit_price_per_case' => (float) $grn->items->sum('unit_price_per_case')];
+    $supplierColumns = collect($grn->supplier->grnLineColumns())
+        ->filter(fn ($column) => $column['key'] !== 'withholding_tax' || $isUnilever || abs($columnTotals['withholding_tax']) > 0)
+        ->filter(fn ($column) => $column['visible'] || abs($columnTotals[$column['key']] ?? 0) > 0)
+        ->values();
+    $columnSpec = [
+        'unit_price_per_case' => ['UP / case', "view === 'all'"],
+        'discount_value' => ['Discount', "view !== 'tax'"],
+        'fmr_allowance' => ['FMR', "view === 'all'"],
+        'excise_duty' => ['Excise', "view !== 'summary'"],
+        'sales_tax_value' => ['Sales tax', "view !== 'summary'"],
+        'advance_income_tax' => ['Adv. IT', "view !== 'summary'"],
+        'other_charges' => ['Other', "view !== 'summary'"],
+        'withholding_tax' => ['WHT', "view !== 'summary'"],
+    ];
+    $lastDeduction = $supplierColumns->keys()->filter(fn ($at) => in_array($supplierColumns[$at]['key'], ['unit_price_per_case', 'discount_value', 'fmr_allowance'], true))->max() ?? -1;
+    $amountCols = [];
+    if ($lastDeduction < 0) {
+        $amountCols[] = ['label' => 'Value', 'show' => "view !== 'tax'", 'field' => 'extended_value'];
+        $amountCols[] = ['label' => 'Before tax', 'show' => "view !== 'summary'", 'field' => 'discounted_value_before_tax'];
+    }
+    foreach ($supplierColumns as $at => $column) {
+        [$label, $show] = $columnSpec[$column['key']];
+        $amountCols[] = ['label' => $label, 'show' => $show, 'field' => $column['key']];
+        if ($column['key'] === 'unit_price_per_case') {
+            $amountCols[] = ['label' => 'Value', 'show' => "view !== 'tax'", 'field' => 'extended_value'];
+        }
+        if ($at === $lastDeduction) {
+            if (! collect($amountCols)->contains('field', 'extended_value')) {
+                $amountCols[] = ['label' => 'Value', 'show' => "view !== 'tax'", 'field' => 'extended_value'];
+            }
+            $amountCols[] = ['label' => 'Before tax', 'show' => "view !== 'summary'", 'field' => 'discounted_value_before_tax'];
+        }
+    }
+
+    // The totals strip follows the same order.
+    $breakdownSpec = [
+        'extended_value' => ['Value', 1, ''],
+        'discount_value' => ['Discount', -1, 'text-red-700'],
+        'fmr_allowance' => ['FMR', -1, 'text-red-700'],
+        'discounted_value_before_tax' => ['Before tax', 1, ''],
+        'excise_duty' => ['Excise', 1, ''],
+        'sales_tax_value' => ['Sales tax', 1, ''],
+        'advance_income_tax' => ['Adv. income tax', 1, ''],
+        'other_charges' => ['Other charges', 1, ''],
+        'withholding_tax' => ['WHT', 1, ''],
+    ];
+    $breakdown = [];
+    foreach ($amountCols as $col) {
+        if (isset($breakdownSpec[$col['field']])) {
+            [$label, $sign, $tone] = $breakdownSpec[$col['field']];
+            $breakdown[$label] = [$sign * $totals[$col['field']], $tone];
+        }
+    }
     $totalPcs = (float) $grn->items->sum('qty_in_stock_uom');
     $itemsGap = abs($itemsTotalWithTax - (float) $grn->grand_total);
     $today0 = now()->startOfDay();
@@ -171,18 +219,9 @@
                                 <th class="sticky left-10 z-20 min-w-[14rem] bg-gray-50 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-600">Product</th>
                                 <th x-show="view !== 'tax'" class="{{ $th }}">Cases</th>
                                     <th x-show="view !== 'tax'" class="{{ $th }}">Pcs</th>
-                                <th x-show="view === 'all'" class="{{ $th }}">UP / case</th>
-                                <th x-show="view !== 'tax'" class="{{ $th }}">Value</th>
-                                <th x-show="view !== 'tax'" class="{{ $th }}">Discount</th>
-                                <th x-show="view === 'all'" class="{{ $th }}">FMR</th>
-                                <th x-show="view !== 'summary'" class="{{ $th }}">Before tax</th>
-                                <th x-show="view !== 'summary'" class="{{ $th }}">Excise</th>
-                                <th x-show="view !== 'summary'" class="{{ $th }}">Sales tax</th>
-                                <th x-show="view !== 'summary'" class="{{ $th }}">Adv. IT</th>
-                                <th x-show="view !== 'summary'" class="{{ $th }}">Other</th>
-                                @if ($isUnilever)
-                                    <th x-show="view !== 'summary'" class="{{ $th }}">WHT</th>
-                                @endif
+                                @foreach ($amountCols as $col)
+                                    <th x-show="{{ $col['show'] }}" class="{{ $th }}">{{ $col['label'] }}</th>
+                                @endforeach
                                 <th x-show="view === 'summary'" class="{{ $th }}">Taxes</th>
                                 <th x-show="view !== 'tax'" class="{{ $th }}">Pcs received</th>
                                 <th x-show="view === 'all'" class="{{ $th }}">Unit cost</th>
@@ -204,18 +243,9 @@
                                     </td>
                                     <td x-show="view !== 'tax'" class="{{ $td }} font-semibold">{{ number_format((float) $item->qty_in_purchase_uom, 2) }}</td>
                                         <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->qty_in_stock_uom, 2) }}</td>
-                                    <td x-show="view === 'all'" class="{{ $td }}">{{ number_format((float) $item->unit_price_per_case, 2) }}</td>
-                                    <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->extended_value, 2) }}</td>
-                                    <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->discount_value, 2) }}</td>
-                                    <td x-show="view === 'all'" class="{{ $td }}">{{ number_format((float) $item->fmr_allowance, 2) }}</td>
-                                    <td x-show="view !== 'summary'" class="{{ $td }} font-semibold">{{ number_format((float) $item->discounted_value_before_tax, 2) }}</td>
-                                    <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->excise_duty, 2) }}</td>
-                                    <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->sales_tax_value, 2) }}</td>
-                                    <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->advance_income_tax, 2) }}</td>
-                                    <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->other_charges, 2) }}</td>
-                                    @if ($isUnilever)
-                                        <td x-show="view !== 'summary'" class="{{ $td }}">{{ number_format((float) $item->withholding_tax, 2) }}</td>
-                                    @endif
+                                    @foreach ($amountCols as $col)
+                                        <td x-show="{{ $col['show'] }}" class="{{ $td }}{{ $col['field'] === 'discounted_value_before_tax' ? ' font-semibold' : '' }}">{{ number_format((float) $item->{$col['field']}, 2) }}</td>
+                                    @endforeach
                                     <td x-show="view === 'summary'" class="{{ $td }}">{{ number_format($row['taxes'], 2) }}</td>
                                     <td x-show="view !== 'tax'" class="{{ $td }}">{{ number_format((float) $item->quantity_received, 2) }}</td>
                                     <td x-show="view === 'all'" class="{{ $td }}">{{ number_format((float) $item->unit_cost, 2) }}</td>
@@ -249,18 +279,13 @@
                                 <td colspan="2" class="sticky left-0 bg-gray-100 px-3 py-2 text-left">Totals · {{ $grn->items->count() }} {{ \Illuminate\Support\Str::plural('line', $grn->items->count()) }}</td>
                                 <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['qty_in_purchase_uom']) }}</td>
                                     <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totalPcs) }}</td>
-                                <td x-show="view === 'all'"></td>
-                                <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['extended_value']) }}</td>
-                                <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['discount_value']) }}</td>
-                                <td x-show="view === 'all'" class="{{ $td }}">{{ $rs($totals['fmr_allowance']) }}</td>
-                                <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['discounted_value_before_tax']) }}</td>
-                                <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['excise_duty']) }}</td>
-                                <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['sales_tax_value']) }}</td>
-                                <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['advance_income_tax']) }}</td>
-                                <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['other_charges']) }}</td>
-                                @if ($isUnilever)
-                                    <td x-show="view !== 'summary'" class="{{ $td }}">{{ $rs($totals['withholding_tax']) }}</td>
-                                @endif
+                                @foreach ($amountCols as $col)
+                                    @if ($col['field'] === 'unit_price_per_case')
+                                        <td x-show="{{ $col['show'] }}"></td>
+                                    @else
+                                        <td x-show="{{ $col['show'] }}" class="{{ $td }}">{{ $rs($totals[$col['field']] ?? 0) }}</td>
+                                    @endif
+                                @endforeach
                                 <td x-show="view === 'summary'" class="{{ $td }}">{{ $rs($taxTotal) }}</td>
                                 <td x-show="view !== 'tax'" class="{{ $td }}">{{ $rs($totals['quantity_received']) }}</td>
                                 <td x-show="view === 'all'"></td>
@@ -278,22 +303,19 @@
         </section>
 
 
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-start">
-            <div class="min-w-0 flex-1 space-y-4">
-                @if ($grn->notes)
-                    <section aria-labelledby="grn-notes-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 {{ $cardShadow }}">
-                        <h2 id="grn-notes-heading" class="mb-1 text-base font-bold text-gray-900">Notes</h2>
-                        <p class="text-sm text-gray-700">Notes: {{ $grn->notes }}</p>
-                    </section>
-                @endif
+        @if ($grn->notes)
+            <section aria-labelledby="grn-notes-heading" class="rounded-2xl bg-white p-5 ring-1 ring-gray-200 {{ $cardShadow }}">
+                <h2 id="grn-notes-heading" class="mb-1 text-base font-bold text-gray-900">Notes</h2>
+                <p class="text-sm text-gray-700">{{ $grn->notes }}</p>
+            </section>
+        @endif
 
-                @include('goods-receipt-notes.partials.show-corrections')
-            </div>
+        @include('goods-receipt-notes.partials.show-corrections')
 
-            <aside class="space-y-4 xl:w-[22rem] xl:shrink-0">
-                @include('goods-receipt-notes.partials.show-side-cards')
-            </aside>
-        </div>
+        {{-- Ledger, timeline, record and related links side by side, so no column is left empty. --}}
+        <aside class="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
+            @include('goods-receipt-notes.partials.show-side-cards')
+        </aside>
 
         <div class="hidden justify-between pt-10 text-xs print:flex">
             <span class="w-1/4 border-t border-black pt-1 text-center">Received by</span>

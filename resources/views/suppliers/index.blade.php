@@ -30,29 +30,20 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('settings.index') }}">Settings</a><span aria-hidden="true">›</span><span>Suppliers</span>
-                </nav>
-                <h1 class="ak-title">Suppliers <span class="ev-ur" lang="ur" dir="rtl">سپلائرز</span></h1>
-                <p class="ak-sub">Companies you buy stock from, their defaults and how GRN quantities are entered.</p>
-            </div>
-            <div class="ak-head-actions">
-                <button type="button" class="ak-btn ak-btn-outline" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+        <x-page-header title="Suppliers" :createRoute="route('suppliers.create')" createLabel="New supplier"
+            createPermission="supplier-create" :showSearch="false" :showRefresh="true" backRoute="settings.index">
+            <x-slot name="actions">
+                <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
                 </button>
-                <a href="{{ route('suppliers.help') }}" class="ak-btn ak-btn-outline" title="How suppliers and carton entry work">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
-                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print <span class="ev-ur" lang="ur" dir="rtl">پرنٹ</span></button>
-                @can('supplier-create')
-                    <a href="{{ route('suppliers.create') }}" class="ak-btn ak-btn-primary"><span aria-hidden="true">＋</span> New supplier <span class="ev-ur" lang="ur" dir="rtl">نیا سپلائر</span></a>
-                @endcan
-            </div>
-        </div>
+                <a href="{{ route('suppliers.help') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" title="How suppliers and carton entry work">How it works</a>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
         @page { margin: 10mm; }
@@ -70,6 +61,7 @@
         .sp-filter-row .ak-field input, .sp-filter-row .ak-field select { height: 38px; box-sizing: border-box; }
         .ak-filter-buttons { display: flex; gap: 8px; }
         .sp-table { min-width: 980px; }
+        @media screen and (max-width: 767px) { .sp-table { min-width: 0; } }
         .sp-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; margin: 1px 4px 1px 0; background: #f1f5f9; color: #475569; }
         .sp-pill-blue { background: #dbeafe; color: #1d4ed8; } .sp-pill-purple { background: #ede9fe; color: #6d28d9; } .sp-pill-amber { background: #fef3c7; color: #b45309; }
         .ak-status-slate { background: #f1f5f9; color: #475569; } .ak-status-slate i { background: #64748b; }

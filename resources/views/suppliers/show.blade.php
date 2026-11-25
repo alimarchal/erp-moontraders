@@ -5,26 +5,18 @@
 @endphp
 <x-app-layout>
     <x-slot name="header">
-        <div class="ak-head">
-            <div>
-                <nav class="ak-crumbs" aria-label="Breadcrumb">
-                    <a href="{{ route('suppliers.index') }}">Suppliers</a><span aria-hidden="true">›</span><span>{{ $supplier->supplier_name }}</span>
-                </nav>
-                <h1 class="ak-title" style="margin:0">{{ $supplier->supplier_name }}</h1>
-                <p class="ak-sub">{{ $dash($supplier->supplier_group) }} &middot; {{ $dash($supplier->country) }} &middot;
-                    <span class="ak-status {{ $supplier->disabled ? 'ak-status-slate' : 'ak-status-green' }}"><i aria-hidden="true"></i>{{ $supplier->disabled ? 'Disabled' : 'Active' }}</span></p>
-            </div>
-            <div class="ak-head-actions no-print">
-                <a href="{{ route('suppliers.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to suppliers</a>
-                <a href="{{ route('suppliers.help') }}" class="ak-btn ak-btn-outline">How it works <span class="ev-ur" lang="ur" dir="rtl" style="color:inherit; font-size:16px">طریقہ کار</span></a>
+        <x-page-header :title="'Supplier: '.$supplier->supplier_name" :createRoute="null" createLabel="" :showSearch="false" :showRefresh="false" backRoute="suppliers.index">
+            <x-slot name="actions">
+                <a href="{{ route('suppliers.help') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" title="How suppliers and carton entry work">How it works</a>
                 @can('supplier-edit')
-                    <a href="{{ route('suppliers.edit', $supplier) }}" class="ak-btn ak-btn-primary">Edit <span class="ev-ur" lang="ur" dir="rtl" style="color:#fff; font-size:15px">ترمیم</span></a>
+                    <a href="{{ route('suppliers.edit', $supplier) }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" title="Edit supplier">Edit</a>
                 @endcan
-            </div>
-        </div>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
+    <x-apple-skin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
     <style>
         .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-size: 14px; font-weight: 600; color: var(--ak-navy); text-transform: none; letter-spacing: 0; margin-inline-start: 8px; }
@@ -42,6 +34,8 @@
     </style>
 
     <div class="ak-page">
+        <p class="gf-lede" style="margin:0 0 12px; font-size:14px; color:#6e6e73">{{ $dash($supplier->supplier_group) }} &middot; {{ $dash($supplier->country) }} &middot;
+            <span class="ak-status {{ $supplier->disabled ? 'ak-status-slate' : 'ak-status-green' }}"><i aria-hidden="true"></i>{{ $supplier->disabled ? 'Disabled' : 'Active' }}</span></p>
         <x-status-message />
         <div class="ev-grid">
             <section class="ak-card ev-pad" aria-label="Supplier details">
@@ -75,11 +69,14 @@
                 </section>
                 <section class="ak-card ev-pad" aria-label="GRN line columns">
                     <h2 style="margin:0 0 6px; font-size:15px; font-weight:700">GRN line columns <span class="ev-ur" lang="ur" dir="rtl">کالموں کی ترتیب</span></h2>
-                    <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.7">
-                        @foreach ($supplier->grnLineColumns() as $column)
-                            <li @class(['ak-muted' => ! $column['visible']])>{{ $column['label'] }}@unless ($column['visible']) <small>(hidden unless used)</small>@endunless</li>
-                        @endforeach
-                    </ol>
+                    @foreach (collect($supplier->grnLineColumns())->groupBy('group') as $group => $columns)
+                        <p style="margin:{{ $loop->first ? '0' : '10px' }} 0 4px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#1e40af">{{ \App\Models\Supplier::GRN_LINE_COLUMN_GROUPS[$group]['label'] }}</p>
+                        <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.7">
+                            @foreach ($columns as $column)
+                                <li>{{ $column['label'] }}</li>
+                            @endforeach
+                        </ol>
+                    @endforeach
                     @can('supplier-edit')
                         <p style="margin:8px 0 0; font-size:12.5px"><a href="{{ route('suppliers.edit', $supplier) }}" style="color:#4338ca; font-weight:600">Change the order on Edit</a></p>
                     @endcan

@@ -51,6 +51,30 @@
         <input type="hidden" :name="`items[${index}][quantity_accepted]`" x-model="item.quantity_received">
     </div>
 
+    {{-- Price and discount: the boxes in the supplier's order (Settings → Suppliers → Edit). Layout only. --}}
+    <div class="{{ $sec }}">
+        <h4 class="{{ $secTitle }}">Price &amp; discount <span class="normal-case tracking-normal text-gray-600" x-text="formatNumber(item.discounted_value_before_tax)"></span></h4>
+        <div class="grid grid-cols-2 gap-2" x-effect="arrangeAmountBoxes($el)">
+            <div :style="{ order: colOrder('unit_price_per_case') }"><label :for="`up_${index}`" class="{{ $lbl }}">Price / case *</label><input :id="`up_${index}`" type="number" :name="`items[${index}][unit_price_per_case]`" x-model="item.unit_price_per_case" @input="calculateFromPurchaseQty(index)" :readonly="isCartonMode" :class="isCartonMode ? '{{ $calc }}' : '{{ $num }}'" step="0.0001" min="0" placeholder="0.00"></div>
+            <div :style="{ order: colOrder('unit_price_per_case') + 1 }"><label class="{{ $lbl }}">Extended value</label><input type="text" :value="formatNumber(item.extended_value)" readonly tabindex="-1" aria-label="Extended value" class="{{ $calc }}"></div>
+            <div :style="{ order: colOrder('discount_value') }"><label :for="`dv_${index}`" class="{{ $lbl }}">Discount</label><input :id="`dv_${index}`" type="number" :name="`items[${index}][discount_value]`" x-model="item.discount_value" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+            <div :style="{ order: colOrder('fmr_allowance') }"><label :for="`fmr_${index}`" class="{{ $lbl }}">FMR allowance</label><input :id="`fmr_${index}`" type="number" :name="`items[${index}][fmr_allowance]`" x-model="item.fmr_allowance" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+            <div class="col-span-2" style="order: 999"><label class="{{ $lbl }}">Value before sales tax</label><input type="text" :value="formatNumber(item.discounted_value_before_tax)" readonly tabindex="-1" aria-label="Value before sales tax" class="{{ $calc }}"></div>
+        </div>
+    </div>
+
+    {{-- Taxes and charges: the boxes in the supplier's order --}}
+    <div class="{{ $sec }}">
+        <h4 class="{{ $secTitle }}">Taxes &amp; charges <span class="normal-case tracking-normal text-gray-600" x-text="formatNumber((parseFloat(item.excise_duty) || 0) + (parseFloat(item.sales_tax_value) || 0) + (parseFloat(item.advance_income_tax) || 0) + (parseFloat(item.other_charges) || 0) + (parseFloat(item.withholding_tax) || 0))"></span></h4>
+        <div class="grid grid-cols-2 gap-2" x-effect="arrangeAmountBoxes($el)">
+            <div :style="{ order: colOrder('sales_tax_value') }"><label :for="`st_${index}`" class="{{ $lbl }}">Sales tax <span class="font-normal text-gray-500" x-text="isCartonMode ? 'enter' : 'auto · ' + supplierSalesTaxRate + '%'"></span></label><input :id="`st_${index}`" type="number" :name="`items[${index}][sales_tax_value]`" x-model="item.sales_tax_value" @input="onSalesTaxManualEdit(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+            <div :style="{ order: colOrder('excise_duty') }"><label :for="`ex_${index}`" class="{{ $lbl }}">Excise duty</label><input :id="`ex_${index}`" type="number" :name="`items[${index}][excise_duty]`" x-model="item.excise_duty" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+            <div :style="{ order: colOrder('advance_income_tax') }"><label :for="`ait_${index}`" class="{{ $lbl }}">Advance income tax</label><input :id="`ait_${index}`" type="number" :name="`items[${index}][advance_income_tax]`" x-model="item.advance_income_tax" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+            <div :style="{ order: colOrder('other_charges') }"><label :for="`oc_${index}`" class="{{ $lbl }}">Other charges</label><input :id="`oc_${index}`" type="number" :name="`items[${index}][other_charges]`" x-model="item.other_charges" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+            <div class="col-span-2" x-show="isUnileverPakistan" :style="{ order: colOrder('withholding_tax') }"><label :for="`wht_${index}`" class="{{ $lbl }}">Withholding tax <span class="font-normal text-gray-500" x-text="'auto · ' + withholdingTaxRate + '%'"></span></label><input :id="`wht_${index}`" type="number" :name="`items[${index}][withholding_tax]`" x-model="item.withholding_tax" @input="onWithholdingTaxManualEdit(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
+        </div>
+    </div>
+
     {{-- Cost and selling --}}
     <div class="{{ $sec }}">
         <h4 class="{{ $secTitle }}">Cost &amp; selling</h4>
@@ -61,26 +85,6 @@
             <div class="col-span-2"><label :for="`pp_${index}`" class="{{ $lbl }}">Promotional price <span class="font-normal text-gray-500">optional</span></label><input :id="`pp_${index}`" type="number" :name="`items[${index}][promotional_price]`" x-model="item.promotional_price" @change="if (parseFloat(item.promotional_price) > 0) { item.selling_price = parseFloat(item.promotional_price); }" step="0.0001" min="0" placeholder="Leave empty if not on promotion" class="{{ $num }}"></div>
         </div>
         <input type="hidden" :name="`items[${index}][unit_cost]`" x-model="item.unit_cost">
-    </div>
-
-    {{-- Price, deductions and taxes: in the supplier's column order (Settings → Suppliers → Edit). Layout only. --}}
-    <div class="{{ $sec }} col-span-full">
-        <h4 class="{{ $secTitle }}"><span>Price, deductions &amp; taxes
-            <button type="button" x-show="hasHiddenColumns()" @click="showAllColumns = ! showAllColumns" :aria-pressed="showAllColumns"
-                class="ml-2 rounded-md px-2 py-0.5 text-[11px] font-semibold normal-case tracking-normal text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-50" x-text="showAllColumns ? 'Hide unused boxes' : 'Show all boxes'"></button></span>
-            <span class="normal-case tracking-normal text-gray-600" x-text="'before tax ' + formatNumber(item.discounted_value_before_tax) + ' · taxes ' + formatNumber((parseFloat(item.excise_duty) || 0) + (parseFloat(item.sales_tax_value) || 0) + (parseFloat(item.advance_income_tax) || 0) + (parseFloat(item.other_charges) || 0) + (parseFloat(item.withholding_tax) || 0))"></span></h4>
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" x-effect="arrangeAmountBoxes($el)">
-            <div x-show="colShown(item, 'unit_price_per_case')" :style="{ order: colOrder('unit_price_per_case') }"><label :for="`up_${index}`" class="{{ $lbl }}">Price / case *</label><input :id="`up_${index}`" type="number" :name="`items[${index}][unit_price_per_case]`" x-model="item.unit_price_per_case" @input="calculateFromPurchaseQty(index)" :readonly="isCartonMode" :class="isCartonMode ? '{{ $calc }}' : '{{ $num }}'" step="0.0001" min="0" placeholder="0.00"></div>
-            <div :style="{ order: colOrder('unit_price_per_case') + 1 }"><label class="{{ $lbl }}">Extended value</label><input type="text" :value="formatNumber(item.extended_value)" readonly tabindex="-1" aria-label="Extended value" class="{{ $calc }}"></div>
-            <div x-show="colShown(item, 'discount_value')" :style="{ order: colOrder('discount_value') }"><label :for="`dv_${index}`" class="{{ $lbl }}">Discount</label><input :id="`dv_${index}`" type="number" :name="`items[${index}][discount_value]`" x-model="item.discount_value" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-            <div x-show="colShown(item, 'fmr_allowance')" :style="{ order: colOrder('fmr_allowance') }"><label :for="`fmr_${index}`" class="{{ $lbl }}">FMR allowance</label><input :id="`fmr_${index}`" type="number" :name="`items[${index}][fmr_allowance]`" x-model="item.fmr_allowance" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-            <div :style="{ order: beforeTaxOrder() }"><label class="{{ $lbl }}">Value before sales tax</label><input type="text" :value="formatNumber(item.discounted_value_before_tax)" readonly tabindex="-1" aria-label="Value before sales tax" class="{{ $calc }}"></div>
-            <div x-show="colShown(item, 'excise_duty')" :style="{ order: colOrder('excise_duty') }"><label :for="`ex_${index}`" class="{{ $lbl }}">Excise duty</label><input :id="`ex_${index}`" type="number" :name="`items[${index}][excise_duty]`" x-model="item.excise_duty" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-            <div x-show="colShown(item, 'sales_tax_value')" :style="{ order: colOrder('sales_tax_value') }"><label :for="`st_${index}`" class="{{ $lbl }}">Sales tax <span class="font-normal text-gray-500" x-text="isCartonMode ? 'enter' : 'auto · ' + supplierSalesTaxRate + '%'"></span></label><input :id="`st_${index}`" type="number" :name="`items[${index}][sales_tax_value]`" x-model="item.sales_tax_value" @input="onSalesTaxManualEdit(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-            <div x-show="colShown(item, 'advance_income_tax')" :style="{ order: colOrder('advance_income_tax') }"><label :for="`ait_${index}`" class="{{ $lbl }}">Advance income tax</label><input :id="`ait_${index}`" type="number" :name="`items[${index}][advance_income_tax]`" x-model="item.advance_income_tax" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-            <div x-show="colShown(item, 'other_charges')" :style="{ order: colOrder('other_charges') }"><label :for="`oc_${index}`" class="{{ $lbl }}">Other charges</label><input :id="`oc_${index}`" type="number" :name="`items[${index}][other_charges]`" x-model="item.other_charges" @input="calculateTaxes(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-            <div x-show="colShown(item, 'withholding_tax')" :style="{ order: colOrder('withholding_tax') }"><label :for="`wht_${index}`" class="{{ $lbl }}">Withholding tax <span class="font-normal text-gray-500" x-text="'auto · ' + withholdingTaxRate + '%'"></span></label><input :id="`wht_${index}`" type="number" :name="`items[${index}][withholding_tax]`" x-model="item.withholding_tax" @input="onWithholdingTaxManualEdit(index)" step="0.0001" min="0" placeholder="0.00" class="{{ $num }}"></div>
-        </div>
     </div>
 
     {{-- Batch and expiry: a summary here, the fields in a sheet (they stay inside the form) --}}

@@ -125,40 +125,49 @@
     </div>
 
     @if ($grnColumns)
-        <div class="sp-cols" x-data="{ cols: {{ Js::from($grnColumns) }},
-                move(i, step) { const j = i + step; if (j < 0 || j >= this.cols.length) { return; } const c = this.cols.splice(i, 1)[0]; this.cols.splice(j, 0, c); },
-                reset() { const order = {{ Js::from(array_keys(\App\Models\Supplier::GRN_LINE_COLUMNS)) }}; this.cols = order.map(k => ({ ...this.cols.find(c => c.key === k), visible: true })); } }">
+        @php
+            $columnGroups = collect(\App\Models\Supplier::GRN_LINE_COLUMN_GROUPS)->map(fn ($section, $group) => [
+                'label' => $section['label'],
+                'cols' => collect($grnColumns)->where('group', $group)->values()->all(),
+                'default' => collect($section['keys'])->map(fn ($key) => ['key' => $key, 'label' => \App\Models\Supplier::GRN_LINE_COLUMNS[$key], 'group' => $group])->all(),
+            ])->all();
+        @endphp
+        <div class="sp-cols" x-data="{ groups: {{ Js::from($columnGroups) }},
+                move(group, i, step) { const cols = this.groups[group].cols; const j = i + step; if (j < 0 || j >= cols.length) { return; } const c = cols.splice(i, 1)[0]; cols.splice(j, 0, c); },
+                reset() { Object.values(this.groups).forEach((section) => { section.cols = section.default.map((col) => ({ ...col })); }); } }">
             <div class="sp-cols-head">
                 <div>
                     <h3 class="ev-bi" style="margin:0"><span>GRN line columns: order</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این لائن کے کالموں کی ترتیب</span></h3>
-                    <p class="ak-hint" style="margin:2px 0 0">The order of the price, deduction and tax boxes on this company's GRN lines (popup and view). Put them in the order of the supplier's invoice. Unticked boxes are hidden unless a line has an amount in them; the GRN popup has a “Show all boxes” switch for the odd invoice that needs one. Sales tax always shows for carton-entry companies.</p>
+                    <p class="ak-hint" style="margin:2px 0 0">The order of the boxes inside each section of this company's GRN line popup (and the GRN view). Put them in the order of the supplier's invoice. Only the order changes: the sections, the boxes and the maths stay the same.</p>
                 </div>
                 <button type="button" class="ak-btn ak-btn-outline" @click="reset()">Reset to default</button>
             </div>
-            <ol class="sp-cols-list">
-                <template x-for="(col, i) in cols" :key="col.key">
-                    <li class="sp-col" :class="col.visible ? '' : 'sp-col-off'">
-                        <span class="sp-col-no" x-text="i + 1"></span>
-                        <span class="sp-col-name" x-text="col.label"></span>
-                        <span class="sp-col-note" x-show="col.key === 'withholding_tax'">Unilever Pakistan only</span>
-                        <label class="sp-col-show">
-                            <input type="hidden" :name="`grn_line_columns[${i}][key]`" :value="col.key">
-                            <input type="hidden" :name="`grn_line_columns[${i}][visible]`" value="0">
-                            <input type="checkbox" :name="`grn_line_columns[${i}][visible]`" value="1" x-model="col.visible" :disabled="col.key === 'unit_price_per_case'" :title="col.key === 'unit_price_per_case' ? 'Price is needed on every line' : ''" :aria-label="'Show ' + col.label">
-                            Show
-                        </label>
-                        <span class="sp-col-moves">
-                            <button type="button" class="sp-col-btn" @click="move(i, -1)" :disabled="i === 0" :aria-label="'Move ' + col.label + ' up'">↑</button>
-                            <button type="button" class="sp-col-btn" @click="move(i, 1)" :disabled="i === cols.length - 1" :aria-label="'Move ' + col.label + ' down'">↓</button>
-                        </span>
-                    </li>
+            <div class="sp-cols-groups">
+                <template x-for="(section, group) in groups" :key="group">
+                    <div class="sp-cols-group">
+                        <h4 class="sp-cols-group-title" x-text="section.label"></h4>
+                        <ol class="sp-cols-list">
+                            <template x-for="(col, i) in section.cols" :key="col.key">
+                                <li class="sp-col">
+                                    <span class="sp-col-no" x-text="i + 1"></span>
+                                    <span class="sp-col-name" x-text="col.label"></span>
+                                    <span class="sp-col-note" x-show="col.key === 'withholding_tax'">Unilever Pakistan only</span>
+                                    <input type="hidden" :name="`grn_line_columns[${group}_${i}][key]`" :value="col.key">
+                                    <span class="sp-col-moves">
+                                        <button type="button" class="sp-col-btn" @click="move(group, i, -1)" :disabled="i === 0" :aria-label="'Move ' + col.label + ' up'">↑</button>
+                                        <button type="button" class="sp-col-btn" @click="move(group, i, 1)" :disabled="i === section.cols.length - 1" :aria-label="'Move ' + col.label + ' down'">↓</button>
+                                    </span>
+                                </li>
+                            </template>
+                        </ol>
+                    </div>
                 </template>
-            </ol>
+            </div>
             @error('grn_line_columns') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
             @error('grn_line_columns.*') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
         </div>
     @else
-        <p class="ak-hint sp-cols-new">GRN line columns start in the default order (Price, Discount, FMR, Excise duty, Sales tax, Advance income tax, Other charges, WHT). Change it from <b>Edit</b> after the supplier is saved.</p>
+        <p class="ak-hint sp-cols-new">GRN line columns start in the default order (Price &amp; discount: Price, Discount, FMR · Taxes &amp; charges: Sales tax, Excise duty, Advance income tax, Other charges, WHT). Change it from <b>Edit</b> after the supplier is saved.</p>
     @endif
 </fieldset>
 <div class="sp-checks">
@@ -189,7 +198,7 @@
     .ev-form-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
     .ev-form-grid > * { min-width: 0; }
     @media (min-width: 900px) { .ev-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ev-form-grid .ev-span-2 { grid-column: span 2; } .ev-form-grid .ev-span-3 { grid-column: span 3; } }
-    .ev-form .ev-bi { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    html.apl-on .ev-form label.ev-bi, .ev-form .ev-bi { display: flex !important; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
     .ev-form .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Geeza Pro', serif; font-size: 15px; font-weight: 600; color: var(--ak-navy); line-height: 1.5; }
     .ev-form-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ak-line, #e5e7eb); }
     .ev-form-foot .ak-btn { display: inline-flex; align-items: center; gap: 10px; }
@@ -214,13 +223,14 @@
     .sp-fmr-table thead th { background: var(--ak-soft); font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); }
     .sp-cols { margin-top: 16px; padding: 14px; background: #fff; border: 1px solid var(--ak-border); border-radius: 10px; }
     .sp-cols-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
-    .sp-cols-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+    .sp-cols-groups { display: grid; gap: 14px; grid-template-columns: 1fr; margin-top: 12px; }
+    @media (min-width: 900px) { .sp-cols-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .sp-cols-group-title { margin: 0 0 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #1e40af; }
+    .sp-cols-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
     .sp-col { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--ak-border); border-radius: 8px; background: #fff; }
-    .sp-col-off { background: var(--ak-soft); color: var(--ak-muted); }
     .sp-col-no { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 999px; background: #e0e7ff; color: #3730a3; font-weight: 700; font-size: 12px; }
     .sp-col-name { font-weight: 600; flex: 1; min-width: 140px; }
     .sp-col-note { font-size: 11.5px; color: var(--ak-muted); }
-    .sp-col-show { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
     .sp-col-moves { display: inline-flex; gap: 4px; }
     .sp-col-btn { width: 34px; height: 30px; border: 1px solid var(--ak-border); border-radius: 6px; background: #fff; font-weight: 700; cursor: pointer; }
     .sp-col-btn:hover:not(:disabled) { background: #eef2ff; }

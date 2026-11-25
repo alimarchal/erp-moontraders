@@ -63,7 +63,6 @@ class StoreSupplierRequest extends FormRequest
             'qty_entry_mode' => ['nullable', Rule::in(['pieces', 'carton'])],
             'grn_line_columns' => ['nullable', 'array', 'max:'.count(Supplier::GRN_LINE_COLUMNS)],
             'grn_line_columns.*.key' => ['required', 'string', 'distinct', Rule::in(array_keys(Supplier::GRN_LINE_COLUMNS))],
-            'grn_line_columns.*.visible' => ['boolean'],
             'disabled' => ['boolean'],
             'default_currency_id' => ['nullable', 'exists:currencies,id'],
             'default_bank_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
@@ -98,11 +97,11 @@ class StoreSupplierRequest extends FormRequest
         $validated['qty_entry_mode'] = $validated['qty_entry_mode'] ?? 'pieces';
 
         if (array_key_exists('grn_line_columns', $validated)) {
-            $validated['grn_line_columns'] = $validated['grn_line_columns'] === null ? null : array_map(fn (array $column) => [
-                'key' => $column['key'],
-                // The price is needed on every line, so it is always shown.
-                'visible' => $column['key'] === 'unit_price_per_case' || (bool) ($column['visible'] ?? true),
-            ], array_values($validated['grn_line_columns']));
+            // Only the order is kept: each section's columns in the order they were sent.
+            $validated['grn_line_columns'] = $validated['grn_line_columns'] === null ? null : array_map(
+                fn (array $column) => ['key' => $column['key']],
+                Supplier::resolveGrnLineColumns(array_values($validated['grn_line_columns'])),
+            );
         }
         $validated['disabled'] = (bool) ($validated['disabled'] ?? false);
 

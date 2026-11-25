@@ -142,23 +142,24 @@ it('opens create and edit in the step-by-step, invoice and focus layouts', funct
     'lines + popup' => ['i', 'Click a line to open it.'],
 ]);
 
-it('shows the GRN list with status tabs in each new list layout and keeps classic by default', function (string $layout) {
+it('shows the GRN list in the goods issues style with status tabs, filters and totals', function () {
     $supplier = Supplier::factory()->create(['supplier_name' => 'Layout Supplier']);
     GoodsReceiptNote::factory()->create(['supplier_id' => $supplier->id, 'status' => 'draft', 'grn_number' => 'GRN-LAYOUT-1', 'grand_total' => 1500]);
-
-    $this->get(route('goods-receipt-notes.index'))->assertSuccessful()->assertDontSee('Today&#039;s receipts and every draft', false);
-
-    AppSetting::put('layout.goods_receipt_notes_index', $layout);
 
     $this->get(route('goods-receipt-notes.index'))
         ->assertSuccessful()
         ->assertSee('GRN-LAYOUT-1')
         ->assertSee('Layout Supplier')
+        ->assertSee('Draft')
         ->assertSee('Posted')
         ->assertSee('Reversed')
-        ->assertSee('Rs 1,500', false);
+        ->assertSee('1,500');
 
     $this->get(route('goods-receipt-notes.index', ['filter' => ['status' => 'posted']]))
         ->assertSuccessful()
         ->assertDontSee('GRN-LAYOUT-1');
-})->with(['a', 'b', 'c', 'd']);
+
+    $this->get(route('goods-receipt-notes.index', ['filter' => ['search' => 'layout-1', 'status' => 'all']]))
+        ->assertSuccessful()
+        ->assertSee('GRN-LAYOUT-1');
+});

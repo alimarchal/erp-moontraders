@@ -1,3 +1,8 @@
+{{--
+    Supplier create / edit fields as compact Apple-style cards (styles: suppliers.partials.apple-style).
+    Left: company, defaults and tax, contact. Right: GRN settings, GRN column order (edit only), switches.
+    Field names and ids are unchanged.
+--}}
 @php
     /** @var \App\Models\Supplier|null $supplier */
     $supplier = $supplier ?? null;
@@ -9,231 +14,210 @@
     $grnColumns = $supplier
         ? \App\Models\Supplier::resolveGrnLineColumns(old('grn_line_columns', $supplier->grn_line_columns))
         : null;
+    $value = fn (string $field) => old($field, optional($supplier)->{$field});
+    $checked = fn (string $field) => (bool) old($field, optional($supplier)->{$field} ?? false);
+    $textFields = [
+        'company' => [
+            ['supplier_name', 'Supplier name', 'Pakistan Tobacco Company', 'sp-span-2', ['required' => true, 'maxlength' => 255]],
+            ['short_name', 'Short name', 'PTC', '', ['maxlength' => 100, 'style' => 'text-transform:uppercase']],
+            ['country', 'Country', 'Pakistan', '', []],
+            ['supplier_group', 'Group', 'Local', '', []],
+            ['supplier_type', 'Type', 'Tobacco', '', []],
+        ],
+        'tax' => [
+            ['tax_id', 'Tax ID / NTN', 'NTN-1234567', '', []],
+            ['pan_number', 'PAN number', 'PAN-987654', '', []],
+            ['default_price_list', 'Default price list', 'STANDARD_PRICES', '', []],
+            ['print_language', 'Print language', 'English', '', []],
+            ['website', 'Website', 'https://example.com', 'sp-span-2', ['type' => 'url']],
+        ],
+    ];
+    $switches = [
+        ['is_transporter', 'Also provides transport', 'Can be picked as a transporter.', ''],
+        ['is_internal_supplier', 'Internal supplier', 'Inter-company supplier.', ''],
+        ['is_advance_tax_income', 'Advance tax income', 'Advance tax is treated as income.', ''],
+        ['disabled', 'Disabled', 'Hidden from new GRNs and dropdowns.', 'sp-switch-red'],
+    ];
 @endphp
-<div class="ev-form-grid">
-    <div class="ak-field ev-span-2">
-        <label for="supplier_name" class="ev-bi"><span>Supplier name</span><span class="ev-ur" lang="ur" dir="rtl">سپلائر کا نام</span></label>
-        <input id="supplier_name" type="text" name="supplier_name" value="{{ old('supplier_name', optional($supplier)->supplier_name) }}" placeholder="Pakistan Tobacco Company" required maxlength="255">
-        @error('supplier_name') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="short_name" class="ev-bi"><span>Short name</span><span class="ev-ur" lang="ur" dir="rtl">مختصر نام</span></label>
-        <input id="short_name" type="text" name="short_name" value="{{ old('short_name', optional($supplier)->short_name) }}" placeholder="PTC" maxlength="100" style="text-transform:uppercase">
-        @error('short_name') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="supplier_group" class="ev-bi"><span>Group</span><span class="ev-ur" lang="ur" dir="rtl">گروپ</span></label>
-        <input id="supplier_group" type="text" name="supplier_group" value="{{ old('supplier_group', optional($supplier)->supplier_group) }}" placeholder="Local" >
-        @error('supplier_group') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="supplier_type" class="ev-bi"><span>Type</span><span class="ev-ur" lang="ur" dir="rtl">قسم</span></label>
-        <input id="supplier_type" type="text" name="supplier_type" value="{{ old('supplier_type', optional($supplier)->supplier_type) }}" placeholder="Tobacco" >
-        @error('supplier_type') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="country" class="ev-bi"><span>Country</span><span class="ev-ur" lang="ur" dir="rtl">ملک</span></label>
-        <input id="country" type="text" name="country" value="{{ old('country', optional($supplier)->country) }}" placeholder="Pakistan" >
-        @error('country') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field">
-        <label for="default_currency_id" class="ev-bi"><span>Default currency</span><span class="ev-ur" lang="ur" dir="rtl">ڈیفالٹ کرنسی</span></label>
-        <select id="default_currency_id" name="default_currency_id" class="ev-select">
-            <option value="">Select currency</option>
-            @foreach ($currencyOptions as $currency)
-                <option value="{{ $currency->id }}" @selected((int) old('default_currency_id', optional($supplier)->default_currency_id) === $currency->id)>{{ $currency->currency_code }} · {{ $currency->currency_name }}</option>
-            @endforeach
-        </select>
-    </div>
-    <div class="ak-field ev-span-2">
-        <label for="default_bank_account_id" class="ev-bi"><span>Default bank account</span><span class="ev-ur" lang="ur" dir="rtl">ڈیفالٹ بینک اکاؤنٹ</span></label>
-        <select id="default_bank_account_id" name="default_bank_account_id" class="ev-select">
-            <option value="">Select account</option>
-            @foreach ($accountOptions as $account)
-                <option value="{{ $account->id }}" @selected((int) old('default_bank_account_id', optional($supplier)->default_bank_account_id) === $account->id)>{{ $account->account_code }} · {{ $account->account_name }}</option>
-            @endforeach
-        </select>
-    </div>
-    <div class="ak-field ">
-        <label for="default_price_list" class="ev-bi"><span>Default price list</span><span class="ev-ur" lang="ur" dir="rtl">ڈیفالٹ پرائس لسٹ</span></label>
-        <input id="default_price_list" type="text" name="default_price_list" value="{{ old('default_price_list', optional($supplier)->default_price_list) }}" placeholder="STANDARD_PRICES" >
-        @error('default_price_list') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="website" class="ev-bi"><span>Website</span><span class="ev-ur" lang="ur" dir="rtl">ویب سائٹ</span></label>
-        <input id="website" type="url" name="website" value="{{ old('website', optional($supplier)->website) }}" placeholder="https://example.com" >
-        @error('website') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="print_language" class="ev-bi"><span>Print language</span><span class="ev-ur" lang="ur" dir="rtl">پرنٹ کی زبان</span></label>
-        <input id="print_language" type="text" name="print_language" value="{{ old('print_language', optional($supplier)->print_language) }}" placeholder="English" >
-        @error('print_language') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="tax_id" class="ev-bi"><span>Tax ID / NTN</span><span class="ev-ur" lang="ur" dir="rtl">ٹیکس آئی ڈی / این ٹی این</span></label>
-        <input id="tax_id" type="text" name="tax_id" value="{{ old('tax_id', optional($supplier)->tax_id) }}" placeholder="NTN-1234567" >
-        @error('tax_id') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ">
-        <label for="pan_number" class="ev-bi"><span>PAN number</span><span class="ev-ur" lang="ur" dir="rtl">پین نمبر</span></label>
-        <input id="pan_number" type="text" name="pan_number" value="{{ old('pan_number', optional($supplier)->pan_number) }}" placeholder="PAN-987654" >
-        @error('pan_number') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-    </div>
-    <div class="ak-field ev-span-3">
-        <label for="supplier_primary_address" class="ev-bi"><span>Primary address</span><span class="ev-ur" lang="ur" dir="rtl">بنیادی پتہ</span></label>
-        <textarea id="supplier_primary_address" name="supplier_primary_address" rows="3" placeholder="Street, city, postal code">{{ old('supplier_primary_address', optional($supplier)->supplier_primary_address) }}</textarea>
-    </div>
-    <div class="ak-field ev-span-3">
-        <label for="supplier_primary_contact" class="ev-bi"><span>Primary contact</span><span class="ev-ur" lang="ur" dir="rtl">بنیادی رابطہ</span></label>
-        <textarea id="supplier_primary_contact" name="supplier_primary_contact" rows="3" placeholder="Name, phone, email">{{ old('supplier_primary_contact', optional($supplier)->supplier_primary_contact) }}</textarea>
-    </div>
-    <div class="ak-field ev-span-3">
-        <label for="supplier_details" class="ev-bi"><span>Additional details</span><span class="ev-ur" lang="ur" dir="rtl">اضافی تفصیل</span></label>
-        <textarea id="supplier_details" name="supplier_details" rows="4" placeholder="Terms, payment notes">{{ old('supplier_details', optional($supplier)->supplier_details) }}</textarea>
-    </div>
-</div>
 
-<fieldset class="sp-grn">
-    <legend class="ev-bi"><span>GRN settings</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این کی ترتیبات</span></legend>
-    <p class="ak-hint" style="margin-top:0">How this company's GRNs are entered. These settings change how the GRN screen looks and fills in; the GRN maths stays the same.</p>
-    <div class="sp-grn-grid">
-        <div class="ak-field">
-            <label for="qty_entry_mode" class="ev-bi"><span>Quantity entry on GRN</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این میں مقدار کیسے درج ہو</span></label>
-            <select id="qty_entry_mode" name="qty_entry_mode" class="ev-select">
-                <option value="pieces" @selected($entryMode === 'pieces')>Pieces (normal entry)</option>
-                <option value="carton" @selected($entryMode === 'carton')>Carton (cartons + loose pieces, rate per TH): for Pakistan Tobacco Company</option>
-            </select>
-            <p class="ak-hint">Carton mode is only an input helper. Stock and the inventory ledger are always kept in pieces. Old GRNs are not affected. Each product needs “Pieces per carton” and “Pouches per piece”.</p>
-            @error('qty_entry_mode') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-        </div>
-        <div class="ak-field">
-            <label class="ev-bi"><span>Sales tax rate</span><span class="ev-ur" lang="ur" dir="rtl">سیلز ٹیکس کی شرح</span></label>
-            <div class="sp-rate">{{ $salesTaxRate }}%</div>
-            <p class="ak-hint">Filled in automatically as sales tax on each GRN line (value before tax × rate); it can be typed over on a line. Shown for reference: it is not changed here, so GRN amounts stay as they are.</p>
-        </div>
-    </div>
-
-    <div class="sp-fmr">
-        <label class="sp-check" for="is_fmr_allowed">
-            <input type="hidden" name="is_fmr_allowed" value="0">
-            <input id="is_fmr_allowed" type="checkbox" name="is_fmr_allowed" value="1" {{ old('is_fmr_allowed', optional($supplier)->is_fmr_allowed ?? false) ? 'checked' : '' }}>
-            <span><b>FMR allowed</b> <span class="ev-ur" lang="ur" dir="rtl">ایف ایم آر کی اجازت</span>
-                <small>Marks a company that gives FMR on its invoices (for example <b>Engro</b>). It shows an “FMR allowed” tag on this company's GRNs.</small>
-            </span>
-        </label>
-        <p class="ak-hint sp-fmr-note">How FMR works on every GRN, ticked or not: the FMR allowance is typed per line, taken off the value before tax, and credited to <b>4210 / 4220 FMR Allowance</b> when the GRN is posted. Stock is carried at its cost before FMR, so unit cost = (total with taxes + FMR) ÷ pieces.</p>
-    </div>
-
-    @if ($grnColumns)
-        @php
-            $columnGroups = collect(\App\Models\Supplier::GRN_LINE_COLUMN_GROUPS)->map(fn ($section, $group) => [
-                'label' => $section['label'],
-                'cols' => collect($grnColumns)->where('group', $group)->values()->all(),
-                'default' => collect($section['keys'])->map(fn ($key) => ['key' => $key, 'label' => \App\Models\Supplier::GRN_LINE_COLUMNS[$key], 'group' => $group])->all(),
-            ])->all();
-        @endphp
-        <div class="sp-cols" x-data="{ groups: {{ Js::from($columnGroups) }},
-                move(group, i, step) { const cols = this.groups[group].cols; const j = i + step; if (j < 0 || j >= cols.length) { return; } const c = cols.splice(i, 1)[0]; cols.splice(j, 0, c); },
-                reset() { Object.values(this.groups).forEach((section) => { section.cols = section.default.map((col) => ({ ...col })); }); } }">
-            <div class="sp-cols-head">
-                <div>
-                    <h3 class="ev-bi" style="margin:0"><span>GRN line columns: order</span><span class="ev-ur" lang="ur" dir="rtl">جی آر این لائن کے کالموں کی ترتیب</span></h3>
-                    <p class="ak-hint" style="margin:2px 0 0">The order of the boxes inside each section of this company's GRN line popup (and the GRN view). Put them in the order of the supplier's invoice. Only the order changes: the sections, the boxes and the maths stay the same.</p>
-                </div>
-                <button type="button" class="ak-btn ak-btn-outline" @click="reset()">Reset to default</button>
-            </div>
-            <div class="sp-cols-groups">
-                <template x-for="(section, group) in groups" :key="group">
-                    <div class="sp-cols-group">
-                        <h4 class="sp-cols-group-title" x-text="section.label"></h4>
-                        <ol class="sp-cols-list">
-                            <template x-for="(col, i) in section.cols" :key="col.key">
-                                <li class="sp-col">
-                                    <span class="sp-col-no" x-text="i + 1"></span>
-                                    <span class="sp-col-name" x-text="col.label"></span>
-                                    <span class="sp-col-note" x-show="col.key === 'withholding_tax'">Unilever Pakistan only</span>
-                                    <input type="hidden" :name="`grn_line_columns[${group}_${i}][key]`" :value="col.key">
-                                    <span class="sp-col-moves">
-                                        <button type="button" class="sp-col-btn" @click="move(group, i, -1)" :disabled="i === 0" :aria-label="'Move ' + col.label + ' up'">↑</button>
-                                        <button type="button" class="sp-col-btn" @click="move(group, i, 1)" :disabled="i === section.cols.length - 1" :aria-label="'Move ' + col.label + ' down'">↓</button>
-                                    </span>
-                                </li>
-                            </template>
-                        </ol>
+<div class="sp-cols-2">
+    <div class="sp-stack">
+        {{-- Company --}}
+        <section class="sp-card" aria-labelledby="sp-company">
+            <header class="sp-card-head"><h2 class="sp-card-title" id="sp-company">Company</h2></header>
+            <div class="sp-card-body sp-grid">
+                @foreach ($textFields['company'] as [$field, $label, $placeholder, $span, $attributes])
+                    <div class="sp-field {{ $span }}">
+                        <label for="{{ $field }}"><span>{{ $label }}</span></label>
+                        <input id="{{ $field }}" type="{{ $attributes['type'] ?? 'text' }}" name="{{ $field }}" value="{{ $value($field) }}" placeholder="{{ $placeholder }}"
+                            @if ($attributes['required'] ?? false) required @endif
+                            @isset($attributes['maxlength']) maxlength="{{ $attributes['maxlength'] }}" @endisset
+                            @isset($attributes['style']) style="{{ $attributes['style'] }}" @endisset>
+                        @error($field) <p class="sp-error">{{ $message }}</p> @enderror
                     </div>
-                </template>
+                @endforeach
             </div>
-            @error('grn_line_columns') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-            @error('grn_line_columns.*') <p class="ak-hint" style="color:#b91c1c">{{ $message }}</p> @enderror
-        </div>
-    @else
-        <p class="ak-hint sp-cols-new">GRN line columns start in the default order (Price &amp; discount: Price, Discount, FMR · Taxes &amp; charges: Sales tax, Excise duty, Advance income tax, Other charges, WHT). Change it from <b>Edit</b> after the supplier is saved.</p>
-    @endif
-</fieldset>
-<div class="sp-checks">
-    <label class="sp-check" for="is_transporter">
-        <input type="hidden" name="is_transporter" value="0">
-        <input id="is_transporter" type="checkbox" name="is_transporter" value="1" {{ old('is_transporter', optional($supplier)->is_transporter ?? false) ? 'checked' : '' }}>
-        <span><b>Also provides transport</b> <span class="ev-ur" lang="ur" dir="rtl">ٹرانسپورٹ بھی فراہم کرتا ہے</span><small>The supplier can be picked as a transporter.</small></span>
-    </label>
-    <label class="sp-check" for="is_internal_supplier">
-        <input type="hidden" name="is_internal_supplier" value="0">
-        <input id="is_internal_supplier" type="checkbox" name="is_internal_supplier" value="1" {{ old('is_internal_supplier', optional($supplier)->is_internal_supplier ?? false) ? 'checked' : '' }}>
-        <span><b>Internal supplier</b> <span class="ev-ur" lang="ur" dir="rtl">اندرونی سپلائر</span><small>Inter-company supplier.</small></span>
-    </label>
-    <label class="sp-check" for="is_advance_tax_income">
-        <input type="hidden" name="is_advance_tax_income" value="0">
-        <input id="is_advance_tax_income" type="checkbox" name="is_advance_tax_income" value="1" {{ old('is_advance_tax_income', optional($supplier)->is_advance_tax_income ?? false) ? 'checked' : '' }}>
-        <span><b>Advance tax income</b> <span class="ev-ur" lang="ur" dir="rtl">ایڈوانس ٹیکس آمدنی</span><small>Advance tax is treated as income.</small></span>
-    </label>
-    <label class="sp-check" for="disabled">
-        <input type="hidden" name="disabled" value="0">
-        <input id="disabled" type="checkbox" name="disabled" value="1" {{ old('disabled', optional($supplier)->disabled ?? false) ? 'checked' : '' }}>
-        <span><b>Disabled</b> <span class="ev-ur" lang="ur" dir="rtl">غیر فعال</span><small>Hidden from new GRNs and dropdowns.</small></span>
-    </label>
+        </section>
+
+        {{-- Defaults and tax --}}
+        <section class="sp-card" aria-labelledby="sp-defaults">
+            <header class="sp-card-head"><h2 class="sp-card-title" id="sp-defaults">Defaults &amp; tax</h2></header>
+            <div class="sp-card-body sp-grid">
+                <div class="sp-field">
+                    <label for="default_currency_id"><span>Default currency</span></label>
+                    <select id="default_currency_id" name="default_currency_id">
+                        <option value="">Select currency</option>
+                        @foreach ($currencyOptions as $currency)
+                            <option value="{{ $currency->id }}" @selected((int) $value('default_currency_id') === $currency->id)>{{ $currency->currency_code }} · {{ $currency->currency_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('default_currency_id') <p class="sp-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="sp-field">
+                    <label for="default_bank_account_id"><span>Default bank account</span></label>
+                    <select id="default_bank_account_id" name="default_bank_account_id">
+                        <option value="">Select account</option>
+                        @foreach ($accountOptions as $account)
+                            <option value="{{ $account->id }}" @selected((int) $value('default_bank_account_id') === $account->id)>{{ $account->account_code }} · {{ $account->account_name }}</option>
+                        @endforeach
+                    </select>
+                    @error('default_bank_account_id') <p class="sp-error">{{ $message }}</p> @enderror
+                </div>
+                @foreach ($textFields['tax'] as [$field, $label, $placeholder, $span, $attributes])
+                    <div class="sp-field {{ $span }}">
+                        <label for="{{ $field }}"><span>{{ $label }}</span></label>
+                        <input id="{{ $field }}" type="{{ $attributes['type'] ?? 'text' }}" name="{{ $field }}" value="{{ $value($field) }}" placeholder="{{ $placeholder }}">
+                        @error($field) <p class="sp-error">{{ $message }}</p> @enderror
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
+        {{-- Contact and notes --}}
+        <section class="sp-card" aria-labelledby="sp-contact">
+            <header class="sp-card-head"><h2 class="sp-card-title" id="sp-contact">Contact &amp; notes</h2></header>
+            <div class="sp-card-body sp-grid">
+                <div class="sp-field">
+                    <label for="supplier_primary_address"><span>Primary address</span></label>
+                    <textarea id="supplier_primary_address" name="supplier_primary_address" rows="2" placeholder="Street, city, postal code">{{ $value('supplier_primary_address') }}</textarea>
+                </div>
+                <div class="sp-field">
+                    <label for="supplier_primary_contact"><span>Primary contact</span></label>
+                    <textarea id="supplier_primary_contact" name="supplier_primary_contact" rows="2" placeholder="Name, phone, email">{{ $value('supplier_primary_contact') }}</textarea>
+                </div>
+                <div class="sp-field sp-span-2">
+                    <label for="supplier_details"><span>Additional details</span></label>
+                    <textarea id="supplier_details" name="supplier_details" rows="2" placeholder="Terms, payment notes">{{ $value('supplier_details') }}</textarea>
+                </div>
+            </div>
+        </section>
+
+        {{-- Switches --}}
+        <section class="sp-card" aria-labelledby="sp-flags">
+            <header class="sp-card-head"><h2 class="sp-card-title" id="sp-flags">Options</h2></header>
+            <div class="sp-card-body">
+                <ul class="sp-list">
+                    @foreach ($switches as [$field, $label, $help, $tone])
+                        <li>
+                            <label class="sp-row" for="{{ $field }}">
+                                <span class="sp-row-text"><span class="sp-row-title">{{ $label }}</span><span class="sp-row-sub">{{ $help }}</span></span>
+                                <input type="hidden" name="{{ $field }}" value="0">
+                                <input id="{{ $field }}" class="sp-switch {{ $tone }}" type="checkbox" role="switch" name="{{ $field }}" value="1" @checked($checked($field))>
+                            </label>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <div class="sp-stack">
+        {{-- GRN settings --}}
+        <section class="sp-card" aria-labelledby="sp-grn">
+            <header class="sp-card-head">
+                <div>
+                    <h2 class="sp-card-title" id="sp-grn">GRN settings</h2>
+                    <p class="sp-card-sub">How this company's GRNs are entered. The GRN maths stays the same.</p>
+                </div>
+            </header>
+            <div class="sp-card-body sp-stack" style="gap:12px">
+                <div class="sp-field">
+                    <label for="qty_entry_mode"><span>Quantity entry on GRN</span></label>
+                    <select id="qty_entry_mode" name="qty_entry_mode">
+                        <option value="pieces" @selected($entryMode === 'pieces')>Pieces (normal entry)</option>
+                        <option value="carton" @selected($entryMode === 'carton')>Carton + loose pieces, rate per TH (PTC)</option>
+                    </select>
+                    <p class="sp-hint">Carton mode is only an input helper: stock is always kept in pieces, and old GRNs are not affected. Products need “Pieces per carton” and “Pouches per piece”.</p>
+                    @error('qty_entry_mode') <p class="sp-error">{{ $message }}</p> @enderror
+                </div>
+                <div class="sp-field">
+                    <label><span>Sales tax rate</span></label>
+                    <div class="sp-readout">{{ $salesTaxRate }}%</div>
+                    <p class="sp-hint">Filled in as sales tax on each GRN line and can be typed over there. Shown for reference only.</p>
+                </div>
+                <ul class="sp-list">
+                    <li>
+                        <label class="sp-row" for="is_fmr_allowed">
+                            <span class="sp-row-text"><span class="sp-row-title">FMR allowed</span>
+                                <span class="sp-row-sub">Shows an “FMR allowed” tag on this company's GRNs (for example Engro).</span></span>
+                            <input type="hidden" name="is_fmr_allowed" value="0">
+                            <input id="is_fmr_allowed" class="sp-switch" type="checkbox" role="switch" name="is_fmr_allowed" value="1" @checked($checked('is_fmr_allowed'))>
+                        </label>
+                    </li>
+                </ul>
+                <details class="sp-details">
+                    <summary>How FMR works on every GRN</summary>
+                    <p>The FMR allowance is typed per line, taken off the value before tax, and credited to <b>4210 / 4220 FMR Allowance</b> when the GRN is posted. Stock is carried at its cost before FMR, so unit cost = (total with taxes + FMR) ÷ pieces.</p>
+                </details>
+            </div>
+        </section>
+
+        {{-- GRN line column order --}}
+        @if ($grnColumns)
+            @php
+                $columnGroups = collect(\App\Models\Supplier::GRN_LINE_COLUMN_GROUPS)->map(fn ($section, $group) => [
+                    'label' => $section['label'],
+                    'cols' => collect($grnColumns)->where('group', $group)->values()->all(),
+                    'default' => collect($section['keys'])->map(fn ($key) => ['key' => $key, 'label' => \App\Models\Supplier::GRN_LINE_COLUMNS[$key], 'group' => $group])->all(),
+                ])->all();
+            @endphp
+            <section class="sp-card" aria-labelledby="sp-order" x-data="{ groups: {{ Js::from($columnGroups) }},
+                    move(group, i, step) { const cols = this.groups[group].cols; const j = i + step; if (j < 0 || j >= cols.length) { return; } const c = cols.splice(i, 1)[0]; cols.splice(j, 0, c); },
+                    reset() { Object.values(this.groups).forEach((section) => { section.cols = section.default.map((col) => ({ ...col })); }); } }">
+                <header class="sp-card-head">
+                    <div>
+                        <h2 class="sp-card-title" id="sp-order">GRN line columns: order</h2>
+                        <p class="sp-card-sub">The order of the boxes inside each section of the GRN line popup and view, as on the supplier's invoice.</p>
+                    </div>
+                    <button type="button" class="sp-link-btn" @click="reset()">Reset</button>
+                </header>
+                <div class="sp-card-body sp-order">
+                    <template x-for="(section, group) in groups" :key="group">
+                        <div>
+                            <h3 class="sp-order-title" x-text="section.label"></h3>
+                            <ol class="sp-list">
+                                <template x-for="(col, i) in section.cols" :key="col.key">
+                                    <li class="sp-row">
+                                        <span class="sp-order-no" x-text="i + 1"></span>
+                                        <span class="sp-order-name" x-text="col.label"></span>
+                                        <span class="sp-order-note" x-show="col.key === 'withholding_tax'">Unilever only</span>
+                                        <input type="hidden" :name="`grn_line_columns[${group}_${i}][key]`" :value="col.key">
+                                        <span class="sp-move">
+                                            <button type="button" @click="move(group, i, -1)" :disabled="i === 0" :aria-label="'Move ' + col.label + ' up'">↑</button>
+                                            <button type="button" @click="move(group, i, 1)" :disabled="i === section.cols.length - 1" :aria-label="'Move ' + col.label + ' down'">↓</button>
+                                        </span>
+                                    </li>
+                                </template>
+                            </ol>
+                        </div>
+                    </template>
+                    @error('grn_line_columns') <p class="sp-error">{{ $message }}</p> @enderror
+                    @error('grn_line_columns.*') <p class="sp-error">{{ $message }}</p> @enderror
+                </div>
+            </section>
+        @else
+            <p class="sp-hint" style="padding:0 4px">GRN line columns start in the default order (Price &amp; discount: Price, Discount, FMR · Taxes &amp; charges: Sales tax, Excise duty, Advance income tax, Other charges, WHT). Change it from <b>Edit</b> after the supplier is saved.</p>
+        @endif
+
+    </div>
 </div>
-<style>
-    /* Layout rules this form relies on (they used to come from the expense-voucher styles). */
-    .ev-form { padding: 20px; }
-    .ev-form-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-    .ev-form-grid > * { min-width: 0; }
-    @media (min-width: 900px) { .ev-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ev-form-grid .ev-span-2 { grid-column: span 2; } .ev-form-grid .ev-span-3 { grid-column: span 3; } }
-    html.apl-on .ev-form label.ev-bi, .ev-form .ev-bi { display: flex !important; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
-    .ev-form .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', 'Geeza Pro', serif; font-size: 15px; font-weight: 600; color: var(--ak-navy); line-height: 1.5; }
-    .ev-form-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ak-line, #e5e7eb); }
-    .ev-form-foot .ak-btn { display: inline-flex; align-items: center; gap: 10px; }
-    @media (max-width: 640px) { .ev-form { padding: 14px; } .ev-form-foot { flex-wrap: wrap; } .ev-form-foot .ak-btn { flex: 1 1 100%; justify-content: center; } }
-    .sp-cols-head h3.ev-bi { justify-content: flex-start; font-size: 14.5px; font-weight: 700; }
-    .sp-grn legend.ev-bi { display: inline-flex; gap: 10px; }
-    .sp-checks { display: grid; gap: 10px; grid-template-columns: 1fr; margin-top: 18px; }
-    @media (min-width: 900px) { .sp-checks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    .sp-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--ak-border); border-radius: 8px; cursor: pointer; background: #fff; }
-    .sp-check:hover { background: var(--ak-soft); }
-    .sp-check input[type=checkbox] { margin-top: 3px; height: 16px; width: 16px; }
-    .sp-check small { display: block; color: var(--ak-muted); font-size: 12px; font-weight: 400; margin-top: 2px; }
-    .sp-grn { margin-top: 18px; padding: 16px; border: 1px solid #c7d2fe; border-radius: 10px; background: #f5f7ff; }
-    .sp-grn legend { padding: 0 6px; font-weight: 700; font-size: 15px; }
-    .sp-grn-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
-    @media (min-width: 900px) { .sp-grn-grid { grid-template-columns: 2fr 1fr; } }
-    .sp-fmr { margin-top: 14px; display: grid; gap: 10px; }
-    .sp-rate { height: 40px; display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--ak-border); border-radius: 8px; background: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .sp-fmr-note { margin: 0; padding: 8px 12px; background: #fff; border: 1px solid var(--ak-border); border-radius: 8px; }
-    .sp-fmr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 1px solid var(--ak-border); border-radius: 8px; overflow: hidden; }
-    .sp-fmr-table th, .sp-fmr-table td { padding: 6px 10px; border-bottom: 1px solid var(--ak-border); text-align: left; vertical-align: top; }
-    .sp-fmr-table thead th { background: var(--ak-soft); font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ak-muted); }
-    .sp-cols { margin-top: 16px; padding: 14px; background: #fff; border: 1px solid var(--ak-border); border-radius: 10px; }
-    .sp-cols-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
-    .sp-cols-groups { display: grid; gap: 14px; grid-template-columns: 1fr; margin-top: 12px; }
-    @media (min-width: 900px) { .sp-cols-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    .sp-cols-group-title { margin: 0 0 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #1e40af; }
-    .sp-cols-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-    .sp-col { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--ak-border); border-radius: 8px; background: #fff; }
-    .sp-col-no { display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center; border-radius: 999px; background: #e0e7ff; color: #3730a3; font-weight: 700; font-size: 12px; }
-    .sp-col-name { font-weight: 600; flex: 1; min-width: 140px; }
-    .sp-col-note { font-size: 11.5px; color: var(--ak-muted); }
-    .sp-col-moves { display: inline-flex; gap: 4px; }
-    .sp-col-btn { width: 34px; height: 30px; border: 1px solid var(--ak-border); border-radius: 6px; background: #fff; font-weight: 700; cursor: pointer; }
-    .sp-col-btn:hover:not(:disabled) { background: #eef2ff; }
-    .sp-col-btn:disabled { opacity: .35; cursor: default; }
-    .sp-cols-new { margin-top: 12px; }
-</style>

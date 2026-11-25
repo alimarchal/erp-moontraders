@@ -33,29 +33,21 @@
         <x-page-header title="Suppliers" :createRoute="route('suppliers.create')" createLabel="New supplier"
             createPermission="supplier-create" :showSearch="false" :showRefresh="true" backRoute="settings.index">
             <x-slot name="actions">
-                <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="size-6" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                    @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
+                <button type="button" class="sp-head-btn" x-data @click="$dispatch('ev-toggle-filters')" aria-controls="ev-filter-panel" title="Show or hide the filters">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"  aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    Filters @if($activeFilterCount)<span class="ak-count ak-count-dark">{{ $activeFilterCount }}</span>@endif
                 </button>
-                <a href="{{ route('suppliers.help') }}" class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 no-print" title="How suppliers and carton entry work">How it works</a>
+                <a href="{{ route('suppliers.help') }}" class="sp-head-btn" title="How suppliers and carton entry work">How it works</a>
             </x-slot>
         </x-page-header>
     </x-slot>
 
     @include('settings.partials.ui-style')
     <x-apple-skin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+    @include('suppliers.partials.apple-style')
     <style>
         @page { margin: 10mm; }
         #ev-filter-panel { overflow: hidden; }
-        .ev-ur { font-family: 'Noto Naskh Arabic', 'Jameel Noori Nastaleeq', 'Geeza Pro', serif; font-weight: 600; color: var(--ak-navy); margin-inline-start: 8px; line-height: 1.5; font-size: 1.1em; }
-        .ak-btn .ev-ur, .ak-tab .ev-ur, .ak-chip .ev-ur, .ak-status .ev-ur, .ak-seg .ev-ur { color: inherit; margin-inline-start: 6px; }
-        .ak-btn-primary .ev-ur { color: #fff; }
-        .ak-title .ev-ur { font-size: 22px; margin-inline-start: 14px; }
-        .ak-tab .ev-ur { font-size: 16px; }
-        .ak-seg .ev-ur { font-size: 14px; }
-        .ak-dt th .ev-ur { font-size: 14px; text-transform: none; letter-spacing: 0; }
-        .ak-dt th a .ev-ur { color: inherit; }
         .sp-filter-row { display: grid; gap: 12px; grid-template-columns: 1fr; align-items: end; }
         @media (min-width: 900px) { .sp-filter-row { grid-template-columns: minmax(220px, 2fr) 1.2fr 1fr 1fr 1fr 90px auto; } }
         .sp-filter-row .ak-field input, .sp-filter-row .ak-field select { height: 38px; box-sizing: border-box; }
@@ -147,9 +139,9 @@
 
         <section class="ak-card" aria-label="Suppliers">
             <div class="ak-tabs" role="tablist">
-                @foreach (['' => ['All', $statusTotal, 'تمام'], 'active' => ['Active', $statusCounts['active'], 'فعال'], 'disabled' => ['Disabled', $statusCounts['disabled'], 'غیر فعال']] as $key => [$label, $count, $urdu])
+                @foreach (['' => ['All', $statusTotal], 'active' => ['Active', $statusCounts['active']], 'disabled' => ['Disabled', $statusCounts['disabled']]] as $key => [$label, $count])
                     <a href="{{ $tabUrl($key) }}" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" class="ak-tab {{ $tab === $key ? 'is-active' : '' }}">
-                        {{ $label }} <span class="ev-ur" lang="ur" dir="rtl">{{ $urdu }}</span> <span class="ak-count">{{ number_format($count) }}</span>
+                        {{ $label }} <span class="ak-count">{{ number_format($count) }}</span>
                     </a>
                 @endforeach
             </div>
@@ -174,8 +166,8 @@
                     <div class="ak-dt-toolbar">
                         <p><b>{{ number_format($suppliers->total()) }}</b> {{ \Illuminate\Support\Str::plural('supplier', $suppliers->total()) }}</p>
                         <div class="ak-seg ak-seg-sm" role="group" aria-label="Row density">
-                            <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable <span class="ev-ur" lang="ur" dir="rtl">آرام دہ</span></button>
-                            <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact <span class="ev-ur" lang="ur" dir="rtl">مختصر</span></button>
+                            <button type="button" @click="setDensity(false)" :aria-pressed="!compact" :class="!compact && 'is-on'">Comfortable</button>
+                            <button type="button" @click="setDensity(true)" :aria-pressed="compact" :class="compact && 'is-on'">Compact</button>
                         </div>
                     </div>
                     <div class="ak-dt-scroll" :class="compact && 'is-compact'" tabindex="0" aria-label="Suppliers table">
@@ -184,13 +176,13 @@
                             <thead>
                                 <tr>
                                     <th scope="col" class="ak-c" style="width:48px">#</th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('supplier_name') }}"><a href="{{ $sortUrl('supplier_name') }}">Supplier <span class="ev-ur" lang="ur" dir="rtl">سپلائر</span> <span aria-hidden="true">{{ $sortMark('supplier_name') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('supplier_group') }}"><a href="{{ $sortUrl('supplier_group') }}">Group · type <span class="ev-ur" lang="ur" dir="rtl">گروپ / قسم</span> <span aria-hidden="true">{{ $sortMark('supplier_group') }}</span></a></th>
-                                    <th scope="col" aria-sort="{{ $ariaSort('country') }}"><a href="{{ $sortUrl('country') }}">Country <span class="ev-ur" lang="ur" dir="rtl">ملک</span> <span aria-hidden="true">{{ $sortMark('country') }}</span></a></th>
-                                    <th scope="col">Defaults <span class="ev-ur" lang="ur" dir="rtl">ڈیفالٹس</span></th>
-                                    <th scope="col">GRN entry <span class="ev-ur" lang="ur" dir="rtl">اندراج</span></th>
-                                    <th scope="col" class="ak-num">Products <span class="ev-ur" lang="ur" dir="rtl">مصنوعات</span></th>
-                                    <th scope="col">Status <span class="ev-ur" lang="ur" dir="rtl">اسٹیٹس</span></th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('supplier_name') }}"><a href="{{ $sortUrl('supplier_name') }}">Supplier <span aria-hidden="true">{{ $sortMark('supplier_name') }}</span></a></th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('supplier_group') }}"><a href="{{ $sortUrl('supplier_group') }}">Group · type <span aria-hidden="true">{{ $sortMark('supplier_group') }}</span></a></th>
+                                    <th scope="col" aria-sort="{{ $ariaSort('country') }}"><a href="{{ $sortUrl('country') }}">Country <span aria-hidden="true">{{ $sortMark('country') }}</span></a></th>
+                                    <th scope="col">Defaults</th>
+                                    <th scope="col">GRN entry</th>
+                                    <th scope="col" class="ak-num">Products</th>
+                                    <th scope="col">Status</th>
                                     <th scope="col" class="ak-c ak-sticky-end"><span class="sr-only">Actions</span></th>
                                 </tr>
                             </thead>
@@ -259,11 +251,11 @@
                 </div>
             @else
                 <div class="ak-empty">
-                    <h2>No suppliers found{{ $chips || $tab ? ' with these filters' : '' }} <span class="ev-ur" lang="ur" dir="rtl">کوئی سپلائر نہیں ملا</span></h2>
+                    <h2>No suppliers found{{ $chips || $tab ? ' with these filters' : '' }}</h2>
                     <p>Remove a filter, or add a new supplier.</p>
                     <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
                         <a href="{{ route('suppliers.index') }}" class="ak-btn ak-btn-outline">Clear filters</a>
-                        @can('supplier-create') <a href="{{ route('suppliers.create') }}" class="ak-btn ak-btn-primary">＋ New supplier <span class="ev-ur" lang="ur" dir="rtl">نیا سپلائر</span></a> @endcan
+                        @can('supplier-create') <a href="{{ route('suppliers.create') }}" class="ak-btn ak-btn-primary">＋ New supplier</a> @endcan
                     </div>
                 </div>
             @endif

@@ -71,6 +71,18 @@
                     <h2 style="margin:0 0 6px; font-size:15px; font-weight:700">GRN quantity entry <span class="ev-ur" lang="ur" dir="rtl">جی آر این اندراج</span></h2>
                     <p style="margin:0 0 10px"><span class="sp-pill {{ $supplier->usesCartonEntry() ? 'sp-pill-amber' : '' }}">{{ $supplier->usesCartonEntry() ? 'Carton' : 'Pieces' }}</span></p>
                     <p class="ak-muted" style="margin:0; font-size:13px">{{ $supplier->usesCartonEntry() ? 'GRNs take cartons + loose pieces and a rate per TH. Stock is saved in pieces.' : 'GRNs take quantity directly, as always.' }}</p>
+                    <p style="margin:10px 0 0; font-size:13px">Sales tax rate: <b>{{ number_format((float) $supplier->sales_tax, 2) }}%</b></p>
+                </section>
+                <section class="ak-card ev-pad" aria-label="GRN line columns">
+                    <h2 style="margin:0 0 6px; font-size:15px; font-weight:700">GRN line columns <span class="ev-ur" lang="ur" dir="rtl">کالموں کی ترتیب</span></h2>
+                    <ol style="margin:0; padding-left:20px; font-size:13px; line-height:1.7">
+                        @foreach ($supplier->grnLineColumns() as $column)
+                            <li @class(['ak-muted' => ! $column['visible']])>{{ $column['label'] }}@unless ($column['visible']) <small>(hidden unless used)</small>@endunless</li>
+                        @endforeach
+                    </ol>
+                    @can('supplier-edit')
+                        <p style="margin:8px 0 0; font-size:12.5px"><a href="{{ route('suppliers.edit', $supplier) }}" style="color:#4338ca; font-weight:600">Change the order on Edit</a></p>
+                    @endcan
                 </section>
                 <section class="ak-card ev-pad" aria-label="Usage">
                     <div class="sp-stats">

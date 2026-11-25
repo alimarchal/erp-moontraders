@@ -649,6 +649,7 @@
                     isUnileverPakistan: false,
                     isFmrAllowed: false,
                     isCartonMode: false,
+                    lineColumns: @json(optional($suppliers->firstWhere('id', (int) old('supplier_id')))->grn_columns ?? \App\Models\Supplier::resolveGrnLineColumns(null)),
 
                     items: oldItems.length > 0 ? oldItems.map(item => ({
                         product_id: item.product_id || '',
@@ -1219,6 +1220,7 @@
                                 grnFormData.isUnileverPakistan = supplier.supplier_name === 'Unilever Pakistan';
                                 grnFormData.isFmrAllowed = supplier.is_fmr_allowed === true || supplier.is_fmr_allowed === 1;
                                 grnFormData.isCartonMode = supplier.qty_entry_mode === 'carton';
+                                grnFormData.lineColumns = supplier.grn_columns || grnFormData.lineColumns;
 
                                 // Reset manually edited WHT flags when supplier changes
                                 grnFormData.items.forEach((item) => {

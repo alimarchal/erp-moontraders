@@ -612,7 +612,7 @@
             const oldItems = @json(old('items', []));
             const existingItems = @json($grn->items);
             const defaultUomId = 24; // Piece UOM
-            const defaultPurchaseUomId = 34; // Case UOM
+            const defaultPurchaseUomId = 33; // Case UOM
 
             function grnForm(withholdingTaxRate = 0) {
                 return {
@@ -623,6 +623,7 @@
                     isUnileverPakistan: {{ $grn->supplier->supplier_name === 'Unilever Pakistan' ? 'true' : 'false' }},
                     isFmrAllowed: {{ $grn->supplier->is_fmr_allowed ? 'true' : 'false' }},
                     isCartonMode: {{ $grn->supplier->usesCartonEntry() ? 'true' : 'false' }},
+                    lineColumns: @json($grn->supplier->grnLineColumns()),
 
                     items: oldItems.length > 0 ? oldItems.map(item => ({
                         product_id: item.product_id || '',
@@ -1194,6 +1195,7 @@
                                 grnFormData.isUnileverPakistan = supplier.supplier_name === 'Unilever Pakistan';
                                 grnFormData.isFmrAllowed = supplier.is_fmr_allowed === true || supplier.is_fmr_allowed === 1;
                                 grnFormData.isCartonMode = supplier.qty_entry_mode === 'carton';
+                                grnFormData.lineColumns = supplier.grn_columns || grnFormData.lineColumns;
 
                                 // Reset manually edited WHT flags when supplier changes
                                 grnFormData.items.forEach((item) => {

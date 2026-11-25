@@ -26,7 +26,7 @@
 <div class="{{ $sectionsGrid }}">
     {{-- Quantity --}}
     <div class="{{ $sec }}">
-        <h4 class="{{ $secTitle }}">Quantity <span class="normal-case tracking-normal text-gray-600" x-text="formatNumber(item.qty_in_stock_uom) + ' pcs'"></span></h4>
+        <h4 class="{{ $secTitle }}">Quantity <span class="normal-case tracking-normal text-gray-600" x-text="(isCartonMode ? formatNumber(item.entered_cartons || 0) + ' ctn' : formatNumber(item.qty_in_purchase_uom) + ' cases') + ' · ' + formatNumber(item.qty_in_stock_uom) + ' pcs'"></span></h4>
         <div class="mb-3 grid grid-cols-3 gap-2" x-show="isCartonMode">
             <div><label :for="`ctn_${index}`" class="{{ $lbl }}">Cartons</label><input :id="`ctn_${index}`" type="number" :name="`items[${index}][entered_cartons]`" x-model="item.entered_cartons" @input="calculateFromCarton(index)" step="0.001" min="0" placeholder="0" class="{{ $num }}"></div>
             <div><label :for="`loose_${index}`" class="{{ $lbl }}">Loose pcs</label><input :id="`loose_${index}`" type="number" :name="`items[${index}][entered_loose_pieces]`" x-model="item.entered_loose_pieces" @input="calculateFromCarton(index)" step="1" min="0" placeholder="0" class="{{ $num }}"></div>

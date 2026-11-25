@@ -58,6 +58,7 @@
                         <th class="w-8"><span class="sr-only">Status</span></th>
                         <th class="w-10 text-left">#</th>
                         <th class="text-left">Product</th>
+                        <th class="text-right" x-text="isCartonMode ? 'Ctn' : 'Cases'"></th>
                         <th class="text-right">Pcs</th>
                         <th class="text-right">Value</th>
                         <th class="text-right">Discount</th>
@@ -78,6 +79,7 @@
                                 <span class="block truncate font-semibold text-gray-900" x-text="productLabel(item)"></span>
                                 <span class="block truncate text-xs" :class="lineIssue(item).level === 'error' ? 'text-red-700' : (lineIssue(item).level === 'warning' ? 'text-amber-800' : 'text-gray-500')" x-text="lineIssue(item).level === 'ok' ? productCode(item) : lineIssue(item).text"></span>
                             </td>
+                            <td class="text-right" x-text="isCartonMode ? formatNumber(item.entered_cartons || 0) : formatNumber(item.qty_in_purchase_uom)"></td>
                             <td class="text-right" x-text="formatNumber(item.qty_in_stock_uom)"></td>
                             <td class="text-right" x-text="formatNumber(item.extended_value)"></td>
                             <td class="text-right" x-text="formatNumber((parseFloat(item.discount_value) || 0) + (parseFloat(item.fmr_allowance) || 0))"></td>

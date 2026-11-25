@@ -19,7 +19,7 @@
             <div class="space-y-2.5 border-b border-gray-200 p-3">
                 <div class="flex items-center justify-between">
                     <h3 id="grn-lines-heading" class="text-sm font-bold text-gray-900">Lines <span class="font-semibold text-gray-500" x-text="'· ' + items.length"></span></h3>
-                    <span class="text-xs tabular-nums text-gray-600" x-text="formatNumber(sumOf('qty_in_stock_uom')) + ' pcs'"></span>
+                    <span class="text-xs tabular-nums text-gray-600" x-text="formatNumber(totalCases()) + (isCartonMode ? ' ctn · ' : ' cases · ') + formatNumber(sumOf('qty_in_stock_uom')) + ' pcs'"></span>
                 </div>
                 <div class="relative" x-show="items.length > 6">
                     <label for="grn-line-search" class="sr-only">Find a line</label>

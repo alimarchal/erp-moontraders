@@ -11,7 +11,7 @@
     $calc = 'block w-full rounded-lg border-gray-200 bg-gray-100 text-right text-sm tabular-nums text-gray-700 shadow-none';
     $txt = 'block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500';
     $lbl = 'mb-1 flex justify-between gap-1 text-xs font-semibold text-gray-700';
-    $sec = 'min-w-0 rounded-xl bg-white p-4 ring-1 ring-gray-200';
+    $sec = 'grn-sec min-w-0 rounded-xl bg-white p-4 ring-1 ring-gray-200';
     $secTitle = 'mb-3 flex items-baseline justify-between text-xs font-bold uppercase tracking-wide text-blue-800';
 @endphp
 <div class="relative">

@@ -1,44 +1,43 @@
 @php($grnLayout = $grnLayout ?? 'classic')
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Create Goods Receipt Note
-        </h2>
-        <div class="flex justify-center items-center float-right gap-2">
-            <x-grn-help-link class="mr-2" />
-            @can('goods-receipt-note-import')
-                <button type="button" x-data @click="$dispatch('open-import-modal')"
-                    class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Import Excel
-                </button>
-            @endcan
-            @can('opening-stock-create')
-                <button type="button" x-data @click="$dispatch('open-opening-stock-modal')"
-                    class="inline-flex items-center px-4 py-2 bg-indigo-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-800 focus:bg-indigo-800 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    Opening Stock
-                </button>
-            @endcan
-
-            <a href="{{ route('goods-receipt-notes.index') }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="grn-head-title">Create Goods Receipt Note</h2>
+            <div class="grn-head-actions">
+                @if (\App\Http\Controllers\GoodsReceiptNoteController::canViewHelp(auth()->user()))
+                    <a href="{{ route('goods-receipt-notes.help') }}" class="grn-head-btn" title="How GRN works">
+                        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" /></svg>
+                        <span class="grn-head-label">How GRN works</span>
+                    </a>
+                @endif
+                @can('goods-receipt-note-import')
+                    <button type="button" x-data @click="$dispatch('open-import-modal')" class="grn-head-btn" title="Import a GRN from Excel">
+                        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        <span class="grn-head-label">Import Excel</span>
+                    </button>
+                @endcan
+                @can('opening-stock-create')
+                    <button type="button" x-data @click="$dispatch('open-opening-stock-modal')" class="grn-head-btn" title="Enter opening stock">
+                        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                        <span class="grn-head-label">Opening stock</span>
+                    </button>
+                @endcan
+                <a href="{{ route('goods-receipt-notes.index') }}" class="grn-head-btn is-icon" aria-label="Back to GRNs" title="Back to GRNs">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" /></svg>
+                </a>
+            </div>
         </div>
     </x-slot>
+
+    @include('goods-receipt-notes.partials.apple-style')
+    @if ($grnLayout !== 'classic')
+        <style>
+            /* Apple canvas for the modern GRN form */
+            body { background: #f5f5f7; }
+            body .bg-gray-100 { background-color: #f5f5f7; }
+            header.bg-white { background: rgba(255,255,255,.8) !important; -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); box-shadow: 0 1px 0 rgba(60,60,67,.12) !important; }
+        </style>
+    @endif
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

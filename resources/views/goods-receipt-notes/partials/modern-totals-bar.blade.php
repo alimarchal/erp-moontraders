@@ -2,7 +2,7 @@
     The totals bar at the bottom of the Option A and Option B GRN forms: the money, the checks
     still open, and the save button. It sticks to the bottom of the window while the lines scroll.
 --}}
-<div class="sticky bottom-3 z-20 rounded-2xl bg-slate-900/90 px-4 py-3 text-white shadow-[0_12px_40px_rgba(15,23,42,0.28)] ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-slate-900 motion-reduce:backdrop-blur-none">
+<div class="grn-totals sticky bottom-3 z-20 rounded-2xl bg-slate-900/90 px-4 py-3 text-white shadow-[0_12px_40px_rgba(15,23,42,0.28)] ring-1 ring-white/10 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-slate-900 motion-reduce:backdrop-blur-none">
     <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
         <dl class="flex flex-wrap gap-x-6 gap-y-1 tabular-nums">
             <div><dt class="text-[11px] font-semibold text-slate-400" x-text="isCartonMode ? 'Cartons' : 'Cases'"></dt><dd class="font-bold" x-text="formatNumber(totalCases())"></dd></div>

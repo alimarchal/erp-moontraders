@@ -262,3 +262,26 @@ it('blocks scoped users from filtering or opening another suppliers account', fu
     $response->assertSee('Own Customer');
     $response->assertDontSee('Other Customer');
 });
+
+it('carries the running balance from page one into page two', function () {
+    $account = createStatementAccount($this);
+    foreach (range(1, 15) as $day) {
+        createStatementTransaction($this, $account, ['transaction_date' => sprintf('2026-11-%02d', $day), 'debit' => 100]);
+    }
+
+    $entries = $this->get(route('reports.customer-account-statement.show', [$account, 'per_page' => 10, 'page' => 2]))
+        ->assertOk()
+        ->viewData('entries');
+
+    // Page two starts after ten sales of 100: its first line closes at 1,100, not the whole period (1,500) + 100.
+    expect($entries->getCollection()->first()->running_balance)->toBe(1100.0)
+        ->and($entries->getCollection()->last()->running_balance)->toBe(1500.0);
+});
+
+it('uses the rows per page chosen in the filters', function () {
+    $account = createStatementAccount($this);
+    createStatementTransaction($this, $account, ['debit' => 100]);
+
+    expect($this->get(route('reports.customer-account-statement.show', [$account, 'per_page' => '25']))->viewData('entries')->perPage())->toBe(25)
+        ->and($this->get(route('reports.customer-account-statement.index', ['per_page' => '10']))->viewData('accounts')->perPage())->toBe(10);
+});

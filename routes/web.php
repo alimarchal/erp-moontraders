@@ -74,6 +74,7 @@ use App\Http\Controllers\Reports\ClaimRegisterReportController;
 use App\Http\Controllers\Reports\CompanyTargetSummaryController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\CustomerAccountStatementController;
+use App\Http\Controllers\Reports\CustomerBalancesController;
 use App\Http\Controllers\Reports\CustomSettlementReportController;
 use App\Http\Controllers\Reports\DailyBusinessSummaryController;
 use App\Http\Controllers\Reports\DailySalesReportController;
@@ -903,6 +904,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('company-target-summary/export/pdf', [CompanyTargetSummaryController::class, 'exportPdf'])->name('company-target-summary.export.pdf');
         Route::get('company-target-summary', [CompanyTargetSummaryController::class, 'index'])->name('company-target-summary.index');
         Route::get('customer-account-statement', [CustomerAccountStatementController::class, 'index'])->name('customer-account-statement.index');
+        Route::get('customer-balances', [CustomerBalancesController::class, 'index'])->name('customer-balances.index');
         Route::get('customer-account-statement/{customerEmployeeAccount}', [CustomerAccountStatementController::class, 'show'])->name('customer-account-statement.show');
         Route::get('sku-fmr-amr', [SkuFmrAmrController::class, 'index'])->name('sku-fmr-amr.index');
 

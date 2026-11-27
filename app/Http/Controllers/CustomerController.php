@@ -52,6 +52,8 @@ class CustomerController extends Controller implements HasMiddleware
         }
 
         $customers = $this->buildFilteredQuery()
+            ->withSum('accountTransactions as account_debits', 'debit')
+            ->withSum('accountTransactions as account_credits', 'credit')
             ->paginate($perPage)
             ->withQueryString();
 
@@ -236,8 +238,17 @@ class CustomerController extends Controller implements HasMiddleware
     {
         $customer->load(['salesRep', 'receivableAccount', 'payableAccount']);
 
+        $accounts = $customer->employeeAccounts()
+            ->with('employee.supplier')
+            ->withSum('transactions as debits', 'debit')
+            ->withSum('transactions as credits', 'credit')
+            ->withMax('transactions as last_entry_date', 'transaction_date')
+            ->orderBy('account_number')
+            ->get();
+
         return view('customers.show', [
             'customer' => $customer,
+            'accounts' => $accounts,
         ]);
     }
 

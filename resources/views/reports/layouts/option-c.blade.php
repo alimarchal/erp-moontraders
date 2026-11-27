@@ -29,6 +29,7 @@
             .rp-search input::placeholder { color: var(--rp-label-3); }
             .rp-search input:focus { outline: none; background: #fff; box-shadow: 0 0 0 4px rgba(0,113,227,.22), 0 0 0 1px var(--rp-blue); }
             .rp-search kbd { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); padding: 1px 7px; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); font: 12px ui-monospace, Menlo, monospace; color: var(--rp-label-3); pointer-events: none; }
+            @media (hover: none) { .rp-search kbd { display: none; } }
             .rp-results { margin: 6px 4px 0; font-size: 13px; color: var(--rp-label-2); }
 
             /* Pinned reports */
@@ -103,6 +104,7 @@
             window.reportsApple = function (config) {
                 const base = window.menuPage(config);
                 const baseInit = base.init;
+                const baseOpen = base.open;
                 const key = 'moontraders.reports.category.{{ auth()->id() }}';
 
                 return Object.assign(base, {
@@ -113,6 +115,11 @@
                             if (last && config.groups.includes(last)) { this.selected = last; }
                         } catch (error) { /* storage blocked: start on the first category */ }
                         this.$watch('selected', (value) => { try { window.localStorage.setItem(key, value); } catch (error) {} });
+                    },
+                    /** A category picked while searching ends the search and shows that category. */
+                    open(category) {
+                        this.query = '';
+                        baseOpen.call(this, category);
                     },
                 });
             };

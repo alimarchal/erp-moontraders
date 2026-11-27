@@ -4,6 +4,7 @@ namespace App\Support\Menus;
 
 use App\Models\User;
 use Closure;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 /**
@@ -17,6 +18,14 @@ use Illuminate\Support\Str;
  */
 abstract class Menu
 {
+    /**
+     * The categories of the page's Apple layout (Option C): key, name, blurb, colour (CSS), icon and the ids of the
+     * links in each. Pages without an Apple layout leave it empty.
+     *
+     * @var list<array{key: string, name: string, blurb: string, color: string, icon: string, ids: list<string>}>
+     */
+    public const APPLE_CATEGORIES = [];
+
     /**
      * Every group and link of the page, before permissions are applied. A permission given as a
      * list means the user needs any one of them.
@@ -60,6 +69,35 @@ abstract class Menu
         }
 
         return $groups;
+    }
+
+    /**
+     * The user's links in the Apple layout's categories. Empty categories are dropped; a link no category lists lands
+     * in a last "More" category, so a new link never disappears from the page.
+     *
+     * @return list<array{key: string, name: string, blurb: string, color: string, icon: string, items: list<MenuItem>}>
+     */
+    public function appleCategoriesFor(User $user): array
+    {
+        $items = collect($this->groupsFor($user))->flatMap(fn (array $group) => $group['items'])->keyBy('id');
+        $placed = [];
+        $categories = [];
+
+        foreach ([...static::APPLE_CATEGORIES, ['key' => 'more', 'name' => 'More', 'blurb' => 'Everything else.', 'color' => '#8e8e93', 'icon' => 'doc', 'ids' => null]] as $category) {
+            $ids = $category['ids'] ?? $items->keys()->diff($placed)->values()->all();
+            $categoryItems = collect($ids)
+                ->filter(fn (string $id) => $items->has($id))
+                ->map(fn (string $id) => [...$items[$id], 'search' => Str::lower($items[$id]['search'].' '.$category['name'])])
+                ->values()
+                ->all();
+            $placed = [...$placed, ...$ids];
+
+            if ($categoryItems !== []) {
+                $categories[] = [...Arr::except($category, 'ids'), 'items' => $categoryItems];
+            }
+        }
+
+        return $categories;
     }
 
     /**

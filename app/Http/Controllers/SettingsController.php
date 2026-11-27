@@ -38,6 +38,7 @@ class SettingsController extends Controller implements HasMiddleware
             PageLayout::Classic => view('settings.index', compact('productCount')),
             PageLayout::OptionA => view('settings.layouts.option-a', ['groups' => (new SettingsMenu($productCount))->groupsFor($user)]),
             PageLayout::OptionB => view('settings.layouts.option-b', ['groups' => (new SettingsMenu($productCount))->groupsFor($user)]),
+            PageLayout::OptionC => view('settings.layouts.option-c', ['categories' => (new SettingsMenu($productCount))->appleCategoriesFor($user)]),
         };
     }
 }

@@ -3,6 +3,7 @@
 use App\Models\AppSetting;
 use App\Models\User;
 use App\Support\Menus\ReportsMenu;
+use App\Support\Menus\SettingsMenu;
 use Spatie\Permission\Models\Permission;
 
 /**
@@ -64,6 +65,7 @@ function menuLinkHrefs(string $html, string $marker): array
 dataset('menu layouts', [
     'settings A' => ['settings', 'a', 'settings.layouts.option-a'],
     'settings B' => ['settings', 'b', 'settings.layouts.option-b'],
+    'settings C (Apple)' => ['settings', 'c', 'settings.layouts.option-c'],
     'reports A' => ['reports', 'a', 'reports.layouts.option-a'],
     'reports B' => ['reports', 'b', 'reports.layouts.option-b'],
     'reports C (Apple)' => ['reports', 'c', 'reports.layouts.option-c'],
@@ -86,7 +88,7 @@ it('shows only the links and groups the user is permitted to see', function (str
         ? [['user-list', 'stock-adjustment-list'], [route('users.index'), route('stock-adjustments.index')], route('chart-of-accounts.index'), 'Company &amp; access', 'Accounting']
         : [['report-audit-creditors-ledger', 'payroll-list'], [route('reports.creditors-ledger.index'), route('payroll.index')], route('reports.trial-balance.index'), 'Receivables &amp; cash', 'Stock &amp; vans'];
 
-    if ($layout === 'c') {
+    if ($page === 'reports' && $layout === 'c') {
         $shownGroup = 'Customers &amp; credit';
     }
 
@@ -133,7 +135,7 @@ it('shows the Appearance link on Settings to super admins only, in every layout'
     expect($superAdminLinks)->toContain($appearance)
         ->and($adminLinks)->not->toContain($appearance)
         ->and(array_values(array_diff($superAdminLinks, $adminLinks)))->toBe([$appearance]);
-})->with(['classic', 'a', 'b']);
+})->with(['classic', 'a', 'b', 'c']);
 
 it('names the customer balances report Debtors ledger and links the bank register reports', function (string $layout) {
     AppSetting::put('layout.reports', $layout);
@@ -146,9 +148,9 @@ it('names the customer balances report Debtors ledger and links the bank registe
         ->assertSee(route('reports.bank.index'), false);
 })->with(['a', 'b', 'c']);
 
-it('puts every report of the Apple layout in a named category, once', function () {
-    $user = menuLayoutUser('reports', classicPagePermissions('reports'));
-    $menu = new ReportsMenu;
+it('puts every link of the Apple layout in a named category, once', function (string $page) {
+    $user = menuLayoutUser($page, classicPagePermissions($page));
+    $menu = $page === 'settings' ? new SettingsMenu(0) : new ReportsMenu;
 
     $categories = $menu->appleCategoriesFor($user);
     $ids = collect($categories)->flatMap(fn (array $category) => array_column($category['items'], 'id'));
@@ -156,16 +158,16 @@ it('puts every report of the Apple layout in a named category, once', function (
     expect(array_column($categories, 'key'))->not->toContain('more')
         ->and($ids->duplicates())->toBeEmpty()
         ->and($ids->count())->toBe(collect($menu->groupsFor($user))->sum(fn (array $group) => count($group['items'])));
-});
+})->with(['reports', 'settings']);
 
-it('shows the Apple layout in English only', function () {
-    AppSetting::put('layout.reports', 'c');
+it('shows the Apple layout in English only', function (string $page, string $firstCategory) {
+    AppSetting::put("layout.{$page}", 'c');
 
-    $html = $this->actingAs(menuLayoutUser('reports', classicPagePermissions('reports')))
-        ->get(route('reports.index'))
+    $html = $this->actingAs(menuLayoutUser($page, classicPagePermissions($page)))
+        ->get(route("{$page}.index"))
         ->assertSuccessful()
-        ->assertSee('Daily overview')
+        ->assertSee($firstCategory, false)
         ->getContent();
 
     expect(preg_match('/\p{Arabic}/u', strip_tags($html)))->toBe(0);
-});
+})->with([['reports', 'Daily overview'], ['settings', 'Company &amp; access']]);

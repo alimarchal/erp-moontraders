@@ -196,8 +196,8 @@ it('uses searchable dropdowns on the customer and product screens and shows acti
     Customer::factory()->create(['customer_name' => 'Dormant Shop', 'is_active' => false]);
 
     $this->get(route('customers.index'))->assertSuccessful()
-        ->assertSee('class="js-select2"', false)
-        ->assertSee('select.js-select2', false)
+        ->assertSee('class="cs-select"', false)
+        ->assertSee("jQuery('.cs-select')", false)
         ->assertSee('Deactivate customer')
         ->assertSee('Activate customer')
         ->assertDontSee('customers.destroy');

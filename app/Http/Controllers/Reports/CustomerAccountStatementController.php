@@ -8,10 +8,12 @@ use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\Supplier;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CustomerAccountStatementController extends Controller implements HasMiddleware
@@ -109,6 +111,18 @@ class CustomerAccountStatementController extends Controller implements HasMiddle
         $accountsQuery->orderByRaw("$balanceSubquery DESC", $balanceBindings)
             ->orderByDesc('customer_employee_accounts.id');
 
+        $filteredAccountIds = (clone $accountsQuery)->reorder()->select('customer_employee_accounts.id');
+        $totalsRow = CustomerEmployeeAccountTransaction::query()
+            ->whereIn('customer_employee_account_id', $filteredAccountIds)
+            ->where($applyTransactionFilters)
+            ->selectRaw('COALESCE(SUM(debit), 0) as debits, COALESCE(SUM(credit), 0) as credits')
+            ->first();
+        $totals = [
+            'debits' => (float) $totalsRow->debits,
+            'credits' => (float) $totalsRow->credits,
+            'balance' => (float) $totalsRow->debits - (float) $totalsRow->credits,
+        ];
+
         $accounts = $this->paginate($accountsQuery, $perPage, $request);
 
         $suppliers = Supplier::query()
@@ -144,6 +158,9 @@ class CustomerAccountStatementController extends Controller implements HasMiddle
 
         return view('reports.customer-account-statement.index', [
             'accounts' => $accounts,
+            'totals' => $totals,
+            'perPage' => $perPage,
+            'isPeriod' => (bool) ($dateFrom || $dateTo || $transactionType),
             'suppliers' => $suppliers,
             'employees' => $employees,
             'customers' => $customers,
@@ -220,7 +237,7 @@ class CustomerAccountStatementController extends Controller implements HasMiddle
 
         $entries = $this->paginate($entriesQuery, $perPage, $request);
         $openingBalance = $this->openingBalance($customerEmployeeAccount, $dateFrom);
-        $balanceBeforePage = $this->balanceBeforePage($customerEmployeeAccount, $request, $entries, $openingBalance);
+        $balanceBeforePage = $this->balanceBeforePage($customerEmployeeAccount, $applyFilters, $entries, $openingBalance);
         $runningBalance = $balanceBeforePage;
 
         $entries->getCollection()->transform(function (CustomerEmployeeAccountTransaction $entry) use (&$runningBalance) {
@@ -267,14 +284,22 @@ class CustomerAccountStatementController extends Controller implements HasMiddle
             'paymentMethods' => $paymentMethods,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
+            'perPage' => $perPage,
         ]);
     }
 
+    /**
+     * Rows per page from the query string ("25" arrives as a string), or "all".
+     */
     private function resolvePerPage(Request $request, int $default): int|string
     {
-        $perPage = $request->input('per_page', $default);
+        $perPage = (string) $request->input('per_page', $default);
 
-        return in_array($perPage, [10, 25, 50, 100, 250, 'all'], true) ? $perPage : $default;
+        if ($perPage === 'all') {
+            return 'all';
+        }
+
+        return in_array((int) $perPage, [10, 25, 50, 100, 250], true) ? (int) $perPage : $default;
     }
 
     private function paginate($query, int|string $perPage, Request $request): LengthAwarePaginator
@@ -332,60 +357,29 @@ class CustomerAccountStatementController extends Controller implements HasMiddle
             ->value('balance');
     }
 
-    private function balanceBeforePage(CustomerEmployeeAccount $account, Request $request, LengthAwarePaginator $entries, float $openingBalance): float
+    /**
+     * Balance carried into the current page: the opening balance plus every filtered line on the earlier pages.
+     * The earlier lines are limited in a subquery first; a LIMIT on the SUM itself would add up the whole period.
+     */
+    private function balanceBeforePage(CustomerEmployeeAccount $account, Closure $applyFilters, LengthAwarePaginator $entries, float $openingBalance): float
     {
         if ($entries->currentPage() <= 1 || $entries->perPage() < 1) {
             return $openingBalance;
         }
 
-        $dateFrom = $request->input('filter.date_from');
-        $dateTo = $request->input('filter.date_to');
-        $entriesBeforePage = ($entries->currentPage() - 1) * $entries->perPage();
-
-        $query = $account->transactions();
-
-        if ($dateFrom) {
-            $query->whereDate('transaction_date', '>=', $dateFrom);
-        }
-
-        if ($dateTo) {
-            $query->whereDate('transaction_date', '<=', $dateTo);
-        }
-
-        foreach (['transaction_type', 'reference_number', 'invoice_number', 'description', 'payment_method'] as $filter) {
-            if ($request->filled('filter.'.$filter)) {
-                $value = $request->input('filter.'.$filter);
-                $operator = in_array($filter, ['reference_number', 'invoice_number', 'description'], true) ? 'like' : '=';
-                $query->where($filter, $operator, $operator === 'like' ? '%'.$value.'%' : $value);
-            }
-        }
-
-        if ($request->filled('filter.amount_min')) {
-            $query->where(function ($amountQuery) use ($request) {
-                $amountQuery->where('debit', '>=', $request->input('filter.amount_min'))
-                    ->orWhere('credit', '>=', $request->input('filter.amount_min'));
-            });
-        }
-
-        if ($request->filled('filter.amount_max')) {
-            $query->where(function ($amountQuery) use ($request) {
-                $amountQuery->where(function ($debitQuery) use ($request) {
-                    $debitQuery->where('debit', '>', 0)
-                        ->where('debit', '<=', $request->input('filter.amount_max'));
-                })->orWhere(function ($creditQuery) use ($request) {
-                    $creditQuery->where('credit', '>', 0)
-                        ->where('credit', '<=', $request->input('filter.amount_max'));
-                });
-            });
-        }
-
-        $balanceBeforePage = $query->orderBy('transaction_date')
+        $earlierLines = $account->transactions()
+            ->where($applyFilters)
+            ->orderBy('transaction_date')
             ->orderBy('id')
-            ->limit($entriesBeforePage)
+            ->limit(($entries->currentPage() - 1) * $entries->perPage())
+            ->select(['debit', 'credit']);
+
+        $balance = DB::query()
+            ->fromSub($earlierLines, 'earlier_lines')
             ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
             ->value('balance');
 
-        return $openingBalance + (float) $balanceBeforePage;
+        return $openingBalance + (float) $balance;
     }
 
     private function authorizeAccountAccess(CustomerEmployeeAccount $account): void

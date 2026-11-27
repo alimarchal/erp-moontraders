@@ -100,7 +100,7 @@ class Customer extends Model
         return $this->hasMany(CustomerEmployeeAccount::class);
     }
 
-    public function accountTransactions(): HasMany
+    public function accountTransactions(): HasManyThrough
     {
         return $this->hasManyThrough(
             CustomerEmployeeAccountTransaction::class,

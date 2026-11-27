@@ -49,7 +49,7 @@ class PermissionCatalog
             'report-financial-balance-sheet', 'report-financial-income-statement', 'report-audit-opening-customer-balance',
         ],
         'Receivables & Core Reports' => [
-            'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-sales-credit-sales',
+            'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-audit-customer-balances', 'report-sales-credit-sales',
             'report-audit-cash-detail', 'report-audit-cash-detail-all-companies', 'report-audit-cash-collection-distributor', 'report-audit-cash-collection-distributor-all-companies', 'report-audit-investment-summary', 'report-audit-daily-business-summary', 'report-audit-daily-business-summary-all-companies', 'report-audit-claim-register',
             'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-cheque-register-all-companies', 'report-audit-amr-dispose-register',
         ],
@@ -154,6 +154,7 @@ class PermissionCatalog
         'report-audit-opening-customer-balance' => 'Opening Customer Balance',
         'report-audit-creditors-ledger' => 'Creditors Ledger',
         'report-audit-customer-account-statement' => 'Customer Account Statement',
+        'report-audit-customer-balances' => 'Customer Balances',
         'report-sales-credit-sales' => 'Salesman Credit History',
         'report-audit-cash-detail' => 'Cash Collection Detail',
         'report-audit-cash-detail-all-companies' => 'Cash Collection Detail - All Companies',

@@ -432,7 +432,7 @@
                     </section>
                 @endcanany
 
-                @canany(['report-audit-cash-detail', 'report-audit-cash-collection-distributor', 'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-audit-opening-customer-balance', 'report-sales-credit-sales'])
+                @canany(['report-audit-cash-detail', 'report-audit-cash-collection-distributor', 'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-audit-customer-balances', 'report-audit-opening-customer-balance', 'report-sales-credit-sales'])
                     <section x-show="sectionVisible($el)" data-settings-section class="mb-6 break-inside-avoid">
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Receivables &amp; Collections</p>
                         <div class="reports-group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
@@ -481,6 +481,17 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-customer-balances')
+                                <x-settings-row data-settings-item data-search="customer balances customers report receivable outstanding due owes advance last sale last recovery receivables and collections credit, collections and customer statements" x-bind:hidden="! matches($el)" href="{{ route('reports.customer-balances.index') }}"
+                                    label="Customer Balances"
+                                    description="What each customer owes, with the last sale and recovery" icon-bg="bg-rose-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.13a9.38 9.38 0 0 0 2.63.37 9.34 9.34 0 0 0 4.12-.95 4.13 4.13 0 0 0-7.53-2.49M15 19.13v-.01c0-1.11-.29-2.16-.79-3.07M15 19.13v.11A12.32 12.32 0 0 1 8.62 21c-2.33 0-4.51-.64-6.37-1.76v-.11a6.38 6.38 0 0 1 11.96-3.08M12 6.38a3.38 3.38 0 1 1-6.75 0 3.38 3.38 0 0 1 6.75 0Zm8.25 2.25a2.63 2.63 0 1 1-5.25 0 2.63 2.63 0 0 1 5.25 0Z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

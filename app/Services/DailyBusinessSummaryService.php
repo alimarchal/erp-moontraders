@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\DB;
  * Figures behind the Daily Business Summary report (reports/daily-business-summary): the
  * management sheet with month-to-date sales by category, the investment position, the TTS
  * balance and one row per salesman for the day (sale, advance tax and scheme, expiry, credit and
- * cash). The salesman "%age" is advance tax (1161) and "Amount" is cash counted plus bank slips,
- * as on the management sheet this report replaces.
+ * cash). The salesman "%age" is advance tax (1161), "Scheme" is the scheme discount (5292) entered
+ * on the settlement and "Amount" is cash counted plus bank slips and cheques, as on the management
+ * sheet this report replaces.
  */
 class DailyBusinessSummaryService
 {
@@ -24,7 +25,7 @@ class DailyBusinessSummaryService
 
     public const SCHEME_DISCOUNT_ACCOUNT_CODE = '5292';
 
-    /** "Promotion OFF": the promo discount salesmen give in the market, booked on the sales settlement. */
+    /** "Promotion OFF": the promo discount salesmen give in the market; counted in the TTS "Promo Passed", not the salesman's scheme. */
     public const PROMO_ACCOUNT_CODE = '5288';
 
     public const AMR_LIQUID_ACCOUNT_CODE = '5262';
@@ -99,7 +100,7 @@ class DailyBusinessSummaryService
 
     /**
      * One row per salesman: the day's sale, advance tax and scheme, expiry taken back, closing
-     * market credit and the cash handed in (counted notes plus bank slips).
+     * market credit and the money handed in (counted notes plus bank slips and cheques).
      *
      * @param  array<int, int|string>  $employeeIds
      * @return Collection<int, object>
@@ -124,7 +125,7 @@ class DailyBusinessSummaryService
             ->whereDate('sales_settlements.settlement_date', $date)
             ->whereIn('sales_settlements.employee_id', $employees->pluck('id'))
             ->whereIn('chart_of_accounts.account_code', [
-                self::ADVANCE_TAX_ACCOUNT_CODE, self::SCHEME_DISCOUNT_ACCOUNT_CODE, self::PROMO_ACCOUNT_CODE,
+                self::ADVANCE_TAX_ACCOUNT_CODE, self::SCHEME_DISCOUNT_ACCOUNT_CODE,
                 self::AMR_LIQUID_ACCOUNT_CODE, self::AMR_POWDER_ACCOUNT_CODE,
             ])
             ->groupBy('sales_settlements.employee_id', 'chart_of_accounts.account_code')
@@ -138,7 +139,7 @@ class DailyBusinessSummaryService
             $amount = fn (string $code) => (float) ($byCode[$code] ?? 0);
 
             $percentage = $amount(self::ADVANCE_TAX_ACCOUNT_CODE);
-            $scheme = $amount(self::SCHEME_DISCOUNT_ACCOUNT_CODE) + $amount(self::PROMO_ACCOUNT_CODE);
+            $scheme = $amount(self::SCHEME_DISCOUNT_ACCOUNT_CODE);
 
             return (object) [
                 'id' => $employee->id,
@@ -158,7 +159,7 @@ class DailyBusinessSummaryService
                         ? (float) $counted->total_amount
                         : (float) $settlement->cash_collected;
 
-                    return $cash + (float) $settlement->bank_slips_amount;
+                    return $cash + (float) $settlement->bank_slips_amount + (float) $settlement->cheques_collected;
                 }),
             ];
         })->values();

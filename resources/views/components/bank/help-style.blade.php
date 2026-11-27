@@ -5,11 +5,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=Noto+Nastaliq+Urdu:wght@400..700&display=swap" rel="stylesheet">
     <style>
-        .bh { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', Tahoma, serif; font-size: 17px; line-height: 2.5; color: var(--ak-text); }
+        .bh { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', Tahoma, serif; font-size: 17px; line-height: 2.9; color: var(--ak-text); }
         .bh-layout { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
         @media (min-width: 1024px) { .bh-layout { grid-template-columns: 270px minmax(0, 1fr); } .bh-toc { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; } }
         .bh-toc, .bh section { background: #fff; border: 1px solid var(--ak-border); border-radius: var(--ak-radius); box-shadow: var(--ak-shadow); }
-        .bh-toc { padding: 14px 18px; font-size: 15px; line-height: 2.3; }
+        .bh-toc { padding: 14px 18px; font-size: 15px; line-height: 2.6; }
         .bh-toc b { display: block; color: var(--ak-navy); font-size: 17px; }
         .bh-toc ol { margin: 0; padding-inline-start: 24px; list-style: decimal; }
         .bh-toc a { color: var(--ak-text); text-decoration: none; } .bh-toc a:hover { color: var(--ak-navy); text-decoration: underline; }
@@ -17,8 +17,8 @@
         .bh section { padding: 20px 26px; scroll-margin-top: 16px; }
         .bh h2 { margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--ak-line); font-size: 24px; font-weight: 700; line-height: 2.2; color: var(--ak-navy); }
         .bh h3 { margin: 16px 0 4px; font-size: 19px; font-weight: 700; line-height: 2.2; color: #166534; }
-        .bh p { margin: 6px 0; }
-        .bh ol, .bh ul { margin: 6px 0; padding-inline-start: 28px; } .bh ol { list-style: decimal; } .bh ul { list-style: disc; } .bh li { margin: 2px 0; }
+        .bh p { margin: 10px 0; }
+        .bh ol, .bh ul { margin: 6px 0; padding-inline-start: 28px; } .bh ol { list-style: decimal; } .bh ul { list-style: disc; } .bh li { margin: 6px 0; }
         .bh .en { direction: ltr; unicode-bidi: isolate; display: inline-block; padding: 1px 8px; border-radius: 7px; background: #eef4ff; color: #0b3d91; font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.6; letter-spacing: 0; vertical-align: 0.15em; white-space: nowrap; }
         /* English words and numbers running inside an Urdu sentence: left-to-right, Latin font, same line */
         .bh bdi.lt { direction: ltr; unicode-bidi: isolate; font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif; font-size: .82em; font-weight: 500; letter-spacing: 0; line-height: 1; vertical-align: 0.12em; padding: 0 .15em; color: inherit; }
@@ -26,7 +26,7 @@
         .bh code.en { background: #f1f5f9; font-family: ui-monospace, Menlo, monospace; font-weight: 500; }
         .bh .note, .bh .tip, .bh .warn { margin: 12px 0; padding: 8px 16px; border-radius: 10px; border: 1px solid; font-size: 16px; }
         .bh .note { background: #fffbeb; border-color: #fcd34d; } .bh .tip { background: #eff6ff; border-color: #bfdbfe; } .bh .warn { background: #fef2f2; border-color: #fecaca; }
-        .bh table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15.5px; line-height: 2.3; }
+        .bh table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15.5px; line-height: 2.6; }
         .bh th, .bh td { border: 0.75pt solid #000; padding: 4px 12px; text-align: right; vertical-align: top; }
         .bh th { background: #e6e6e6; font-weight: 700; white-space: nowrap; }
         .bh td.en-cell { direction: ltr; text-align: left; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.8; white-space: nowrap; }
@@ -50,8 +50,8 @@
         .bh .hf-num { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-top: 6px; border-radius: 50%; background: #0071e3; color: #fff;
             font-family: 'Inter', -apple-system, Arial, sans-serif; font-size: 13px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 4px #fbfbfd; position: relative; z-index: 1; }
         .bh .hf-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; min-width: 0; padding: 6px 14px 8px; border-radius: 12px; background: #fff; border: 1px solid #ececf0; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
-        .bh .hf-body b { font-size: 16px; line-height: 2.2; color: var(--ak-text); }
-        .bh .hf-body small { flex-basis: 100%; order: 3; font-size: 14px; line-height: 2.1; color: #55555b; }
+        .bh .hf-body b { font-size: 16px; line-height: 2.5; color: var(--ak-text); }
+        .bh .hf-body small { flex-basis: 100%; order: 3; font-size: 14px; line-height: 2.4; color: #55555b; }
         .bh .hf-body .en { order: 2; margin-inline-start: auto; font-size: 12px; font-weight: 600; background: #f0f0f5; color: #3a3a40; }
         @media (max-width: 640px) { .bh .hf-body .en { margin-inline-start: 0; } }
         @media print {

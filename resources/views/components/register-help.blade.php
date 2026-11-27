@@ -397,7 +397,7 @@
                                 </div>
                                 <div class="rgh-col">
                                     <div class="rgh-col-head"><span class="en">Scheme</span><b>سکیم</b></div>
-                                    <p>سکیم ڈسکاؤنٹ (<bdi class="lt" dir="ltr">5292</bdi>) اور پروموشن آف (<bdi class="lt" dir="ltr">5288</bdi>) ملا کر۔</p>
+                                    <p>سیٹلمنٹ میں درج سکیم ڈسکاؤنٹ (<bdi class="lt" dir="ltr">5292</bdi>)۔ پروموشن آف (<bdi class="lt" dir="ltr">5288</bdi>) اس میں نہیں، وہ ٹی ٹی ایس کے <span class="en">Promo Passed</span> میں آتا ہے۔</p>
                                 </div>
                                 <div class="rgh-col">
                                     <div class="rgh-col-head"><span class="en">Total Discount</span><b>کل رعایت</b></div>
@@ -413,7 +413,7 @@
                                 </div>
                                 <div class="rgh-col">
                                     <div class="rgh-col-head"><span class="en">Amount</span><b>رقم</b></div>
-                                    <p>سیل مین نے جو نقد گن کر دیا، اس میں بینک سلپ کی رقم جمع۔</p>
+                                    <p>سیل مین نے جو نقد گن کر دیا، اس میں بینک سلپ اور چیک کی رقم جمع۔</p>
                                 </div>
                                 <div class="tip">خالی جگہ پر <bdi class="lt" dir="ltr">–</bdi> کا مطلب صفر ہے۔</div>
                             </section>

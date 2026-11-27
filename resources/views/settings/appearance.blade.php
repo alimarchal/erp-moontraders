@@ -28,6 +28,7 @@
                 'classic' => ['Classic', 'Three columns of lists, as before.', 'images/layouts/reports-classic.jpg'],
                 'a' => ['Option A: group chips + pins', 'Search on top, chips that jump to each group, and a Pinned row for the reports each user stars.', 'images/layouts/reports-a.jpg'],
                 'b' => ['Option B: two panes', 'Groups on the left, the chosen group\'s reports on the right, like Mail. One group at a time on a phone.', 'images/layouts/reports-b.jpg'],
+                'c' => ['Option C: Apple', 'Like Settings on a Mac or an iPhone, in English only. Reports grouped by task (Daily overview, Customers & credit, Stock & vans…), one search, pins on top.', 'images/layouts/reports-c.jpg'],
             ],
         ],
         'goods_receipt_notes' => [

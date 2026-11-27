@@ -2,6 +2,7 @@
 
 use App\Models\AppSetting;
 use App\Models\User;
+use App\Support\Menus\ReportsMenu;
 use Spatie\Permission\Models\Permission;
 
 /**
@@ -65,6 +66,7 @@ dataset('menu layouts', [
     'settings B' => ['settings', 'b', 'settings.layouts.option-b'],
     'reports A' => ['reports', 'a', 'reports.layouts.option-a'],
     'reports B' => ['reports', 'b', 'reports.layouts.option-b'],
+    'reports C (Apple)' => ['reports', 'c', 'reports.layouts.option-c'],
 ]);
 
 it('picks the view from the layout chosen on Appearance', function (string $page, string $layout, string $view) {
@@ -83,6 +85,10 @@ it('shows only the links and groups the user is permitted to see', function (str
     [$permissions, $allowed, $denied, $shownGroup, $hiddenGroup] = $page === 'settings'
         ? [['user-list', 'stock-adjustment-list'], [route('users.index'), route('stock-adjustments.index')], route('chart-of-accounts.index'), 'Company &amp; access', 'Accounting']
         : [['report-audit-creditors-ledger', 'payroll-list'], [route('reports.creditors-ledger.index'), route('payroll.index')], route('reports.trial-balance.index'), 'Receivables &amp; cash', 'Stock &amp; vans'];
+
+    if ($layout === 'c') {
+        $shownGroup = 'Customers &amp; credit';
+    }
 
     $html = $this->actingAs(menuLayoutUser($page, $permissions))
         ->get(route("{$page}.index"))
@@ -138,4 +144,28 @@ it('names the customer balances report Debtors ledger and links the bank registe
         ->assertSee('Debtors ledger')
         ->assertDontSee('Creditors Ledger')
         ->assertSee(route('reports.bank.index'), false);
-})->with(['a', 'b']);
+})->with(['a', 'b', 'c']);
+
+it('puts every report of the Apple layout in a named category, once', function () {
+    $user = menuLayoutUser('reports', classicPagePermissions('reports'));
+    $menu = new ReportsMenu;
+
+    $categories = $menu->appleCategoriesFor($user);
+    $ids = collect($categories)->flatMap(fn (array $category) => array_column($category['items'], 'id'));
+
+    expect(array_column($categories, 'key'))->not->toContain('more')
+        ->and($ids->duplicates())->toBeEmpty()
+        ->and($ids->count())->toBe(collect($menu->groupsFor($user))->sum(fn (array $group) => count($group['items'])));
+});
+
+it('shows the Apple layout in English only', function () {
+    AppSetting::put('layout.reports', 'c');
+
+    $html = $this->actingAs(menuLayoutUser('reports', classicPagePermissions('reports')))
+        ->get(route('reports.index'))
+        ->assertSuccessful()
+        ->assertSee('Daily overview')
+        ->getContent();
+
+    expect(preg_match('/\p{Arabic}/u', strip_tags($html)))->toBe(0);
+});

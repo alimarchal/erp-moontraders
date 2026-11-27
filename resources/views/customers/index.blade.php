@@ -89,7 +89,7 @@
                         <div class="ak-search">
                             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" /></svg>
                             <input id="f_search" type="search" name="filter[search]" value="{{ $filters['search'] ?? '' }}" autocomplete="off"
-                                placeholder="Name, code, phone, address, area, NTN or CNIC" x-ref="search">
+                                placeholder="Name, code, phone or area" title="Searches name, code, phone, address, area, NTN and CNIC" x-ref="search">
                             <kbd aria-hidden="true">/</kbd>
                         </div>
                     </div>

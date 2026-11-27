@@ -127,8 +127,8 @@
     /* Phones and tablets: the row number steps aside, a cell's two lines stack on the right */
     @media screen and (max-width: 1023px) {
         .cs-table td.cs-no { display: none !important; }
-        .cs-table td.cs-stack { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: start; }
-        .cs-table td.cs-stack::before { grid-row: 1 / span 3; }
+        .cs-table td.cs-stack { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: start; align-content: start; }
+        .cs-table td.cs-stack::before { grid-row: 1; }
         .cs-table td.cs-stack > * { grid-column: 2; justify-self: end; text-align: right; }
         .cs-table td.cs-num, .cs-table td.ak-sticky-end { display: flex !important; justify-content: space-between !important; align-items: center; }
         .cs-table td.ak-sticky-end { justify-content: flex-end !important; }

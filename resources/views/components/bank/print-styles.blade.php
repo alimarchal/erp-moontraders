@@ -118,10 +118,37 @@
     @keyframes bk-fade { from { opacity: 0; } to { opacity: 1; } }
     #bk-entry-modal .uf-modal-bg, .bk-action-modal .uf-modal-bg { animation: bk-fade .2s ease-out; }
     @media (prefers-reduced-motion: reduce) { .bk-modal-box, #bk-entry-modal .uf-modal-bg, .bk-action-modal .uf-modal-bg, .bk-skeleton i { animation: none; } .ak-btn:active, .ak-icon:active, .bk-clip:active { transform: none; } }
+    /* List tables in the pop-up scroll sideways on a narrow screen instead of squeezing a word into one letter per line */
+    .bk-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
     @media (max-width: 640px) {
-        #bk-entry-modal { padding: 0; align-items: stretch; }
-        .bk-modal-box { width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; }
-        .bk-modal-head { padding: 12px 14px; } .bk-modal-body { padding: 14px; }
+        /* Phone: the transaction and help windows fill the screen; a short action window (reject, reverse, delete) stays a
+           card with a small margin. The selectors carry .uf-modal so they win over the skin's rounded desktop sheet. */
+        #bk-entry-modal, #bk-help-modal { padding: 0; align-items: stretch; }
+        .uf-modal#bk-entry-modal .bk-modal-box, .uf-modal#bk-help-modal .bk-modal-box { width: 100%; max-width: none; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; }
+        .uf-modal.bk-action-modal { padding: 12px; }
+        .uf-modal .bk-modal-box.bk-action-box { width: 100%; max-height: calc(100dvh - 24px); border-radius: 16px; }
+        .uf-modal .bk-modal-head { padding: 10px 12px 10px 16px; padding-top: max(10px, env(safe-area-inset-top)); }
+        .uf-modal .bk-modal-head > :first-child { flex: 1 1 auto; min-width: 0; }
+        .uf-modal .bk-modal-head h3 { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .uf-modal .bk-modal-head p { font-size: 12px; }
+        .uf-modal .bk-modal-head .bk-row { flex: none; flex-wrap: nowrap; gap: 6px; }
+        .uf-modal .bk-modal-body { padding: 14px 14px max(16px, env(safe-area-inset-bottom)); }
+        .uf-modal .bk-modal-foot { padding: 10px 12px max(10px, env(safe-area-inset-bottom)); }
+        .uf-modal .bk-modal-foot .ak-btn { flex: 1 1 0; justify-content: center; }
+        #bk-help-modal .bh-main > section { padding: 14px 12px; }
+
+        /* Sheet tables: the caption note drops under the title; list tables keep whole words and scroll */
+        table.bk-t th, table.bk-t td { padding: 8px 10px; }
+        table.bk-t tr.cap th small { float: none; display: block; margin: 2px 0 0; }
+        .bk-scroll > table.bk-t td, .bk-scroll > table.bk-t th { word-break: normal; overflow-wrap: normal; }
+        .bk-scroll > table.bk-t td { min-width: 4.5em; }
+        .bk-scroll > table.bk-files td:first-child { min-width: 12em; }
+
+        /* The entry facts (label, value, label, value) become one label and value per line */
+        table.bk-kv, table.bk-kv thead, table.bk-kv tbody, table.bk-kv tr.cap, table.bk-kv tr.cap th { display: block; }
+        table.bk-kv tbody tr { display: grid; grid-template-columns: minmax(96px, 36%) minmax(0, 1fr); }
+        table.bk-kv tbody th, table.bk-kv tbody td { width: auto; min-width: 0; padding-top: 9px; }
+        table.bk-kv tbody tr:last-child > :nth-last-child(n+3) { border-bottom: 1px solid var(--ak-line); }
     }
     /* Transaction detail: the facts on one side, the receipt files and the actions on the other (one column on a phone) */
     .bk-hero { padding: 16px 18px; border: 1px solid var(--ak-line); border-radius: 10px; background: var(--ak-soft); }
@@ -209,7 +236,7 @@
         body.bk-modal-open #bk-entry-modal { display: block !important; position: static !important; }
         body.bk-modal-open #bk-entry-modal .uf-modal-bg, body.bk-modal-open .bk-modal-head button { display: none !important; }
         body.bk-modal-open .uf-modal-box { max-width: none; max-height: none; overflow: visible; display: block; }
-        body.bk-modal-open .bk-modal-body { overflow: visible; }
+        body.bk-modal-open .bk-modal-body, .bk-scroll { overflow: visible; }
         .bk-detail-grid { display: block; } .bk-detail-side { position: static; } .bk-hero { border: 0; background: none; padding: 0; }
         body.bk-modal-open .bk-modal-head { background: #fff; color: #000; border-bottom: 1px solid #000; }
         body.bk-modal-open .bk-modal-head h3 { color: #000; }

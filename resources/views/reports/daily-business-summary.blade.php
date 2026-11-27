@@ -363,7 +363,7 @@
                     <div class="dbs-card dbs-kpi dbs-kpi-cash">
                         <div class="dbs-kpi-label">Today's Cash</div>
                         <div class="dbs-kpi-value" title="{{ number_format($totals['cash'], 2) }}">{{ number_format($totals['cash'], 2) }}</div>
-                        <div class="dbs-kpi-sub">Cash + bank slips</div>
+                        <div class="dbs-kpi-sub">Cash + bank slips + cheques</div>
                     </div>
                     <div class="dbs-card dbs-kpi dbs-kpi-credit">
                         <div class="dbs-kpi-label">Total Credit</div>
@@ -543,7 +543,7 @@
                 </section>
 
                 <p class="dbs-footnote no-print">
-                    Sales by category and the TTS summary run from the 1st of the month to the report date. Salesman figures are for the report date; Credit is each salesman's closing market credit. %age = advance tax (1161); Scheme = scheme discount (5292) + Promotion OFF (5288); Amount = cash counted + bank slips.
+                    Sales by category and the TTS summary run from the 1st of the month to the report date. Salesman figures are for the report date; Credit is each salesman's closing market credit. %age = advance tax (1161); Scheme = scheme discount (5292); Amount = cash counted + bank slips + cheques.
                 </p>
             </div>
         </div>

@@ -26,6 +26,7 @@ class AppSetting extends Model
         'reports' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB, PageLayout::OptionC],
         'goods_receipt_notes' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB, PageLayout::OptionC, PageLayout::OptionD, PageLayout::OptionE, PageLayout::OptionF, PageLayout::OptionG, PageLayout::OptionH, PageLayout::OptionI],
         'goods_receipt_notes_index' => [PageLayout::Classic, PageLayout::OptionA, PageLayout::OptionB, PageLayout::OptionC, PageLayout::OptionD],
+        'goods_issues_index' => [PageLayout::Classic, PageLayout::OptionA],
     ];
 
     protected $fillable = ['key', 'value', 'updated_by'];

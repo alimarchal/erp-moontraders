@@ -58,6 +58,14 @@
                 'd' => ['Option D: enterprise grid', 'A dense, striped ERP grid with every key column, received by, and page totals in the footer.', 'images/layouts/grn-index-d.jpg'],
             ],
         ],
+        'goods_issues_index' => [
+            'title' => 'Goods issues list',
+            'ur' => 'گڈز ایشو کی فہرست',
+            'options' => [
+                'classic' => ['Classic', 'Filter menu, status tabs and the seven-column table with the Urdu help, as now.', 'images/layouts/gi-index-classic.jpg'],
+                'a' => ['Option A: Apple', 'English only. Search always in view, quick dates, segmented stage tabs and one clean list per day; tap an issue for a quick look. No sideways scrolling on a phone.', 'images/layouts/gi-index-a.jpg'],
+            ],
+        ],
     ];
 @endphp
 <x-app-layout>

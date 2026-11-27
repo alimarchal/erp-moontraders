@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PageLayout;
 use App\Exports\GoodsIssueExport;
 use App\Http\Requests\AppendGoodsIssueItemsRequest;
 use App\Http\Requests\RemoveGoodsIssueItemRequest;
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
+use App\Models\AppSetting;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
@@ -183,7 +185,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ->reorder()
             ->sum('total_value');
 
-        return view('goods-issues.index', [
+        // Settings → Appearance picks the list layout; Classic is the list as it was.
+        $view = match (AppSetting::layoutFor('goods_issues_index')) {
+            PageLayout::OptionA => 'goods-issues.index-apple',
+            default => 'goods-issues.index',
+        };
+
+        return view($view, [
             'totalValue' => $totalValue,
             'goodsIssues' => $goodsIssues,
             'stats' => $stats,

@@ -45,6 +45,34 @@ class SettingsMenu extends Menu
     /**
      * @param  int  $productCount  Products the user can see (a supplier-scoped user only counts their supplier's).
      */
+    /**
+     * The categories of the Apple layout (Settings, Option C): the same pages regrouped by what they set up, so
+     * everything about customers, stock or the bank sits in one place. Each page id (the slug of its label) is in
+     * exactly one category; a page missing here still shows, under "More" (see Menu::appleCategoriesFor).
+     *
+     * @var list<array{key: string, name: string, blurb: string, color: string, icon: string, ids: list<string>}>
+     */
+    public const APPLE_CATEGORIES = [
+        ['key' => 'access', 'name' => 'Company & access', 'blurb' => 'Companies, users, roles and permissions, and how the pages look.', 'color' => '#636366', 'icon' => 'shield',
+            'ids' => ['companies', 'users', 'roles', 'permissions', 'appearance']],
+        ['key' => 'parties', 'name' => 'Customers & suppliers', 'blurb' => 'Who you sell to and buy from, and their opening balances.', 'color' => '#ff375f', 'icon' => 'users',
+            'ids' => ['customers', 'suppliers', 'opening-balances', 'investment-balances']],
+        ['key' => 'products', 'name' => 'Products & stock', 'blurb' => 'Products, categories, units, promotions and warehouses.', 'color' => '#5e5ce6', 'icon' => 'cube',
+            'ids' => ['products', 'categories', 'units-of-measure', 'promotions', 'warehouses', 'warehouse-types']],
+        ['key' => 'staff', 'name' => 'Staff, vans & targets', 'blurb' => 'Employees and their pay, vans and monthly sales targets.', 'color' => '#30a46c', 'icon' => 'truck',
+            'ids' => ['employees', 'vehicles', 'company-targets', 'payroll']],
+        ['key' => 'records', 'name' => 'Day-to-day records', 'blurb' => 'Journal entries, stock adjustments, recalls and claims.', 'color' => '#ff9f0a', 'icon' => 'doc',
+            'ids' => ['journal-entries', 'stock-adjustments', 'product-recalls', 'claim-register']],
+        ['key' => 'expenses', 'name' => 'Expenses', 'blurb' => 'What expense vouchers are for, the shops paid, and month-end payments.', 'color' => '#ff6482', 'icon' => 'cash',
+            'ids' => ['expense-categories', 'shops-payees', 'vendor-payments']],
+        ['key' => 'accounting', 'name' => 'Accounting', 'blurb' => 'Chart of accounts, account types, fiscal periods, currencies and cost centres.', 'color' => '#0a84ff', 'icon' => 'book',
+            'ids' => ['chart-of-accounts', 'account-types', 'fiscal-periods', 'currencies', 'cost-centers']],
+        ['key' => 'bank', 'name' => 'Bank', 'blurb' => 'Bank accounts and how the bank register reads statements.', 'color' => '#34c759', 'icon' => 'bank',
+            'ids' => ['bank-accounts', 'bank-categories', 'party-aliases', 'auto-classify-rules']],
+        ['key' => 'tax', 'name' => 'Tax & profit rules', 'blurb' => 'Tax codes and rates, revenue and profit categories.', 'color' => '#ff3b30', 'icon' => 'percent',
+            'ids' => ['tax-codes', 'tax-rates', 'category-revenue', 'profit-categories']],
+    ];
+
     public function __construct(private readonly int $productCount) {}
 
     protected function definitions(): array

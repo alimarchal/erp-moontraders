@@ -913,6 +913,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('salesman-stock-register', [SalesmanStockRegisterController::class, 'index'])->name('salesman-stock-register.index');
         Route::get('inventory-ledger', [InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
+        Route::get('shop-list/{customer}', [ShopListController::class, 'show'])->name('shop-list.show');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
         Route::get('vehicle', [VehicleReportController::class, 'index'])->name('vehicle.index');
         Route::get('stock-availability/export/pdf', [StockAvailabilityReportController::class, 'exportPdf'])->name('stock-availability.export.pdf');

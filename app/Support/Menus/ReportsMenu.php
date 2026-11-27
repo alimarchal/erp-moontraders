@@ -2,10 +2,6 @@
 
 namespace App\Support\Menus;
 
-use App\Models\User;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-
 /**
  * The links of the Reports page in the grouping of issue #197. Screens that are not reports
  * (expense vouchers, shops, payroll…) sit in the last group, "Expenses & payroll", because no
@@ -30,7 +26,8 @@ class ReportsMenu extends Menu
     /**
      * The categories of the Apple layout (Reports, Option C): the same reports regrouped by the job they are for,
      * so a manager starts the day in one place and every customer or stock question has one home. Each report id
-     * (the slug of its label) sits in exactly one category; a report missing here still shows, under "More".
+     * (the slug of its label) sits in exactly one category; a report missing here still shows, under "More"
+     * (see Menu::appleCategoriesFor).
      *
      * @var list<array{key: string, name: string, blurb: string, color: string, icon: string, ids: list<string>}>
      */
@@ -56,35 +53,6 @@ class ReportsMenu extends Menu
         ['key' => 'expenses', 'name' => 'Expenses & payroll', 'blurb' => 'Expense vouchers, shops paid for expenses, and salaries.', 'color' => '#8e8e93', 'icon' => 'cash',
             'ids' => ['expense-vouchers', 'expense-categories', 'shops', 'vendor-payments', 'incentives-adjustments', 'payroll']],
     ];
-
-    /**
-     * The user's reports in the Apple layout's categories. Empty categories are dropped; a report no category
-     * lists lands in a last "More" category so a new report never disappears from the page.
-     *
-     * @return list<array{key: string, name: string, blurb: string, color: string, icon: string, items: list<array{id: string, label: string, description: string, url: string, icon: string, count: int|null, search: string}>}>
-     */
-    public function appleCategoriesFor(User $user): array
-    {
-        $items = collect($this->groupsFor($user))->flatMap(fn (array $group) => $group['items'])->keyBy('id');
-        $placed = [];
-        $categories = [];
-
-        foreach ([...self::APPLE_CATEGORIES, ['key' => 'more', 'name' => 'More', 'blurb' => 'Other reports.', 'color' => '#8e8e93', 'icon' => 'doc', 'ids' => null]] as $category) {
-            $ids = $category['ids'] ?? $items->keys()->diff($placed)->values()->all();
-            $categoryItems = collect($ids)
-                ->filter(fn (string $id) => $items->has($id))
-                ->map(fn (string $id) => [...$items[$id], 'search' => Str::lower($items[$id]['search'].' '.$category['name'])])
-                ->values()
-                ->all();
-            $placed = [...$placed, ...$ids];
-
-            if ($categoryItems !== []) {
-                $categories[] = [...Arr::except($category, 'ids'), 'items' => $categoryItems];
-            }
-        }
-
-        return $categories;
-    }
 
     protected function definitions(): array
     {

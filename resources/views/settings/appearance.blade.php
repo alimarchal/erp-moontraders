@@ -19,6 +19,7 @@
                 'classic' => ['Classic', 'Three columns of lists, as before.', 'images/layouts/settings-classic.jpg'],
                 'a' => ['Option A: side menu + tiles', 'Groups on the left, tidy tiles on the right, search stays on top. Chips on a phone.', 'images/layouts/settings-a.jpg'],
                 'b' => ['Option B: one card per group', 'Nine cards with their pages inside and a "Recently used" row. Fits about one screen.', 'images/layouts/settings-b.jpg'],
+                'c' => ['Option C: Apple', 'Like Settings on a Mac or an iPhone, in English only. Pages grouped by what they set up (Customers & suppliers, Products & stock, Bank…), one search, recently used on top.', 'images/layouts/settings-c.jpg'],
             ],
         ],
         'reports' => [

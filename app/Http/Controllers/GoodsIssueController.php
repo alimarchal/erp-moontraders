@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PageLayout;
 use App\Exports\GoodsIssueExport;
 use App\Http\Requests\AppendGoodsIssueItemsRequest;
 use App\Http\Requests\RemoveGoodsIssueItemRequest;
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
+use App\Models\AppSetting;
 use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
@@ -183,7 +185,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ->reorder()
             ->sum('total_value');
 
-        return view('goods-issues.index', [
+        // Settings → Appearance picks the list layout; Classic is the list as it was.
+        $view = match (AppSetting::layoutFor('goods_issues_index')) {
+            PageLayout::OptionA => 'goods-issues.index-apple',
+            default => 'goods-issues.index',
+        };
+
+        return view($view, [
             'totalValue' => $totalValue,
             'goodsIssues' => $goodsIssues,
             'stats' => $stats,
@@ -539,7 +547,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 }
 
                 $item->batch_breakdown = $batchBreakdown;
-                $item->calculated_total = collect($batchBreakdown)->sum('value');
+                // Stock short of the line: the batches cannot price all of it, so the line keeps its saved value.
+                $item->calculated_total = $remainingQty > 0.0005 ? null : collect($batchBreakdown)->sum('value');
             }
         }
 
@@ -630,6 +639,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 ->with('error', 'Only draft Goods Issues can be updated.');
         }
 
+        $this->ensureAuthorizedSupplierIds($this->normalizeSupplierIds($request->input('supplier_ids', [])));
+
         DB::beginTransaction();
 
         try {
@@ -641,11 +652,12 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 $totalQuantity += $item['quantity_issued'];
             }
 
-            // Get supplier_id from employee
-            $employee = Employee::findOrFail($request->employee_id);
+            // The supplier picked on the form, as on create; the salesman's own supplier only when none was sent.
+            // An unassigned salesman has no supplier, so taking it from him wiped the issue's supplier.
+            $supplierId = $request->input('supplier_ids.0') ?? Employee::findOrFail($request->employee_id)->supplier_id;
             $userSupplierId = $this->getUserSupplierScope();
 
-            if ($userSupplierId && (int) $employee->supplier_id !== $userSupplierId) {
+            if ($userSupplierId && (int) $supplierId !== $userSupplierId) {
                 return back()
                     ->withInput()
                     ->with('error', 'You do not have permission to update goods issues for this supplier.');
@@ -657,7 +669,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 'warehouse_id' => $request->warehouse_id,
                 'vehicle_id' => $request->vehicle_id,
                 'employee_id' => $request->employee_id,
-                'supplier_id' => $employee->supplier_id,
+                'supplier_id' => $supplierId,
                 'total_quantity' => $totalQuantity,
                 'total_value' => $totalValue,
                 'notes' => $request->notes,
@@ -914,7 +926,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         $draftSettlement = $goodsIssue->settlement()->where('status', 'draft')->first();
         $uoms = Uom::orderBy('uom_name')->get();
-        $canEnterCartons = auth()->user()->can('goods-issue-enter-cartons');
+        $canEnterCartons = auth()->user()->can('goods-issue-carton-entry');
         $canAdd = auth()->user()->can('goods-issue-edit');
         $canRemove = auth()->user()->can('goods-issue-remove-items');
         $remover = app(GoodsIssueLineRemovalService::class);

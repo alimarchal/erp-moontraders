@@ -2,6 +2,10 @@
 
 namespace App\Support\Menus;
 
+use App\Models\User;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+
 /**
  * The links of the Reports page in the grouping of issue #197. Screens that are not reports
  * (expense vouchers, shops, payroll…) sit in the last group, "Expenses & payroll", because no
@@ -22,6 +26,65 @@ class ReportsMenu extends Menu
         'report-bank-summary',
         'report-bank-unlinked-scans',
     ];
+
+    /**
+     * The categories of the Apple layout (Reports, Option C): the same reports regrouped by the job they are for,
+     * so a manager starts the day in one place and every customer or stock question has one home. Each report id
+     * (the slug of its label) sits in exactly one category; a report missing here still shows, under "More".
+     *
+     * @var list<array{key: string, name: string, blurb: string, color: string, icon: string, ids: list<string>}>
+     */
+    public const APPLE_CATEGORIES = [
+        ['key' => 'daily', 'name' => 'Daily overview', 'blurb' => 'Start the day here: the summary, sales, cash and stock of one day.', 'color' => '#0a84ff', 'icon' => 'sparkle',
+            'ids' => ['daily-business-summary', 'daily-sales-summary', 'investment-summary', 'cash-collection-distributor', 'daily-stock-register']],
+        ['key' => 'sales', 'name' => 'Sales', 'blurb' => 'What was sold, by product, salesman and settlement, and against target.', 'color' => '#30a46c', 'icon' => 'trend',
+            'ids' => ['sku-wise-sales', 'sales-by-salesman', 'sales-settlement', 'company-target-summary', 'goods-issue-report', 'salesman-credit-history']],
+        ['key' => 'customers', 'name' => 'Customers & credit', 'blurb' => 'Who owes what, for how long, and every entry of a customer account.', 'color' => '#ff375f', 'icon' => 'users',
+            'ids' => ['customer-balances', 'customer-account-statement', 'debtors-ledger', 'credit-aging', 'salesman-wise-debtors', 'opening-customer-balance', 'shop-directory']],
+        ['key' => 'cash', 'name' => 'Cash & bank', 'blurb' => 'Cash counted, cheques and the bank register.', 'color' => '#34c759', 'icon' => 'bank',
+            'ids' => ['cash-collection-detail', 'cheque-register', 'bank-register-reports']],
+        ['key' => 'stock', 'name' => 'Stock & vans', 'blurb' => 'Stock in the warehouse and on each van, movements, expiry and vehicles.', 'color' => '#ff9f0a', 'icon' => 'box',
+            'ids' => ['stock-availability', 'inventory-ledger', 'salesman-stock-register', 'van-stock-status', 'van-stock-ledger', 'van-stock-by-batch', 'fmr-vs-amr', 'sku-wise-fmr-vs-amr', 'amr-dispose-register', 'vehicle-report']],
+        ['key' => 'suppliers', 'name' => 'Suppliers & claims', 'blurb' => 'Supplier ledgers, invoices, claims and price lists.', 'color' => '#bf5af2', 'icon' => 'truck',
+            'ids' => ['supplier-ledger', 'supplier-ledger-register', 'invoice-summary', 'custom-settlement', 'claim-register', 'sku-pricing', 'product-price-change-log']],
+        ['key' => 'schemes', 'name' => 'Schemes & trade offers', 'blurb' => 'TTS, promotions and discounts received and passed on.', 'color' => '#ff6482', 'icon' => 'tag',
+            'ids' => ['schemes-discounts', 'scheme-received', 'tts-summary', 'daily-sales-trade-offer-dashboard']],
+        ['key' => 'profit', 'name' => 'Profit & expenses', 'blurb' => 'Return on investment, revenue, expenses and their share.', 'color' => '#00c7be', 'icon' => 'chart',
+            'ids' => ['return-on-investment', 'summary-roi', 'profit-after-category', 'revenue-detail', 'expense-detail', 'percentage-summary']],
+        ['key' => 'accounts', 'name' => 'Accounts & tax', 'blurb' => 'Ledgers, trial balance, statements and advance tax.', 'color' => '#5e5ce6', 'icon' => 'book',
+            'ids' => ['general-ledger', 'trial-balance', 'account-balances', 'balance-sheet', 'income-statement', 'advance-tax-report', 'advance-tax-sales-register', 'advance-tax-customer-summary']],
+        ['key' => 'expenses', 'name' => 'Expenses & payroll', 'blurb' => 'Expense vouchers, shops paid for expenses, and salaries.', 'color' => '#8e8e93', 'icon' => 'cash',
+            'ids' => ['expense-vouchers', 'expense-categories', 'shops', 'vendor-payments', 'incentives-adjustments', 'payroll']],
+    ];
+
+    /**
+     * The user's reports in the Apple layout's categories. Empty categories are dropped; a report no category
+     * lists lands in a last "More" category so a new report never disappears from the page.
+     *
+     * @return list<array{key: string, name: string, blurb: string, color: string, icon: string, items: list<array{id: string, label: string, description: string, url: string, icon: string, count: int|null, search: string}>}>
+     */
+    public function appleCategoriesFor(User $user): array
+    {
+        $items = collect($this->groupsFor($user))->flatMap(fn (array $group) => $group['items'])->keyBy('id');
+        $placed = [];
+        $categories = [];
+
+        foreach ([...self::APPLE_CATEGORIES, ['key' => 'more', 'name' => 'More', 'blurb' => 'Other reports.', 'color' => '#8e8e93', 'icon' => 'doc', 'ids' => null]] as $category) {
+            $ids = $category['ids'] ?? $items->keys()->diff($placed)->values()->all();
+            $categoryItems = collect($ids)
+                ->filter(fn (string $id) => $items->has($id))
+                ->map(fn (string $id) => [...$items[$id], 'search' => Str::lower($items[$id]['search'].' '.$category['name'])])
+                ->values()
+                ->all();
+            $placed = [...$placed, ...$ids];
+
+            if ($categoryItems !== []) {
+                $categories[] = [...Arr::except($category, 'ids'), 'items' => $categoryItems];
+            }
+        }
+
+        return $categories;
+    }
 
     protected function definitions(): array
     {

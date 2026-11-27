@@ -27,6 +27,7 @@ class ReportsController extends Controller implements HasMiddleware
             PageLayout::Classic => view('reports.index'),
             PageLayout::OptionA => view('reports.layouts.option-a', ['groups' => (new ReportsMenu)->groupsFor(auth()->user())]),
             PageLayout::OptionB => view('reports.layouts.option-b', ['groups' => (new ReportsMenu)->groupsFor(auth()->user())]),
+            PageLayout::OptionC => view('reports.layouts.option-c', ['categories' => (new ReportsMenu)->appleCategoriesFor(auth()->user())]),
         };
     }
 }
